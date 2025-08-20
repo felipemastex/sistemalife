@@ -21,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 // --- COMPONENTES ---
@@ -585,6 +587,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [missionFeedback, setMissionFeedback] = useState({});
+    const [hackerMode, setHackerMode] = useState(false);
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -619,6 +622,17 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
+    
+    useEffect(() => {
+        if (hackerMode) {
+            setMissions(currentMissions => currentMissions.map(m => ({ ...m, ultima_missao_concluida_em: null })));
+            toast({
+                title: "Modo Hacker Ativado!",
+                description: "Tempos de espera das missões eliminados.",
+            });
+            setHackerMode(false); // Reset switch after use
+        }
+    }, [hackerMode, setMissions, toast]);
 
 
     const handleLevelUp = (currentProfile) => {
@@ -831,7 +845,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     return (
         <div className="p-6">
-            <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
+            <div className="flex justify-between items-center mb-2">
+                <h1 className="text-3xl font-bold text-cyan-400">Diário de Missões</h1>
+                 <div className="flex items-center space-x-2">
+                    <Switch id="hacker-mode" onCheckedChange={setHackerMode} checked={hackerMode} />
+                    <Label htmlFor="hacker-mode" className="text-sm text-gray-400">Modo Hacker</Label>
+                </div>
+            </div>
             <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
@@ -844,7 +864,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                            <div className="flex items-center w-full px-4 py-3">
+                             <div className="flex items-center w-full px-4 py-3">
                                 <AccordionTrigger className="flex-1 hover:no-underline text-left">
                                     <div className="flex-1 text-left">
                                         <div className="flex justify-between items-center">
@@ -1217,3 +1237,5 @@ export default function App() {
     </div>
   );
 }
+
+    
