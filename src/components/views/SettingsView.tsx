@@ -11,18 +11,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent } from '@/components/ui/card';
 
 const getProfileRank = (level) => {
-    if (level <= 5) return 'F';
-    if (level <= 10) return 'E';
-    if (level <= 20) return 'D';
-    if (level <= 30) return 'C';
-    if (level <= 40) return 'B';
-    if (level <= 50) return 'A';
-    if (level <= 70) return 'S';
-    if (level <= 90) return 'SS';
-    return 'SSS';
+    if (level <= 5) return 'Novato (F)';
+    if (level <= 10) return 'Iniciante (E)';
+    if (level <= 20) return 'Adepto (D)';
+    if (level <= 30) return 'Experiente (C)';
+    if (level <= 40) return 'Perito (B)';
+    if (level <= 50) return 'Mestre (A)';
+    if (level <= 70) return 'Grão-Mestre (S)';
+    if (level <= 90) return 'Herói (SS)';
+    return 'Lendário (SSS)';
 };
 
-// 1. Define the component as a standard function component.
 const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
@@ -49,12 +48,13 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     
     const hasChanges = () => {
         if (!profile) return false;
+        const profileFields = profileData;
         return (
-            profileData.primeiro_nome !== profile.primeiro_nome ||
-            profileData.apelido !== profile.apelido ||
-            profileData.genero !== profile.genero ||
-            profileData.nacionalidade !== profile.nacionalidade ||
-            profileData.avatar_url !== profile.avatar_url
+            profileFields.primeiro_nome !== profile.primeiro_nome ||
+            profileFields.apelido !== profile.apelido ||
+            profileFields.genero !== profile.genero ||
+            profileFields.nacionalidade !== profile.nacionalidade ||
+            profileFields.avatar_url !== profile.avatar_url
         );
     };
 
@@ -99,10 +99,10 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
                     value={value}
                     onChange={onChange}
                     placeholder={placeholder}
-                    className="bg-transparent border-0 border-b-2 border-cyan-400/30 rounded-none px-1 py-1 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 transition-colors"
+                    className="bg-transparent border-0 border-b-2 border-cyan-400/30 rounded-none px-1 py-1 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 transition-colors h-auto"
                 />
             ) : (
-                <p className="text-lg text-white font-semibold h-9 flex items-center">{value}</p>
+                <p className="text-lg text-white font-semibold h-10 flex items-center">{value}</p>
             )}
         </div>
     );
@@ -220,5 +220,6 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     );
 };
 
-// 2. Wrap the component with memo at export time. This is the correct pattern.
 export const SettingsView = memo(SettingsViewComponent);
+
+    
