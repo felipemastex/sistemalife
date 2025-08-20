@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -779,7 +780,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 visible.push(goalMissions[0]);
             }
         }
-        return visible;
+        return visible.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
     };
     
     const visibleMissions = getVisibleMissions();
@@ -799,29 +800,31 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3">
-                                <div className="flex-1 text-left">
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
-                                        <div className="flex items-center space-x-2">
-                                         {onCooldown && (
-                                            <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
-                                                <Timer className="h-4 w-4 mr-1.5"/>
-                                                {timers[mission.id]}
-                                            </div>
-                                         )}
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => {e.stopPropagation(); handleShowProgression(mission);}}>
-                                              <GitMerge className="h-5 w-5" />
-                                          </Button>
-                                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
+                            <div className="flex items-center w-full px-4 py-3">
+                                <AccordionTrigger className="flex-1 hover:no-underline text-left">
+                                    <div className="flex-1 text-left">
+                                        <div className="flex justify-between items-center">
+                                            <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
+                                        </div>
+                                        <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
+                                        <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
+                                             <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
-                                    <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
-                                         <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
-                                    </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center space-x-2 pl-4">
+                                     {onCooldown && (
+                                        <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
+                                            <Timer className="h-4 w-4 mr-1.5"/>
+                                            {timers[mission.id]}
+                                        </div>
+                                     )}
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={() => handleShowProgression(mission)}>
+                                          <GitMerge className="h-5 w-5" />
+                                      </Button>
+                                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
                                 </div>
-                            </AccordionTrigger>
+                            </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
                                 {activeDailyMission && !onCooldown && (
@@ -1152,3 +1155,5 @@ export default function App() {
     </div>
   );
 }
+
+    
