@@ -22,6 +22,7 @@ const getProfileRank = (level) => {
     return 'SSS';
 };
 
+// Define the component as a standard function component.
 const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
@@ -105,7 +106,6 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
             )}
         </div>
     );
-
 
     return (
         <div className="p-4 md:p-8 h-full overflow-y-auto">
@@ -220,4 +220,5 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     );
 };
 
+// Wrap the component with memo at export time. This is the correct pattern.
 export const SettingsView = memo(SettingsViewComponent);
