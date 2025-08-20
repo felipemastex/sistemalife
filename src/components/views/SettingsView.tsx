@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -22,6 +22,26 @@ const getProfileRank = (level) => {
     return 'Lendário (SSS)';
 };
 
+// Componente para um campo de informação/edição estilizado
+const InfoField = ({ label, value, editable = false, onChange, placeholder, className = "" }) => (
+    <div className={`flex flex-col gap-1 ${className}`}>
+        <Label className="text-sm text-cyan-300/70 tracking-wider uppercase">{label}</Label>
+        {editable ? (
+            <Input 
+                type="text"
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className="bg-transparent border-0 border-b-2 border-cyan-400/30 rounded-none px-1 py-1 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 transition-colors h-auto"
+            />
+        ) : (
+            <p className="text-lg text-white font-semibold h-10 flex items-center">{value}</p>
+        )}
+    </div>
+);
+
+
+// O componente principal da vista de Configurações
 const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
@@ -83,28 +103,11 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const handleReset = async () => {
         setIsResetting(true);
         await onReset();
-    }
+    };
 
     if (!profile) {
         return <div className="p-6">A carregar configurações...</div>;
     }
-    
-    const InfoField = ({ label, value, editable = false, onChange, placeholder, className = "" }) => (
-        <div className={`flex flex-col gap-1 ${className}`}>
-            <Label className="text-sm text-cyan-300/70 tracking-wider uppercase">{label}</Label>
-            {editable ? (
-                <Input 
-                    type="text"
-                    value={value}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    className="bg-transparent border-0 border-b-2 border-cyan-400/30 rounded-none px-1 py-1 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 transition-colors h-auto"
-                />
-            ) : (
-                <p className="text-lg text-white font-semibold h-10 flex items-center">{value}</p>
-            )}
-        </div>
-    );
 
     return (
         <div className="p-4 md:p-8 h-full overflow-y-auto">
@@ -214,11 +217,9 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
                     </CardContent>
                  </Card>
             </div>
-
         </div>
     );
 };
 
+// Envolve o componente com memo para otimizar a performance e evitar re-renders desnecessários
 export const SettingsView = memo(SettingsViewComponent);
-
-    
