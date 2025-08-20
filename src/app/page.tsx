@@ -108,11 +108,35 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [goalState, setGoalState] = useState(metaToEdit ? {name: metaToEdit.nome, ...metaToEdit.detalhes_smart} : { name: '' });
+    const [goalState, setGoalState] = useState({ name: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
     
+    useEffect(() => {
+        if (metaToEdit) {
+            setGoalState({ name: metaToEdit.nome, ...metaToEdit.detalhes_smart });
+            setIsEditing(true);
+            // Directly ask the first question if a field is empty
+            const firstEmptyField = ['specific', 'measurable', 'achievable', 'relevant', 'timeBound'].find(field => !metaToEdit.detalhes_smart[field]);
+            if(firstEmptyField){
+                 handleInitialQuestion({ name: metaToEdit.nome, ...metaToEdit.detalhes_smart });
+            } else {
+                // If all fields are filled, maybe just allow saving or show a summary
+                 setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
+            }
+        } else {
+            // Reset for new goal creation
+            setGoalState({ name: '' });
+            setCurrentQuestion('');
+            setUserInput('');
+            setHistory([]);
+            setIsEditing(false);
+        }
+    }, [metaToEdit]);
+
+
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
@@ -122,18 +146,15 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         }
     };
 
-    const handleInitialQuestion = useCallback(async (goalName) => {
+    const handleInitialQuestion = useCallback(async (initialGoal) => {
         setIsLoading(true);
-        const initialGoal = metaToEdit ? goalState : { name: goalName };
-        if (!metaToEdit) {
-            setGoalState(initialGoal);
-        }
+        setGoalState(initialGoal);
         
         try {
             const result = await generateSmartGoalQuestion({ goal: initialGoal, history: [] });
             if (result.nextQuestion) {
                 setCurrentQuestion(result.nextQuestion);
-                setExampleAnswers(userInput.length > 0 ? result.exampleAnswers || [] : []);
+                setExampleAnswers(result.exampleAnswers || []);
             } else if (result.isComplete && result.refinedGoal) {
                 await handleSaveGoal(result.refinedGoal);
             }
@@ -143,13 +164,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         } finally {
             setIsLoading(false);
         }
-    },[goalState, metaToEdit, onClose, toast, userInput]);
+    },[onClose, toast]);
 
-    useEffect(() => {
-      if (goalState.name && !currentQuestion) {
-        handleInitialQuestion(goalState.name)
-      }
-    }, [goalState.name, currentQuestion, handleInitialQuestion]);
 
     const handleNextStep = async () => {
         if (!userInput.trim() || isLoading) return;
@@ -223,6 +239,11 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             setIsLoading(false);
         }
     }
+    
+    // Simplified save for edit mode
+    const handleEditSave = () => {
+        handleSaveGoal(goalState);
+    }
 
     const renderInitialScreen = () => (
         <div className="text-center">
@@ -232,17 +253,50 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion(userInput)}
+                onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion({name: userInput})}
                 placeholder="Ex: Aprender a programar, correr uma maratona, ler mais livros..."
                 className="max-w-lg mx-auto"
                 disabled={isLoading}
             />
-            <Button onClick={() => userInput.trim() && handleInitialQuestion(userInput)} className="mt-4" disabled={isLoading || !userInput.trim()}>
+            <Button onClick={() => userInput.trim() && handleInitialQuestion({name: userInput})} className="mt-4" disabled={isLoading || !userInput.trim()}>
                 Começar a Definir
             </Button>
         </div>
     );
     
+     const renderEditingScreen = () => (
+        <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
+             <h2 className="text-2xl text-center font-bold text-cyan-400 mb-4">Editar Meta: {goalState.name}</h2>
+             <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 space-y-4">
+                <div>
+                    <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
+                    <Textarea id="specific" value={goalState.specific} onChange={(e) => setGoalState({...goalState, specific: e.target.value})} className="min-h-[60px]" />
+                </div>
+                 <div>
+                    <Label htmlFor="measurable" className="text-cyan-400">Mensurável</Label>
+                    <Textarea id="measurable" value={goalState.measurable} onChange={(e) => setGoalState({...goalState, measurable: e.target.value})} className="min-h-[60px]" />
+                </div>
+                 <div>
+                    <Label htmlFor="achievable" className="text-cyan-400">Atingível</Label>
+                    <Textarea id="achievable" value={goalState.achievable} onChange={(e) => setGoalState({...goalState, achievable: e.target.value})} className="min-h-[60px]" />
+                </div>
+                 <div>
+                    <Label htmlFor="relevant" className="text-cyan-400">Relevante</Label>
+                    <Textarea id="relevant" value={goalState.relevant} onChange={(e) => setGoalState({...goalState, relevant: e.target.value})} className="min-h-[60px]" />
+                </div>
+                 <div>
+                    <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
+                    <Textarea id="timeBound" value={goalState.timeBound} onChange={(e) => setGoalState({...goalState, timeBound: e.target.value})} className="min-h-[60px]" />
+                </div>
+                <div className="flex justify-end pt-4">
+                     <Button onClick={handleEditSave} disabled={isLoading}>
+                        Salvar Alterações
+                    </Button>
+                </div>
+             </div>
+        </div>
+    );
+
     const renderQuestionScreen = () => (
          <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
             <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.name}</span></p>
@@ -294,13 +348,24 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             </div>
          </div>
     );
+    
+    const renderContent = () => {
+        if(isEditing){
+            return renderEditingScreen();
+        }
+        if(!goalState.name){
+            return renderInitialScreen();
+        }
+        return renderQuestionScreen();
+    }
+
 
     return (
          <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
             <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <X className="h-6 w-6" />
             </Button>
-            {!goalState.name ? renderInitialScreen() : renderQuestionScreen()}
+            {renderContent()}
         </div>
     )
 }
@@ -329,6 +394,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
             setMetaToEdit(meta);
             setShowWizard(true);
         } else {
+            setMetaToEdit(null);
             setShowModeSelection(true);
         }
     };
@@ -343,9 +409,10 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
     const handleSave = async (newOrUpdatedMeta) => {
         setIsLoadingSimpleGoal(true);
+        const isEditing = !!metaToEdit;
         
         try {
-            if (metaToEdit) {
+            if (isEditing) {
                 // --- UPDATE LOGIC ---
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 setMetas(updatedMetas);
