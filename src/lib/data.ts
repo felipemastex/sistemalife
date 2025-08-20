@@ -13,12 +13,12 @@ export const perfis = [
     xp: 0,
     xp_para_proximo_nivel: 100, // XP necessário para ir do nível 1 para o 2
     estatisticas: {
-      forca: 15,
-      inteligencia: 22,
-      destreza: 18,
-      constituicao: 16,
-      sabedoria: 20,
-      carisma: 17,
+      forca: 5,
+      inteligencia: 5,
+      destreza: 5,
+      constituicao: 5,
+      sabedoria: 5,
+      carisma: 5,
     },
     genero: 'Não especificado',
     nacionalidade: 'Não especificada',
