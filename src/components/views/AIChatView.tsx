@@ -60,8 +60,8 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
 
 
     return (
-        <div className="p-6 h-full flex flex-col">
-            <h1 className="text-3xl font-bold text-cyan-400 mb-6">Interagir com o Sistema</h1>
+        <div className="p-4 md:p-6 h-full flex flex-col">
+            <h1 className="text-3xl font-bold text-cyan-400 mb-6 font-cinzel tracking-wider">Arquiteto</h1>
             <div className="flex-1 bg-gray-800/50 border border-gray-700 rounded-lg p-4 overflow-y-auto space-y-4">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>

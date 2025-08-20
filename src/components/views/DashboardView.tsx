@@ -48,9 +48,9 @@ export const DashboardView = ({ profile }) => {
 
   return (
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
         <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
-         <div className="text-right">
+         <div className="text-left sm:text-right">
             <p className="font-bold text-xl text-foreground">{profile.nome_utilizador}</p>
             <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
         </div>

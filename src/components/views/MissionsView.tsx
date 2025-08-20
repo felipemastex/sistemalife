@@ -441,8 +441,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const visibleMissions = getVisibleMissions();
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-2">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-cyan-400">Diário de Missões</h1>
                  <div className="flex items-center space-x-2">
                     <Switch id="hacker-mode" onCheckedChange={setHackerMode} checked={hackerMode} />
@@ -461,8 +461,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                             <div className="flex items-center w-full">
-                                <AccordionTrigger className="flex-1 hover:no-underline text-left px-4 py-3">
+                             <div className="flex flex-col sm:flex-row items-start sm:items-center w-full">
+                                <AccordionTrigger className="flex-1 hover:no-underline text-left px-4 py-3 w-full">
                                     <div className="flex-1 text-left">
                                         <div className="flex justify-between items-center">
                                             <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
@@ -473,7 +473,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <div className="flex items-center space-x-2 pl-4 pr-4">
+                                <div className="flex items-center space-x-2 p-4 pt-0 sm:pt-4 sm:pl-0 w-full sm:w-auto justify-end">
                                      {onCooldown && (
                                         <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
@@ -490,8 +490,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 
                                 {activeDailyMission && !onCooldown && (
                                      <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4`}>
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 mr-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                            <div className="flex-shrink-0">
                                                 <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
                                                     {generating === activeDailyMission.id ? 
                                                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-500 border-t-cyan-400" />
@@ -541,13 +541,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
                                 
                                 {onCooldown && lastCompletedMission && (
-                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center opacity-80">
-                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4 flex-shrink-0" />
+                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 opacity-80">
+                                        <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
                                         <div className="flex-grow">
                                             <p className="text-lg font-bold text-gray-300 line-through">{lastCompletedMission.nome}</p>
                                             <p className="text-sm text-gray-400">Concluída! Próxima missão disponível à meia-noite.</p>
                                         </div>
-                                        <div className="flex items-center text-cyan-400 ml-4 flex-shrink-0">
+                                        <div className="flex items-center text-cyan-400 ml-0 sm:ml-4 flex-shrink-0">
                                             <Timer className="h-5 w-5 mr-2"/>
                                             <p className="text-lg font-mono">{timers[mission.id]}</p>
                                         </div>

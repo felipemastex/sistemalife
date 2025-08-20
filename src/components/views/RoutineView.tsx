@@ -287,17 +287,17 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     const unscheduledMissions = getUnscheduledMissions();
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)}>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)} className="w-full sm:w-auto">
                         <Save className="h-5 w-5 mr-2" />
                         Salvar como Template
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
+                            <Button variant="outline" className="w-full sm:w-auto">
                                <FileDown className="h-5 w-5 mr-2" />
                                Carregar Template
                             </Button>
@@ -311,7 +311,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500">
+                    <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
                         <PlusCircle className="h-5 w-5 mr-2" />
                         Adicionar Atividade
                     </Button>
@@ -345,8 +345,8 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                 <div className="space-y-4">
                                     {unscheduledMissions.map(mission => (
                                         <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                            <div className="flex items-center justify-between">
-                                                <div>
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                <div className="w-full">
                                                     <p className="font-bold text-gray-200">{mission.nome}</p>
                                                     <p className="text-sm text-gray-400">{mission.descricao}</p>
                                                 </div>
@@ -354,6 +354,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                                     onClick={() => handleGetSuggestion(mission)} 
                                                     disabled={isLoadingSuggestion === mission.id}
                                                     size="sm"
+                                                    className="w-full sm:w-auto flex-shrink-0"
                                                 >
                                                     {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
                                                     <BrainCircuit className="ml-2 h-4 w-4"/>
@@ -382,13 +383,13 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                             <h2 className="text-2xl font-bold text-cyan-400 mb-4 capitalize">Agenda de {day}</h2>
                             <div className="space-y-3">
                                 {sortedRoutineForDay.map(item => (
-                                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
+                                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div className="flex items-center">
                                             <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
                                             <span className="mx-4 text-gray-500">|</span>
-                                            <p className="text-lg text-gray-200">{item.activity}</p>
+                                            <p className="text-lg text-gray-200 break-all">{item.activity}</p>
                                         </div>
-                                        <div className="flex space-x-2">
+                                        <div className="flex space-x-2 self-end sm:self-center">
                                             <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                             <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                                         </div>

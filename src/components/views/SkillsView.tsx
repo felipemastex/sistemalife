@@ -42,7 +42,7 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
     };
     
     return (
-        <div className="p-6">
+        <div className="p-4 md:p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Árvore de Habilidades</h1>
             </div>
@@ -56,10 +56,10 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
                     
                     return(
                     <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4 transition-opacity ${!canLevelUp ? 'opacity-60' : ''}`}>
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <div className="flex-1">
-                                <div className="flex justify-between items-center">
-                                    <p className="text-lg font-bold text-gray-200">{skill.nome}</p>
+                                <div className="flex justify-between items-start">
+                                    <p className="text-lg font-bold text-gray-200 break-words">{skill.nome}</p>
                                      
                                      <TooltipProvider>
                                         <Tooltip>
@@ -67,7 +67,7 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
                                                 <span tabIndex={deletable ? -1 : 0}>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8" disabled={!deletable}>
+                                                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8 -mt-1 -mr-1" disabled={!deletable}>
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </AlertDialogTrigger>
@@ -96,7 +96,7 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
 
                                 </div>
 
-                                <p className="text-sm text-gray-400 mt-1">{skill.descricao}</p>
+                                <p className="text-sm text-gray-400 mt-1 break-words">{skill.descricao}</p>
                                 {skill.pre_requisito && (
                                     <p className="text-xs text-yellow-400/70 mt-2">
                                         Requer: {skills.find(s => s.id === skill.pre_requisito)?.nome} Nv. {skills.find(s => s.id === skill.pre_requisito)?.nivel_minimo_para_desbloqueio || 1}
@@ -105,7 +105,7 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
                                 {stats.length > 0 && (
                                      <div className="flex items-center gap-4 pt-2 mt-2 border-t border-gray-700/50">
                                         <strong className="text-xs text-gray-400">Aumenta:</strong>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
                                             <div key={stat} className="flex items-center gap-1.5 text-gray-300">
                                                 {statIcons[stat]}
@@ -116,7 +116,7 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
                                     </div>
                                 )}
                             </div>
-                            <div className="text-center ml-4 w-28 flex-shrink-0">
+                            <div className="text-center w-full sm:w-28 flex-shrink-0 bg-gray-900/30 p-2 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none">
                                 <p className="text-sm text-gray-400">Nível</p>
                                 <p className="text-2xl font-bold text-cyan-400">{skill.nivel_atual}</p>
                                 <p className="text-xs text-gray-500">Máx {skill.nivel_maximo}</p>

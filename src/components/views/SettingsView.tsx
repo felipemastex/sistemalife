@@ -233,14 +233,14 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                     <CardContent className="p-6">
                         <h2 className="text-xl font-bold text-red-400">Zona de Perigo</h2>
                         <p className="text-red-400/70 text-sm mb-4">Ações nesta secção são permanentes e não podem ser desfeitas.</p>
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                                 <p className="font-bold text-gray-200">Resetar a sua conta</p>
                                 <p className="text-sm text-muted-foreground">Isto irá apagar permanentemente todos os seus dados.</p>
                             </div>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" disabled={isResetting}>
+                                    <Button variant="destructive" disabled={isResetting} className="w-full sm:w-auto">
                                         {isResetting ? "A resetar..." : "Resetar Conta"}
                                     </Button>
                                 </AlertDialogTrigger>
