@@ -197,6 +197,11 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    } else {
+                        // Limpa o temporizador se o tempo acabou
+                        if(timers[mission.id]){
+                            setMissions(currentMissions => currentMissions.map(m => m.id === mission.id ? {...m, ultima_missao_concluida_em: null} : m));
+                        }
                     }
                 }
             });
@@ -204,7 +209,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [missions]);
+    }, [missions, setMissions, timers]);
 
 
     const handleLevelUp = (currentProfile) => {
@@ -250,7 +255,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return rm;
         });
 
-        setMissions(updatedMissions);
+        // Set missions with the completed one first, but without the new one yet
+        setMissions(updatedMissions.map(rm => {
+            if (rm.id === rankedMissionId) {
+                return { ...rm, ultima_missao_concluida_em: now.toISOString() };
+            }
+            return rm;
+        }));
 
         setProfile(currentProfile => {
             let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
@@ -259,7 +270,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             }
             return updatedProfile;
         });
-
+        
         try {
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
@@ -284,10 +295,12 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 concluido: false,
                 tipo: 'diaria',
             };
-
+            
+            // Now add the new mission to the list
             const finalMissions = updatedMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    return { ...rm, ultima_missao_concluida_em: now.toISOString(), missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
+                    // Update again with the new mission
+                     return { ...rm, ultima_missao_concluida_em: now.toISOString(), missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
                 }
                 return rm;
             });
@@ -330,8 +343,10 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {availableMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
+                    const lastCompletedMission = mission.missoes_diarias.slice().reverse().find(d => d.concluido);
                     const missionProgress = (mission.missoes_diarias.filter(d => d.concluido).length / (mission.total_missoes_diarias || 10)) * 100;
                     const onCooldown = !!timers[mission.id];
+                    const wasCompletedToday = onCooldown && lastCompletedMission;
                     
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -347,13 +362,29 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="px-4 pb-4">
+                            <AccordionContent className="px-4 pb-4 space-y-4">
+                                {wasCompletedToday && lastCompletedMission && (
+                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4 flex-shrink-0" />
+                                        <div className="flex-grow">
+                                            <p className="text-lg font-bold text-gray-400 line-through">{lastCompletedMission.nome}</p>
+                                            <p className="text-sm text-gray-500">Missão do dia concluída. Bom trabalho!</p>
+                                        </div>
+                                        <div className="text-right ml-4 flex-shrink-0">
+                                            <p className="text-sm font-semibold text-green-400">+{lastCompletedMission.xp_conclusao} XP</p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {onCooldown ? (
                                     <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
-                                        <Timer className="h-8 w-8 text-cyan-400 mr-4"/>
-                                        <div>
-                                            <p className="text-lg font-bold text-cyan-400">Próxima missão em:</p>
-                                            <p className="text-2xl font-mono text-gray-200">{timers[mission.id]}</p>
+                                        <div className="blur-sm flex-grow text-left">
+                                           <p className="text-lg font-bold text-gray-500">Próxima Missão Bloqueada</p>
+                                           <p className="text-sm text-gray-600">A transmissão estará disponível em breve.</p>
+                                        </div>
+                                        <div className="flex items-center text-cyan-400 ml-4">
+                                            <Timer className="h-6 w-6 mr-2"/>
+                                            <p className="text-xl font-mono">{timers[mission.id]}</p>
                                         </div>
                                     </div>
                                 ) : activeDailyMission ? (
@@ -374,13 +405,15 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
-                                        <div>
-                                            <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
-                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
+                                     !wasCompletedToday && (
+                                        <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                            <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
+                                            <div>
+                                                <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
+                                                <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                     )
                                 )}
                             </AccordionContent>
                         </AccordionItem>
@@ -579,5 +612,3 @@ export default function App() {
     </div>
   );
 }
-
-    
