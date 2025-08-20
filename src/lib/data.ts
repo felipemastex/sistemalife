@@ -282,3 +282,21 @@ export const rotina = {
     { id: 14, start_time: '15:00', end_time: '18:00', activity: 'Hobby: Pintura' },
   ]
 };
+
+
+export const rotinaTemplates = {
+    'Dia de Semana': [
+        { id: 1, start_time: '07:00', end_time: '07:30', activity: 'Acordar e Meditar' },
+        { id: 2, start_time: '08:00', end_time: '09:00', activity: 'Exercício Físico' },
+        { id: 3, start_time: '09:30', end_time: '12:30', activity: 'Trabalho Focado (Bloco 1)' },
+        { id: 4, start_time: '12:30', end_time: '13:30', activity: 'Almoço' },
+        { id: 5, start_time: '13:30', end_time: '17:00', activity: 'Trabalho Focado (Bloco 2)' },
+        { id: 6, start_time: '18:00', end_time: '19:00', activity: 'Estudo/Leitura' },
+    ],
+    'Fim de Semana': [
+        { id: 10, start_time: '09:00', end_time: '10:00', activity: 'Pequeno-almoço em família' },
+        { id: 11, start_time: '11:00', end_time: '13:00', activity: 'Passeio ou Hobby' },
+        { id: 12, start_time: '18:00', end_time: '19:00', activity: 'Planear a semana' },
+        { id: 13, start_time: '15:00', end_time: '18:00', activity: 'Tempo livre / Social' },
+    ]
+};

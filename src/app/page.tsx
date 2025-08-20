@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit, Link } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit, Link, FileDown } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
@@ -19,6 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -1258,6 +1259,11 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
     const today = new Date();
     const [selectedDay, setSelectedDay] = useState(dayNames[today.getDay()]);
+    
+    // State for template loading dialog
+    const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+
 
     const getWeekDays = () => {
         const todayDate = new Date();
@@ -1316,6 +1322,26 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
         const updatedDayRoutine = currentDayRoutine.filter(item => item.id !== id);
         setRoutine(prev => ({...prev, [selectedDay]: updatedDayRoutine}));
     };
+    
+    const handleLoadTemplate = (templateName) => {
+        const template = mockData.rotinaTemplates[templateName];
+        if (template) {
+            setSelectedTemplate(template);
+            setShowTemplateDialog(true);
+        }
+    };
+
+    const confirmLoadTemplate = () => {
+        if (selectedTemplate) {
+            // Add new unique IDs to template items to avoid key conflicts
+            const templateWithNewIds = selectedTemplate.map(item => ({...item, id: Date.now() + Math.random()}));
+            setRoutine(prev => ({ ...prev, [selectedDay]: templateWithNewIds }));
+            toast({ title: "Template Carregado!", description: `A rotina de ${selectedDay} foi atualizada.` });
+        }
+        setShowTemplateDialog(false);
+        setSelectedTemplate(null);
+    };
+
 
     const handleGetSuggestion = async (mission) => {
         setIsLoadingSuggestion(mission.id);
@@ -1409,9 +1435,8 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     }
 
     const getUnscheduledMissions = () => {
-        const allRoutineActivities = Object.values(routine).flat().map(r => r.activity);
-        
-        // 1. Find the active epic missions (same logic as MissionsView)
+        const currentDayActivities = (routine[selectedDay] || []).map(r => r.activity);
+
         const visibleEpicMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
@@ -1431,18 +1456,17 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
             }
         }
 
-        // 2. From those active epic missions, find the active daily mission
         const activeDailyMissions = visibleEpicMissions.map(epicMission => {
             return epicMission.missoes_diarias.find(dm => !dm.concluido);
-        }).filter(Boolean); // Filter out any undefined results
+        }).filter(Boolean);
 
-        // 3. Filter out missions already scheduled in the routine
         const unscheduled = activeDailyMissions.filter(dailyMission => 
-            !allRoutineActivities.some(routineActivity => routineActivity.includes(dailyMission.nome))
+            !currentDayActivities.some(routineActivity => routineActivity.includes(`[Missão] ${dailyMission.nome}`))
         );
 
         return unscheduled;
     };
+
 
     const sortedRoutineForDay = (routine[selectedDay] || []).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const unscheduledMissions = getUnscheduledMissions();
@@ -1451,10 +1475,28 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
-                <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500">
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Adicionar Atividade
-                </Button>
+                <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                               <FileDown className="h-5 w-5 mr-2" />
+                               Carregar Template
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            {Object.keys(mockData.rotinaTemplates).map(templateName => (
+                                <DropdownMenuItem key={templateName} onSelect={() => handleLoadTemplate(templateName)}>
+                                    {templateName}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500">
+                        <PlusCircle className="h-5 w-5 mr-2" />
+                        Adicionar Atividade
+                    </Button>
+                </div>
             </div>
              <p className="text-gray-400 mb-6">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
 
@@ -1574,6 +1616,22 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            
+            <AlertDialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Carregar Template de Rotina?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Isto irá substituir todas as atividades agendadas para <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>. Tem a certeza?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setSelectedTemplate(null)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmLoadTemplate}>Sim, carregar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
         </div>
     );
 };
