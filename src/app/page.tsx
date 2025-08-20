@@ -11,6 +11,7 @@ import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
+import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -397,7 +398,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 }
 
 
-const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
+const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills }) => {
     const [showWizard, setShowWizard] = useState(false);
     const [showModeSelection, setShowModeSelection] = useState(false);
     const [showSimpleModeDialog, setShowSimpleModeDialog] = useState(false);
@@ -456,7 +457,10 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
             } else {
                 // --- CREATE LOGIC ---
-                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
+                 const categorySkills = skills.filter(s => s.categoria === newOrUpdatedMeta.categoria);
+                 const mainSkill = categorySkills.length > 0 ? categorySkills[0] : null;
+
+                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id, habilidade_associada_id: mainSkill ? mainSkill.id : null };
                 
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
@@ -707,7 +711,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     );
 }
 
-const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
+const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -820,6 +824,10 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
     };
 
+    const handleSkillUp = (updatedSkill) => {
+        setSkills(currentSkills => currentSkills.map(s => s.id === updatedSkill.id ? updatedSkill : s));
+        toast({ title: "Habilidade Aumentada!", description: `A sua habilidade "${updatedSkill.nome}" subiu para o nível ${updatedSkill.nivel_atual}!` });
+    };
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
         const now = new Date();
@@ -838,6 +846,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setGenerating(dailyMissionId);
         let xpGained = 0;
+        let completedDailyMission = null;
 
         let isRankedMissionComplete = false;
         const updatedMissions = missions.map(rm => {
@@ -845,7 +854,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
                     if (daily.id === dailyMissionId) {
                         xpGained = daily.xp_conclusao;
-                        return { ...daily, concluido: true };
+                        completedDailyMission = { ...daily, concluido: true };
+                        return completedDailyMission;
                     }
                     return daily;
                 });
@@ -865,17 +875,40 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setMissions(updatedMissions);
 
+        // Profile XP and Level Up
         let newProfile = { ...profile, xp: profile.xp + xpGained };
-        let leveledUp = false;
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
-            leveledUp = true;
+            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
         }
-        
         setProfile(newProfile);
 
-        if(leveledUp){
-            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
+        // Skill XP and Level Up
+        const meta = metas.find(m => m.nome === rankedMission.meta_associada);
+        if (meta && meta.habilidade_associada_id && completedDailyMission) {
+            const skillToUpdate = skills.find(s => s.id === meta.habilidade_associada_id);
+            if (skillToUpdate && skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
+                try {
+                    const { xp } = await generateSkillExperience({ 
+                        missionText: `${completedDailyMission.nome}: ${completedDailyMission.descricao}`,
+                        skillLevel: skillToUpdate.nivel_atual,
+                     });
+                     
+                     let newSkillXp = skillToUpdate.xp_atual + xp;
+                     if(newSkillXp >= skillToUpdate.xp_para_proximo_nivel){
+                        handleSkillUp({
+                            ...skillToUpdate,
+                            nivel_atual: skillToUpdate.nivel_atual + 1,
+                            xp_atual: newSkillXp - skillToUpdate.xp_para_proximo_nivel,
+                            xp_para_proximo_nivel: Math.floor(skillToUpdate.xp_para_proximo_nivel * 1.5)
+                        });
+                     } else {
+                        setSkills(currentSkills => currentSkills.map(s => s.id === skillToUpdate.id ? {...s, xp_atual: newSkillXp} : s));
+                     }
+                } catch(error) {
+                    handleToastError(error, "Não foi possível calcular o XP da habilidade.");
+                }
+            }
         }
         
         if (isRankedMissionComplete) {
@@ -922,13 +955,11 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
 
         try {
-            const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
                 .filter(d => d.concluido)
                 .map(d => `- ${d.nome}`)
                 .join('\n');
 
-            const meta = metas.find(m => m.nome === rankedMission.meta_associada)
             const feedbackForNextMission = missionFeedback[rankedMission.id];
 
             const result = await generateNextDailyMission({
@@ -1219,27 +1250,57 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 };
 
 const SkillsView = ({ skills, profile }) => {
+    const getSkillColor = (category) => {
+        switch(category){
+            case 'Desenvolvimento de Carreira': return 'border-blue-500';
+            case 'Saúde & Fitness': return 'border-green-500';
+            case 'Crescimento Pessoal': return 'border-purple-500';
+            default: return 'border-gray-500';
+        }
+    }
+    
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Árvore de Habilidades</h1>
             </div>
+            <p className="text-gray-400 mb-6">As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Cada missão contribui com XP para a habilidade correspondente.</p>
             <div className="space-y-4">
-                {skills.map(skill => (
-                    <div key={skill.id} className={`bg-gray-800/50 border border-gray-700 rounded-lg p-4 ${skill.nivel_atual === 0 ? 'opacity-50' : ''}`}>
-                        <div className="flex justify-between items-center">
-                            <div>
+                {skills.map(skill => {
+                    const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
+                    const canLevelUp = skill.nivel_atual > 0 && skill.pre_requisito ? skills.find(s => s.id === skill.pre_requisito)?.nivel_atual > 0 : skill.nivel_atual > 0;
+                    
+                    return(
+                    <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4 transition-opacity ${!canLevelUp ? 'opacity-60' : ''}`}>
+                        <div className="flex justify-between items-start">
+                            <div className="flex-1">
                                 <p className="text-lg font-bold text-gray-200">{skill.nome}</p>
                                 <p className="text-sm text-gray-400">{skill.descricao}</p>
+                                {skill.pre_requisito && (
+                                    <p className="text-xs text-yellow-400/70 mt-2">
+                                        Requer: {skills.find(s => s.id === skill.pre_requisito)?.nome} Nv. {skills.find(s => s.id === skill.pre_requisito)?.nivel_minimo_para_desbloqueio || 1}
+                                    </p>
+                                )}
                             </div>
-                            <div className="text-center ml-4">
+                            <div className="text-center ml-4 w-28">
                                 <p className="text-sm text-gray-400">Nível</p>
-                                <p className="text-2xl font-bold text-cyan-400">{skill.nivel_atual} / {skill.nivel_maximo}</p>
+                                <p className="text-2xl font-bold text-cyan-400">{skill.nivel_atual}</p>
+                                <p className="text-xs text-gray-500">Máx {skill.nivel_maximo}</p>
                             </div>
                         </div>
-                        {skill.pre_requisito && (<p className="text-xs text-gray-500 mt-2">Requer: {skills.find(s => s.id === skill.pre_requisito)?.nome}</p>)}
+                        {skill.nivel_atual > 0 && (
+                             <div className="mt-3">
+                                <div className="flex justify-between text-xs text-gray-300 mb-1">
+                                    <span>XP da Habilidade</span>
+                                    <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel}</span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-2.5">
+                                    <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${skillProgress}%` }}></div>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                ))}
+                )})}
             </div>
         </div>
     );
@@ -1845,9 +1906,9 @@ export default function App() {
       case 'dashboard':
         return <Dashboard profile={profile} />;
       case 'metas':
-        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} />;
+        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} skills={skills} />;
       case 'missions':
-        return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} />;
+        return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} skills={skills} setSkills={setSkills} />;
       case 'skills':
         return <SkillsView skills={skills} profile={profile} />;
       case 'routine':
