@@ -50,9 +50,15 @@ export const DashboardView = ({ profile }) => {
     <div className="p-4 md:p-6 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold text-primary">STATUS</h1>
-        <div className="text-right">
-          <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
-          <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
+        <div className="flex items-center gap-4">
+            <div className="text-right">
+                <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
+                <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
+            </div>
+             <Avatar>
+                <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
+                <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
+            </Avatar>
         </div>
       </div>
 
