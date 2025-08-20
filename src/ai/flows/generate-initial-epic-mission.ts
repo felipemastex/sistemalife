@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview Um agente de IA que gera a missão épica inicial (ranqueada) com base na nova meta do utilizador e no seu histórico.
+ * @fileOverview Um agente de IA que gera uma árvore de progressão de missões épicas com base na nova meta do utilizador.
  *
- * - generateInitialEpicMission - Gera a missão ranqueada, incluindo o seu rank e a primeira missão diária.
+ * - generateInitialEpicMission - Gera uma sequência de missões ranqueadas e a primeira missão diária.
  * - GenerateInitialEpicMissionInput - O tipo de entrada para a função.
  * - GenerateInitialEpicMissionOutput - O tipo de retorno para a função.
  */
@@ -10,6 +10,13 @@
 import {ai} from '@/ai/genkit';
 import {generateXpValue} from './generate-xp-value';
 import {z} from 'genkit';
+
+const EpicMissionSchema = z.object({
+    epicMissionName: z.string().describe("O nome temático e inspirador para a Missão Épica (ex: 'A Senda do Maratonista')."),
+    epicMissionDescription: z.string().describe("Uma breve descrição da Missão Épica, explicando o seu objetivo principal."),
+    rank: z.enum(['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']).describe("O rank sugerido para esta missão específica na progressão."),
+});
+
 
 const GenerateInitialEpicMissionInputSchema = z.object({
   goalName: z.string().describe("O nome da nova meta SMART do utilizador."),
@@ -20,10 +27,8 @@ const GenerateInitialEpicMissionInputSchema = z.object({
 export type GenerateInitialEpicMissionInput = z.infer<typeof GenerateInitialEpicMissionInputSchema>;
 
 const GenerateInitialEpicMissionOutputSchema = z.object({
-    epicMissionName: z.string().describe("O nome temático e inspirador para a nova Missão Épica (ex: 'A Senda do Maratonista')."),
-    epicMissionDescription: z.string().describe("Uma breve descrição da Missão Épica."),
-    rank: z.enum(['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']).describe("O rank inicial sugerido para a missão. Analise a dificuldade, o histórico e as habilidades necessárias para classificar de F (trivial) a SSS (extremamente difícil)."),
-    firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico."),
+    progression: z.array(EpicMissionSchema).describe("Uma lista de 3 a 5 missões épicas que representam uma clara progressão de dificuldade."),
+    firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
     firstDailyMissionDescription: z.string().describe("A descrição detalhada da primeira missão diária."),
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
 });
@@ -44,42 +49,37 @@ const generateInitialEpicMissionFlow = ai.defineFlow(
   async (input) => {
 
     const historyPrompt = input.relatedHistory
-      ? `O utilizador já tem experiência nesta área. O seu histórico relevante é: ${input.relatedHistory}. Com base nisto, o Rank deve ser D ou superior, e a primeira missão não deve ser para iniciantes absolutos.`
-      : 'Este é um campo completamente novo para o utilizador. O Rank deve ser F ou E, e a primeira missão deve ser um passo fundamental muito básico.';
+      ? `O utilizador já tem experiência nesta área. O seu histórico relevante é: ${input.relatedHistory}. Com base nisto, o Rank da primeira missão deve ser D ou superior, e a primeira tarefa não deve ser para iniciantes absolutos.`
+      : 'Este é um campo completamente novo para o utilizador. O Rank da primeira missão deve ser F ou E, e a primeira tarefa deve ser um passo fundamental muito básico.';
 
-    const finalPrompt = `Você é o "Avaliador" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar a "Missão Épica" inicial, definindo o seu Rank de dificuldade e a sua primeira tarefa.
+    const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa, uma sequência lógica de missões épicas que o levarão à maestria.
 
 Utilizador: Nível ${input.userLevel}
 Nova Meta: "${input.goalName}"
 Detalhes da Meta (SMART): ${input.goalDetails}
 Contexto Histórico: ${historyPrompt}
 
-A sua análise deve ser profunda. Considere os seguintes fatores para definir o Rank:
-- Complexidade: Quão difícil é a meta em si? (Ex: "Ler um livro" é mais simples que "Construir uma aplicação web completa").
-- Prazo: Metas de longo prazo (anos) são inerentemente de rank mais alto.
-- Habilidades Exigidas: Requer o domínio de múltiplas habilidades complexas?
-- Histórico do Utilizador: Um utilizador experiente numa área deve receber um rank inicial mais alto para uma meta relacionada.
-
-Use a seguinte escala de Ranks:
-- F: Trivial, uma tarefa muito simples.
-- E: Fácil, um desafio introdutório.
-- D: Básico, requer alguma consistência.
-- C: Moderado, um desafio considerável.
-- B: Difícil, requer dedicação e habilidade.
-- A: Muito Difícil, um marco de carreira ou de vida.
-- S: Nível de Especialista, um desafio de elite.
-- SS: Nível de Mestre, no auge do potencial humano.
-- SSS: Nível Lendário, um feito que redefine o que é possível.
-
 A sua tarefa é:
-1.  **Nome da Missão Épica:** Crie um nome inspirador.
-2.  **Rank:** Atribua um Rank de F a SSS com base na sua análise. Seja criterioso.
-3.  **Primeira Missão Diária:** Crie o primeiro passo. Deve ser extremamente específico e alinhado com o nível de experiência do utilizador e o Rank da missão.
+1.  **Criar uma Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência. Cada missão deve ser um passo lógico e mais desafiador que a anterior. A progressão de ranks deve ser coerente e realista. Não salte de Rank E para A. Mantenha os objetivos dentro de padrões humanos normais (ex: para corrida, progrida de 5km para 10km, depois 21km; não sugira 100km).
+2.  **Atribuir Ranks:** Analise a dificuldade de cada passo e atribua um Rank (de F a SSS) para cada missão na árvore.
+3.  **Primeira Missão Diária:** Crie a PRIMEIRA missão diária para a PRIMEIRA missão épica da sua lista. Deve ser um passo inicial, extremamente específico e alinhado com a experiência do utilizador.
+
+Use a seguinte escala de Ranks para guiar a sua progressão:
+- F: Trivial
+- E: Fácil
+- D: Básico
+- C: Moderado
+- B: Difícil
+- A: Muito Difícil
+- S: Nível de Especialista
+- SS: Nível de Mestre
+- SSS: Nível Lendário
+
+A sua resposta deve ser um objeto JSON completo.
 `;
+    
     const MissionSchema = z.object({
-        epicMissionName: z.string(),
-        epicMissionDescription: z.string(),
-        rank: z.enum(['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']),
+        progression: z.array(EpicMissionSchema),
         firstDailyMissionName: z.string(),
         firstDailyMissionDescription: z.string(),
     })
@@ -93,11 +93,8 @@ A sua tarefa é:
     const missionText = `${output!.firstDailyMissionName}: ${output!.firstDailyMissionDescription}`;
     const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
 
-
     return {
-        epicMissionName: output!.epicMissionName,
-        epicMissionDescription: output!.epicMissionDescription,
-        rank: output!.rank,
+        progression: output!.progression,
         firstDailyMissionName: output!.firstDailyMissionName,
         firstDailyMissionDescription: output!.firstDailyMissionDescription,
         firstDailyMissionXp: xp.xp

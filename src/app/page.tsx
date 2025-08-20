@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -140,7 +138,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         };
     }, [isEditing, metaToEdit]);
     
-    const [goalState, setGoalState] = useState(() => getInitialGoalState());
+    const [goalState, setGoalState] = useState(getInitialGoalState);
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
@@ -471,32 +469,35 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     relatedHistory: relatedHistory,
                 });
 
-                const newRankedMission = {
-                    id: Date.now() + 1, 
-                    nome: result.epicMissionName,
-                    descricao: result.epicMissionDescription,
-                    concluido: false, 
-                    rank: result.rank, 
-                    level_requirement: 1,
-                    meta_associada: newMetaWithId.nome, 
-                    total_missoes_diarias: 10,
-                    ultima_missao_concluida_em: null,
-                    missoes_diarias: [{
-                        id: Date.now() + 2,
-                        nome: result.firstDailyMissionName,
-                        descricao: result.firstDailyMissionDescription,
-                        xp_conclusao: result.firstDailyMissionXp, 
-                        concluido: false, 
-                        tipo: 'diaria',
-                    }]
-                };
+                const newMissions = result.progression.map((epicMission, index) => {
+                    const isFirstMission = index === 0;
+                    return {
+                        id: Date.now() + index + 1,
+                        nome: epicMission.epicMissionName,
+                        descricao: epicMission.epicMissionDescription,
+                        concluido: false,
+                        rank: epicMission.rank,
+                        level_requirement: 1, // Can be adjusted later
+                        meta_associada: newMetaWithId.nome,
+                        total_missoes_diarias: 10, // Default value
+                        ultima_missao_concluida_em: null,
+                        missoes_diarias: isFirstMission ? [{
+                            id: Date.now() + result.progression.length + 2,
+                            nome: result.firstDailyMissionName,
+                            descricao: result.firstDailyMissionDescription,
+                            xp_conclusao: result.firstDailyMissionXp,
+                            concluido: false,
+                            tipo: 'diaria',
+                        }] : [],
+                    };
+                });
                 
                 setMetas(prev => [...prev, newMetaWithId]);
-                setMissions(prev => [...prev, newRankedMission]);
-                 toast({ title: "Nova Missão Épica Iniciada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
+                setMissions(prev => [...prev, ...newMissions]);
+                 toast({ title: "Nova Árvore de Progressão Gerada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
             }
         } catch (error) {
-            handleToastError(error, 'Não foi possível salvar a meta ou gerar a missão épica.');
+            handleToastError(error, 'Não foi possível salvar a meta ou gerar a árvore de progressão.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -552,7 +553,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     Adicionar Meta
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma missão épica será criada.</p>
+            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             <Accordion type="multiple" className="space-y-4">
                 {metas.map(meta => (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -869,6 +870,42 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         
         if (isRankedMissionComplete) {
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
+            
+            // Unlock first daily mission of the next ranked mission in the same goal
+            const goalMissions = missions
+                .filter(m => m.meta_associada === rankedMission.meta_associada)
+                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            
+            const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
+            const nextMission = goalMissions[currentIndex + 1];
+
+            if(nextMission && nextMission.missoes_diarias.length === 0){
+                try {
+                     const history = `O utilizador concluiu a missão épica anterior: "${rankedMission.nome}".`;
+                     const meta = metas.find(m => m.nome === rankedMission.meta_associada);
+
+                     const result = await generateNextDailyMission({
+                        rankedMissionName: nextMission.nome,
+                        metaName: meta?.nome || "Objetivo geral",
+                        history: history,
+                        userLevel: newProfile.nivel,
+                    });
+
+                     const newDailyMission = {
+                        id: Date.now(),
+                        nome: result.nextMissionName,
+                        descricao: result.nextMissionDescription,
+                        xp_conclusao: result.xp,
+                        concluido: false,
+                        tipo: 'diaria',
+                    };
+
+                    setMissions(current => current.map(m => m.id === nextMission.id ? {...m, missoes_diarias: [newDailyMission]} : m));
+                } catch (error) {
+                    handleToastError(error, "Não foi possível gerar a primeira missão da próxima etapa.");
+                }
+            }
+            
             setGenerating(null);
             return;
         }
@@ -1720,4 +1757,3 @@ export default function App() {
     </div>
   );
 }
-
