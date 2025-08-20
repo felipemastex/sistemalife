@@ -88,19 +88,19 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         return <div className="p-6">A carregar configurações...</div>;
     }
     
-    const InfoField = ({ label, value, editable = false, onChange, placeholder }) => (
-        <div>
-            <Label className="text-sm text-cyan-300/70">{label}</Label>
+    const InfoField = ({ label, value, editable = false, onChange, placeholder, className = "" }) => (
+        <div className={`flex flex-col gap-1 ${className}`}>
+            <Label className="text-sm text-cyan-300/70 tracking-wider uppercase">{label}</Label>
             {editable ? (
                 <Input 
                     type="text"
                     value={value}
                     onChange={onChange}
                     placeholder={placeholder}
-                    className="bg-transparent border-b border-cyan-400/50 rounded-none px-0 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400"
+                    className="bg-transparent border-0 border-b-2 border-cyan-400/30 rounded-none px-1 py-1 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400 transition-colors"
                 />
             ) : (
-                <p className="text-lg text-white font-semibold">{value}</p>
+                <p className="text-lg text-white font-semibold h-9 flex items-center">{value}</p>
             )}
         </div>
     );
@@ -110,30 +110,31 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         <div className="p-4 md:p-8 h-full overflow-y-auto">
             <h1 className="text-3xl font-bold text-primary mb-6">Ficha de Caçador</h1>
             
-            <div className="bg-gray-900/50 border border-cyan-400/30 rounded-lg p-6 backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+            <form onSubmit={handleSave} className="bg-gray-900/50 border border-cyan-400/30 rounded-lg p-6 backdrop-blur-sm grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-6">
                 {/* Profile Picture */}
-                <div className="md:col-span-1 flex flex-col items-center">
-                    <div className="w-48 h-56 border-2 border-cyan-400/50 p-1 bg-black/20">
+                <div className="md:col-span-4 flex flex-col items-center justify-start">
+                    <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-cyan-400/50 p-1 bg-black/20">
                          <Avatar className="w-full h-full rounded-none">
                             <AvatarImage src={profileData.avatar_url} alt={profile.primeiro_nome} className="object-cover"/>
-                            <AvatarFallback className="bg-gray-800 rounded-none text-cyan-400">
+                            <AvatarFallback className="bg-gray-800 rounded-none text-cyan-400 text-4xl">
                                 {profileData.primeiro_nome?.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                     </div>
-                    <Input 
-                        type="url"
+                    <InfoField
+                        label="URL do Avatar"
                         value={profileData.avatar_url}
+                        editable
                         onChange={(e) => setProfileData({...profileData, avatar_url: e.target.value})}
-                        placeholder="URL da Imagem"
-                        className="mt-2 text-xs bg-gray-800/70 border-cyan-400/30"
+                        placeholder="https://..."
+                        className="mt-2 w-full max-w-[200px]"
                     />
                 </div>
 
                 {/* Profile Data */}
-                <div className="md:col-span-2 grid grid-rows-4 gap-4">
-                    <div className="grid grid-cols-2 gap-4">
-                         <InfoField 
+                <div className="md:col-span-8 flex flex-col justify-between">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                        <InfoField 
                             label="Primeiro Nome" 
                             value={profileData.primeiro_nome}
                             editable
@@ -147,12 +148,8 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                              onChange={(e) => setProfileData({...profileData, apelido: e.target.value})}
                             placeholder="Seu apelido"
                         />
-                    </div>
-                     <div className="grid grid-cols-2 gap-4">
                         <InfoField label="Classe" value={getProfileRank(profile.nivel)} />
                         <InfoField label="Status" value={profile.status || 'Ativo'} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
                        <InfoField 
                             label="Género" 
                             value={profileData.genero}
@@ -168,13 +165,13 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                             placeholder="Ex: Portugal"
                         />
                     </div>
-                    <div className="flex justify-end items-end">
-                       <Button onClick={handleSave} disabled={isSaving || !hasChanges()}>
+                    <div className="flex justify-end items-end mt-6">
+                       <Button type="submit" disabled={isSaving || !hasChanges()}>
                             {isSaving ? "A salvar..." : "Salvar Alterações"}
                         </Button>
                     </div>
                 </div>
-            </div>
+            </form>
 
             <div className="mt-8">
                  <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-6">
@@ -213,3 +210,5 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
+
+    
