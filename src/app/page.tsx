@@ -187,7 +187,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         } finally {
             setIsLoading(false);
         }
-    },[onClose, handleToastError]);
+    },[onClose]);
 
 
     const handleNextStep = async () => {
@@ -469,6 +469,16 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     relatedHistory: relatedHistory,
                 });
 
+                if (result.fallback) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Sistema Sobrecarregado',
+                        description: 'Uma missão inicial simples foi criada. Tente editar a meta mais tarde para gerar uma árvore de progressão completa.',
+                    });
+                } else {
+                    toast({ title: "Nova Árvore de Progressão Gerada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
+                }
+
                 const newMissions = result.progression.map((epicMission, index) => {
                     const isFirstMission = index === 0;
                     return {
@@ -494,7 +504,6 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 
                 setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, ...newMissions]);
-                 toast({ title: "Nova Árvore de Progressão Gerada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta ou gerar a árvore de progressão.');

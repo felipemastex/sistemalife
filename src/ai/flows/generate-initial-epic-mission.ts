@@ -31,6 +31,7 @@ const GenerateInitialEpicMissionOutputSchema = z.object({
     firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
     firstDailyMissionDescription: z.string().describe("A descrição detalhada da primeira missão diária."),
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
+    fallback: z.boolean().optional().describe("Indica se a resposta foi gerada usando um plano de fallback devido a um erro de IA."),
 });
 export type GenerateInitialEpicMissionOutput = z.infer<typeof GenerateInitialEpicMissionOutputSchema>;
 
@@ -47,12 +48,12 @@ const generateInitialEpicMissionFlow = ai.defineFlow(
     outputSchema: GenerateInitialEpicMissionOutputSchema,
   },
   async (input) => {
+    try {
+        const historyPrompt = input.relatedHistory
+        ? `O utilizador já tem experiência nesta área. O seu histórico relevante é: ${input.relatedHistory}. Com base nisto, o Rank da primeira missão deve ser D ou superior, e a primeira tarefa não deve ser para iniciantes absolutos.`
+        : 'Este é um campo completamente novo para o utilizador. O Rank da primeira missão deve ser F ou E, e a primeira tarefa deve ser um passo fundamental muito básico.';
 
-    const historyPrompt = input.relatedHistory
-      ? `O utilizador já tem experiência nesta área. O seu histórico relevante é: ${input.relatedHistory}. Com base nisto, o Rank da primeira missão deve ser D ou superior, e a primeira tarefa não deve ser para iniciantes absolutos.`
-      : 'Este é um campo completamente novo para o utilizador. O Rank da primeira missão deve ser F ou E, e a primeira tarefa deve ser um passo fundamental muito básico.';
-
-    const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa, uma sequência lógica de missões épicas que o levarão à maestria.
+        const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa, uma sequência lógica de missões épicas que o levarão à maestria.
 
 Utilizador: Nível ${input.userLevel}
 Nova Meta: "${input.goalName}"
@@ -77,27 +78,51 @@ Use a seguinte escala de Ranks para guiar a sua progressão:
 
 A sua resposta deve ser um objeto JSON completo.
 `;
-    
-    const MissionSchema = z.object({
-        progression: z.array(EpicMissionSchema),
-        firstDailyMissionName: z.string(),
-        firstDailyMissionDescription: z.string(),
-    })
+        
+        const MissionSchema = z.object({
+            progression: z.array(EpicMissionSchema),
+            firstDailyMissionName: z.string(),
+            firstDailyMissionDescription: z.string(),
+        })
 
-    const {output} = await ai.generate({
-        prompt: finalPrompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: MissionSchema },
-    });
-    
-    const missionText = `${output!.firstDailyMissionName}: ${output!.firstDailyMissionDescription}`;
-    const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
+        const {output} = await ai.generate({
+            prompt: finalPrompt,
+            model: 'googleai/gemini-2.5-flash',
+            output: { schema: MissionSchema },
+        });
+        
+        const missionText = `${output!.firstDailyMissionName}: ${output!.firstDailyMissionDescription}`;
+        const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
 
-    return {
-        progression: output!.progression,
-        firstDailyMissionName: output!.firstDailyMissionName,
-        firstDailyMissionDescription: output!.firstDailyMissionDescription,
-        firstDailyMissionXp: xp.xp
-    };
+        return {
+            progression: output!.progression,
+            firstDailyMissionName: output!.firstDailyMissionName,
+            firstDailyMissionDescription: output!.firstDailyMissionDescription,
+            firstDailyMissionXp: xp.xp,
+            fallback: false,
+        };
+    } catch (error) {
+        console.error("Falha ao gerar árvore de progressão, acionando fallback:", error);
+
+        // Fallback: Gerar uma única missão épica e uma missão diária simples.
+        const fallbackProgression = [{
+            epicMissionName: `Missão Épica: ${input.goalName}`,
+            epicMissionDescription: `Uma grande jornada em direção ao seu objetivo: ${input.goalName}.`,
+            rank: 'E' as const,
+        }];
+
+        const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
+        const fallbackDailyMissionDescription = "O primeiro passo é o mais importante. Complete esta tarefa para começar a sua nova aventura.";
+        const missionText = `${fallbackDailyMissionName}: ${fallbackDailyMissionDescription}`;
+        const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
+
+        return {
+            progression: fallbackProgression,
+            firstDailyMissionName: fallbackDailyMissionName,
+            firstDailyMissionDescription: fallbackDailyMissionDescription,
+            firstDailyMissionXp: xp.xp,
+            fallback: true,
+        };
+    }
   }
 );
