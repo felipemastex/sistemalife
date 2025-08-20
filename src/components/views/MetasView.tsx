@@ -698,8 +698,12 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     </AccordionItem>
                 )})}
             </Accordion>
-
-            {showWizard && renderWizardContent()}
+            
+            {showWizard && (
+              <Dialog open={showWizard} onOpenChange={(open) => !open && handleCloseWizard()}>
+                {renderWizardContent()}
+              </Dialog>
+            )}
             
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
                 <DialogContent className="max-w-2xl">
