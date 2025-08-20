@@ -15,6 +15,7 @@ import { MissionsView } from '@/components/views/MissionsView';
 import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
+import { SettingsView } from '@/components/views/SettingsView';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -243,6 +244,8 @@ export default function App() {
         return <RoutineView routine={routine} setRoutine={persistRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={persistRoutineTemplates} />;
       case 'ai-chat':
         return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
+      case 'settings':
+        return <SettingsView profile={profile} setProfile={persistProfile} />;
       default:
         return <DashboardView profile={profile} />;
     }
@@ -287,3 +290,5 @@ export default function App() {
     </div>
   );
 }
+
+    
