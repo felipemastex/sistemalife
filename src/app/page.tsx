@@ -318,10 +318,12 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         setIsLoadingSimpleGoal(true);
         if (metaToEdit) {
             // Logic for updating an existing goal
-            setMetas(metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m));
+            const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m);
+            setMetas(updatedMetas);
+            // Update the associated mission's meta link
              setMissions(prev => prev.map(mission => 
                 mission.meta_associada === metaToEdit.nome 
-                ? { ...mission, nome: `Missão Épica: ${newOrUpdatedMeta.nome}`, meta_associada: newOrUpdatedMeta.nome }
+                ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                 : mission
             ));
         } else {
@@ -442,8 +444,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                                 </div>
                             </AccordionTrigger>
                             <div className="flex space-x-2 pl-4">
-                                <Button onClick={(e) => { e.stopPropagation(); handleOpenWizard(meta);}} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <Button onClick={(e) => { e.stopPropagation(); handleDelete(meta.id);}} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                             </div>
                         </div>
                         <AccordionContent className="p-4 pt-0">
@@ -545,6 +547,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                     } else {
                         if(timers[mission.id]){
+                            // Timer finished, reset the cooldown date
                             setMissions(currentMissions => currentMissions.map(m => m.id === mission.id ? {...m, ultima_missao_concluida_em: null} : m));
                         }
                     }
@@ -559,7 +562,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
-        // XP para o próximo nível: Nível Anterior + 25 (Ex: 100, 125, 150...)
         const newXpToNextLevel = currentProfile.xp_para_proximo_nivel + 25; 
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         
@@ -577,6 +579,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         const now = new Date();
         const rankedMission = missions.find(m => m.id === rankedMissionId);
         
+        // Prevent completing if on cooldown
         if (rankedMission?.ultima_missao_concluida_em) {
             const completionDate = new Date(rankedMission.ultima_missao_concluida_em);
             const midnight = new Date(completionDate);
@@ -596,6 +599,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         setGenerating(dailyMissionId);
         let xpGained = 0;
 
+        // Mark the daily mission as complete and set cooldown
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
@@ -612,6 +616,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setMissions(updatedMissions);
 
+        // Update profile XP and check for level up
         setProfile(currentProfile => {
             let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
             while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
@@ -620,6 +625,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return updatedProfile;
         });
         
+        // Generate the next mission
         try {
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
@@ -645,6 +651,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 tipo: 'diaria',
             };
             
+            // Add the new mission to the list
             setMissions(currentMissions => currentMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
                      return { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
@@ -690,6 +697,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 {availableMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
+                    const lastCompletedMission = completedDailyMissions[0];
                     const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     const onCooldown = !!timers[mission.id];
                     
@@ -716,19 +724,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                {onCooldown ? (
-                                    <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
-                                        <div className="blur-sm flex-grow text-left">
-                                           <p className="text-lg font-bold text-gray-500">Próxima Missão Bloqueada</p>
-                                           <p className="text-sm text-gray-600">A transmissão estará disponível em breve.</p>
-                                        </div>
-                                        <div className="flex items-center text-cyan-400 ml-4">
-                                            <Timer className="h-6 w-6 mr-2"/>
-                                            <p className="text-xl font-mono">{timers[mission.id]}</p>
-                                        </div>
-                                    </div>
-                                ) : activeDailyMission ? (
-                                    <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
+                                {activeDailyMission ? (
+                                     <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
                                         <div className="flex-shrink-0 mr-4">
                                             <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
                                                 {generating === activeDailyMission.id ? 
@@ -742,6 +739,17 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                         </div>
                                         <div className="text-right ml-4 flex-shrink-0">
                                             <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                        </div>
+                                    </div>
+                                ) : onCooldown ? (
+                                    <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
+                                        <div className="blur-sm flex-grow text-left">
+                                           <p className="text-lg font-bold text-gray-500">Próxima Missão Bloqueada</p>
+                                           <p className="text-sm text-gray-600">A transmissão estará disponível em breve.</p>
+                                        </div>
+                                        <div className="flex items-center text-cyan-400 ml-4">
+                                            <Timer className="h-6 w-6 mr-2"/>
+                                            <p className="text-xl font-mono">{timers[mission.id]}</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -897,35 +905,42 @@ export default function App() {
   const [skills, setSkills] = useState([]);
   
   useEffect(() => {
-    // Simula o carregamento de dados
+    const initialProfile = mockData.perfis[0];
     const initialMetas = mockData.metas;
-    const initialMissions = mockData.missoes;
+    const initialMissions = [...mockData.missoes];
+    const initialSkills = mockData.habilidades;
     
-    // Garantir que cada meta tem uma missão
+    // Ensure every goal from mockData has a corresponding mission
     initialMetas.forEach(meta => {
         const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
         if (!hasMission) {
+            console.log(`Creating mission for goal: ${meta.nome}`);
             initialMissions.push({
-                id: Date.now() + Math.random(),
+                id: Date.now() + Math.random(), // simple unique id
                 nome: `Missão Épica: ${meta.nome}`,
                 descricao: `Um grande passo em direção a: ${meta.nome}.`,
-                concluido: false, rank: 'E', level_requirement: 1,
-                meta_associada: meta.nome, total_missoes_diarias: 10,
+                concluido: false, 
+                rank: 'E', 
+                level_requirement: 1,
+                meta_associada: meta.nome, 
+                total_missoes_diarias: 10,
                 ultima_missao_concluida_em: null,
                 missoes_diarias: [{
                     id: Date.now() + Math.random(),
                     nome: `Iniciar a jornada para "${meta.nome}"`,
                     descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
-                    xp_conclusao: 10, concluido: false, tipo: 'diaria',
+                    xp_conclusao: 10, 
+                    concluido: false, 
+                    tipo: 'diaria',
                 }]
             });
         }
     });
 
-    setProfile(mockData.perfis[0]);
+    setProfile(initialProfile);
     setMetas(initialMetas);
     setMissions(initialMissions);
-    setSkills(mockData.habilidades);
+    setSkills(initialSkills);
   }, []);
   
   const NavItem = ({ icon: Icon, label, page }) => (
