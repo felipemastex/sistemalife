@@ -9,6 +9,7 @@ import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/flows/generate-smart-goal-questions';
 import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
+import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -147,7 +148,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         let updatedGoal = { ...goalState };
         const lastQuestionLower = lastQuestion.toLowerCase();
         
-        if (lastQuestionLower.includes('específico')) updatedGoal.specific = userInput;
+        if (lastQuestionLower.includes('específico') || lastQuestionLower.includes('exatamente')) updatedGoal.specific = userInput;
         else if (lastQuestionLower.includes('medirá') || lastQuestionLower.includes('progresso')) updatedGoal.measurable = userInput;
         else if (lastQuestionLower.includes('atingir') || lastQuestionLower.includes('passos')) updatedGoal.achievable = userInput;
         else if (lastQuestionLower.includes('relevante') || lastQuestionLower.includes('importante')) updatedGoal.relevant = userInput;
@@ -287,7 +288,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 }
 
 
-const MetasView = ({ metas, setMetas, setMissions }) => {
+const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const [showWizard, setShowWizard] = useState(false);
     const [showModeSelection, setShowModeSelection] = useState(false);
     const [showSimpleModeDialog, setShowSimpleModeDialog] = useState(false);
@@ -313,33 +314,64 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         setShowModeSelection(false);
     };
 
-    const handleSave = (newOrUpdatedMeta) => {
+    const handleSave = async (newOrUpdatedMeta) => {
+        setIsLoadingSimpleGoal(true);
         if (metaToEdit) {
+            // Logic for updating an existing goal
             setMetas(metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m));
-            setMissions(prev => prev.map(mission => 
+             setMissions(prev => prev.map(mission => 
                 mission.meta_associada === metaToEdit.nome 
                 ? { ...mission, nome: `Missão Épica: ${newOrUpdatedMeta.nome}`, meta_associada: newOrUpdatedMeta.nome }
                 : mission
             ));
         } else {
-            const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
+            // Logic for creating a new goal and its epic mission
+            const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
             setMetas(prev => [...prev, newMetaWithId]);
-            const newRankedMission = {
-                id: Date.now() + 1, 
-                nome: `Missão Épica: ${newMetaWithId.nome}`,
-                descricao: `Um grande passo em direção a: ${newMetaWithId.nome}. Detalhes: ${newOrUpdatedMeta.detalhes_smart.specific}`,
-                concluido: false, rank: 'E', level_requirement: 1,
-                meta_associada: newMetaWithId.nome, total_missoes_diarias: 10, 
-                ultima_missao_concluida_em: null,
-                missoes_diarias: [{
-                    id: Date.now() + 2,
-                    nome: `Iniciar a jornada para "${newMetaWithId.nome}"`,
-                    descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
-                    xp_conclusao: 10, concluido: false, tipo: 'diaria',
-                }]
-            };
-            setMissions(prev => [...prev, newRankedMission]);
+            
+            try {
+                // Find related history
+                const relatedHistory = metas
+                    .filter(m => m.categoria === newMetaWithId.categoria)
+                    .map(m => `- Meta Concluída: ${m.nome}`)
+                    .join('\n');
+                
+                const result = await generateInitialEpicMission({
+                    goalName: newMetaWithId.nome,
+                    goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
+                    userLevel: profile.nivel,
+                    relatedHistory: relatedHistory,
+                });
+
+                const newRankedMission = {
+                    id: Date.now() + 1, 
+                    nome: result.epicMissionName,
+                    descricao: result.epicMissionDescription,
+                    concluido: false, 
+                    rank: result.rank, 
+                    level_requirement: 1,
+                    meta_associada: newMetaWithId.nome, 
+                    total_missoes_diarias: 10, 
+                    ultima_missao_concluida_em: null,
+                    missoes_diarias: [{
+                        id: Date.now() + 2,
+                        nome: result.firstDailyMissionName,
+                        descricao: result.firstDailyMissionDescription,
+                        xp_conclusao: result.firstDailyMissionXp, 
+                        concluido: false, 
+                        tipo: 'diaria',
+                    }]
+                };
+                setMissions(prev => [...prev, newRankedMission]);
+
+            } catch (error) {
+                console.error("Erro ao gerar missão épica inicial:", error);
+                toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a missão épica. Tente novamente.' });
+                // Rollback meta creation if mission generation fails
+                setMetas(prev => prev.filter(m => m.id !== newMetaWithId.id));
+            }
         }
+        setIsLoadingSimpleGoal(false);
         handleCloseWizard();
     };
 
@@ -352,7 +384,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
                 goalName: result.refinedGoal.name,
                 categories: mockData.categoriasMetas,
             });
-            handleSave({
+            await handleSave({
                 nome: result.refinedGoal.name,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: result.refinedGoal
@@ -366,6 +398,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
             setSimpleGoalName('');
         }
     };
+
 
     const handleDelete = (id) => {
         const metaToDelete = metas.find(m => m.id === id);
@@ -914,7 +947,7 @@ export default function App() {
       case 'dashboard':
         return <Dashboard profile={profile} />;
       case 'metas':
-        return <MetasView metas={metas} setMetas={setMetas} setMissions={setMissions} />;
+        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} />;
       case 'missions':
         return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} />;
       case 'skills':

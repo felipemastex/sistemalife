@@ -65,7 +65,7 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
             
             Com base nas respostas, refine o nome da meta para ser mais conciso e inspirador. As outras propriedades devem ser mantidas como estão.
             Responda APENAS com o objeto JSON do "refinedGoal" atualizado. Não adicione nenhuma outra palavra.
-            O formato de saída deve ser um JSON igual ao ` + '`refinedGoal`' + ` no output schema.
+            O formato de saída deve ser um JSON igual ao \`refinedGoal\` no output schema.
         `;
 
         const {output} = await ai.generate({
@@ -101,7 +101,7 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         Com base em todas as informações fornecidas, formule a próxima pergunta. A pergunta deve ser aberta, instigante e projetada para extrair uma resposta detalhada e útil. Não faça perguntas de sim/não.
         
         Exemplos de perguntas para inspirar o seu tom:
-        - Para 'specific': "Excelente começo! Para tornar isso cristalino, descreva exatamente o que você quer alcançar. Que resultado específico você visualiza?"
+        - Para 'specific': "Excelente começo! Para tornar isto cristalino, descreva exatamente o que você quer alcançar. Que resultado específico você visualiza?"
         - Para 'measurable': "Ótimo. Agora, como saberemos que você está no caminho certo? Quais números ou marcos específicos indicarão o seu progresso e o sucesso final?"
         - Para 'achievable': "Isso é ambicioso, e eu gosto disso. Realisticamente, quais são os passos que você pode dar para alcançar essa meta? Você tem os recursos e o tempo necessários?"
         - Para 'relevant': "Vamos conectar isso ao seu 'porquê'. De que forma esta meta se alinha com os seus objetivos de vida ou carreira a longo prazo? Porque é que isto é importante para si *agora*?"
