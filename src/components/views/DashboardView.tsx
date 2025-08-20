@@ -3,6 +3,7 @@
 
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
 export const DashboardView = ({ profile }) => {
@@ -17,26 +18,11 @@ export const DashboardView = ({ profile }) => {
     if (level <= 90) return { rank: 'SS', title: 'Herói' };
     return { rank: 'SSS', title: 'Lendário' };
   };
-
-  const getRankColor = (rank) => {
-    switch (rank) {
-      case 'F': return 'border-gray-500 text-gray-300';
-      case 'E': return 'border-green-500 text-green-300';
-      case 'D': return 'border-cyan-500 text-cyan-300';
-      case 'C': return 'border-blue-500 text-blue-300';
-      case 'B': return 'border-purple-500 text-purple-300';
-      case 'A': return 'border-red-500 text-red-300';
-      case 'S': return 'border-yellow-400 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]';
-      case 'SS': return 'border-orange-500 text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.5)]';
-      case 'SSS': return 'border-fuchsia-500 text-fuchsia-300 shadow-[0_0_20px_rgba(217,70,239,0.6)] animate-pulse';
-      default: return 'border-gray-600 text-gray-400';
-    }
-  };
-
+  
   if (!profile || !profile.estatisticas) {
     return (
       <div className="p-6 h-full flex items-center justify-center">
-        <p className="text-cyan-400 text-lg">A carregar dados do Sistema...</p>
+        <p className="text-primary text-lg">A carregar dados do Sistema...</p>
       </div>
     );
   }
@@ -53,51 +39,44 @@ export const DashboardView = ({ profile }) => {
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 50 },
   ];
   
-  const StatItem = ({ label, value }) => (
-    <div>
-        <p className="text-sm text-gray-400">{label}</p>
-        <p className="text-lg font-bold text-gray-100">{value}</p>
+  const StatItem = ({ label, value, className = '' }) => (
+    <div className={className}>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-lg font-bold text-foreground">{value}</p>
     </div>
   );
 
   return (
-    <div className="p-4 md:p-6 space-y-6 bg-background h-full overflow-y-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary">STATUS</h1>
-            <div className="text-right">
-                <p className="text-lg font-semibold text-gray-200">{profile.nome_utilizador}</p>
-                <p className="text-sm text-gray-400">Nível: {profile.nivel}</p>
-            </div>
-        </div>
-
-        {/* Main Content Card */}
-        <div className="bg-card border border-border rounded-lg p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 h-full overflow-y-auto">
+        <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
             
-            {/* Profile Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <div className="md:col-span-2 space-y-3">
-                    <StatItem label="Nome" value={profile.nome_utilizador} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                     <Avatar className="h-full w-full rounded-md border-2 border-primary/50">
+                        <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} className="object-cover"/>
+                        <AvatarFallback className="text-6xl rounded-md bg-secondary">
+                          {profile.nome_utilizador?.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                </div>
+
+                <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4">
+                    <StatItem label="Nome" value={profile.nome_utilizador} className="col-span-2" />
                     <StatItem label="Nível" value={profile.nivel} />
                     <StatItem label="Título" value={profileRank.title} />
-                </div>
-                <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className={cn("w-24 h-24 border-2 flex items-center justify-center font-bold text-5xl bg-black/20", getRankColor(profileRank.rank))}>
-                        {profileRank.rank}
-                    </div>
-                    <p className="text-lg font-semibold text-gray-300">RANK</p>
+                    <StatItem label="Rank" value={profileRank.rank} />
+                    <StatItem label="Status" value="Ativo" />
                 </div>
             </div>
             
             <hr className="border-border/50" />
             
-            {/* Stats Grid & Radar Chart */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
                    {statsData.map(stat => (
-                     <div key={stat.subject} className="flex justify-between items-baseline">
-                         <p className="text-base text-gray-300">{stat.subject}</p>
-                         <p className="font-mono text-lg font-medium text-primary">{stat.value}</p>
+                     <div key={stat.subject} className="bg-secondary/50 p-3 rounded-md border border-border/50">
+                        <p className="text-base text-muted-foreground">{stat.subject}</p>
+                        <p className="font-mono text-xl font-medium text-primary">{stat.value}</p>
                      </div>
                    ))}
                 </div>
@@ -116,26 +95,26 @@ export const DashboardView = ({ profile }) => {
                             <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" fill="url(#radar-fill)" fillOpacity={0.8} />
                              <Tooltip 
                                 contentStyle={{
-                                    backgroundColor: 'hsl(var(--card))',
+                                    backgroundColor: 'hsl(var(--popover))',
                                     borderColor: 'hsl(var(--border))',
                                     color: 'hsl(var(--foreground))'
                                 }}
+                                cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }}
                             />
                         </RadarChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-        </div>
-
-         {/* XP Bar */}
-        <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex justify-between text-sm text-gray-300 mb-1">
-                <span>XP para o próximo Nível</span>
-                <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border">
-                <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
+             {/* XP Bar */}
+            <div>
+                <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                    <span>XP</span>
+                    <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border/50">
+                    <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
+                </div>
             </div>
         </div>
     </div>

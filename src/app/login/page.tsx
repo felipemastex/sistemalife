@@ -59,7 +59,7 @@ export default function LoginPage() {
     
     if (authLoading || (!authLoading && user)) {
         return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center text-cyan-400">
+            <div className="min-h-screen bg-background flex items-center justify-center text-primary">
                 <LoaderCircle className="animate-spin h-10 w-10 mr-4" />
                 <span className="text-xl">A carregar...</span>
             </div>
@@ -67,11 +67,11 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-            <Card className="w-full max-w-md bg-gray-800/80 border-gray-700 text-gray-200">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <Card className="w-full max-w-md bg-card border-border text-card-foreground">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-3xl font-bold text-cyan-400">SISTEMA</CardTitle>
-                    <CardDescription className="text-gray-400">A sua vida, gamificada. Inicie a sessão para continuar.</CardDescription>
+                    <CardTitle className="text-3xl font-bold text-primary">SISTEMA</CardTitle>
+                    <CardDescription className="text-muted-foreground">A sua vida, gamificada. Inicie a sessão para continuar.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-6">
@@ -84,7 +84,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="bg-gray-700 border-gray-600 text-gray-200"
+                                className="bg-secondary border-border"
                             />
                         </div>
                         <div className="space-y-2">
@@ -96,11 +96,11 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="bg-gray-700 border-gray-600 text-gray-200"
+                                className="bg-secondary border-border"
                             />
                         </div>
                         {error && <p className="text-sm text-red-500">{error}</p>}
-                        <Button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500" disabled={loading}>
+                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
                             {loading ? <LoaderCircle className="animate-spin" /> : "Iniciar Sessão"}
                         </Button>
                     </form>
