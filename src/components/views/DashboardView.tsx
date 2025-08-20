@@ -64,7 +64,7 @@ export const DashboardView = ({ profile }) => {
                    <StatItem label="Título" value={profileRank.title}/>
                  </div>
                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-24 h-24 border-2 border-border flex items-center justify-center bg-secondary/30 p-1">
+                    <div className="w-40 h-40 border-2 border-border flex items-center justify-center bg-secondary/30 p-1">
                         <Avatar className="w-full h-full rounded-sm">
                             <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
                             <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
