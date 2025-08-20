@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle } from 'lucide-react';
-import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -41,6 +41,7 @@ export default function App() {
 
   const setupInitialData = async (userId, userEmail) => {
       const batch = writeBatch(db);
+      const userRef = doc(db, 'users', userId);
 
       // 1. Profile
       const initialProfile = { 
@@ -50,8 +51,8 @@ export default function App() {
           nome_utilizador: userEmail.split('@')[0],
           avatar_url: `https://placehold.co/100x100.png?text=${userEmail.substring(0,2).toUpperCase()}`
       };
-      const profileRef = doc(db, 'users', userId);
-      batch.set(profileRef, { profile: initialProfile });
+      // Set the profile directly on the user document
+      batch.set(userRef, initialProfile);
       setProfile(initialProfile);
 
       // 2. Metas
@@ -96,28 +97,30 @@ export default function App() {
     const fetchData = async (userId) => {
         try {
             // Profile
-            const profileDoc = await getDoc(doc(db, 'users', userId));
-            if (profileDoc.exists() && profileDoc.data().profile) {
-                setProfile(profileDoc.data().profile);
+            const userDocRef = doc(db, 'users', userId);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                setProfile(userDoc.data());
 
                 // Metas
-                const metasSnapshot = await getDocs(collection(db, 'users', userId, 'metas'));
+                const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
                 setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
                 
                 // Missions
-                const missionsSnapshot = await getDocs(collection(db, 'users', userId, 'missions'));
+                const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
                 setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
                 // Skills
-                const skillsSnapshot = await getDocs(collection(db, 'users', userId, 'skills'));
+                const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
                 setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
                 // Routine
-                const routineDoc = await getDoc(doc(db, 'users', userId, 'routine', 'main'));
+                const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
                 setRoutine(routineDoc.exists() ? routineDoc.data() : {});
                 
                 // Routine Templates
-                const routineTemplatesDoc = await getDoc(doc(db, 'users', userId, 'routine', 'templates'));
+                const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
                 setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
 
             } else {
@@ -141,7 +144,7 @@ export default function App() {
   const persistProfile = async (newProfile) => {
       if (!user) return;
       setProfile(newProfile);
-      await setDoc(doc(db, 'users', user.uid), { profile: newProfile }, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
   }
 
   const persistMetas = async (newMetas) => {
@@ -218,36 +221,58 @@ export default function App() {
     setIsDataLoaded(false); // Show loading state
     
     try {
+        const userDocRef = doc(db, 'users', user.uid);
         const collectionsToDelete = ['metas', 'missions', 'skills'];
         const batch = writeBatch(db);
 
         // Delete all documents in sub-collections
         for (const coll of collectionsToDelete) {
-            const snapshot = await getDocs(collection(db, 'users', user.uid, coll));
+            const snapshot = await getDocs(collection(userDocRef, coll));
             snapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
         }
         
-        // Delete top-level documents
-        batch.delete(doc(db, 'users', user.uid, 'routine', 'main'));
-        batch.delete(doc(db, 'users', user.uid, 'routine', 'templates'));
-        
-        // Delete the main profile document (it will be recreated)
-        // Note: this doesn't delete sub-collections, which is why we do it separately above.
-        batch.delete(doc(db, 'users', user.uid));
+        // Delete nested routine documents
+        batch.delete(doc(userDocRef, 'routine', 'main'));
+        batch.delete(doc(userDocRef, 'routine', 'templates'));
         
         await batch.commit();
-        
-        toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa. A reconfigurar perfil inicial..." });
-        
-        // Re-initialize data
+
+        // Overwrite the main user document with initial data, effectively resetting it
         await setupInitialData(user.uid, user.email);
+        
+        toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa e reconfigurada." });
 
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: "Não foi possível apagar os seus dados." });
     } finally {
+        // Re-fetch data to update the UI
+        const fetchData = async (userId) => {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+                setProfile(userDoc.data());
+                setMetas([]); // Clear old state
+                setMissions([]);
+                setSkills([]);
+                setRoutine({});
+                setRoutineTemplates({});
+                
+                // Now fetch fresh data
+                const metasSnapshot = await getDocs(collection(db, 'users', userId, 'metas'));
+                setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
+                const missionsSnapshot = await getDocs(collection(db, 'users', userId, 'missions'));
+                setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
+                const skillsSnapshot = await getDocs(collection(db, 'users', userId, 'skills'));
+                setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
+                const routineDoc = await getDoc(doc(db, 'users', userId, 'routine', 'main'));
+                setRoutine(routineDoc.exists() ? routineDoc.data() : {});
+                const routineTemplatesDoc = await getDoc(doc(db, 'users', userId, 'routine', 'templates'));
+                setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
+            }
+        };
+        await fetchData(user.uid);
         setIsDataLoaded(true); // Hide loading state
     }
   };
@@ -329,5 +354,3 @@ export default function App() {
     </div>
   );
 }
-
-    
