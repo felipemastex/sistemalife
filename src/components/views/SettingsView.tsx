@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ const getProfileRank = (level) => {
     return 'SSS';
 };
 
-export const SettingsView = ({ profile, setProfile, onReset }) => {
+const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
         apelido: '',
@@ -201,7 +201,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                                         <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                             Esta ação é irreversível. Todos os seus dados, incluindo perfil, metas, missões e habilidades, serão apagados permanentemente. Não será possível recuperar a sua conta.
-                                        </AlertDialogDescription>
+                                        </dialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -219,3 +219,5 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
+
+export const SettingsView = memo(SettingsViewComponent);

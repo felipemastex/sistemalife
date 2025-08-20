@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
@@ -145,7 +145,7 @@ export default function App() {
     }
   }, [user, isDataLoaded, toast]);
   
-  const persistProfile = async (newProfile) => {
+  const persistProfile = useCallback(async (newProfile) => {
       if (!user) return;
       
       const profileToSave = {
@@ -155,9 +155,9 @@ export default function App() {
 
       setProfile(profileToSave);
       await setDoc(doc(db, 'users', user.uid), profileToSave, { merge: true });
-  }
+  }, [user]);
 
-  const persistMetas = async (newMetas) => {
+  const persistMetas = useCallback(async (newMetas) => {
       if (!user) return;
       setMetas(newMetas);
       const batch = writeBatch(db);
@@ -174,9 +174,9 @@ export default function App() {
           batch.set(metaDocRef, meta);
       });
       await batch.commit();
-  }
+  }, [user]);
 
-  const persistMissions = async (newMissions) => {
+  const persistMissions = useCallback(async (newMissions) => {
       if (!user) return;
       setMissions(newMissions);
       const batch = writeBatch(db);
@@ -193,9 +193,9 @@ export default function App() {
           batch.set(missionDocRef, mission);
       });
       await batch.commit();
-  }
+  }, [user]);
   
-    const persistSkills = async (newSkills) => {
+    const persistSkills = useCallback(async (newSkills) => {
       if (!user) return;
       setSkills(newSkills);
       const batch = writeBatch(db);
@@ -212,19 +212,19 @@ export default function App() {
           batch.set(skillDocRef, skill);
       });
       await batch.commit();
-  }
+  }, [user]);
 
-  const persistRoutine = async (newRoutine) => {
+  const persistRoutine = useCallback(async (newRoutine) => {
       if (!user) return;
       setRoutine(newRoutine);
       await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
-  }
+  }, [user]);
   
-  const persistRoutineTemplates = async (newTemplates) => {
+  const persistRoutineTemplates = useCallback(async (newTemplates) => {
       if (!user) return;
       setRoutineTemplates(newTemplates);
       await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
-  }
+  }, [user]);
 
   const handleFullReset = async () => {
     if (!user) return;
