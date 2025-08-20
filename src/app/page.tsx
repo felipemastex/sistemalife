@@ -640,8 +640,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel + 25);
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         
-        toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newLevel}!` });
-
         return {
             ...currentProfile,
             nivel: newLevel,
@@ -726,13 +724,16 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setMissions(updatedMissions);
 
-        setProfile(currentProfile => {
-            let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
-            while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
-                updatedProfile = handleLevelUp(updatedProfile);
-            }
-            return updatedProfile;
-        });
+        const oldLevel = profile.nivel;
+        let newProfile = { ...profile, xp: profile.xp + xpGained };
+        while (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
+            newProfile = handleLevelUp(newProfile);
+        }
+        setProfile(newProfile);
+
+        if (newProfile.nivel > oldLevel) {
+            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
+        }
         
         if (isRankedMissionComplete) {
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
