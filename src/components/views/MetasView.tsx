@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { statCategoryMapping } from '@/lib/mappings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 const statIcons = {
     forca: <Swords className="h-4 w-4 text-red-400" />,
@@ -499,7 +500,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     toast({ title: "Nova Árvore de Progressão Gerada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
                 }
 
-                const newMissions = result.progression.map((epicMission, index) => {
+                const newMissions = (result.progression || []).map((epicMission, index) => {
                     const isFirstMission = index === 0;
                     return {
                         id: Date.now() + index + 1,
@@ -512,7 +513,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         total_missoes_diarias: 10, // Default value
                         ultima_missao_concluida_em: null,
                         missoes_diarias: isFirstMission ? [{
-                            id: Date.now() + result.progression.length + 2,
+                            id: Date.now() + (result.progression?.length || 0) + 2,
                             nome: result.firstDailyMissionName,
                             descricao: result.firstDailyMissionDescription,
                             xp_conclusao: result.firstDailyMissionXp,
@@ -571,6 +572,16 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             setMetas(metas.filter(m => m.id !== id));
             // A habilidade não é removida aqui de propósito, como solicitado.
         }
+    };
+
+    const isSkillDeletable = (skillId) => {
+        const associatedMeta = metas.find(m => m.habilidade_associada_id === skillId);
+        if (!associatedMeta) {
+            return true; // No associated goal, can be deleted
+        }
+        // A goal is active if any of its missions are not completed
+        const isGoalActive = missions.some(miss => miss.meta_associada === associatedMeta.nome && !miss.concluido);
+        return !isGoalActive; // Can be deleted if goal is not active
     };
 
     const renderWizardContent = () => {
@@ -660,6 +671,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 {metas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];
+                    const deletable = isSkillDeletable(meta.id);
                     
                     return (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -672,23 +684,38 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                            </AccordionTrigger>
                            <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
                                 <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                 <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                             <span tabIndex={deletable ? -1 : 0}>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400" disabled={!deletable}>
+                                                            <Trash2 className="h-5 w-5" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                             </span>
+                                        </TooltipTrigger>
+                                        {!deletable && (
+                                            <TooltipContent>
+                                                <p>Esta meta não pode ser excluída porque tem missões ativas.</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                 </TooltipProvider>
                            </div>
                        </div>
                         <AccordionContent className="p-4 pt-0">
@@ -766,5 +793,3 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
-
-    
