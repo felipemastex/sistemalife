@@ -183,7 +183,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
 
-    const handleSkillUp = (skill) => {
+    const handleSkillUp = (skill, statsToUpgrade) => {
         const leveledUpSkill = {
             ...skill,
             nivel_atual: skill.nivel_atual + 1,
@@ -191,27 +191,22 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             xp_para_proximo_nivel: Math.floor(skill.xp_para_proximo_nivel * 1.5)
         };
         setSkills(currentSkills => currentSkills.map(s => s.id === skill.id ? leveledUpSkill : s));
-        toast({ title: "Habilidade Aumentada!", description: `A sua habilidade "${skill.nome}" subiu para o nível ${leveledUpSkill.nivel_atual}!` });
         
-        // Update profile stats based on skill category
-        const statsToUpgrade = statCategoryMapping[skill.categoria];
-        if (statsToUpgrade) {
+        let toastDescription = `A sua habilidade "${skill.nome}" subiu para o nível ${leveledUpSkill.nivel_atual}!`;
+
+        if (statsToUpgrade && statsToUpgrade.length > 0) {
             setProfile(prevProfile => {
                 const newStats = { ...prevProfile.estatisticas };
                 statsToUpgrade.forEach(stat => {
                     newStats[stat] = (newStats[stat] || 0) + 1;
                 });
-                const updatedProfile = { ...prevProfile, estatisticas: newStats };
-                
-                const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' e ');
-                toast({
-                    title: "Atributos Melhorados!",
-                    description: `A sua dedicação em ${skill.categoria} aumentou a sua ${statNames}.`
-                });
-
-                return updatedProfile;
+                return { ...prevProfile, estatisticas: newStats };
             });
+            const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' e ');
+            toastDescription += `\nSua ${statNames} aumentou.`
         }
+
+        toast({ title: "Habilidade Aumentada!", description: toastDescription });
     };
 
 
@@ -282,10 +277,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                      
                      let newSkillXp = skillToUpdate.xp_atual + xp;
                      if(newSkillXp >= skillToUpdate.xp_para_proximo_nivel){
-                        handleSkillUp({
-                            ...skillToUpdate,
-                            xp_atual: newSkillXp,
-                        });
+                        const statsToUpgrade = statCategoryMapping[skillToUpdate.categoria] || [];
+                        handleSkillUp({ ...skillToUpdate, xp_atual: newSkillXp }, statsToUpgrade);
                      } else {
                         setSkills(currentSkills => currentSkills.map(s => s.id === skillToUpdate.id ? {...s, xp_atual: newSkillXp} : s));
                      }

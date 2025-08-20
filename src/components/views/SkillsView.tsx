@@ -1,9 +1,19 @@
 
 "use client";
 
-import { Trash2 } from 'lucide-react';
+import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { statCategoryMapping } from '@/lib/mappings';
+
+const statIcons = {
+    forca: <Swords className="h-4 w-4 text-red-400" />,
+    inteligencia: <Brain className="h-4 w-4 text-blue-400" />,
+    destreza: <Zap className="h-4 w-4 text-yellow-400" />,
+    constituicao: <ShieldCheck className="h-4 w-4 text-green-400" />,
+    sabedoria: <BookOpen className="h-4 w-4 text-purple-400" />,
+    carisma: <Star className="h-4 w-4 text-pink-400" />,
+};
 
 
 export const SkillsView = ({ skills, setSkills }) => {
@@ -30,6 +40,7 @@ export const SkillsView = ({ skills, setSkills }) => {
                 {skills.map(skill => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
                     const canLevelUp = skill.nivel_atual > 0 && skill.pre_requisito ? skills.find(s => s.id === skill.pre_requisito)?.nivel_atual > 0 : skill.nivel_atual > 0;
+                    const stats = statCategoryMapping[skill.categoria] || [];
                     
                     return(
                     <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4 transition-opacity ${!canLevelUp ? 'opacity-60' : ''}`}>
@@ -63,6 +74,19 @@ export const SkillsView = ({ skills, setSkills }) => {
                                     <p className="text-xs text-yellow-400/70 mt-2">
                                         Requer: {skills.find(s => s.id === skill.pre_requisito)?.nome} Nv. {skills.find(s => s.id === skill.pre_requisito)?.nivel_minimo_para_desbloqueio || 1}
                                     </p>
+                                )}
+                                {stats.length > 0 && (
+                                     <div className="flex items-center gap-4 pt-2 mt-2 border-t border-gray-700/50">
+                                        <strong className="text-xs text-gray-400">Aumenta:</strong>
+                                        <div className="flex items-center gap-3">
+                                        {stats.map(stat => (
+                                            <div key={stat} className="flex items-center gap-1.5 text-gray-300">
+                                                {statIcons[stat]}
+                                                <span className="capitalize text-xs">{stat}</span>
+                                            </div>
+                                        ))}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                             <div className="text-center ml-4 w-28 flex-shrink-0">

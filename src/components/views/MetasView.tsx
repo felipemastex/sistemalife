@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
@@ -17,6 +17,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
+import { statCategoryMapping } from '@/lib/mappings';
+
+const statIcons = {
+    forca: <Swords className="h-4 w-4 text-red-400" />,
+    inteligencia: <Brain className="h-4 w-4 text-blue-400" />,
+    destreza: <Zap className="h-4 w-4 text-yellow-400" />,
+    constituicao: <ShieldCheck className="h-4 w-4 text-green-400" />,
+    sabedoria: <BookOpen className="h-4 w-4 text-purple-400" />,
+    carisma: <Star className="h-4 w-4 text-pink-400" />,
+};
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const isEditing = !!metaToEdit;
@@ -500,6 +510,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (metaToDelete) {
             setMissions(currentMissions => currentMissions.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(currentMetas => currentMetas.filter(m => m.id !== id));
+            // A habilidade não é removida aqui de propósito, como solicitado.
         }
     };
 
@@ -527,7 +538,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             </div>
             <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             <Accordion type="multiple" className="space-y-4">
-                {metas.map(meta => (
+                {metas.map(meta => {
+                    const skill = skills.find(s => s.id === meta.habilidade_associada_id);
+                    const stats = skill ? statCategoryMapping[skill.categoria] : [];
+                    
+                    return (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
                        <div className="flex items-center w-full">
                            <AccordionTrigger className="flex-1 hover:no-underline text-left p-4">
@@ -564,10 +579,23 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 <p><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
                                 <p><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
                                 <p><strong className="text-cyan-400">Prazo:</strong> {meta.detalhes_smart.timeBound}</p>
+                                {stats && stats.length > 0 && (
+                                    <div className="flex items-center gap-4 pt-2">
+                                        <strong className="text-cyan-400">Atributos Melhorados:</strong>
+                                        <div className="flex items-center gap-3">
+                                        {stats.map(stat => (
+                                            <div key={stat} className="flex items-center gap-1 text-gray-300">
+                                                {statIcons[stat]}
+                                                <span className="capitalize text-xs">{stat}</span>
+                                            </div>
+                                        ))}
+                                        </div>
+                                    </div>
+                                )}
                            </div>
                         </AccordionContent>
                     </AccordionItem>
-                ))}
+                )})}
             </Accordion>
 
             {showWizard && (
