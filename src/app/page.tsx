@@ -228,15 +228,23 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
         const now = new Date();
         const rankedMission = missions.find(m => m.id === rankedMissionId);
-
-        if (timers[rankedMissionId]) {
-            toast({
-                variant: "destructive",
-                title: "Aguarde o Cooldown!",
-                description: "A próxima missão estará disponível quando o temporizador zerar.",
-            });
-            return;
+        
+        // Esta verificação agora é redundante se a UI desabilita o botão, mas é uma boa proteção
+        if (rankedMission?.ultima_missao_concluida_em) {
+            const completionDate = new Date(rankedMission.ultima_missao_concluida_em);
+            const midnight = new Date(completionDate);
+            midnight.setDate(midnight.getDate() + 1);
+            midnight.setHours(0, 0, 0, 0);
+            if(now < midnight) {
+                 toast({
+                    variant: "destructive",
+                    title: "Aguarde o Cooldown!",
+                    description: "A próxima missão estará disponível quando o temporizador zerar.",
+                });
+                return;
+            }
         }
+
 
         setGenerating(dailyMissionId);
         let xpGained = 0;
@@ -250,18 +258,12 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                     }
                     return daily;
                 });
-                return { ...rm, missoes_diarias: updatedDailyMissions };
+                 return { ...rm, missoes_diarias: updatedDailyMissions, ultima_missao_concluida_em: now.toISOString() };
             }
             return rm;
         });
 
-        // Set missions with the completed one first, but without the new one yet
-        setMissions(updatedMissions.map(rm => {
-            if (rm.id === rankedMissionId) {
-                return { ...rm, ultima_missao_concluida_em: now.toISOString() };
-            }
-            return rm;
-        }));
+        setMissions(updatedMissions);
 
         setProfile(currentProfile => {
             let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
@@ -296,15 +298,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 tipo: 'diaria',
             };
             
-            // Now add the new mission to the list
-            const finalMissions = updatedMissions.map(rm => {
+            setMissions(currentMissions => currentMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    // Update again with the new mission
-                     return { ...rm, ultima_missao_concluida_em: now.toISOString(), missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
+                     return { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
                 }
                 return rm;
-            });
-            setMissions(finalMissions);
+            }));
+
 
         } catch (error) {
             console.error("Erro ao gerar nova missão diária:", error);
@@ -344,7 +344,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 {availableMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
-                    const missionProgress = (mission.missoes_diarias.filter(d => d.concluido).length / (mission.total_missoes_diarias || 10)) * 100;
+                    const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     const onCooldown = !!timers[mission.id];
                     
                     return (
@@ -353,7 +353,15 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                 <div className="flex-1 text-left">
                                     <div className="flex justify-between items-center">
                                         <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
-                                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
+                                        <div className="flex items-center space-x-2">
+                                         {onCooldown && (
+                                            <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
+                                                <Timer className="h-4 w-4 mr-1.5"/>
+                                                {timers[mission.id]}
+                                            </div>
+                                         )}
+                                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
+                                        </div>
                                     </div>
                                     <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
                                     <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
