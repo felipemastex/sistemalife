@@ -44,7 +44,7 @@ const InfoField = ({ label, value, editable = false, onChange, placeholder, clas
 
 
 // O componente principal da vista de Configurações
-const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
+export const SettingsView = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
         apelido: '',
@@ -266,6 +266,3 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
-
-// Envolve o componente com memo para otimizar a performance e evitar re-renders desnecessários
-export const SettingsView = memo(SettingsViewComponent);
