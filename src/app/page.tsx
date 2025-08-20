@@ -149,8 +149,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     useEffect(() => {
         const initialState = getInitialGoalState();
         setGoalState(initialState);
+        setHistory([]);
+        setUserInput('');
         if (isEditing) {
             setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
+        } else {
+            setCurrentQuestion('');
         }
     }, [metaToEdit, isEditing, getInitialGoalState]);
 
@@ -501,26 +505,9 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         setIsLoadingSimpleGoal(true);
         try {
             const { refinedGoal } = await generateSimpleSmartGoal({ goalName: simpleGoalName });
-
-            let category = 'Desenvolvimento Pessoal';
-            try {
-                const categoryResult = await generateGoalCategory({
-                    goalName: refinedGoal.name,
-                    categories: mockData.categoriasMetas,
-                });
-                category = categoryResult.category;
-            } catch (categoryError) {
-                console.error("AI category suggestion failed, using default:", categoryError);
-                toast({
-                    variant: 'destructive',
-                    title: 'Falha na Sugestão de Categoria',
-                    description: 'A categoria foi definida como padrão devido a um erro na IA.'
-                });
-            }
-
             await handleSave({
                 nome: refinedGoal.name,
-                categoria: category,
+                categoria: 'Desenvolvimento Pessoal', // Default category
                 detalhes_smart: refinedGoal
             });
         } catch (error) {
@@ -1196,6 +1183,7 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     const [currentItem, setCurrentItem] = useState(null);
     const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
     const { toast } = useToast();
+    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
     
     // State for AI suggestions
     const [suggestions, setSuggestions] = useState({}); // { missionId: { suggestionText, ... } }
@@ -1281,17 +1269,40 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
 
     const getUnscheduledMissions = () => {
         const routineMissionNames = routine.map(r => r.activity);
-        const unscheduled = [];
-        missions.forEach(rankedMission => {
-            if (!rankedMission.concluido) {
-                const activeDaily = rankedMission.missoes_diarias.find(dm => !dm.concluido);
-                if (activeDaily && !routineMissionNames.some(name => name.includes(activeDaily.nome))) {
-                    unscheduled.push(activeDaily);
-                }
+        
+        // 1. Find the active epic missions (same logic as MissionsView)
+        const visibleEpicMissions = [];
+        const missionsByGoal = missions.reduce((acc, mission) => {
+            if (!acc[mission.meta_associada]) {
+                acc[mission.meta_associada] = [];
             }
-        });
+            acc[mission.meta_associada].push(mission);
+            return acc;
+        }, {});
+
+        for (const goalName in missionsByGoal) {
+            const goalMissions = missionsByGoal[goalName]
+                .filter(m => !m.concluido)
+                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+
+            if (goalMissions.length > 0) {
+                visibleEpicMissions.push(goalMissions[0]);
+            }
+        }
+
+        // 2. From those active epic missions, find the active daily mission
+        const activeDailyMissions = visibleEpicMissions.map(epicMission => {
+            return epicMission.missoes_diarias.find(dm => !dm.concluido);
+        }).filter(Boolean); // Filter out any undefined results
+
+        // 3. Filter out missions already scheduled in the routine
+        const unscheduled = activeDailyMissions.filter(dailyMission => 
+            !routineMissionNames.some(routineActivity => routineActivity.includes(dailyMission.nome))
+        );
+
         return unscheduled;
-    }
+    };
+
 
     const sortedRoutine = [...routine].sort((a, b) => a.start_time.localeCompare(b.start_time));
     const unscheduledMissions = getUnscheduledMissions();
