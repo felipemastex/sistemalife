@@ -9,9 +9,6 @@ export default {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        mono: ['var(--font-roboto-mono)', 'monospace'],
-      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

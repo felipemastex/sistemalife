@@ -1,13 +1,12 @@
 import type {Metadata} from 'next';
-import { Roboto_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
 
-const robotoMono = Roboto_Mono({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-roboto-mono',
 })
 
 export const metadata: Metadata = {
@@ -21,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${robotoMono.variable} dark`} suppressHydrationWarning>
-      <body className="font-mono antialiased">
+    <html lang="en" className={`${inter.className} dark`} suppressHydrationWarning>
+      <body className="antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>
