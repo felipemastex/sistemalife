@@ -12,7 +12,7 @@ export const DashboardView = ({ profile }) => {
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
     if (level <= 20) return { rank: 'D', title: 'Adepto' };
     if (level <= 30) return { rank: 'C', title: 'Experiente' };
-    if (level <= 40) return { rank: 'B', title: 'Perito' };
+    if (level <= 40) return { rank: 'B', 'title': 'Perito' };
     if (level <= 50) return { rank: 'A', title: 'Mestre' };
     if (level <= 70) return { rank: 'S', title: 'Grão-Mestre' };
     if (level <= 90) return { rank: 'SS', title: 'Herói' };
@@ -50,15 +50,9 @@ export const DashboardView = ({ profile }) => {
     <div className="p-4 md:p-6 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold text-primary">STATUS</h1>
-        <div className="flex items-center gap-4">
-            <div className="text-right">
-                <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
-                <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
-            </div>
-             <Avatar>
-                <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
-                <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
-            </Avatar>
+        <div className="text-right">
+            <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
+            <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
         </div>
       </div>
 
@@ -70,10 +64,13 @@ export const DashboardView = ({ profile }) => {
                    <StatItem label="Título" value={profileRank.title}/>
                  </div>
                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-24 h-24 border-2 border-border flex items-center justify-center bg-secondary/30">
-                        <span className="text-6xl font-black text-primary">{profileRank.rank}</span>
+                    <div className="w-24 h-24 border-2 border-border flex items-center justify-center bg-secondary/30 p-1">
+                        <Avatar className="w-full h-full rounded-sm">
+                            <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
+                            <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
+                        </Avatar>
                     </div>
-                    <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground">RANK</p>
+                    <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground">RANK {profileRank.rank}</p>
                  </div>
             </div>
             
