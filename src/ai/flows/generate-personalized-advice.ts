@@ -45,7 +45,7 @@ const generateSystemAdviceFlow = ai.defineFlow(
     // Etapa 1: Verificar se a consulta é sobre agendamento de rotina.
     const analysisPrompt = `
         Analise a diretiva do utilizador. A pergunta é sobre onde, quando ou como encaixar uma tarefa, missão ou atividade na rotina diária? 
-        Responda com um JSON contendo 'isRoutineQuery: boolean' e, se for verdade, 'missionToSchedule: string' que identifica a missão que o utilizador quer agendar.
+        Responda com um JSON contendo 'isRoutineQuery: boolean' e, se for verdade, 'missionToSchedule: string' que identifica a missão que o utilizador quer agendar a partir da lista de missões ativas. Se a pergunta não for sobre rotina OU se a missão mencionada não estiver na lista de missões ativas, retorne 'isRoutineQuery: false'.
         
         Diretiva: "${input.query}"
         Missões Ativas: ${input.missions}
@@ -62,24 +62,28 @@ const generateSystemAdviceFlow = ai.defineFlow(
         output: { schema: AnalysisSchema },
     });
 
-    // Etapa 2: Se for uma consulta de rotina, gerar a sugestão.
+    // Etapa 2: Se for uma consulta de rotina e uma missão válida for encontrada, gerar a sugestão.
     if (analysis?.isRoutineQuery && analysis.missionToSchedule) {
         const activeMissions = JSON.parse(input.missions);
-        // Tentar encontrar a missão completa pelo nome
+        // Tentar encontrar a missão épica que contém a missão diária
         const targetRankedMission = activeMissions.find(m => m.nome.toLowerCase().includes(analysis.missionToSchedule.toLowerCase()));
-        const dailyMission = targetRankedMission?.missoes_diarias.find(dm => !dm.concluido);
+        
+        if (targetRankedMission) {
+            // Encontrar a missão diária ativa (não concluída) dentro da missão épica
+            const dailyMission = targetRankedMission.missoes_diarias?.find(dm => !dm.concluido);
 
-        if (dailyMission) {
-            const suggestion = await generateRoutineSuggestion({
-                routine: JSON.parse(input.routine),
-                missionName: dailyMission.nome,
-                missionDescription: dailyMission.descricao,
-            });
-            return { response: suggestion.suggestion };
+            if (dailyMission) {
+                const suggestion = await generateRoutineSuggestion({
+                    routine: JSON.parse(input.routine),
+                    missionName: dailyMission.nome,
+                    missionDescription: dailyMission.descricao,
+                });
+                return { response: suggestion.suggestion };
+            }
         }
     }
 
-    // Etapa 3: Se não for sobre rotina, gerar uma resposta geral.
+    // Etapa 3: Se não for sobre rotina ou se nenhuma missão válida for encontrada, gerar uma resposta geral.
     const generalPrompt = `Você é o 'Sistema', uma IA de um RPG da vida real. O utilizador é ${input.userName}.
         O perfil dele: ${input.profile}
         Os seus objetivos a longo prazo (Metas): ${input.metas}
