@@ -12,8 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '@/components/ui/separator';
 
 export const SettingsView = ({ profile, setProfile, onReset }) => {
-    const [username, setUsername] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
+    const [username, setUsername] = useState(profile?.nome_utilizador || '');
+    const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
     const [isSaving, setIsSaving] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const { toast } = useToast();
@@ -171,5 +171,3 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
-
-    
