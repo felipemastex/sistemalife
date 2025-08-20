@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,9 @@ import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
 import { SettingsView } from '@/components/views/SettingsView';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 
 
 export default function App() {
@@ -24,6 +27,7 @@ export default function App() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [profile, setProfile] = useState(null);
   const [metas, setMetas] = useState([]);
@@ -258,17 +262,45 @@ export default function App() {
   };
 
 
-  const NavItem = ({ icon: Icon, label, page }) => (
-    <button 
-      onClick={() => setCurrentPage(page)}
-      className={cn(
-        'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors',
-        currentPage === page ? 'bg-primary/20 text-primary' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-      )}
-    >
-      <Icon className="h-5 w-5" />
-      <span className="font-medium">{label}</span>
-    </button>
+  const NavItem = ({ icon: Icon, label, page, inSheet = false }) => {
+    const Component = inSheet ? SheetClose : 'button';
+    
+    return (
+        <Component
+          onClick={() => setCurrentPage(page)}
+          className={cn(
+            'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors',
+            currentPage === page ? 'bg-primary/20 text-primary' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+          )}
+        >
+          <Icon className="h-5 w-5" />
+          <span className="font-medium">{label}</span>
+        </Component>
+    );
+  };
+  
+  const NavContent = ({inSheet = false}) => (
+    <>
+      <div className="text-2xl font-bold text-primary text-center mb-8">SISTEMA</div>
+      <nav className="flex-grow space-y-2">
+          <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
+          <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
+          <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
+          <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
+          <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
+          <NavItem icon={Bot} label="Interagir com IA" page="ai-chat" inSheet={inSheet}/>
+      </nav>
+      <div className="mt-auto">
+          <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
+          <button 
+            onClick={logout}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-md text-gray-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">Terminar Sessão</span>
+          </button>
+      </div>
+    </>
   );
 
   const renderContent = () => {
@@ -307,29 +339,28 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <aside className="w-64 bg-gray-900/80 border-r border-border/50 p-4 flex-col hidden md:flex">
-        <div className="text-2xl font-bold text-primary text-center mb-8">SISTEMA</div>
-        <nav className="flex-grow space-y-2">
-            <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" />
-            <NavItem icon={BookOpen} label="Metas" page="metas" />
-            <NavItem icon={Target} label="Missões" page="missions" />
-            <NavItem icon={Clock} label="Rotina" page="routine" />
-            <NavItem icon={BarChart3} label="Habilidades" page="skills" />
-            <NavItem icon={Bot} label="Interagir com IA" page="ai-chat" />
-        </nav>
-        <div className="mt-auto">
-            <NavItem icon={Settings} label="Configurações" page="settings" />
-            <button 
-              onClick={logout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-md text-gray-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">Terminar Sessão</span>
-            </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 overflow-y-auto" style={{height: '100vh'}}>
+        {!isMobile && (
+          <aside className="w-64 bg-gray-900/80 border-r border-border/50 p-4 flex flex-col">
+              <NavContent />
+          </aside>
+        )}
+        
+      <main className="flex-1 overflow-y-auto relative" style={{height: '100vh'}}>
+         {isMobile && (
+            <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-gray-900/80 backdrop-blur-md border-b border-border/50 flex items-center">
+                 <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Menu />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-72 bg-gray-900/90 border-r border-border/50 p-4 flex flex-col">
+                        <NavContent inSheet={true}/>
+                    </SheetContent>
+                </Sheet>
+                 <h2 className="text-lg font-bold text-primary ml-4 capitalize">{currentPage}</h2>
+            </header>
+          )}
         {renderContent()}
       </main>
     </div>
