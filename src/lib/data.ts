@@ -25,20 +25,42 @@ export const metas = [
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome: 'Aprender a programar em Python',
     categoria: 'Desenvolvimento Pessoal',
+    detalhes_smart: {
+        specific: "Aprender os fundamentos de Python, incluindo tipos de dados, loops, funções e manipulação de dados.",
+        measurable: "Concluir um curso online de Python para iniciantes e construir 3 projetos pequenos.",
+        achievable: "Dedicar 1 hora por dia, 5 dias por semana, para estudo e prática.",
+        relevant: "Ganhar uma habilidade fundamental para avançar na minha carreira de tecnologia.",
+        timeBound: "Alcançar a proficiência básica e completar os projetos em 3 meses."
+    }
   },
   {
     id: 2,
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome: 'Correr uma maratona de 5km',
     categoria: 'Saúde & Fitness',
+    detalhes_smart: {
+        specific: "Treinar para conseguir correr 5 quilómetros sem parar.",
+        measurable: "Aumentar a distância de corrida em 500 metros a cada semana.",
+        achievable: "Seguir um plano de treino para iniciantes, correndo 3 vezes por semana.",
+        relevant: "Melhorar a minha saúde cardiovascular e bem-estar geral.",
+        timeBound: "Estar pronto para correr os 5km em 8 semanas."
+    }
   },
   {
     id: 3,
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome: 'Ler 12 livros este ano',
     categoria: 'Cultura',
+    detalhes_smart: {
+        specific: "Ler um livro de não-ficção por mês.",
+        measurable: "Acompanhar o progresso de leitura e terminar um livro a cada 4 semanas.",
+        achievable: "Ler durante 30 minutos antes de dormir todas as noites.",
+        relevant: "Expandir o meu conhecimento em diferentes áreas e desenvolver o hábito da leitura.",
+        timeBound: "Ler 12 livros até o final do ano."
+    }
   },
 ];
+
 
 export const missoes = [
   // Missões Épicas (Ranqueadas)

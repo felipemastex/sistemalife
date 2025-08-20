@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
+import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 
 // --- COMPONENTES ---
@@ -92,91 +94,211 @@ const Dashboard = ({ profile }) => {
   );
 };
 
-const MetasView = ({ metas, setMetas, setMissions }) => {
-    const [showModal, setShowModal] = useState(false);
-    const [currentMeta, setCurrentMeta] = useState(null);
-    const [nome, setNome] = useState('');
-    const [categoria, setCategoria] = useState('');
-    const [isSuggesting, setIsSuggesting] = useState(false);
-    const debounceTimeout = useRef(null);
+const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
+    const [conversation, setConversation] = useState([]);
+    const [userInput, setUserInput] = useState('');
+    const [goalState, setGoalState] = useState(metaToEdit ? {name: metaToEdit.nome, ...metaToEdit.detalhes_smart} : { name: '' });
+    const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const conversationEndRef = useRef(null);
 
+    const scrollToBottom = () => {
+        conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
 
-    const suggestCategory = useCallback(async (goalName) => {
-        if (!goalName || goalName.length < 5) return;
-        setIsSuggesting(true);
+    useEffect(scrollToBottom, [conversation]);
+
+    useEffect(() => {
+        if (metaToEdit) {
+            setConversation([{ sender: 'ai', text: `Vamos editar a sua meta: "${metaToEdit.nome}". O que você gostaria de alterar primeiro?` }]);
+        } else {
+             setConversation([{ sender: 'ai', text: 'Olá! Estou aqui para o ajudar a definir uma meta poderosa usando o método SMART. Qual é a meta que você tem em mente?' }]);
+        }
+    }, [metaToEdit]);
+
+    const askNextQuestion = useCallback(async (currentGoal, history = []) => {
+        setIsLoading(true);
         try {
-            const result = await generateGoalCategory({
-                goalName: goalName,
-                categories: mockData.categoriasMetas,
-            });
-            if (result.category && mockData.categoriasMetas.includes(result.category)) {
-                setCategoria(result.category);
+            const result = await generateSmartGoalQuestion({ goal: currentGoal, history });
+
+            if (result.isComplete && result.refinedGoal) {
+                setConversation(prev => [...prev, { sender: 'ai', text: "Excelente! A sua meta SMART está definida. Aqui está o resumo final. Pode salvar agora." }]);
+                setGoalState(result.refinedGoal);
+            } else if (result.nextQuestion) {
+                 setConversation(prev => [...prev, { sender: 'ai', text: result.nextQuestion }]);
             }
         } catch (error) {
-            console.error("Erro ao sugerir categoria:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria.' });
+            console.error("Erro ao gerar pergunta SMART:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a próxima pergunta.' });
+            setConversation(prev => [...prev, { sender: 'ai', text: "Ocorreu um erro. Vamos tentar novamente. Qual é a sua meta?"}])
         } finally {
-            setIsSuggesting(false);
+            setIsLoading(false);
         }
     }, [toast]);
 
-    const handleNomeChange = (e) => {
-        const newName = e.target.value;
-        setNome(newName);
-        if (debounceTimeout.current) {
-            clearTimeout(debounceTimeout.current);
+    const handleSend = async () => {
+        if (!userInput.trim() || isLoading) return;
+
+        const newUserMessage = { sender: 'user', text: userInput };
+        const newConversation = [...conversation, newUserMessage];
+        setConversation(newConversation);
+        setUserInput('');
+        setIsLoading(true);
+
+        let updatedGoal = { ...goalState };
+        let history = conversation.filter(m => m.sender === 'user').map((m, i) => ({
+            question: conversation.filter(msg => msg.sender === 'ai')[i]?.text,
+            answer: m.text
+        }));
+
+        if (!goalState.name) {
+            updatedGoal.name = userInput;
+        } else {
+            const lastQuestion = conversation.filter(m => m.sender === 'ai').slice(-1)[0]?.text.toLowerCase();
+            if (lastQuestion) {
+                 if (lastQuestion.includes('especificamente')) updatedGoal.specific = userInput;
+                 else if (lastQuestion.includes('medirá') || lastQuestion.includes('indicadores')) updatedGoal.measurable = userInput;
+                 else if (lastQuestion.includes('atingir') || lastQuestion.includes('passos')) updatedGoal.achievable = userInput;
+                 else if (lastQuestion.includes('importante') || lastQuestion.includes('relevante')) updatedGoal.relevant = userInput;
+                 else if (lastQuestion.includes('prazo') || lastQuestion.includes('quando')) updatedGoal.timeBound = userInput;
+            }
         }
-        debounceTimeout.current = setTimeout(() => {
-            suggestCategory(newName);
-        }, 1000); // 1 segundo de debounce
+        
+        setGoalState(updatedGoal);
+        await askNextQuestion(updatedGoal, history);
     };
 
-    const handleOpenModal = (meta = null) => {
-        setCurrentMeta(meta);
-        setNome(meta ? meta.nome : '');
-        setCategoria(meta ? meta.categoria : '');
-        setShowModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setCurrentMeta(null);
-        setNome('');
-        setCategoria('');
-        if (debounceTimeout.current) {
-            clearTimeout(debounceTimeout.current);
-        }
-    };
-
-    const handleSave = () => {
-        if (!nome || !categoria) {
-            toast({ variant: "destructive", title: "Campos em falta", description: "Por favor preencha o nome e a categoria." });
+    const handleSaveGoal = async () => {
+        if (!goalState.name || !goalState.specific || !goalState.measurable || !goalState.achievable || !goalState.relevant || !goalState.timeBound) {
+            toast({ variant: 'destructive', title: 'Meta Incompleta', description: 'Por favor, complete a definição da meta SMART antes de salvar.' });
             return;
         }
 
-        if (currentMeta) {
+        // Sugerir categoria antes de salvar
+        setIsLoading(true);
+        try {
+            const categoryResult = await generateGoalCategory({
+                goalName: goalState.name,
+                categories: mockData.categoriasMetas,
+            });
+            const newMeta = {
+                id: metaToEdit ? metaToEdit.id : Date.now(),
+                nome: goalState.name,
+                categoria: categoryResult.category || 'Desenvolvimento Pessoal',
+                detalhes_smart: {
+                    specific: goalState.specific,
+                    measurable: goalState.measurable,
+                    achievable: goalState.achievable,
+                    relevant: goalState.relevant,
+                    timeBound: goalState.timeBound,
+                }
+            };
+            onSave(newMeta);
+            onClose();
+        } catch (error) {
+             console.error("Erro ao sugerir categoria:", error);
+             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. Salvando com categoria padrão.' });
+             const newMeta = {
+                id: metaToEdit ? metaToEdit.id : Date.now(),
+                nome: goalState.name,
+                categoria: 'Desenvolvimento Pessoal',
+                detalhes_smart: { ...goalState }
+             };
+             onSave(newMeta);
+             onClose();
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    return (
+         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 border border-cyan-500 rounded-lg w-full max-w-2xl h-[90vh] flex flex-col">
+                <h2 className="text-xl font-bold text-cyan-400 p-4 border-b border-gray-700">{metaToEdit ? 'Editar Meta SMART' : 'Assistente de Metas SMART'}</h2>
+
+                <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                    {conversation.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                            {msg.sender === 'ai' && <Bot className="h-6 w-6 text-cyan-400 flex-shrink-0" />}
+                            <div className={`max-w-lg p-3 rounded-lg ${msg.sender === 'user' ? 'bg-cyan-800 text-white' : 'bg-gray-700 text-gray-300'}`}>
+                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                            </div>
+                            {msg.sender === 'user' && <User className="h-6 w-6 text-gray-400 flex-shrink-0" />}
+                        </div>
+                    ))}
+                    {isLoading && ( <div className="flex items-start gap-3"><Bot className="h-6 w-6 text-cyan-400 flex-shrink-0" /><div className="max-w-lg p-3 rounded-lg bg-gray-700 text-gray-300"><div className="flex items-center space-x-2"><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse"></div></div></div></div>)}
+                    <div ref={conversationEndRef} />
+                </div>
+
+                <div className="p-4 border-t border-gray-700 flex items-center gap-2">
+                    <Input
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="Digite a sua resposta..."
+                        className="flex-1"
+                        disabled={isLoading || goalState.isComplete}
+                    />
+                    <Button onClick={handleSend} disabled={isLoading || goalState.isComplete} size="icon">
+                        <Send className="h-5 w-5" />
+                    </Button>
+                </div>
+                 <div className="p-4 border-t border-gray-700 flex justify-end space-x-2">
+                    <Button onClick={onClose} variant="secondary">Cancelar</Button>
+                    <Button onClick={handleSaveGoal} className="bg-cyan-600 hover:bg-cyan-500" disabled={isLoading}>
+                        Salvar Meta
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+const MetasView = ({ metas, setMetas, setMissions }) => {
+    const [showWizard, setShowWizard] = useState(false);
+    const [metaToEdit, setMetaToEdit] = useState(null);
+
+    const handleOpenWizard = (meta = null) => {
+        setMetaToEdit(meta);
+        setShowWizard(true);
+    };
+
+    const handleCloseWizard = () => {
+        setShowWizard(false);
+        setMetaToEdit(null);
+    };
+
+    const handleSave = (newOrUpdatedMeta) => {
+        if (metaToEdit) {
             // Edição
-            setMetas(metas.map(m => m.id === currentMeta.id ? { ...m, nome, categoria } : m));
+            setMetas(metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m));
+             // Atualizar a missão épica associada
+            setMissions(prev => prev.map(mission => 
+                mission.meta_associada === metaToEdit.nome 
+                ? { ...mission, nome: `Missão Épica: ${newOrUpdatedMeta.nome}`, meta_associada: newOrUpdatedMeta.nome }
+                : mission
+            ));
         } else {
             // Criação
-            const newMeta = { id: Date.now(), nome, categoria, user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
-            setMetas(prev => [...prev, newMeta]);
+            const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
+            setMetas(prev => [...prev, newMetaWithId]);
 
             // Criar missão épica associada
             const newRankedMission = {
                 id: Date.now() + 1, // Evitar colisão de id
-                nome: `Missão Épica: ${nome}`,
-                descricao: `Um grande passo em direção a: ${nome}.`,
+                nome: `Missão Épica: ${newMetaWithId.nome}`,
+                descricao: `Um grande passo em direção a: ${newMetaWithId.nome}. Detalhes: ${newMetaWithId.detalhes_smart.specific}`,
                 concluido: false,
                 rank: 'E', // Rank inicial
                 level_requirement: 1,
-                meta_associada: nome,
+                meta_associada: newMetaWithId.nome,
                 total_missoes_diarias: 10, // Default
                 ultima_missao_concluida_em: null,
                 missoes_diarias: [{
                     id: Date.now() + 2,
-                    nome: `Iniciar a jornada para "${nome}"`,
+                    nome: `Iniciar a jornada para "${newMetaWithId.nome}"`,
                     descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
                     xp_conclusao: 10,
                     concluido: false,
@@ -185,7 +307,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
             };
             setMissions(prev => [...prev, newRankedMission]);
         }
-        handleCloseModal();
+        handleCloseWizard();
     };
 
     const handleDelete = (id) => {
@@ -201,65 +323,51 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Metas</h1>
-                <Button onClick={() => handleOpenModal()} className="bg-cyan-600 hover:bg-cyan-500">
+                <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500">
                     <PlusCircle className="h-5 w-5 mr-2" />
                     Adicionar Meta
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma missão épica será criada.</p>
-            <div className="space-y-4">
+            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo, definidas com o método SMART. Para cada meta, uma missão épica será criada.</p>
+            <Accordion type="multiple" className="space-y-4">
                 {metas.map(meta => (
-                    <div key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-lg text-gray-200">{meta.nome}</p>
-                            <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
-                        </div>
-                        <div className="flex space-x-2">
-                            <Button onClick={() => handleOpenModal(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                            <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
-                        </div>
-                    </div>
+                    <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
+                        <AccordionTrigger className="hover:no-underline p-4">
+                            <div className="flex items-center justify-between w-full">
+                                <div>
+                                    <p className="text-lg text-gray-200">{meta.nome}</p>
+                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
+                                </div>
+                                <div className="flex space-x-2">
+                                    <Button onClick={(e) => {e.stopPropagation(); handleOpenWizard(meta)}} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                    <Button onClick={(e) => {e.stopPropagation(); handleDelete(meta.id)}} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                </div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 pt-0">
+                           <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
+                                <p><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
+                                <p><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
+                                <p><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
+                                <p><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
+                                <p><strong className="text-cyan-400">Prazo:</strong> {meta.detalhes_smart.timeBound}</p>
+                           </div>
+                        </AccordionContent>
+                    </AccordionItem>
                 ))}
-            </div>
+            </Accordion>
 
-            {showModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border border-cyan-500 rounded-lg p-6 w-full max-w-md">
-                        <h2 className="text-2xl font-bold text-cyan-400 mb-4">{currentMeta ? 'Editar Meta' : 'Nova Meta'}</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold mb-2 text-gray-400">Nome da Meta</label>
-                                <Input
-                                    type="text"
-                                    value={nome}
-                                    onChange={handleNomeChange}
-                                    placeholder="Ex: Aprender a programar em 6 meses"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-2 text-gray-400">Categoria</label>
-                                <Select onValueChange={setCategoria} value={categoria}>
-                                    <SelectTrigger disabled={isSuggesting}>
-                                        <SelectValue placeholder={isSuggesting ? "A IA está a pensar..." : "Selecione uma categoria"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {mockData.categoriasMetas.map(cat => (
-                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-end space-x-2">
-                            <Button onClick={handleCloseModal} variant="secondary">Cancelar</Button>
-                            <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-500">Salvar</Button>
-                        </div>
-                    </div>
-                </div>
+            {showWizard && (
+                <SmartGoalWizard
+                    onClose={handleCloseWizard}
+                    onSave={handleSave}
+                    metaToEdit={metaToEdit}
+                />
             )}
         </div>
     );
 };
+
 
 const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
     const [generating, setGenerating] = useState(null);
