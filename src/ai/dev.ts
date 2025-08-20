@@ -9,3 +9,4 @@ import '@/ai/flows/generate-smart-goal-questions.ts';
 import '@/ai/flows/generate-simple-smart-goal.ts';
 import '@/ai/flows/generate-initial-epic-mission.ts';
 import '@/ai/flows/generate-xp-value.ts';
+import '@/ai/flows/generate-mission-suggestion.ts';

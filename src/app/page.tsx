@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
@@ -11,6 +11,7 @@ import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/flows/generate-smart-goal-questions';
 import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
+import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 // --- COMPONENTES ---
@@ -584,6 +586,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
+    const [missionFeedback, setMissionFeedback] = useState({});
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -634,6 +637,38 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             xp_para_proximo_nivel: newXpToNextLevel,
         };
     };
+    
+    const handleMissionFeedback = async (missionName, missionDescription, feedbackType) => {
+        try {
+            const result = await generateMissionSuggestion({
+                missionName,
+                missionDescription,
+                feedbackType,
+            });
+
+            toast({
+                title: "Feedback do Sistema",
+                description: result.suggestion,
+            });
+
+            if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
+                const feedbackValue = feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil';
+                // We find the ranked mission this daily mission belongs to, and store the feedback.
+                const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.nome === missionName));
+                if (rankedMission) {
+                    setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
+                }
+            }
+        } catch (error) {
+            console.error("Erro ao processar feedback da missão:", error);
+            toast({
+                variant: "destructive",
+                title: "Erro de Comunicação",
+                description: "Não foi possível enviar o seu feedback ao Sistema.",
+            });
+        }
+    };
+
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
         const now = new Date();
@@ -701,13 +736,24 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 .join('\n');
 
             const meta = metas.find(m => m.nome === rankedMission.meta_associada)
+            const feedbackForNextMission = missionFeedback[rankedMission.id];
 
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
                 history: history || `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
                 userLevel: profile.nivel,
+                feedback: feedbackForNextMission,
             });
+
+            // Clear feedback after using it
+            if (feedbackForNextMission) {
+                setMissionFeedback(prev => {
+                    const newState = {...prev};
+                    delete newState[rankedMission.id];
+                    return newState;
+                });
+            }
 
             const newDailyMission = {
                 id: Date.now(),
@@ -840,8 +886,26 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                             <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
                                             <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
                                         </div>
-                                        <div className="text-right ml-4 flex-shrink-0">
+                                        <div className="text-right ml-4 flex-shrink-0 flex items-center gap-2">
                                             <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400">
+                                                        <LifeBuoy className="h-5 w-5" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'hint')}>
+                                                        Preciso de uma dica
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'too_hard')}>
+                                                        Está muito difícil
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'too_easy')}>
+                                                        Está muito fácil
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </div>
                                 )}
