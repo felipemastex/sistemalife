@@ -4,6 +4,7 @@
 import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { statCategoryMapping } from '@/lib/mappings';
 
 const statIcons = {
@@ -16,7 +17,7 @@ const statIcons = {
 };
 
 
-export const SkillsView = ({ skills, setSkills }) => {
+export const SkillsView = ({ skills, setSkills, metas, missions }) => {
     const getSkillColor = (category) => {
         switch(category){
             case 'Desenvolvimento de Carreira': return 'border-blue-500';
@@ -28,6 +29,16 @@ export const SkillsView = ({ skills, setSkills }) => {
 
     const handleDeleteSkill = (skillId) => {
         setSkills(currentSkills => currentSkills.filter(s => s.id !== skillId));
+    };
+
+    const isSkillDeletable = (skillId) => {
+        const associatedMeta = metas.find(m => m.habilidade_associada_id === skillId);
+        if (!associatedMeta) {
+            return true; // No associated goal, can be deleted
+        }
+        // A goal is active if any of its missions are not completed
+        const isGoalActive = missions.some(miss => miss.meta_associada === associatedMeta.nome && !miss.concluido);
+        return !isGoalActive; // Can be deleted if goal is not active
     };
     
     return (
@@ -41,6 +52,7 @@ export const SkillsView = ({ skills, setSkills }) => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
                     const canLevelUp = skill.nivel_atual > 0 && skill.pre_requisito ? skills.find(s => s.id === skill.pre_requisito)?.nivel_atual > 0 : skill.nivel_atual > 0;
                     const stats = statCategoryMapping[skill.categoria] || [];
+                    const deletable = isSkillDeletable(skill.id);
                     
                     return(
                     <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4 transition-opacity ${!canLevelUp ? 'opacity-60' : ''}`}>
@@ -48,25 +60,40 @@ export const SkillsView = ({ skills, setSkills }) => {
                             <div className="flex-1">
                                 <div className="flex justify-between items-center">
                                     <p className="text-lg font-bold text-gray-200">{skill.nome}</p>
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Tem a certeza que quer excluir a habilidade "{skill.nome}"? Esta ação não pode ser desfeita. Todo o progresso nesta habilidade será perdido.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                     
+                                     <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span tabIndex={deletable ? -1 : 0}>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8" disabled={!deletable}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Tem a certeza que quer excluir a habilidade "{skill.nome}"? Esta ação não pode ser desfeita.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                </span>
+                                            </TooltipTrigger>
+                                            {!deletable && (
+                                                <TooltipContent>
+                                                    <p>Esta habilidade não pode ser excluída porque está vinculada a uma meta ativa.</p>
+                                                </TooltipContent>
+                                            )}
+                                        </Tooltip>
+                                     </TooltipProvider>
+
                                 </div>
 
                                 <p className="text-sm text-gray-400 mt-1">{skill.descricao}</p>
