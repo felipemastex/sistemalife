@@ -666,7 +666,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                     <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
                                 </div>
                            </AccordionTrigger>
-                           <div className="flex space-x-2 p-4">
+                           <div className="flex flex-col sm:flex-row gap-2 p-4">
                                 <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -713,9 +713,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 )})}
             </Accordion>
             
-            <Dialog open={showWizardDialog} onOpenChange={handleCloseWizard}>
-                {renderWizardContent()}
-            </Dialog>
+            {showWizardDialog && (
+                <Dialog open={showWizardDialog} onOpenChange={handleCloseWizard}>
+                    {renderWizardContent()}
+                </Dialog>
+            )}
             
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
                 <DialogContent className="max-w-2xl">
