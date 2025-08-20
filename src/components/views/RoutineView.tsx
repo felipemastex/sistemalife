@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 
 export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
@@ -320,41 +321,43 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
              <p className="text-gray-400 mb-6">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
 
             <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
-                <TabsList className="grid w-full grid-cols-7">
-                    {weekDays.map(day => (
-                       <TabsTrigger 
-                            key={day.name} 
-                            value={day.name} 
-                            className={cn(
-                                "flex-col p-2 h-auto capitalize data-[state=active]:bg-gray-700",
-                                day.isToday && "bg-cyan-500/20 text-cyan-300"
-                            )}
-                        >
-                            <span>{day.name.substring(0,3)}</span>
-                            <span className="font-bold text-lg">{day.date}</span>
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <TabsList className="inline-flex h-auto">
+                        {weekDays.map(day => (
+                           <TabsTrigger 
+                                key={day.name} 
+                                value={day.name} 
+                                className={cn(
+                                    "flex-col p-2 h-auto capitalize data-[state=active]:bg-gray-700 w-24",
+                                    day.isToday && "bg-cyan-500/20 text-cyan-300"
+                                )}
+                            >
+                                <span>{day.name.substring(0,3)}</span>
+                                <span className="font-bold text-lg">{day.date}</span>
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
                 
                 {dayNames.map(day => (
-                    <TabsContent key={day} value={day}>
-                        {/* Unscheduled Missions Section */}
+                    <TabsContent key={day} value={day} className="mt-6">
                         {unscheduledMissions.length > 0 && (
                             <div className="my-8">
                                 <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
                                 <div className="space-y-4">
                                     {unscheduledMissions.map(mission => (
                                         <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                                 <div className="w-full">
                                                     <p className="font-bold text-gray-200">{mission.nome}</p>
-                                                    <p className="text-sm text-gray-400">{mission.descricao}</p>
+                                                    <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
                                                 </div>
                                                 <Button 
                                                     onClick={() => handleGetSuggestion(mission)} 
                                                     disabled={isLoadingSuggestion === mission.id}
                                                     size="sm"
-                                                    className="w-full sm:w-auto flex-shrink-0"
+                                                    className="w-full md:w-auto flex-shrink-0"
                                                 >
                                                     {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
                                                     <BrainCircuit className="ml-2 h-4 w-4"/>
@@ -384,9 +387,8 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                             <div className="space-y-3">
                                 {sortedRoutineForDay.map(item => (
                                     <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <div className="flex items-center">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
                                             <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
-                                            <span className="mx-4 text-gray-500">|</span>
                                             <p className="text-lg text-gray-200 break-all">{item.activity}</p>
                                         </div>
                                         <div className="flex space-x-2 self-end sm:self-center">
@@ -478,3 +480,5 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         </div>
     );
 };
+
+    
