@@ -43,7 +43,11 @@ const Dashboard = ({ profile }) => {
         setAiAdvice(result.message);
       } catch (e) {
         console.error("Erro ao buscar mensagem motivacional:", e);
-        setAiAdvice("Erro: Não foi possível comunicar com o Sistema.");
+        if (e instanceof Error && e.message.includes('429')) {
+             setAiAdvice("Quota diária de IA excedida. Mensagens do sistema retornarão amanhã.");
+        } else {
+             setAiAdvice("Erro: Não foi possível comunicar com o Sistema.");
+        }
       } finally {
         setLoading(false);
       }
@@ -142,6 +146,15 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
+    
+    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+        console.error("Erro de IA:", error);
+        if (error instanceof Error && error.message.includes('429')) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        } else {
+             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+        }
+    };
 
     const handleInitialQuestion = useCallback(async (goalName) => {
         setIsLoading(true);
@@ -154,18 +167,17 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             const result = await generateSmartGoalQuestion({ goal: initialGoal, history: [] });
             if (result.nextQuestion) {
                 setCurrentQuestion(result.nextQuestion);
-                setExampleAnswers(result.exampleAnswers || []);
+                setExampleAnswers(userInput.length > 0 ? result.exampleAnswers || [] : []);
             } else if (result.isComplete && result.refinedGoal) {
                 await handleSaveGoal(result.refinedGoal);
             }
         } catch (error) {
-            console.error("Erro ao gerar a primeira pergunta:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível iniciar o assistente. O Sistema pode estar sobrecarregado.' });
+            handleToastError(error, 'Não foi possível iniciar o assistente.');
             onClose();
         } finally {
             setIsLoading(false);
         }
-    },[goalState, metaToEdit, onClose, toast]);
+    },[goalState, metaToEdit, onClose, toast, userInput]);
 
     useEffect(() => {
       if (goalState.name && !currentQuestion) {
@@ -203,8 +215,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
                 setExampleAnswers(result.exampleAnswers || []);
             }
         } catch (error) {
-            console.error("Erro ao gerar próxima pergunta:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível continuar. Tente novamente mais tarde.' });
+            handleToastError(error);
         } finally {
             setIsLoading(false);
         }
@@ -233,8 +244,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             toast({ title: "Meta SMART Salva!", description: "A sua nova meta foi definida com sucesso." });
             onClose(); 
         } catch (error) {
-             console.error("Erro ao sugerir categoria:", error);
-             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.' });
+             handleToastError(error, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
              const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
                 nome: finalGoal.name,
@@ -339,13 +349,20 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const [metaToEdit, setMetaToEdit] = useState(null);
     const { toast } = useToast();
 
+    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+        console.error("Erro de IA:", error);
+        if (error instanceof Error && error.message.includes('429')) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        } else {
+             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+        }
+    };
+
     const handleOpenWizard = (meta = null) => {
         setMetaToEdit(meta);
         if (meta) {
-            // Directly open the detailed wizard for editing
             startDetailedMode(meta);
         } else {
-            // Show mode selection for creating a new goal
             setShowModeSelection(true);
         }
     };
@@ -359,17 +376,14 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     };
 
     const handleSave = async (newOrUpdatedMeta) => {
-        // This function handles both create and update
         setIsLoadingSimpleGoal(true);
         
         try {
             if (metaToEdit) {
                 // --- UPDATE LOGIC ---
-                // Replace the existing meta with the updated version
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 setMetas(updatedMetas);
                 
-                // If the goal name changed, we need to update the associated mission link
                 if (metaToEdit.nome !== newOrUpdatedMeta.nome) {
                     setMissions(prev => prev.map(mission => 
                         mission.meta_associada === metaToEdit.nome 
@@ -381,10 +395,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
             } else {
                 // --- CREATE LOGIC ---
-                // Assign a new ID
                 const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
                 
-                // Find related history from already completed goals
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
                     .map(m => `- Meta Concluída: ${m.nome}`)
@@ -403,9 +415,9 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     descricao: result.epicMissionDescription,
                     concluido: false, 
                     rank: result.rank, 
-                    level_requirement: 1, // Level requirement can be adjusted later
+                    level_requirement: 1,
                     meta_associada: newMetaWithId.nome, 
-                    total_missoes_diarias: 10, // Default value, can be dynamic
+                    total_missoes_diarias: 10,
                     ultima_missao_concluida_em: null,
                     missoes_diarias: [{
                         id: Date.now() + 2,
@@ -417,14 +429,12 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     }]
                 };
                 
-                // Add new meta and new mission to state
                 setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, newRankedMission]);
 
             }
         } catch (error) {
-            console.error("Erro ao salvar meta ou gerar missão épica:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível salvar a meta ou gerar a missão épica. O Sistema pode estar sobrecarregado.' });
+            handleToastError(error, 'Não foi possível salvar a meta ou gerar a missão épica.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -435,24 +445,20 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         if (!simpleGoalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            // 1. Generate SMART details from a simple name
             const smartResult = await generateSimpleSmartGoal({ goalName: simpleGoalName });
             
-            // 2. Generate a category for the new goal
             const categoryResult = await generateGoalCategory({
                 goalName: smartResult.refinedGoal.name,
                 categories: mockData.categoriasMetas,
             });
 
-            // 3. Call the main save function with the newly generated data
             await handleSave({
                 nome: smartResult.refinedGoal.name,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: smartResult.refinedGoal
             });
         } catch (error) {
-            console.error("Erro ao criar meta simples:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. O Sistema pode estar sobrecarregado. Tente novamente.' });
+            handleToastError(error, 'Não foi possível criar a meta.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -463,7 +469,6 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const handleDelete = (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
-            // Also delete the associated epic mission
             setMissions(prev => prev.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(metas.filter(m => m.id !== id));
         }
@@ -591,6 +596,15 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
+    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+        console.error("Erro de IA:", error);
+        if (error instanceof Error && error.message.includes('429')) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        } else {
+             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+        }
+    };
+
     useEffect(() => {
         const interval = setInterval(() => {
             const now = new Date();
@@ -663,19 +677,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
             if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
                 const feedbackValue = feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil';
-                // We find the ranked mission this daily mission belongs to, and store the feedback.
                 const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.nome === missionName));
                 if (rankedMission) {
                     setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
                 }
             }
         } catch (error) {
-            console.error("Erro ao processar feedback da missão:", error);
-            toast({
-                variant: "destructive",
-                title: "Erro de Comunicação",
-                description: "Não foi possível enviar o seu feedback ao Sistema. Pode estar sobrecarregado.",
-            });
+            handleToastError(error, 'Não foi possível enviar o seu feedback ao Sistema.');
         }
     };
 
@@ -726,12 +734,14 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         const oldLevel = profile.nivel;
         let newProfile = { ...profile, xp: profile.xp + xpGained };
+        let leveledUp = false;
         while (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
+            leveledUp = true;
         }
         setProfile(newProfile);
 
-        if (newProfile.nivel > oldLevel) {
+        if (leveledUp) {
             toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
         }
         
@@ -759,7 +769,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 feedback: feedbackForNextMission,
             });
 
-            // Clear feedback after using it
             if (feedbackForNextMission) {
                 setMissionFeedback(prev => {
                     const newState = {...prev};
@@ -786,12 +795,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
 
         } catch (error) {
-            console.error("Erro ao gerar nova missão diária:", error);
-            toast({
-                variant: "destructive",
-                title: "Erro do Sistema",
-                description: "Não foi possível gerar a próxima missão diária. O servidor pode estar sobrecarregado.",
-            });
+            handleToastError(error, "Não foi possível gerar a próxima missão diária.");
         } finally {
             setGenerating(null);
         }
@@ -1079,10 +1083,15 @@ const AIChatView = ({ profile, metas }) => {
           setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             console.error("Erro ao buscar conselho da IA:", error);
+            let errorMessage = 'Não foi possível obter uma resposta. O Sistema pode estar sobrecarregado.';
+            if (error instanceof Error && error.message.includes('429')) {
+                errorMessage = 'Quota de IA excedida. Você atingiu o limite de pedidos diários. Tente novamente amanhã.';
+            }
+
             toast({
               variant: 'destructive',
               title: 'Erro de comunicação com o sistema',
-              description: 'Não foi possível obter uma resposta. O Sistema pode estar sobrecarregado.',
+              description: errorMessage,
             })
             setMessages(prev => [...prev, { sender: 'ai', text: 'Erro de comunicação. Verifique a sua conexão e tente novamente.'}])
         } finally {
