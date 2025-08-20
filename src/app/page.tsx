@@ -106,40 +106,49 @@ const Dashboard = ({ profile }) => {
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const isEditing = !!metaToEdit;
-    
+
     const getInitialGoalState = useCallback(() => {
-        if (isEditing) {
+        if (isEditing && metaToEdit) {
             return {
-                name: metaToEdit.nome,
-                specific: metaToEdit.detalhes_smart.specific,
-                measurable: metaToEdit.detalhes_smart.measurable,
-                achievable: metaToEdit.detalhes_smart.achievable,
-                relevant: metaToEdit.detalhes_smart.relevant,
-                timeBound: metaToEdit.detalhes_smart.timeBound,
+                id: metaToEdit.id,
+                nome: metaToEdit.nome || '',
+                categoria: metaToEdit.categoria || '',
+                detalhes_smart: {
+                    specific: metaToEdit.detalhes_smart?.specific || '',
+                    measurable: metaToEdit.detalhes_smart?.measurable || '',
+                    achievable: metaToEdit.detalhes_smart?.achievable || '',
+                    relevant: metaToEdit.detalhes_smart?.relevant || '',
+                    timeBound: metaToEdit.detalhes_smart?.timeBound || '',
+                }
             };
         }
         return {
-            name: '',
-            specific: '',
-            measurable: '',
-            achievable: '',
-            relevant: '',
-            timeBound: '',
+            id: null,
+            nome: '',
+            categoria: '',
+            detalhes_smart: {
+                specific: '',
+                measurable: '',
+                achievable: '',
+                relevant: '',
+                timeBound: '',
+            }
         };
     }, [isEditing, metaToEdit]);
-    
+
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [goalState, setGoalState] = useState(getInitialGoalState);
+    const [goalState, setGoalState] = useState(getInitialGoalState());
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
 
     useEffect(() => {
-        setGoalState(getInitialGoalState());
+        const initialState = getInitialGoalState();
+        setGoalState(initialState);
         if (isEditing) {
-             setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
+            setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
         }
     }, [metaToEdit, isEditing, getInitialGoalState]);
 
@@ -152,9 +161,10 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         }
     };
 
-    const handleInitialQuestion = useCallback(async (initialGoal) => {
+    const handleInitialQuestion = useCallback(async (initialGoalName) => {
         setIsLoading(true);
-        setGoalState(initialGoal);
+        const initialGoal = { name: initialGoalName };
+        setGoalState(prev => ({...prev, name: initialGoalName}));
         
         try {
             const result = await generateSmartGoalQuestion({ goal: initialGoal, history: [] });
@@ -182,8 +192,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         setIsLoading(true);
         setExampleAnswers([]);
         
-        let updatedGoal = { ...goalState };
-        // This is a bit naive, a better approach would be to know which field we are asking about
+        let updatedGoal = { ...goalState.detalhes_smart, name: goalState.nome };
+        
         if (!updatedGoal.specific) updatedGoal.specific = userInput;
         else if (!updatedGoal.measurable) updatedGoal.measurable = userInput;
         else if (!updatedGoal.achievable) updatedGoal.achievable = userInput;
@@ -191,7 +201,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         else if (!updatedGoal.timeBound) updatedGoal.timeBound = userInput;
         
         setUserInput(''); 
-        setGoalState(updatedGoal);
+        setGoalState(prev => ({...prev, detalhes_smart: updatedGoal}));
 
         try {
             const result = await generateSmartGoalQuestion({ goal: updatedGoal, history: newHistory });
@@ -209,23 +219,25 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         }
     };
     
-    const handleSaveGoal = async (finalGoal) => {
+    const handleSaveGoal = async (finalGoalDetails) => {
         setIsLoading(true);
         try {
+            const finalName = finalGoalDetails.name || goalState.nome;
+            
             const categoryResult = await generateGoalCategory({
-                goalName: finalGoal.name,
+                goalName: finalName,
                 categories: mockData.categoriasMetas,
             });
             const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
-                nome: finalGoal.name,
+                nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: {
-                    specific: finalGoal.specific,
-                    measurable: finalGoal.measurable,
-                    achievable: finalGoal.achievable,
-                    relevant: finalGoal.relevant,
-                    timeBound: finalGoal.timeBound,
+                    specific: finalGoalDetails.specific,
+                    measurable: finalGoalDetails.measurable,
+                    achievable: finalGoalDetails.achievable,
+                    relevant: finalGoalDetails.relevant,
+                    timeBound: finalGoalDetails.timeBound,
                 }
             };
             onSave(newMeta);
@@ -233,11 +245,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             onClose(); 
         } catch (error) {
              handleToastError(error, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
+             const finalName = finalGoalDetails.name || goalState.nome;
              const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
-                nome: finalGoal.name,
+                nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
-                detalhes_smart: { ...finalGoal }
+                detalhes_smart: finalGoalDetails
              };
              onSave(newMeta);
              onClose();
@@ -246,10 +259,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         }
     }
     
-    // Simplified save for edit mode
     const handleEditSave = () => {
-        const finalGoalState = { ...goalState };
-        handleSaveGoal(finalGoalState);
+        handleSaveGoal(goalState.detalhes_smart);
     }
 
     const renderInitialScreen = () => (
@@ -260,12 +271,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion({name: userInput})}
+                onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion(userInput)}
                 placeholder="Ex: Aprender a programar, correr uma maratona, ler mais livros..."
                 className="max-w-lg mx-auto"
                 disabled={isLoading}
             />
-            <Button onClick={() => userInput.trim() && handleInitialQuestion({name: userInput})} className="mt-4" disabled={isLoading || !userInput.trim()}>
+            <Button onClick={() => userInput.trim() && handleInitialQuestion(userInput)} className="mt-4" disabled={isLoading || !userInput.trim()}>
                 Começar a Definir
             </Button>
         </div>
@@ -273,27 +284,27 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     
      const renderEditingScreen = () => (
         <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
-             <h2 className="text-2xl text-center font-bold text-cyan-400 mb-4">Editar Meta: {goalState.name}</h2>
+             <h2 className="text-2xl text-center font-bold text-cyan-400 mb-4">Editar Meta: {goalState.nome}</h2>
              <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 space-y-4">
                 <div>
                     <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
-                    <Textarea id="specific" value={goalState.specific} onChange={(e) => setGoalState({...goalState, specific: e.target.value})} className="min-h-[60px]" />
+                    <Textarea id="specific" value={goalState.detalhes_smart.specific} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[60px]" />
                 </div>
                  <div>
                     <Label htmlFor="measurable" className="text-cyan-400">Mensurável</Label>
-                    <Textarea id="measurable" value={goalState.measurable} onChange={(e) => setGoalState({...goalState, measurable: e.target.value})} className="min-h-[60px]" />
+                    <Textarea id="measurable" value={goalState.detalhes_smart.measurable} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[60px]" />
                 </div>
                  <div>
                     <Label htmlFor="achievable" className="text-cyan-400">Atingível</Label>
-                    <Textarea id="achievable" value={goalState.achievable} onChange={(e) => setGoalState({...goalState, achievable: e.target.value})} className="min-h-[60px]" />
+                    <Textarea id="achievable" value={goalState.detalhes_smart.achievable} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[60px]" />
                 </div>
                  <div>
                     <Label htmlFor="relevant" className="text-cyan-400">Relevante</Label>
-                    <Textarea id="relevant" value={goalState.relevant} onChange={(e) => setGoalState({...goalState, relevant: e.target.value})} className="min-h-[60px]" />
+                    <Textarea id="relevant" value={goalState.detalhes_smart.relevant} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[60px]" />
                 </div>
                  <div>
                     <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
-                    <Textarea id="timeBound" value={goalState.timeBound} onChange={(e) => setGoalState({...goalState, timeBound: e.target.value})} className="min-h-[60px]" />
+                    <Textarea id="timeBound" value={goalState.detalhes_smart.timeBound} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[60px]" />
                 </div>
                 <div className="flex justify-end pt-4">
                      <Button onClick={handleEditSave} disabled={isLoading}>
@@ -306,7 +317,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 
     const renderQuestionScreen = () => (
          <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
-            <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.name}</span></p>
+            <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.nome}</span></p>
             <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 text-center shadow-lg">
                 {isLoading && !currentQuestion ? (
                      <div className="flex items-center justify-center space-x-2 h-48">
@@ -360,7 +371,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         if(isEditing){
             return renderEditingScreen();
         }
-        if(!goalState.name){
+        if(!goalState.nome){
             return renderInitialScreen();
         }
         return renderQuestionScreen();
@@ -399,6 +410,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const handleOpenWizard = (meta = null) => {
         if (meta) {
             setMetaToEdit(meta);
+            setShowModeSelection(false);
             setShowWizard(true);
         } else {
             setMetaToEdit(null);
@@ -416,17 +428,18 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
     const handleSave = async (newOrUpdatedMeta) => {
         setIsLoadingSimpleGoal(true);
-        const isEditing = !!metaToEdit;
+        const isEditing = !!(newOrUpdatedMeta.id && metas.some(m => m.id === newOrUpdatedMeta.id));
         
         try {
             if (isEditing) {
                 // --- UPDATE LOGIC ---
+                const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 setMetas(updatedMetas);
                 
-                if (metaToEdit.nome !== newOrUpdatedMeta.nome) {
+                if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
                     setMissions(prev => prev.map(mission => 
-                        mission.meta_associada === metaToEdit.nome 
+                        mission.meta_associada === metaOriginal.nome 
                         ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                         : mission
                     ));
@@ -496,6 +509,11 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 category = categoryResult.category;
             } catch (categoryError) {
                 console.error("AI category suggestion failed, using default:", categoryError);
+                toast({
+                    variant: 'destructive',
+                    title: 'Falha na Sugestão de Categoria',
+                    description: 'A categoria foi definida como padrão devido a um erro na IA.'
+                });
             }
 
             await handleSave({
@@ -1171,7 +1189,101 @@ const SkillsView = ({ skills, profile }) => {
     );
 };
 
-const AIChatView = ({ profile, metas }) => {
+const RoutineView = ({ routine, setRoutine }) => {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [currentItem, setCurrentItem] = useState(null);
+    const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
+
+    const handleOpenDialog = (item = null) => {
+        setCurrentItem(item);
+        if (item) {
+            setEditedItem({ start_time: item.start_time, end_time: item.end_time, activity: item.activity });
+        } else {
+            setEditedItem({ id: null, start_time: '', end_time: '', activity: '' });
+        }
+        setIsDialogOpen(true);
+    };
+
+    const handleSave = () => {
+        if (currentItem) {
+            // Edit
+            setRoutine(routine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item));
+        } else {
+            // Add
+            setRoutine([...routine, { ...editedItem, id: Date.now() }]);
+        }
+        setIsDialogOpen(false);
+    };
+
+    const handleDelete = (id) => {
+        setRoutine(routine.filter(item => item.id !== id));
+    };
+
+    const sortedRoutine = [...routine].sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+    return (
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-cyan-400">Rotina Diária</h1>
+                <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500">
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Adicionar Atividade
+                </Button>
+            </div>
+            <p className="text-gray-400 mb-6">Mantenha a sua rotina diária atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+
+            <div className="space-y-3">
+                {sortedRoutine.map(item => (
+                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                            <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
+                            <span className="mx-4 text-gray-500">|</span>
+                            <p className="text-lg text-gray-200">{item.activity}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                            <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                            <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                        </div>
+                    </div>
+                ))}
+                 {sortedRoutine.length === 0 && (
+                    <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
+                        <p className="text-gray-400">A sua rotina está vazia.</p>
+                        <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
+                    </div>
+                )}
+            </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{currentItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="start_time" className="text-right">Início</Label>
+                            <Input id="start_time" type="time" value={editedItem.start_time} onChange={(e) => setEditedItem({...editedItem, start_time: e.target.value})} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="end_time" className="text-right">Fim</Label>
+                            <Input id="end_time" type="time" value={editedItem.end_time} onChange={(e) => setEditedItem({...editedItem, end_time: e.target.value})} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="activity" className="text-right">Atividade</Label>
+                            <Input id="activity" value={editedItem.activity} onChange={(e) => setEditedItem({...editedItem, activity: e.target.value})} className="col-span-3" placeholder="Ex: Trabalho, Almoço, Exercício"/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleSave}>Salvar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+};
+
+
+const AIChatView = ({ profile, metas, routine, missions }) => {
     const [messages, setMessages] = useState([{ sender: 'ai', text: 'Sistema online. Qual é a sua diretiva?' }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -1197,6 +1309,8 @@ const AIChatView = ({ profile, metas }) => {
             userName: profile.nome_utilizador,
             profile: JSON.stringify(profile),
             metas: JSON.stringify(metas),
+            routine: JSON.stringify(routine),
+            missions: JSON.stringify(missions.filter(m => !m.concluido)),
             query: input,
           });
           const aiMessage = { sender: 'ai', text: result.response };
@@ -1217,7 +1331,7 @@ const AIChatView = ({ profile, metas }) => {
         } finally {
           setIsLoading(false);
         }
-    }, [input, isLoading, profile, metas, toast]);
+    }, [input, isLoading, profile, metas, routine, missions, toast]);
 
 
     return (
@@ -1262,12 +1376,14 @@ export default function App() {
   const [metas, setMetas] = useState([]);
   const [missions, setMissions] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [routine, setRoutine] = useState([]);
   
   useEffect(() => {
     const initialProfile = mockData.perfis[0];
     const initialMetas = mockData.metas;
     const initialMissions = [...mockData.missoes];
     const initialSkills = mockData.habilidades;
+    const initialRoutine = mockData.rotina;
     
     initialMetas.forEach(meta => {
         const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
@@ -1299,6 +1415,7 @@ export default function App() {
     setMetas(initialMetas);
     setMissions(initialMissions);
     setSkills(initialSkills);
+    setRoutine(initialRoutine);
   }, []);
   
   const NavItem = ({ icon: Icon, label, page }) => (
@@ -1328,8 +1445,10 @@ export default function App() {
         return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} />;
       case 'skills':
         return <SkillsView skills={skills} profile={profile} />;
+      case 'routine':
+        return <RoutineView routine={routine} setRoutine={setRoutine} />;
       case 'ai-chat':
-        return <AIChatView profile={profile} metas={metas} />;
+        return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
       default:
         return <Dashboard profile={profile} />;
     }
@@ -1347,6 +1466,7 @@ export default function App() {
             <NavItem icon={User} label="Dashboard" page="dashboard" />
             <NavItem icon={BookOpen} label="Metas" page="metas" />
             <NavItem icon={Target} label="Missões" page="missions" />
+            <NavItem icon={Clock} label="Rotina" page="routine" />
             <NavItem icon={TreeDeciduous} label="Habilidades" page="skills" />
             <NavItem icon={Bot} label="Interagir com IA" page="ai-chat" />
         </nav>

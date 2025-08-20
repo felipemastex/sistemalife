@@ -231,3 +231,14 @@ export const categoriasMetas = [
     'Cultura & Conhecimento',
     'Viagens & Aventura'
 ];
+
+export const rotina = [
+    { id: 1, start_time: '07:00', end_time: '07:30', activity: 'Acordar e Meditar' },
+    { id: 2, start_time: '08:00', end_time: '09:00', activity: 'Exercício Físico' },
+    { id: 3, start_time: '09:30', end_time: '12:30', activity: 'Trabalho Focado (Bloco 1)' },
+    { id: 4, start_time: '12:30', end_time: '13:30', activity: 'Almoço' },
+    { id: 5, start_time: '13:30', end_time: '17:00', activity: 'Trabalho Focado (Bloco 2)' },
+    { id: 6, start_time: '18:00', end_time: '19:00', activity: 'Estudo/Leitura' },
+    { id: 7, start_time: '20:00', end_time: '21:00', activity: 'Jantar e Tempo em Família' },
+    { id: 8, start_time: '22:30', end_time: '23:00', activity: 'Preparar para Dormir' },
+]
