@@ -27,24 +27,6 @@ const GenerateSystemAdviceOutputSchema = z.object({
 });
 export type GenerateSystemAdviceOutput = z.infer<typeof GenerateSystemAdviceOutputSchema>;
 
-const suggestRoutineTool = ai.defineTool(
-    {
-        name: 'suggestRoutineTool',
-        description: 'Usado quando o utilizador pergunta onde encaixar uma missão na sua rotina. Analisa a rotina do utilizador e a missão para encontrar o melhor horário.',
-        inputSchema: z.object({
-            missionName: z.string().describe("O nome da missão para a qual a sugestão de horário é necessária."),
-            missionDescription: z.string().describe("A descrição da missão."),
-        }),
-        outputSchema: z.string().describe("A sugestão de horário gerada."),
-    },
-    async (input) => {
-        // This is a wrapper. We need the full routine from the parent flow's scope.
-        // It's a bit of a workaround because tools don't have access to the parent flow's direct input.
-        // The `generateSystemAdviceFlow` will provide the routine.
-        return "ROUTINE_SUGGESTION_PLACEHOLDER";
-    }
-);
-
 export async function generateSystemAdvice(
   input: GenerateSystemAdviceInput
 ): Promise<GenerateSystemAdviceOutput> {
@@ -57,38 +39,62 @@ const generateSystemAdviceFlow = ai.defineFlow(
     name: 'generateSystemAdviceFlow',
     inputSchema: GenerateSystemAdviceInputSchema,
     outputSchema: GenerateSystemAdviceOutputSchema,
-    tools: [suggestRoutineTool]
   },
   async (input) => {
-    const prompt = `Você é o 'Sistema', uma IA de um RPG da vida real. O utilizador é ${input.userName}.
-O perfil dele: ${input.profile}
-Os seus objetivos a longo prazo (Metas): ${input.metas}
-A sua rotina diária: ${input.routine}
-As suas missões ativas: ${input.missions}
-
-Diretiva do utilizador: "${input.query}"
-
-Responda de forma concisa, no personagem do Sistema. Seja útil e estratégico. Se o utilizador perguntar sobre a sua rotina ou como encaixar uma tarefa, use a ferramenta \`suggestRoutineTool\` para fornecer uma recomendação específica. Para usar a ferramenta, você precisa identificar qual missão o utilizador quer agendar.`;
-
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        tools: [suggestRoutineTool],
+    
+    // Etapa 1: Verificar se a consulta é sobre agendamento de rotina.
+    const analysisPrompt = `
+        Analise a diretiva do utilizador. A pergunta é sobre onde, quando ou como encaixar uma tarefa, missão ou atividade na rotina diária? 
+        Responda com um JSON contendo 'isRoutineQuery: boolean' e, se for verdade, 'missionToSchedule: string' que identifica a missão que o utilizador quer agendar.
+        
+        Diretiva: "${input.query}"
+        Missões Ativas: ${input.missions}
+    `;
+    
+    const AnalysisSchema = z.object({
+        isRoutineQuery: z.boolean(),
+        missionToSchedule: z.string().optional(),
     });
 
-    if (output?.toolCalls) {
-        for (const toolCall of output.toolCalls) {
-            if (toolCall.name === 'suggestRoutineTool' && toolCall.input) {
-                const suggestion = await generateRoutineSuggestion({
-                    routine: JSON.parse(input.routine),
-                    missionName: toolCall.input.missionName,
-                    missionDescription: toolCall.input.missionDescription,
-                });
-                return { response: suggestion.suggestion };
-            }
+    const { output: analysis } = await ai.generate({
+        prompt: analysisPrompt,
+        model: 'googleai/gemini-2.5-flash',
+        output: { schema: AnalysisSchema },
+    });
+
+    // Etapa 2: Se for uma consulta de rotina, gerar a sugestão.
+    if (analysis?.isRoutineQuery && analysis.missionToSchedule) {
+        const activeMissions = JSON.parse(input.missions);
+        // Tentar encontrar a missão completa pelo nome
+        const targetRankedMission = activeMissions.find(m => m.nome.toLowerCase().includes(analysis.missionToSchedule.toLowerCase()));
+        const dailyMission = targetRankedMission?.missoes_diarias.find(dm => !dm.concluido);
+
+        if (dailyMission) {
+            const suggestion = await generateRoutineSuggestion({
+                routine: JSON.parse(input.routine),
+                missionName: dailyMission.nome,
+                missionDescription: dailyMission.descricao,
+            });
+            return { response: suggestion.suggestion };
         }
     }
 
-    return { response: output?.text || "Não foi possível gerar uma resposta." };
+    // Etapa 3: Se não for sobre rotina, gerar uma resposta geral.
+    const generalPrompt = `Você é o 'Sistema', uma IA de um RPG da vida real. O utilizador é ${input.userName}.
+        O perfil dele: ${input.profile}
+        Os seus objetivos a longo prazo (Metas): ${input.metas}
+        A sua rotina diária: ${input.routine}
+        As suas missões ativas: ${input.missions}
+
+        Diretiva do utilizador: "${input.query}"
+
+        Responda de forma concisa, no personagem do Sistema. Seja útil e estratégico.`;
+
+    const {output: generalOutput} = await ai.generate({
+        prompt: generalPrompt,
+        model: 'googleai/gemini-2.5-flash',
+    });
+
+    return { response: generalOutput?.text || "Não foi possível gerar uma resposta." };
   }
 );
