@@ -18,6 +18,7 @@ const Dashboard = ({ profile }) => {
 
   useEffect(() => {
     const getInitialMessage = async () => {
+      if (!profile) return;
       setLoading(true);
       try {
         const result = await generateMotivationalMessage({
@@ -26,14 +27,13 @@ const Dashboard = ({ profile }) => {
         });
         setAiAdvice(result.message);
       } catch (e) {
+        console.error("Error fetching motivational message:", e);
         setAiAdvice("Erro: Não foi possível comunicar com o Sistema.");
       } finally {
         setLoading(false);
       }
     };
-    if (profile) {
-      getInitialMessage();
-    }
+    getInitialMessage();
   }, [profile]);
 
   if (!profile) return <div className="text-center p-8 text-cyan-400">A carregar perfil...</div>;
@@ -333,6 +333,7 @@ const AIChatView = ({ profile, metas }) => {
           const aiMessage = { sender: 'ai', text: result.response };
           setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
+            console.error("Error fetching AI advice:", error);
             toast({
               variant: 'destructive',
               title: 'Erro de comunicação com o sistema',
@@ -409,6 +410,10 @@ export default function App() {
   );
 
   const renderContent = () => {
+    if (!profile) {
+      return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-cyan-400 text-xl">A carregar sistema...</div>
+    }
+    
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard profile={profile} />;
@@ -457,3 +462,5 @@ export default function App() {
     </div>
   );
 }
+
+    
