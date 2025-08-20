@@ -115,8 +115,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
-        if (error instanceof Error && error.message.includes('429')) {
-             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
         } else {
              toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
@@ -317,17 +317,17 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
-        if (error instanceof Error && error.message.includes('429')) {
-             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
         } else {
              toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
     };
 
     const handleOpenWizard = (meta = null) => {
-        setMetaToEdit(meta);
         if (meta) {
-            startDetailedMode(meta);
+            setMetaToEdit(meta);
+            setShowWizard(true);
         } else {
             setShowModeSelection(true);
         }
@@ -429,7 +429,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 });
                 category = categoryResult.category;
             } catch (categoryError) {
-                handleToastError(categoryError, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
+                // Ignore AI error and use default
+                console.error("AI category suggestion failed:", categoryError);
             }
 
             await handleSave({
@@ -593,7 +594,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     if (!mission || !feedbackType) return null;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setFeedbackText(''); onOpenChange(isOpen);}}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{dialogTitles[feedbackType]}</DialogTitle>
@@ -634,8 +635,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
-        if (error instanceof Error && error.message.includes('429')) {
-             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos diários. Tente novamente amanhã.' });
+        if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
         } else {
              toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
@@ -779,12 +780,16 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         setMissions(updatedMissions);
 
         let newProfile = { ...profile, xp: profile.xp + xpGained };
+        let leveledUp = false;
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
-            const leveledUpProfile = handleLevelUp(newProfile);
-            setProfile(leveledUpProfile);
-            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${leveledUpProfile.nivel}!` });
-        } else {
-             setProfile(newProfile);
+            newProfile = handleLevelUp(newProfile);
+            leveledUp = true;
+        }
+        
+        setProfile(newProfile);
+
+        if(leveledUp){
+            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
         }
         
         if (isRankedMissionComplete) {
@@ -1134,8 +1139,8 @@ const AIChatView = ({ profile, metas }) => {
         } catch (error) {
             console.error("Erro ao buscar conselho da IA:", error);
             let errorMessage = 'Não foi possível obter uma resposta. O Sistema pode estar sobrecarregado.';
-            if (error instanceof Error && error.message.includes('429')) {
-                errorMessage = 'Quota de IA excedida. Você atingiu o limite de pedidos diários. Tente novamente amanhã.';
+            if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+                errorMessage = 'Quota de IA excedida. Você atingiu o limite de pedidos. Tente novamente mais tarde.';
             }
 
             toast({
@@ -1297,7 +1302,5 @@ export default function App() {
     </div>
   );
 }
-
-    
 
     
