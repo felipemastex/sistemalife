@@ -14,7 +14,8 @@ export function SystemGuide() {
     const [advice, setAdvice] = useState('');
     const { toast } = useToast();
 
-    const [generate, { loading, data: result, error }] = useFlowState(generatePersonalizedAdvice);
+    const [generate, state] = useFlowState(generatePersonalizedAdvice);
+    const { loading, data: result, error } = state;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

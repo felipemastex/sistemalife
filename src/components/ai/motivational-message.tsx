@@ -11,7 +11,8 @@ export function MotivationalMessage() {
     const [category, setCategory] = useState('fitness');
     const [message, setMessage] = useState('');
 
-    const [generate, { loading, data: result, error }] = useFlowState(generateMotivationalMessage);
+    const [generate, state] = useFlowState(generateMotivationalMessage);
+    const { loading, data: result, error } = state;
     
     const handleGenerate = useCallback((cat: string) => {
         setMessage('');
