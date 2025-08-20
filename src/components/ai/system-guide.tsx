@@ -14,9 +14,9 @@ export function SystemGuide() {
     const [advice, setAdvice] = useState('');
     const { toast } = useToast();
 
-    const {run: generate, loading: generating, result} = useFlowState(generatePersonalizedAdvice);
+    const [generate, { loading, data: result, error }] = useFlowState(generatePersonalizedAdvice);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setAdvice('');
         generate({ userData: userDataForAI, query });
@@ -25,7 +25,7 @@ export function SystemGuide() {
     useEffect(() => {
         if (result) {
             setAdvice(result.advice);
-        } else if (!generating && query) { // query check prevents toast on initial load
+        } else if (error) { 
              toast({
                 variant: 'destructive',
                 title: 'Error generating advice',
@@ -33,7 +33,7 @@ export function SystemGuide() {
             });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [result, generating]);
+    }, [result, error]);
 
 
     return (
@@ -52,7 +52,7 @@ export function SystemGuide() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         rows={3}
-                        disabled={generating}
+                        disabled={loading}
                         className="text-base"
                     />
                      {advice && (
@@ -65,8 +65,8 @@ export function SystemGuide() {
                     )}
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" disabled={generating || !query} className="w-full">
-                        {generating ? (
+                    <Button type="submit" disabled={loading || !query} className="w-full">
+                        {loading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Analyzing...

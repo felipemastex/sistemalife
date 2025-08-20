@@ -11,9 +11,9 @@ export function MotivationalMessage() {
     const [category, setCategory] = useState('fitness');
     const [message, setMessage] = useState('');
 
-    const {run: generate, loading: generating, result} = useFlowState(generateMotivationalMessage);
+    const [generate, { loading, data: result, error }] = useFlowState(generateMotivationalMessage);
     
-    const handleGenerate = useCallback(async (cat: string) => {
+    const handleGenerate = useCallback((cat: string) => {
         setMessage('');
         generate({ userName: 'Alex', category: cat });
     }, [generate]);
@@ -26,10 +26,10 @@ export function MotivationalMessage() {
     useEffect(() => {
         if (result) {
             setMessage(result.message);
-        } else if (!generating && !result) {
+        } else if (error) {
             setMessage(`Couldn't get a message. Please try again.`);
         }
-    }, [result, generating]);
+    }, [result, error]);
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
@@ -44,7 +44,7 @@ export function MotivationalMessage() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="p-4 bg-muted/50 rounded-lg min-h-[120px] flex items-center justify-center">
-                    {generating ? (
+                    {loading ? (
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     ) : (message && message.trim() !== '') ? (
                         <p className="text-center italic text-foreground/80">
@@ -57,7 +57,7 @@ export function MotivationalMessage() {
                     )}
                 </div>
                  <div className="flex gap-2">
-                    <Select value={category} onValueChange={handleCategoryChange} disabled={generating}>
+                    <Select value={category} onValueChange={handleCategoryChange} disabled={loading}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
@@ -68,7 +68,7 @@ export function MotivationalMessage() {
                             <SelectItem value="productivity">Productivity</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button onClick={() => handleGenerate(category)} disabled={generating} size="icon" variant="outline">
+                    <Button onClick={() => handleGenerate(category)} disabled={loading} size="icon" variant="outline">
                         <RefreshCw className="h-4 w-4"/>
                         <span className="sr-only">New Quote</span>
                     </Button>
