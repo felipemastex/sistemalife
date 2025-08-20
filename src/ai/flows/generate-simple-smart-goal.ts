@@ -11,7 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SmartGoalSchema = z.object({
-  name: z.string().describe('O nome conciso e inspirador da meta.'),
+  name: z.string().describe('O nome original da meta, conforme inserido pelo utilizador.'),
   specific: z.string().describe('O detalhe Específico (Specific) da meta.'),
   measurable: z.string().describe('O detalhe Mensurável (Measurable) da meta.'),
   achievable: z.string().describe('O detalhe Atingível (Achievable) da meta.'),
@@ -44,7 +44,8 @@ Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la pa
 
 Meta do Utilizador: "{{goalName}}"
 
-Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíveis, relevantes e com prazo para a meta. O nome final da meta ('name') deve ser uma versão refinada e inspiradora do input do utilizador.
+Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíveis, relevantes e com prazo para a meta.
+IMPORTANTE: O campo 'name' na resposta DEVE ser exatamente igual à "Meta do Utilizador" fornecida. Não modifique o nome.
 
 Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
 `,

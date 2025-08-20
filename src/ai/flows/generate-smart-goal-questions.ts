@@ -59,22 +59,8 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
 
 
     if (!nextStep) {
-        const refinePrompt = `
-            Você é um coach de produtividade. A meta a seguir foi totalmente preenchida pelo utilizador.
-            Meta: ${JSON.stringify(goal, null, 2)}
-            
-            Com base nas respostas, refine o nome da meta para ser mais conciso e inspirador. As outras propriedades devem ser mantidas como estão.
-            Responda APENAS com o objeto JSON do "refinedGoal" atualizado. Não adicione nenhuma outra palavra.
-            O formato de saída deve ser um JSON igual ao \`refinedGoal\` no output schema.
-        `;
-
-        const {output} = await ai.generate({
-            prompt: refinePrompt,
-            model: 'googleai/gemini-2.5-flash',
-            output: { schema: z.object({ refinedGoal: SmartGoalSchema }) }
-        });
-        
-        return { isComplete: true, refinedGoal: output!.refinedGoal };
+        // A meta está completa. Não é necessário refinar mais. Apenas retorne o objeto da meta como está.
+        return { isComplete: true, refinedGoal: goal };
     }
 
     const promptTemplate = `
