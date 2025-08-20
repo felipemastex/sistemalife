@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { statCategoryMapping } from '@/lib/mappings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const statIcons = {
     forca: <Swords className="h-4 w-4 text-red-400" />,
@@ -302,9 +303,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                             </div>
                         )}
                         
-                        <Button onClick={handleNextStep} className="mt-6" disabled={isLoading || !userInput.trim()}>
-                            Próximo Passo
-                        </Button>
+                        <div className="flex flex-col-reverse sm:flex-row justify-end items-center gap-4 mt-6">
+                            <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
+                            <Button onClick={handleNextStep} className="w-full sm:w-auto" disabled={isLoading || !userInput.trim()}>
+                                Próximo Passo
+                            </Button>
+                        </div>
                     </>
                 )}
             </div>
@@ -661,12 +665,12 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
                        <div className="flex items-center w-full">
                            <AccordionTrigger className="flex-1 hover:no-underline text-left p-4">
-                                <div>
-                                    <p className="text-lg text-gray-200">{meta.nome}</p>
-                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-lg text-gray-200 break-words">{meta.nome}</p>
+                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded mt-1 inline-block">{meta.categoria}</span>
                                 </div>
                            </AccordionTrigger>
-                           <div className="flex flex-col sm:flex-row gap-2 p-4">
+                           <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
                                 <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -689,15 +693,15 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                        </div>
                         <AccordionContent className="p-4 pt-0">
                            <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
-                                <p><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
-                                <p><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
-                                <p><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
-                                <p><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
-                                <p><strong className="text-cyan-400">Prazo:</strong> {meta.detalhes_smart.timeBound}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {meta.detalhes_smart.timeBound}</p>
                                 {stats && stats.length > 0 && (
-                                    <div className="flex items-center gap-4 pt-2">
-                                        <strong className="text-cyan-400">Atributos Melhorados:</strong>
-                                        <div className="flex items-center gap-3">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
+                                        <strong className="text-cyan-400 shrink-0">Atributos Melhorados:</strong>
+                                        <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
                                             <div key={stat} className="flex items-center gap-1 text-gray-300">
                                                 {statIcons[stat]}
@@ -762,3 +766,5 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
+    
