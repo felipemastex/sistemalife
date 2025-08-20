@@ -31,12 +31,12 @@ export const DashboardView = ({ profile }) => {
   const profileRank = getProfileRank(profile.nivel);
 
   const statsData = [
-    { subject: 'Força', value: profile.estatisticas.forca, fullMark: 50 },
-    { subject: 'Int.', value: profile.estatisticas.inteligencia, fullMark: 50 },
-    { subject: 'Sab.', value: profile.estatisticas.sabedoria, fullMark: 50 },
-    { subject: 'Const.', value: profile.estatisticas.constituicao, fullMark: 50 },
-    { subject: 'Destr.', value: profile.estatisticas.destreza, fullMark: 50 },
-    { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 50 },
+    { subject: 'Força', value: profile.estatisticas.forca, fullMark: 100 },
+    { subject: 'Int.', value: profile.estatisticas.inteligencia, fullMark: 100 },
+    { subject: 'Sab.', value: profile.estatisticas.sabedoria, fullMark: 100 },
+    { subject: 'Const.', value: profile.estatisticas.constituicao, fullMark: 100 },
+    { subject: 'Destr.', value: profile.estatisticas.destreza, fullMark: 100 },
+    { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 100 },
   ];
   
   const StatItem = ({ label, value }) => (
@@ -93,6 +93,7 @@ export const DashboardView = ({ profile }) => {
                             </defs>
                             <PolarGrid stroke="hsl(var(--border))" />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: 14 }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} />
                             <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" fill="url(#radar-fill)" fillOpacity={0.8} />
                              <Tooltip 
                                 contentStyle={{
