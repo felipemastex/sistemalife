@@ -1,8 +1,6 @@
 
 import type {Config} from 'tailwindcss';
 
-const { "fontFamily": "var(--font-inter)" } = require('tailwindcss/defaultTheme');
-
 // Custom radial gradient plugin
 const plugin = require('tailwindcss/plugin');
 const radialGradientPlugin = plugin(
