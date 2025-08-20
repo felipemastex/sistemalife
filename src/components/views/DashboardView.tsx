@@ -1,8 +1,8 @@
 
 "use client";
 
-import { Swords, Brain, Zap, ShieldCheck, BookOpen, Star } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
+import { cn } from '@/lib/utils';
 
 
 export const DashboardView = ({ profile }) => {
@@ -19,72 +19,125 @@ export const DashboardView = ({ profile }) => {
   };
 
   const getRankColor = (rank) => {
-        switch (rank) {
-            case 'F': return 'bg-gray-500 text-gray-100';
-            case 'E': return 'bg-green-700 text-green-200';
-            case 'D': return 'bg-cyan-700 text-cyan-200';
-            case 'C': return 'bg-blue-700 text-blue-200';
-            case 'B': return 'bg-purple-700 text-purple-200';
-            case 'A': return 'bg-red-700 text-red-200';
-            case 'S': return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
-            case 'SS': return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/50';
-            case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
-            default: return 'bg-gray-700 text-gray-400';
-        }
+    switch (rank) {
+      case 'F': return 'border-gray-500 text-gray-300';
+      case 'E': return 'border-green-500 text-green-300';
+      case 'D': return 'border-cyan-500 text-cyan-300';
+      case 'C': return 'border-blue-500 text-blue-300';
+      case 'B': return 'border-purple-500 text-purple-300';
+      case 'A': return 'border-red-500 text-red-300';
+      case 'S': return 'border-yellow-400 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]';
+      case 'SS': return 'border-orange-500 text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.5)]';
+      case 'SSS': return 'border-fuchsia-500 text-fuchsia-300 shadow-[0_0_20px_rgba(217,70,239,0.6)] animate-pulse';
+      default: return 'border-gray-600 text-gray-400';
+    }
   };
 
-  if (!profile || !profile.estatisticas) return <div className="text-center p-8 text-cyan-400">A carregar perfil...</div>;
+  if (!profile || !profile.estatisticas) {
+    return (
+      <div className="p-6 h-full flex items-center justify-center">
+        <p className="text-cyan-400 text-lg">A carregar dados do Sistema...</p>
+      </div>
+    );
+  }
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
   const profileRank = getProfileRank(profile.nivel);
-  
-  const stats = [
-    { name: 'Força', value: profile.estatisticas.forca, icon: Swords, color: 'text-red-400' },
-    { name: 'Inteligência', value: profile.estatisticas.inteligencia, icon: Brain, color: 'text-blue-400' },
-    { name: 'Destreza', value: profile.estatisticas.destreza, icon: Zap, color: 'text-yellow-400' },
-    { name: 'Constituição', value: profile.estatisticas.constituicao, icon: ShieldCheck, color: 'text-green-400' },
-    { name: 'Sabedoria', value: profile.estatisticas.sabedoria, icon: BookOpen, color: 'text-purple-400' },
-    { name: 'Carisma', value: profile.estatisticas.carisma, icon: Star, color: 'text-pink-400' },
+
+  const statsData = [
+    { subject: 'Força', value: profile.estatisticas.forca, fullMark: 50 },
+    { subject: 'Int.', value: profile.estatisticas.inteligencia, fullMark: 50 },
+    { subject: 'Sab.', value: profile.estatisticas.sabedoria, fullMark: 50 },
+    { subject: 'Const.', value: profile.estatisticas.constituicao, fullMark: 50 },
+    { subject: 'Destr.', value: profile.estatisticas.destreza, fullMark: 50 },
+    { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 50 },
   ];
+  
+  const StatItem = ({ label, value }) => (
+    <div>
+        <p className="text-sm text-gray-400">{label}</p>
+        <p className="text-lg font-bold text-gray-100">{value}</p>
+    </div>
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 shadow-lg">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
-                    <AvatarFallback>{profile.nome_utilizador?.substring(0,2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <h2 className="text-2xl font-bold text-cyan-400">{profile.nome_utilizador}</h2>
-                     <span className={`px-3 py-1 text-sm font-bold rounded-full ${getRankColor(profileRank.rank)}`}>
-                        Rank {profileRank.rank}
-                    </span>
+    <div className="p-4 md:p-6 space-y-6 bg-background h-full overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+            <h1 className="text-2xl md:text-3xl font-bold text-primary">STATUS</h1>
+            <div className="text-right">
+                <p className="text-lg font-semibold text-gray-200">{profile.nome_utilizador}</p>
+                <p className="text-sm text-gray-400">Nível: {profile.nivel}</p>
+            </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-card border border-border rounded-lg p-4 md:p-6 space-y-6">
+            
+            {/* Profile Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div className="md:col-span-2 space-y-3">
+                    <StatItem label="Nome" value={profile.nome_utilizador} />
+                    <StatItem label="Nível" value={profile.nivel} />
+                    <StatItem label="Título" value={profileRank.title} />
+                </div>
+                <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className={cn("w-24 h-24 border-2 flex items-center justify-center font-bold text-5xl bg-black/20", getRankColor(profileRank.rank))}>
+                        {profileRank.rank}
+                    </div>
+                    <p className="text-lg font-semibold text-gray-300">RANK</p>
                 </div>
             </div>
-             <p className="text-gray-400">Nível {profile.nivel} <span className="text-gray-500">({profileRank.title})</span></p>
+            
+            <hr className="border-border/50" />
+            
+            {/* Stats Grid & Radar Chart */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-3">
+                   {statsData.map(stat => (
+                     <div key={stat.subject} className="flex justify-between items-baseline">
+                         <p className="text-base text-gray-300">{stat.subject}</p>
+                         <p className="font-mono text-lg font-medium text-primary">{stat.value}</p>
+                     </div>
+                   ))}
+                </div>
+                <div className="w-full h-64 md:h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={statsData}>
+                            <defs>
+                                <radialGradient id="radar-fill">
+                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
+                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                                </radialGradient>
+                            </defs>
+                            <PolarGrid stroke="hsl(var(--border))" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: 14 }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 10']} tick={false} axisLine={false} />
+                            <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" fill="url(#radar-fill)" fillOpacity={0.8} />
+                             <Tooltip 
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--card))',
+                                    borderColor: 'hsl(var(--border))',
+                                    color: 'hsl(var(--foreground))'
+                                }}
+                            />
+                        </RadarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
         </div>
-        <div className="mt-4">
+
+         {/* XP Bar */}
+        <div className="bg-card border border-border rounded-lg p-4">
             <div className="flex justify-between text-sm text-gray-300 mb-1">
-                <span>XP</span>
-                <span>{profile.xp} / {profile.xp_para_proximo_nivel}</span>
+                <span>XP para o próximo Nível</span>
+                <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-4">
-                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-4 rounded-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
+            <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border">
+                <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
             </div>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {stats.map(stat => (
-          <div key={stat.name} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col items-center justify-center space-y-2">
-            <stat.icon className={`h-8 w-8 ${stat.color}`} />
-            <span className="text-gray-300 text-sm">{stat.name}</span>
-            <span className="text-xl font-bold text-white">{stat.value}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
