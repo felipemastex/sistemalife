@@ -262,7 +262,7 @@ export default function App() {
   };
 
 
-  const NavItem = ({ icon: Icon, label, page, inSheet = false }) => {
+  const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }) => {
     const Component = inSheet ? SheetClose : 'button';
     
     return (
@@ -274,7 +274,7 @@ export default function App() {
           )}
         >
           <Icon className="h-5 w-5" />
-          <span className="font-medium">{label}</span>
+          <span className={cn("font-medium", className)}>{label}</span>
         </Component>
     );
   };
@@ -288,7 +288,7 @@ export default function App() {
           <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
-          <NavItem icon={Bot} label="Interagir com IA" page="ai-chat" inSheet={inSheet}/>
+          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-mono" />
       </nav>
       <div className="mt-auto">
           <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
@@ -366,3 +366,5 @@ export default function App() {
     </div>
   );
 }
+
+    
