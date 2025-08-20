@@ -185,8 +185,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             const newTimers = {};
             missions.forEach(mission => {
                 if (mission.ultima_missao_concluida_em) {
-                    const cooldownEnds = new Date(mission.ultima_missao_concluida_em).getTime() + 24 * 60 * 60 * 1000;
-                    const timeLeft = cooldownEnds - now.getTime();
+                    const completionDate = new Date(mission.ultima_missao_concluida_em);
+                    const midnight = new Date(completionDate);
+                    midnight.setDate(midnight.getDate() + 1);
+                    midnight.setHours(0, 0, 0, 0);
+
+                    const timeLeft = midnight.getTime() - now.getTime();
+
                     if (timeLeft > 0) {
                         const hours = Math.floor(timeLeft / (1000 * 60 * 60));
                         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
@@ -320,7 +325,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     return (
         <div className="p-6">
             <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
-            <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada 24h após a conclusão.</p>
+            <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {availableMissions.map(mission => {
