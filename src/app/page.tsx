@@ -44,14 +44,16 @@ export default function App() {
       const batch = writeBatch(db);
 
       // 1. Profile
+      const emailUsername = userEmail.split('@')[0];
       const initialProfile = { 
           ...mockData.perfis[0], 
           id: userId, 
           email: userEmail,
-          nome_utilizador: userEmail.split('@')[0],
-          avatar_url: `https://placehold.co/100x100.png?text=${userEmail.substring(0,2).toUpperCase()}`
+          primeiro_nome: emailUsername,
+          apelido: "Caçador",
+          nome_utilizador: emailUsername,
+          avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0,2).toUpperCase()}`
       };
-      // Set the profile directly on the user document
       batch.set(userRef, initialProfile);
 
       // 2. Metas
@@ -99,30 +101,30 @@ export default function App() {
   useEffect(() => {
     const fetchData = async (userId) => {
         try {
-            // Profile
             const userDocRef = doc(db, 'users', userId);
             const userDoc = await getDoc(userDocRef);
             
             if (userDoc.exists()) {
-                setProfile(userDoc.data());
+                const profileData = userDoc.data();
+                // Ensure legacy `nome_utilizador` is handled
+                if (profileData.nome_utilizador && !profileData.primeiro_nome) {
+                    profileData.primeiro_nome = profileData.nome_utilizador;
+                    profileData.apelido = "Caçador";
+                }
+                setProfile(profileData);
 
-                // Metas
                 const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
                 setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
                 
-                // Missions
                 const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
                 setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
-                // Skills
                 const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
                 setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
-                // Routine
                 const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
                 setRoutine(routineDoc.exists() ? routineDoc.data() : {});
                 
-                // Routine Templates
                 const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
                 setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
 
@@ -143,11 +145,16 @@ export default function App() {
     }
   }, [user, isDataLoaded, toast]);
   
-  // --- Data Persistence Functions ---
   const persistProfile = async (newProfile) => {
       if (!user) return;
-      setProfile(newProfile);
-      await setDoc(doc(db, 'users', user.uid), newProfile, { merge: true });
+      
+      const profileToSave = {
+        ...newProfile,
+        nome_utilizador: newProfile.primeiro_nome, // Maintain compatibility
+      };
+
+      setProfile(profileToSave);
+      await setDoc(doc(db, 'users', user.uid), profileToSave, { merge: true });
   }
 
   const persistMetas = async (newMetas) => {
@@ -221,41 +228,31 @@ export default function App() {
 
   const handleFullReset = async () => {
     if (!user) return;
-    setIsDataLoaded(false); // Bloqueia a UI para evitar inconsistências
+    setIsDataLoaded(false);
 
     try {
         const userDocRef = doc(db, 'users', user.uid);
 
-        // Apagar todas as subcoleções (metas, missões, habilidades)
-        const collectionsToDelete = ['metas', 'missions', 'skills'];
-        for (const coll of collectionsToDelete) {
-            const subcollectionRef = collection(userDocRef, coll);
+        const collectionsToDelete = ['metas', 'missions', 'skills', 'routine'];
+        for (const collName of collectionsToDelete) {
+            const subcollectionRef = collection(userDocRef, collName);
             const snapshot = await getDocs(subcollectionRef);
-            if (!snapshot.empty) {
-                const deleteBatch = writeBatch(db);
-                snapshot.docs.forEach(docToDelete => deleteBatch.delete(docToDelete.ref));
-                await deleteBatch.commit();
-            }
+            const deleteBatch = writeBatch(db);
+            snapshot.docs.forEach(docToDelete => deleteBatch.delete(docToDelete.ref));
+            await deleteBatch.commit();
         }
         
-        // Apagar documentos da rotina
         await deleteDoc(doc(userDocRef, 'routine', 'main')).catch(e => console.log("Rotina principal não encontrada, a ignorar."));
         await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Templates de rotina não encontrados, a ignorar."));
 
-        // Apagar o documento principal do utilizador, que contém o perfil (estatísticas, nível, etc.)
         await deleteDoc(userDocRef);
 
         toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa. A reconfigurar para o estado inicial." });
-
-        // O useEffect que depende de [user, isDataLoaded] irá re-executar,
-        // não encontrará o userDoc, e chamará setupInitialData naturalmente.
-        // Forçar isDataLoaded para false garante que este useEffect seja acionado.
-        // A lógica de recarregamento já está no sítio certo.
-
+        
+        // Let the useEffect handle the data setup by re-triggering it.
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
-        // Tentar recarregar os dados mesmo se houver um erro, para sair do estado de bloqueio
         setIsDataLoaded(true);
     }
   };

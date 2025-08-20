@@ -5,44 +5,64 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Separator } from '@/components/ui/separator';
+
+const getProfileRank = (level) => {
+    if (level <= 5) return 'F';
+    if (level <= 10) return 'E';
+    if (level <= 20) return 'D';
+    if (level <= 30) return 'C';
+    if (level <= 40) return 'B';
+    if (level <= 50) return 'A';
+    if (level <= 70) return 'S';
+    if (level <= 90) return 'SS';
+    return 'SSS';
+};
 
 export const SettingsView = ({ profile, setProfile, onReset }) => {
-    const [username, setUsername] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
+    const [profileData, setProfileData] = useState({
+        primeiro_nome: '',
+        apelido: '',
+        genero: '',
+        nacionalidade: '',
+        avatar_url: '',
+    });
     const [isSaving, setIsSaving] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
         if (profile) {
-            setUsername(profile.nome_utilizador || '');
-            setAvatarUrl(profile.avatar_url || '');
+            setProfileData({
+                primeiro_nome: profile.primeiro_nome || '',
+                apelido: profile.apelido || '',
+                genero: profile.genero || 'Não especificado',
+                nacionalidade: profile.nacionalidade || 'Não especificada',
+                avatar_url: profile.avatar_url || '',
+            });
         }
     }, [profile]);
+    
+    const hasChanges = () => {
+        if (!profile) return false;
+        return (
+            profileData.primeiro_nome !== profile.primeiro_nome ||
+            profileData.apelido !== profile.apelido ||
+            profileData.genero !== profile.genero ||
+            profileData.nacionalidade !== profile.nacionalidade ||
+            profileData.avatar_url !== profile.avatar_url
+        );
+    };
 
     const handleSave = async (e) => {
         e.preventDefault();
-        const trimmedUsername = username.trim();
-        const trimmedAvatarUrl = avatarUrl.trim();
-
-        if (!trimmedUsername) {
-            toast({ variant: 'destructive', title: "Nome de Utilizador Inválido", description: "O nome de utilizador não pode estar em branco." });
-            return;
-        }
-
-        if (trimmedUsername === profile.nome_utilizador && trimmedAvatarUrl === profile.avatar_url) {
-            return;
-        }
+        if (!hasChanges()) return;
 
         setIsSaving(true);
         try {
-            const updatedProfile = { ...profile, nome_utilizador: trimmedUsername, avatar_url: trimmedAvatarUrl };
-            await setProfile(updatedProfile);
+            await setProfile({ ...profile, ...profileData });
             toast({
                 title: "Perfil Atualizado!",
                 description: "Os seus dados foram alterados com sucesso.",
@@ -62,110 +82,134 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
     const handleReset = async () => {
         setIsResetting(true);
         await onReset();
-        // The component will unmount and remount with new data, so no need to set isResetting to false
     }
 
     if (!profile) {
         return <div className="p-6">A carregar configurações...</div>;
     }
+    
+    const InfoField = ({ label, value, editable = false, onChange, placeholder }) => (
+        <div>
+            <Label className="text-sm text-cyan-300/70">{label}</Label>
+            {editable ? (
+                <Input 
+                    type="text"
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className="bg-transparent border-b border-cyan-400/50 rounded-none px-0 text-lg text-white focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-cyan-400"
+                />
+            ) : (
+                <p className="text-lg text-white font-semibold">{value}</p>
+            )}
+        </div>
+    );
+
 
     return (
-        <div className="p-6">
-            <h1 className="text-3xl font-bold text-primary mb-6">Configurações</h1>
+        <div className="p-4 md:p-8 h-full overflow-y-auto">
+            <h1 className="text-3xl font-bold text-primary mb-6">Ficha de Caçador</h1>
             
-            <div className="max-w-2xl space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Perfil</CardTitle>
-                        <CardDescription>Atualize os seus dados de perfil aqui.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSave} className="space-y-6">
-                            <div className="flex items-center space-x-4">
-                                <Avatar className="h-20 w-20">
-                                    <AvatarImage src={avatarUrl} alt={username} />
-                                    <AvatarFallback>{username?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <div className="space-y-2 w-full">
-                                    <Label htmlFor="avatar_url">URL do Avatar</Label>
-                                    <Input
-                                        id="avatar_url"
-                                        type="url"
-                                        value={avatarUrl}
-                                        onChange={(e) => setAvatarUrl(e.target.value)}
-                                        placeholder="https://exemplo.com/imagem.png"
-                                    />
-                                </div>
-                            </div>
+            <div className="bg-gray-900/50 border border-cyan-400/30 rounded-lg p-6 backdrop-blur-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Profile Picture */}
+                <div className="md:col-span-1 flex flex-col items-center">
+                    <div className="w-48 h-56 border-2 border-cyan-400/50 p-1 bg-black/20">
+                         <Avatar className="w-full h-full rounded-none">
+                            <AvatarImage src={profileData.avatar_url} alt={profile.primeiro_nome} className="object-cover"/>
+                            <AvatarFallback className="bg-gray-800 rounded-none text-cyan-400">
+                                {profileData.primeiro_nome?.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <Input 
+                        type="url"
+                        value={profileData.avatar_url}
+                        onChange={(e) => setProfileData({...profileData, avatar_url: e.target.value})}
+                        placeholder="URL da Imagem"
+                        className="mt-2 text-xs bg-gray-800/70 border-cyan-400/30"
+                    />
+                </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="username">Nome de Utilizador</Label>
-                                <Input
-                                    id="username"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="O seu nome no sistema"
-                                />
-                            </div>
-
-                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={profile.email}
-                                    disabled
-                                    className="cursor-not-allowed opacity-50"
-                                />
-                                 <p className="text-xs text-muted-foreground">O seu email de login não pode ser alterado.</p>
-                            </div>
-                            
-                            <div className="flex justify-end">
-                                <Button type="submit" disabled={isSaving || (username === profile.nome_utilizador && avatarUrl === profile.avatar_url)}>
-                                    {isSaving ? "A salvar..." : "Salvar Alterações"}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                 <Card className="border-red-500/50">
-                    <CardHeader>
-                        <CardTitle className="text-red-400">Zona de Perigo</CardTitle>
-                        <CardDescription>Estas ações são destrutivas e não podem ser revertidas.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <div className="flex justify-between items-center">
-                           <div>
-                               <p className="font-bold">Resetar a sua conta</p>
-                               <p className="text-sm text-muted-foreground">Isto irá apagar permanentemente todos os seus dados.</p>
-                           </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" disabled={isResetting}>
-                                        {isResetting ? "A resetar..." : "Resetar Conta"}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta ação é irreversível. Todos os seus dados, incluindo perfil, metas, missões e habilidades, serão apagados permanentemente. Não será possível recuperar a sua conta.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleReset} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                                            Sim, quero resetar a conta
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                       </div>
-                    </CardContent>
-                </Card>
+                {/* Profile Data */}
+                <div className="md:col-span-2 grid grid-rows-4 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                         <InfoField 
+                            label="Primeiro Nome" 
+                            value={profileData.primeiro_nome}
+                            editable
+                            onChange={(e) => setProfileData({...profileData, primeiro_nome: e.target.value})}
+                            placeholder="Seu nome"
+                        />
+                         <InfoField 
+                            label="Apelido" 
+                            value={profileData.apelido}
+                            editable
+                             onChange={(e) => setProfileData({...profileData, apelido: e.target.value})}
+                            placeholder="Seu apelido"
+                        />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <InfoField label="Classe" value={getProfileRank(profile.nivel)} />
+                        <InfoField label="Status" value={profile.status || 'Ativo'} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <InfoField 
+                            label="Género" 
+                            value={profileData.genero}
+                            editable
+                             onChange={(e) => setProfileData({...profileData, genero: e.target.value})}
+                            placeholder="Ex: Masculino"
+                        />
+                        <InfoField 
+                            label="Nacionalidade" 
+                            value={profileData.nacionalidade}
+                            editable
+                             onChange={(e) => setProfileData({...profileData, nacionalidade: e.target.value})}
+                            placeholder="Ex: Portugal"
+                        />
+                    </div>
+                    <div className="flex justify-end items-end">
+                       <Button onClick={handleSave} disabled={isSaving || !hasChanges()}>
+                            {isSaving ? "A salvar..." : "Salvar Alterações"}
+                        </Button>
+                    </div>
+                </div>
             </div>
+
+            <div className="mt-8">
+                 <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-6">
+                    <h2 className="text-xl font-bold text-red-400">Zona de Perigo</h2>
+                    <p className="text-red-400/70 text-sm mb-4">Ações nesta secção são permanentes e não podem ser desfeitas.</p>
+                     <div className="flex justify-between items-center">
+                        <div>
+                            <p className="font-bold text-gray-200">Resetar a sua conta</p>
+                            <p className="text-sm text-muted-foreground">Isto irá apagar permanentemente todos os seus dados.</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isResetting}>
+                                    {isResetting ? "A resetar..." : "Resetar Conta"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação é irreversível. Todos os seus dados, incluindo perfil, metas, missões e habilidades, serão apagados permanentemente. Não será possível recuperar a sua conta.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleReset} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                                        Sim, quero resetar a conta
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                 </div>
+            </div>
+
         </div>
     );
 };

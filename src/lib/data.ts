@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 import { Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 
@@ -5,6 +6,8 @@ export const perfis = [
   {
     id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome_utilizador: 'Cazador_01',
+    primeiro_nome: 'Cazador',
+    apelido: '01',
     avatar_url: 'https://placehold.co/100x100.png',
     nivel: 1,
     xp: 0,
@@ -17,6 +20,9 @@ export const perfis = [
       sabedoria: 20,
       carisma: 17,
     },
+    genero: 'Não especificado',
+    nacionalidade: 'Não especificada',
+    status: 'Ativo',
   },
 ];
 
