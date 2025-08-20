@@ -39,42 +39,44 @@ export const DashboardView = ({ profile }) => {
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 50 },
   ];
   
-  const StatItem = ({ label, value, className = '' }) => (
-    <div className={className}>
-        <p className="text-sm text-muted-foreground">{label}</p>
+  const StatItem = ({ label, value }) => (
+    <div>
+        <span className="text-sm text-muted-foreground">{label}</span>
         <p className="text-lg font-bold text-foreground">{value}</p>
     </div>
   );
 
   return (
     <div className="p-4 md:p-6 h-full overflow-y-auto">
-        <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1">
-                     <Avatar className="h-full w-full rounded-md border-2 border-primary/50">
-                        <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} className="object-cover"/>
-                        <AvatarFallback className="text-6xl rounded-md bg-secondary">
-                          {profile.nome_utilizador?.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                </div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold text-primary">STATUS</h1>
+        <div className="text-right">
+          <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
+          <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
+        </div>
+      </div>
 
-                <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4">
-                    <StatItem label="Nome" value={profile.nome_utilizador} className="col-span-2" />
-                    <StatItem label="Nível" value={profile.nivel} />
-                    <StatItem label="Título" value={profileRank.title} />
-                    <StatItem label="Rank" value={profileRank.rank} />
-                    <StatItem label="Status" value="Ativo" />
-                </div>
+        <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="md:col-span-2 space-y-4">
+                   <StatItem label="Nome" value={profile.nome_utilizador}/>
+                   <StatItem label="Nível" value={profile.nivel}/>
+                   <StatItem label="Título" value={profileRank.title}/>
+                 </div>
+                 <div className="flex flex-col items-center justify-center">
+                    <div className="w-24 h-24 border-2 border-border flex items-center justify-center bg-secondary/30">
+                        <span className="text-6xl font-black text-primary">{profileRank.rank}</span>
+                    </div>
+                    <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground">RANK</p>
+                 </div>
             </div>
             
             <hr className="border-border/50" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                    {statsData.map(stat => (
-                     <div key={stat.subject} className="bg-secondary/50 p-3 rounded-md border border-border/50">
+                     <div key={stat.subject} className="flex justify-between items-baseline">
                         <p className="text-base text-muted-foreground">{stat.subject}</p>
                         <p className="font-mono text-xl font-medium text-primary">{stat.value}</p>
                      </div>
@@ -91,7 +93,6 @@ export const DashboardView = ({ profile }) => {
                             </defs>
                             <PolarGrid stroke="hsl(var(--border))" />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: 14 }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 10']} tick={false} axisLine={false} />
                             <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" fill="url(#radar-fill)" fillOpacity={0.8} />
                              <Tooltip 
                                 contentStyle={{
@@ -109,7 +110,7 @@ export const DashboardView = ({ profile }) => {
              {/* XP Bar */}
             <div>
                 <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                    <span>XP</span>
+                    <span>XP para o próximo Nível</span>
                     <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
                 </div>
                 <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border/50">

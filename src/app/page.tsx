@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -266,7 +266,7 @@ export default function App() {
       onClick={() => setCurrentPage(page)}
       className={cn(
         'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors',
-        currentPage === page ? 'bg-cyan-500/20 text-cyan-300' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+        currentPage === page ? 'bg-primary/20 text-primary' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
       )}
     >
       <Icon className="h-5 w-5" />
@@ -276,7 +276,7 @@ export default function App() {
 
   const renderContent = () => {
     if (!profile) {
-      return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-cyan-400 text-xl">A carregar sistema...</div>
+      return <div className="min-h-screen bg-background flex items-center justify-center text-primary text-xl">A carregar sistema...</div>
     }
     
     switch (currentPage) {
@@ -301,7 +301,7 @@ export default function App() {
   
   if (loading || !user || !isDataLoaded) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-cyan-400">
+      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <LoaderCircle className="animate-spin h-10 w-10 mr-4" />
         <span className="text-xl">A validar sessão...</span>
       </div>
@@ -309,15 +309,15 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-gray-200 flex">
-      <aside className="w-64 bg-gray-800/80 border-r border-gray-700/50 p-4 flex-col hidden md:flex">
-        <div className="text-2xl font-bold text-cyan-400 text-center mb-8">SISTEMA</div>
+    <div className="min-h-screen bg-background text-foreground flex">
+      <aside className="w-64 bg-gray-900/80 border-r border-border/50 p-4 flex-col hidden md:flex">
+        <div className="text-2xl font-bold text-primary text-center mb-8">SISTEMA</div>
         <nav className="flex-grow space-y-2">
-            <NavItem icon={User} label="Dashboard" page="dashboard" />
+            <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" />
             <NavItem icon={BookOpen} label="Metas" page="metas" />
             <NavItem icon={Target} label="Missões" page="missions" />
             <NavItem icon={Clock} label="Rotina" page="routine" />
-            <NavItem icon={TreeDeciduous} label="Habilidades" page="skills" />
+            <NavItem icon={BarChart3} label="Habilidades" page="skills" />
             <NavItem icon={Bot} label="Interagir com IA" page="ai-chat" />
         </nav>
         <div className="mt-auto">
@@ -338,7 +338,3 @@ export default function App() {
     </div>
   );
 }
-
-    
-
-    
