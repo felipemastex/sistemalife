@@ -14,3 +14,4 @@ import './flows/generate-routine-suggestion.js';
 import './flows/generate-skill-experience.js';
 import './flows/generate-skill-from-goal.js';
 import './flows/generate-goal-suggestion.js';
+import './flows/generate-hunter-avatar.js';

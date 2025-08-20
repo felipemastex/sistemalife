@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent } from '@/components/ui/card';
+import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
+import { LoaderCircle, Wand2 } from 'lucide-react';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -52,6 +54,7 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -105,6 +108,40 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
         await onReset();
     };
 
+    const handleGenerateAvatar = async () => {
+        setIsGeneratingAvatar(true);
+        try {
+            const stats = Object.entries(profile.estatisticas)
+                .sort(([,a],[,b]) => b - a)
+                .slice(0, 2)
+                .map(([key]) => key);
+
+            const result = await generateHunterAvatar({
+                level: profile.nivel,
+                rank: getProfileRank(profile.nivel),
+                gender: profileData.genero,
+                topStats: stats,
+            });
+
+            if (result.avatarDataUri) {
+                setProfileData(prev => ({ ...prev, avatar_url: result.avatarDataUri }));
+                toast({
+                    title: "Avatar Gerado!",
+                    description: "Um novo avatar foi criado para si. Não se esqueça de salvar as alterações."
+                });
+            }
+        } catch (error) {
+            console.error("Erro ao gerar avatar:", error);
+            toast({
+                variant: "destructive",
+                title: "Falha na Geração",
+                description: "Não foi possível gerar um avatar. Tente novamente mais tarde.",
+            });
+        } finally {
+            setIsGeneratingAvatar(false);
+        }
+    }
+
     if (!profile) {
         return <div className="p-6">A carregar configurações...</div>;
     }
@@ -119,14 +156,23 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
                        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-6">
                             {/* Profile Picture */}
                             <div className="md:col-span-4 flex flex-col items-center justify-start">
-                                <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-cyan-400/50 p-1 bg-black/20">
+                                <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-cyan-400/50 p-1 bg-black/20 relative">
                                     <Avatar className="w-full h-full rounded-none">
                                         <AvatarImage src={profileData.avatar_url} alt={profile.primeiro_nome} className="object-cover"/>
                                         <AvatarFallback className="bg-gray-800 rounded-none text-cyan-400 text-4xl">
                                             {profileData.primeiro_nome?.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
+                                    {isGeneratingAvatar && (
+                                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                                            <LoaderCircle className="h-10 w-10 text-cyan-400 animate-spin" />
+                                        </div>
+                                    )}
                                 </div>
+                                <Button type="button" onClick={handleGenerateAvatar} disabled={isGeneratingAvatar} className="w-full max-w-[200px] mt-2">
+                                    {isGeneratingAvatar ? "A gerar..." : "Gerar Novo Avatar"}
+                                    <Wand2 className="ml-2 h-4 w-4"/>
+                                </Button>
                                 <InfoField
                                     label="URL do Avatar"
                                     value={profileData.avatar_url}
