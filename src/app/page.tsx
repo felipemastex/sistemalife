@@ -648,6 +648,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         setGenerating(dailyMissionId);
         let xpGained = 0;
 
+        let isRankedMissionComplete = false;
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
@@ -657,7 +658,16 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                     }
                     return daily;
                 });
-                 return { ...rm, missoes_diarias: updatedDailyMissions, ultima_missao_concluida_em: now.toISOString() };
+                 
+                const allDailyComplete = updatedDailyMissions.every(d => d.concluido);
+                isRankedMissionComplete = allDailyComplete && updatedDailyMissions.length >= rm.total_missoes_diarias;
+
+                return { 
+                    ...rm, 
+                    missoes_diarias: updatedDailyMissions, 
+                    ultima_missao_concluida_em: now.toISOString(),
+                    concluido: isRankedMissionComplete,
+                 };
             }
             return rm;
         });
@@ -672,6 +682,12 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return updatedProfile;
         });
         
+        if (isRankedMissionComplete) {
+            toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
+            setGenerating(null);
+            return;
+        }
+
         try {
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
@@ -720,19 +736,43 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const getRankColor = (rank) => {
         switch (rank) {
             case 'F': return 'bg-gray-500 text-gray-100';
-            case 'E': return 'bg-gray-600 text-gray-200';
-            case 'D': return 'bg-green-700 text-green-200';
+            case 'E': return 'bg-green-700 text-green-200';
+            case 'D': return 'bg-cyan-700 text-cyan-200';
             case 'C': return 'bg-blue-700 text-blue-200';
             case 'B': return 'bg-purple-700 text-purple-200';
             case 'A': return 'bg-red-700 text-red-200';
             case 'S': return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
-            case 'SS': return 'bg-gradient-to-r from-red-500 to-yellow-500 text-white shadow-lg shadow-red-500/50';
+            case 'SS': return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/50';
             case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
             default: return 'bg-gray-700 text-gray-400';
         }
     }
     
-    const visibleMissions = missions;
+    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+
+    const getVisibleMissions = () => {
+        const visible = [];
+        const missionsByGoal = missions.reduce((acc, mission) => {
+            if (!acc[mission.meta_associada]) {
+                acc[mission.meta_associada] = [];
+            }
+            acc[mission.meta_associada].push(mission);
+            return acc;
+        }, {});
+
+        for (const goalName in missionsByGoal) {
+            const goalMissions = missionsByGoal[goalName]
+                .filter(m => !m.concluido)
+                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+
+            if (goalMissions.length > 0) {
+                visible.push(goalMissions[0]);
+            }
+        }
+        return visible;
+    };
+    
+    const visibleMissions = getVisibleMissions();
 
     return (
         <div className="p-6">
@@ -804,12 +844,22 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                     </div>
                                 )}
 
-                                {!activeDailyMission && !onCooldown && (
-                                    <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                {!activeDailyMission && !onCooldown && !mission.concluido && (
+                                    <div className="bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center">
+                                        <Sparkles className="h-8 w-8 text-yellow-400 mr-4"/>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-200">A gerar nova missão...</p>
+                                            <p className="text-sm text-gray-400">O Sistema está a preparar o seu próximo desafio.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {mission.concluido && (
+                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
                                         <Sparkles className="h-8 w-8 text-yellow-400 mr-4"/>
                                         <div>
                                             <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
-                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
+                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho! A próxima missão será revelada em breve.</p>
                                         </div>
                                     </div>
                                 )}
