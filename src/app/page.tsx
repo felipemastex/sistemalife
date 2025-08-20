@@ -24,6 +24,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 // --- COMPONENTES ---
@@ -1189,6 +1190,10 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     const [suggestions, setSuggestions] = useState({}); // { missionId: { suggestionText, ... } }
     const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(null); // missionId that is loading
 
+    const today = new Date();
+    const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+    const [selectedDay, setSelectedDay] = useState(dayNames[today.getDay()]);
+
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
@@ -1209,25 +1214,31 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     };
 
     const handleSave = () => {
+        const currentDayRoutine = routine[selectedDay] || [];
         if (currentItem) {
             // Edit
-            setRoutine(routine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item));
+            const updatedDayRoutine = currentDayRoutine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item);
+            setRoutine(prev => ({...prev, [selectedDay]: updatedDayRoutine }));
         } else {
             // Add
-            setRoutine([...routine, { ...editedItem, id: Date.now() }]);
+            const newDayRoutine = [...currentDayRoutine, { ...editedItem, id: Date.now() }];
+            setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
         }
         setIsDialogOpen(false);
     };
 
     const handleDelete = (id) => {
-        setRoutine(routine.filter(item => item.id !== id));
+        const currentDayRoutine = routine[selectedDay] || [];
+        const updatedDayRoutine = currentDayRoutine.filter(item => item.id !== id);
+        setRoutine(prev => ({...prev, [selectedDay]: updatedDayRoutine}));
     };
 
     const handleGetSuggestion = async (mission) => {
         setIsLoadingSuggestion(mission.id);
         try {
             const result = await generateRoutineSuggestion({
-                routine: routine,
+                routine: routine[selectedDay] || [],
+                dayOfWeek: selectedDay,
                 missionName: mission.nome,
                 missionDescription: mission.descricao,
             });
@@ -1250,11 +1261,11 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
             activity: `[Missão] ${mission.nome}`
         };
     
-        let updatedRoutine = [...routine];
+        let dayRoutine = routine[selectedDay] || [];
     
         // If the suggestion modifies an existing block, split that block
         if (suggestion.modifiedBlockId) {
-            const blockToModify = updatedRoutine.find(item => item.id === suggestion.modifiedBlockId);
+            const blockToModify = dayRoutine.find(item => item.id === suggestion.modifiedBlockId);
             
             if (blockToModify) {
                 const originalStart = blockToModify.start_time;
@@ -1263,7 +1274,7 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
                 const suggestionEnd = suggestion.suggestedEndTime;
     
                 // Remove the original block
-                updatedRoutine = updatedRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
+                let updatedRoutine = dayRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
     
                 // Add the new mission block
                 updatedRoutine.push(newRoutineItem);
@@ -1285,16 +1296,17 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
                         start_time: suggestionEnd,
                     });
                 }
+                setRoutine(prev => ({...prev, [selectedDay]: updatedRoutine}));
             } else {
                  // Fallback if block not found: just add the mission
-                 updatedRoutine.push(newRoutineItem);
+                const newDayRoutine = [...dayRoutine, newRoutineItem];
+                setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
             }
         } else {
             // If no block is modified, just add the new item
-            updatedRoutine.push(newRoutineItem);
+            const newDayRoutine = [...dayRoutine, newRoutineItem];
+            setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
         }
-    
-        setRoutine(updatedRoutine);
     
         // Remove suggestion after implementing
         setSuggestions(prev => {
@@ -1313,7 +1325,7 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     }
 
     const getUnscheduledMissions = () => {
-        const routineMissionNames = routine.map(r => r.activity);
+        const allRoutineActivities = Object.values(routine).flat().map(r => r.activity);
         
         // 1. Find the active epic missions (same logic as MissionsView)
         const visibleEpicMissions = [];
@@ -1342,97 +1354,112 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
 
         // 3. Filter out missions already scheduled in the routine
         const unscheduled = activeDailyMissions.filter(dailyMission => 
-            !routineMissionNames.some(routineActivity => routineActivity.includes(dailyMission.nome))
+            !allRoutineActivities.some(routineActivity => routineActivity.includes(dailyMission.nome))
         );
 
         return unscheduled;
     };
 
-
-    const sortedRoutine = [...routine].sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const sortedRoutineForDay = (routine[selectedDay] || []).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const unscheduledMissions = getUnscheduledMissions();
 
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-cyan-400">Rotina Diária</h1>
+                <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
                 <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500">
                     <PlusCircle className="h-5 w-5 mr-2" />
                     Adicionar Atividade
                 </Button>
             </div>
-            
-            {/* Unscheduled Missions Section */}
-            {unscheduledMissions.length > 0 && (
-                <div className="mb-8">
-                     <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
-                     <div className="space-y-4">
-                        {unscheduledMissions.map(mission => (
-                            <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="font-bold text-gray-200">{mission.nome}</p>
-                                        <p className="text-sm text-gray-400">{mission.descricao}</p>
-                                    </div>
-                                    <Button 
-                                        onClick={() => handleGetSuggestion(mission)} 
-                                        disabled={isLoadingSuggestion === mission.id}
-                                        size="sm"
-                                    >
-                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                        <BrainCircuit className="ml-2 h-4 w-4"/>
-                                    </Button>
-                                </div>
-                                {suggestions[mission.id] && (
-                                    <Alert className="mt-4 border-cyan-500/50">
-                                        <Sparkles className="h-4 w-4 text-cyan-400" />
-                                        <AlertTitle className="text-cyan-400">Sugestão do Sistema</AlertTitle>
-                                        <AlertDescription className="text-gray-300">
-                                            {suggestions[mission.id].suggestionText}
-                                            <div className="flex gap-2 mt-3">
-                                                <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
-                                                <Button size="sm" variant="outline" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+             <p className="text-gray-400 mb-6">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+
+            <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
+                <TabsList className="grid w-full grid-cols-7">
+                    {dayNames.map(day => (
+                       <TabsTrigger key={day} value={day} className="capitalize">{day.substring(0,3)}</TabsTrigger>
+                    ))}
+                </TabsList>
+                
+                {dayNames.map(day => (
+                    <TabsContent key={day} value={day}>
+                        {/* Unscheduled Missions Section */}
+                        {unscheduledMissions.length > 0 && (
+                            <div className="my-8">
+                                <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
+                                <div className="space-y-4">
+                                    {unscheduledMissions.map(mission => (
+                                        <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-bold text-gray-200">{mission.nome}</p>
+                                                    <p className="text-sm text-gray-400">{mission.descricao}</p>
+                                                </div>
+                                                <Button 
+                                                    onClick={() => handleGetSuggestion(mission)} 
+                                                    disabled={isLoadingSuggestion === mission.id}
+                                                    size="sm"
+                                                >
+                                                    {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                    <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                </Button>
                                             </div>
-                                        </AlertDescription>
-                                    </Alert>
+                                            {suggestions[mission.id] && (
+                                                <Alert className="mt-4 border-cyan-500/50">
+                                                    <Sparkles className="h-4 w-4 text-cyan-400" />
+                                                    <AlertTitle className="text-cyan-400">Sugestão do Sistema</AlertTitle>
+                                                    <AlertDescription className="text-gray-300">
+                                                        {suggestions[mission.id].suggestionText}
+                                                        <div className="flex gap-2 mt-3">
+                                                            <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
+                                                            <Button size="sm" variant="outline" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                        </div>
+                                                    </AlertDescription>
+                                                </Alert>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="border-t border-gray-700 pt-8">
+                            <h2 className="text-2xl font-bold text-cyan-400 mb-4 capitalize">Agenda de {day}</h2>
+                            <div className="space-y-3">
+                                {sortedRoutineForDay.map(item => (
+                                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
+                                            <span className="mx-4 text-gray-500">|</span>
+                                            <p className="text-lg text-gray-200">{item.activity}</p>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                            <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {sortedRoutineForDay.length === 0 && (
+                                    <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
+                                        <p className="text-gray-400">Nenhuma atividade agendada para este dia.</p>
+                                        <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
+                                    </div>
                                 )}
                             </div>
-                        ))}
-                     </div>
-                </div>
-            )}
-            
-            <div className="border-t border-gray-700 pt-8">
-                <h2 className="text-2xl font-bold text-cyan-400 mb-4">Sua Agenda</h2>
-                 <p className="text-gray-400 mb-6">Mantenha a sua rotina diária atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+                        </div>
 
-                <div className="space-y-3">
-                    {sortedRoutine.map(item => (
-                        <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
-                            <div className="flex items-center">
-                                <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
-                                <span className="mx-4 text-gray-500">|</span>
-                                <p className="text-lg text-gray-200">{item.activity}</p>
-                            </div>
-                            <div className="flex space-x-2">
-                                <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
-                            </div>
-                        </div>
-                    ))}
-                    {sortedRoutine.length === 0 && (
-                        <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
-                            <p className="text-gray-400">A sua rotina está vazia.</p>
-                            <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+                    </TabsContent>
+                ))}
+            </Tabs>
+
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{currentItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
+                        <DialogDescription>
+                            A atividade será adicionada à agenda de <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>.
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -1551,7 +1578,7 @@ export default function App() {
   const [metas, setMetas] = useState([]);
   const [missions, setMissions] = useState([]);
   const [skills, setSkills] = useState([]);
-  const [routine, setRoutine] = useState([]);
+  const [routine, setRoutine] = useState({});
   
   useEffect(() => {
     const initialProfile = mockData.perfis[0];
