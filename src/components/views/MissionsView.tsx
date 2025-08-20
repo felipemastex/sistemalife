@@ -95,6 +95,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const interval = setInterval(() => {
             const now = new Date();
             const newTimers = {};
+            let missionsToUpdate = [];
+
             missions.forEach(mission => {
                 if (mission.ultima_missao_concluida_em) {
                     const completionDate = new Date(mission.ultima_missao_concluida_em);
@@ -111,12 +113,22 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                     } else {
                         if(timers[mission.id]){
-                            // Timer finished, reset the cooldown date by removing it
-                            setMissions(currentMissions => currentMissions.map(m => m.id === mission.id ? {...m, ultima_missao_concluida_em: null} : m));
+                            // Timer finished, mark mission for update
+                            missionsToUpdate.push(mission.id);
                         }
                     }
                 }
             });
+
+            if (missionsToUpdate.length > 0) {
+                setMissions(currentMissions =>
+                    currentMissions.map(m =>
+                        missionsToUpdate.includes(m.id)
+                            ? { ...m, ultima_missao_concluida_em: null }
+                            : m
+                    )
+                );
+            }
             setTimers(newTimers);
         }, 1000);
 
@@ -625,3 +637,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
+
+    
+
+    
