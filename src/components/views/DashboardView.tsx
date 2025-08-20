@@ -93,7 +93,7 @@ export const DashboardView = ({ profile }) => {
                             </defs>
                             <PolarGrid stroke="hsl(var(--border))" />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: 14 }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                             <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" fill="url(#radar-fill)" fillOpacity={0.8} />
                              <Tooltip 
                                 contentStyle={{
