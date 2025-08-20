@@ -445,17 +445,31 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         if (!simpleGoalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            const smartResult = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            // Simplified goal creation without SMART generation
+            const newSmartGoal = {
+                name: simpleGoalName,
+                specific: '',
+                measurable: '',
+                achievable: '',
+                relevant: '',
+                timeBound: '',
+            };
             
-            const categoryResult = await generateGoalCategory({
-                goalName: smartResult.refinedGoal.name,
-                categories: mockData.categoriasMetas,
-            });
+            let category = 'Desenvolvimento Pessoal';
+            try {
+                 const categoryResult = await generateGoalCategory({
+                    goalName: simpleGoalName,
+                    categories: mockData.categoriasMetas,
+                });
+                category = categoryResult.category;
+            } catch (categoryError) {
+                handleToastError(categoryError, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
+            }
 
             await handleSave({
-                nome: smartResult.refinedGoal.name,
-                categoria: categoryResult.category || 'Desenvolvimento Pessoal',
-                detalhes_smart: smartResult.refinedGoal
+                nome: newSmartGoal.name,
+                categoria: category,
+                detalhes_smart: newSmartGoal
             });
         } catch (error) {
             handleToastError(error, 'Não foi possível criar a meta.');
@@ -1317,5 +1331,7 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
