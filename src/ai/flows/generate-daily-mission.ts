@@ -24,6 +24,7 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico."),
     nextMissionDescription: z.string().describe("Uma breve descrição da próxima missão diária. Deve ser detalhada e acionável."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
+    learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
 
@@ -48,11 +49,23 @@ const generateNextDailyMissionFlow = ai.defineFlow(
         ? `IMPORTANTE: O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isso em consideração para ajustar a dificuldade da nova missão. Se o feedback indica que foi 'muito difícil', torne a próxima missão um passo menor e mais simples. Se foi 'muito fácil', aumente ligeiramente a complexidade. Se o utilizador descreveu um problema específico, use esse contexto para criar o próximo passo.`
         : '';
 
-    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos com base no livro "Hábitos Atómicos". O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", que está ligada à sua meta de longo prazo: "${input.metaName}". ${historyPrompt} ${feedbackPrompt} A sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico. A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA. Não crie missões genéricas como "estude mais". Siga os princípios de "Hábitos Atómicos": 1. **Torne-a Óbvia:** A missão deve ser clara e inequívoca. Ex: "Abra o seu editor de código e encontre a função 'calcularTotal'." 2. **Torne-a Atraente:** Formule a missão de uma forma que soe como um progresso, não uma tarefa. Ex: "Execute o seu primeiro teste unitário para validar o cálculo." 3. **Torne-a Fácil:** Deve ser um passo muito pequeno, uma melhoria de 1%. Algo que pode ser feito em menos de 15 minutos. Aumente a dificuldade apenas ligeiramente em relação à tarefa anterior. 4. **Torne-a Satisfatória:** A descrição deve implicar a sensação de realização. Gere uma única missão que seja o próximo passo lógico, específico e pequeno. Não repita as missões do histórico.`;
+    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos e um mentor técnico. O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", que está ligada à sua meta de longo prazo: "${input.metaName}". ${historyPrompt} ${feedbackPrompt} 
+A sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico. A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA.
+Siga os princípios de "Hábitos Atómicos": Torne-a Óbvia, Atraente, Fácil e Satisfatória.
+
+**Diretiva Adicional: Mentor Técnico**
+Se a missão envolver um conhecimento técnico (como programação, análise de dados, etc.), você DEVE agir como um mentor. 
+- Analise a tarefa.
+- Forneça até 3 links (URLs) para recursos de aprendizagem de alta qualidade que ajudem diretamente a concluir a missão. Podem ser links para documentação oficial, tutoriais em vídeo, artigos ou exemplos de código.
+- Os recursos devem ser específicos para a tarefa, não genéricos. Por exemplo, se a missão é sobre "criar uma função em Python", forneça um link para a documentação sobre funções em Python.
+
+Gere uma única missão que seja o próximo passo lógico, específico e pequeno. Não repita as missões do histórico.
+`;
 
     const MissionSchema = z.object({
         nextMissionName: z.string(),
         nextMissionDescription: z.string(),
+        learningResources: z.array(z.string().url()).optional(),
     });
 
     const {output} = await ai.generate({
@@ -71,6 +84,7 @@ const generateNextDailyMissionFlow = ai.defineFlow(
       nextMissionName: output!.nextMissionName,
       nextMissionDescription: output!.nextMissionDescription,
       xp: xp.xp,
+      learningResources: output!.learningResources,
     };
   }
 );

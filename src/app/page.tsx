@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit, Link } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
@@ -187,7 +187,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         } finally {
             setIsLoading(false);
         }
-    },[onClose]);
+    },[onClose, handleToastError]);
 
 
     const handleNextStep = async () => {
@@ -898,6 +898,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                         xp_conclusao: result.xp,
                         concluido: false,
                         tipo: 'diaria',
+                        learningResources: result.learningResources,
                     };
 
                     setMissions(current => current.map(m => m.id === nextMission.id ? {...m, missoes_diarias: [newDailyMission]} : m));
@@ -943,6 +944,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 xp_conclusao: result.xp,
                 concluido: false,
                 tipo: 'diaria',
+                learningResources: result.learningResources,
             };
             
             setMissions(currentMissions => currentMissions.map(rm => {
@@ -1056,39 +1058,54 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
                                 {activeDailyMission && !onCooldown && (
-                                     <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
-                                        <div className="flex-shrink-0 mr-4">
-                                            <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
-                                                {generating === activeDailyMission.id ? 
-                                                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-500 border-t-cyan-400" />
-                                                  : <Circle className="h-8 w-8 text-gray-500 hover:text-green-500 transition-colors" />}
-                                            </button>
+                                     <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4`}>
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0 mr-4">
+                                                <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
+                                                    {generating === activeDailyMission.id ? 
+                                                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-500 border-t-cyan-400" />
+                                                      : <Circle className="h-8 w-8 text-gray-500 hover:text-green-500 transition-colors" />}
+                                                </button>
+                                            </div>
+                                            <div className="flex-grow">
+                                                <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
+                                                <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
+                                            </div>
+                                            <div className="text-right ml-4 flex-shrink-0 flex items-center gap-2">
+                                                <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400">
+                                                            <LifeBuoy className="h-5 w-5" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
+                                                            Preciso de uma dica
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
+                                                            Está muito difícil
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
+                                                            Está muito fácil
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
-                                        <div className="flex-grow">
-                                            <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
-                                            <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
-                                        </div>
-                                        <div className="text-right ml-4 flex-shrink-0 flex items-center gap-2">
-                                            <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400">
-                                                        <LifeBuoy className="h-5 w-5" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent>
-                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
-                                                        Preciso de uma dica
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
-                                                        Está muito difícil
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
-                                                        Está muito fácil
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
+                                         {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
+                                            <div className="mt-4 pt-3 border-t border-gray-700/50">
+                                                <h5 className="text-sm font-bold text-gray-400 mb-2">Recursos de Aprendizagem Sugeridos</h5>
+                                                <div className="space-y-2">
+                                                    {activeDailyMission.learningResources.map((link, index) => (
+                                                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm bg-gray-800/60 p-2 rounded-md">
+                                                            <Link className="h-4 w-4"/>
+                                                            <span className="truncate">{link}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                                 
