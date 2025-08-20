@@ -33,7 +33,7 @@ export const DashboardView = ({ profile }) => {
         }
   };
 
-  if (!profile) return <div className="text-center p-8 text-cyan-400">A carregar perfil...</div>;
+  if (!profile || !profile.estatisticas) return <div className="text-center p-8 text-cyan-400">A carregar perfil...</div>;
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
   const profileRank = getProfileRank(profile.nivel);
