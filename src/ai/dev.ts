@@ -1,12 +1,12 @@
-import { config } from 'dotenv';
+import {config} from 'dotenv';
 config();
 
-import '@/ai/flows/generate-personalized-advice.ts';
-import '@/ai/flows/generate-motivational-messages.ts';
-import '@/ai/flows/generate-daily-mission.ts';
-import '@/ai/flows/generate-goal-category.ts';
-import '@/ai/flows/generate-smart-goal-questions.ts';
-import '@/ai/flows/generate-simple-smart-goal.ts';
-import '@/ai/flows/generate-initial-epic-mission.ts';
-import '@/ai/flows/generate-xp-value.ts';
-import '@/ai/flows/generate-mission-suggestion.ts';
+import './flows/generate-personalized-advice.js';
+import './flows/generate-motivational-messages.js';
+import './flows/generate-daily-mission.js';
+import './flows/generate-goal-category.js';
+import './flows/generate-smart-goal-questions.js';
+import './flows/generate-simple-smart-goal.js';
+import './flows/generate-initial-epic-mission.js';
+import './flows/generate-xp-value.js';
+import './flows/generate-mission-suggestion.js';

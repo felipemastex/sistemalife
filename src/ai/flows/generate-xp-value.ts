@@ -54,7 +54,7 @@ const generateXpValueFlow = ai.defineFlow(
 
     const {output: difficultyScoreText} = await ai.generate({
       prompt,
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-1.5-pro-latest',
     });
 
     const difficultyScore = parseInt(difficultyScoreText, 10) || 4; // Padrão para 4 se a análise falhar
