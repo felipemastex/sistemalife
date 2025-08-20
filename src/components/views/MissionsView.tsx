@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2 } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -78,6 +78,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
+    const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -188,7 +189,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 }
             }
         } catch (error) {
-            handleToastError(error, 'Não foi possível enviar o seu feedback ao Sistema.');
+            handleToastError(error);
         }
     };
 
@@ -433,6 +434,56 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
     
+    const reactivateEpicMission = async (missionId) => {
+        const missionToReactivate = missions.find(m => m.id === missionId);
+        if (!missionToReactivate) return;
+        
+        setGenerating(missionId);
+        try {
+            const meta = metas.find(m => m.nome === missionToReactivate.meta_associada);
+            
+            const result = await generateNextDailyMission({
+                rankedMissionName: missionToReactivate.nome,
+                metaName: meta?.nome || "Objetivo geral",
+                history: "Esta é a primeira missão para este objetivo (reativado).",
+                userLevel: profile.nivel,
+            });
+
+             const newDailyMission = {
+                id: Date.now(),
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp,
+                concluido: false,
+                tipo: 'diaria',
+                learningResources: result.learningResources,
+            };
+
+            const updatedMissions = missions.map(m => {
+                if (m.id === missionId) {
+                    return {
+                        ...m,
+                        concluido: false,
+                        missoes_diarias: [newDailyMission],
+                        ultima_missao_concluida_em: null,
+                    };
+                }
+                return m;
+            });
+            setMissions(updatedMissions);
+            toast({
+                title: "Missão Reativada!",
+                description: `A missão "${missionToReactivate.nome}" está novamente no seu diário.`
+            });
+
+        } catch (error) {
+            handleToastError(error, "Não foi possível reativar a missão.");
+        } finally {
+            setGenerating(null);
+        }
+    };
+
+
     const handleShowProgression = (clickedMission) => {
         const goalMissions = missions
             .filter(m => m.meta_associada === clickedMission.meta_associada)
@@ -477,7 +528,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
         return visible.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
     };
-    
+
+    const completedMissions = missions.filter(m => m.concluido);
     const visibleMissions = getVisibleMissions();
 
     return (
@@ -517,9 +569,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             {timers[mission.id]}
                                         </div>
                                      )}
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
-                                          <GitMerge className="h-5 w-5" />
-                                      </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
+                                        <GitMerge className="h-5 w-5" />
+                                    </Button>
                                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
                                 </div>
                             </div>
@@ -657,6 +709,44 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 })}
             </Accordion>
             
+            {completedMissions.length > 0 && (
+                 <div className="mt-8">
+                     <Accordion type="single" collapsible value={completedAccordionOpen ? "completed" : ""} onValueChange={(value) => setCompletedAccordionOpen(value === "completed")}>
+                         <AccordionItem value="completed" className="bg-gray-800/30 border border-gray-700/50 rounded-lg">
+                             <AccordionTrigger className="hover:no-underline px-4 py-3 text-gray-400">
+                                 <div className="flex items-center gap-2">
+                                    {completedAccordionOpen ? <ChevronsUp className="h-5 w-5"/> : <ChevronsDown className="h-5 w-5"/>}
+                                    Missões Concluídas ({completedMissions.length})
+                                 </div>
+                             </AccordionTrigger>
+                             <AccordionContent className="px-4 pb-4 space-y-4">
+                                {completedMissions.map(mission => (
+                                     <div key={mission.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70">
+                                         <div className="flex-grow">
+                                             <p className="font-bold text-gray-300 line-through">{mission.nome}</p>
+                                             <p className="text-sm text-gray-500 mt-1">{mission.descricao}</p>
+                                         </div>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => reactivateEpicMission(mission.id)}
+                                            disabled={generating === mission.id}
+                                            className="w-full sm:w-auto"
+                                        >
+                                             {generating === mission.id ? (
+                                                <><Timer className="h-4 w-4 mr-2 animate-spin"/> A reativar...</>
+                                             ) : (
+                                                <><RefreshCw className="h-4 w-4 mr-2"/> Reativar</>
+                                             )}
+                                         </Button>
+                                     </div>
+                                ))}
+                             </AccordionContent>
+                         </AccordionItem>
+                     </Accordion>
+                 </div>
+            )}
+
             <MissionFeedbackDialog 
                 open={feedbackModalState.open}
                 onOpenChange={(isOpen) => setFeedbackModalState(prev => ({...prev, open: isOpen}))}
@@ -696,11 +786,3 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
-
-    
-
-
-
-    
-
-    
