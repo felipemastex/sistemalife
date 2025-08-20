@@ -342,7 +342,7 @@ export default function App() {
           </aside>
         )}
         
-      <main className="flex-1 overflow-y-auto relative" style={{height: '100vh'}}>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{height: '100vh'}}>
          {isMobile && (
             <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-background/80 backdrop-blur-md border-b border-border/50 flex items-center">
                  <Sheet>
@@ -363,3 +363,5 @@ export default function App() {
     </div>
   );
 }
+
+    
