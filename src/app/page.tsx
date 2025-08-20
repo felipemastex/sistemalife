@@ -442,8 +442,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                                 </div>
                             </AccordionTrigger>
                             <div className="flex space-x-2 pl-4">
-                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                <Button onClick={(e) => { e.stopPropagation(); handleOpenWizard(meta);}} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={(e) => { e.stopPropagation(); handleDelete(meta.id);}} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                             </div>
                         </div>
                         <AccordionContent className="p-4 pt-0">
@@ -559,9 +559,12 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
+        // XP para o próximo nível: Nível Anterior + 25 (Ex: 100, 125, 150...)
+        const newXpToNextLevel = currentProfile.xp_para_proximo_nivel + 25; 
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
-        const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel * 1.5);
+        
         toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newLevel}!` });
+
         return {
             ...currentProfile,
             nivel: newLevel,

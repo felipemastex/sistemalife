@@ -5,9 +5,9 @@ export const perfis = [
   {
     id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome_utilizador: 'Cazador_01',
-    nivel: 12,
-    xp: 450,
-    xp_para_proximo_nivel: 1200,
+    nivel: 1,
+    xp: 0,
+    xp_para_proximo_nivel: 100, // XP necessário para ir do nível 1 para o 2
     estatisticas: {
       forca: 15,
       inteligencia: 22,
