@@ -40,8 +40,8 @@ export default function App() {
   }, [user, loading, router]);
 
   const setupInitialData = async (userId, userEmail) => {
-      const batch = writeBatch(db);
       const userRef = doc(db, 'users', userId);
+      const batch = writeBatch(db);
 
       // 1. Profile
       const initialProfile = { 
@@ -53,7 +53,6 @@ export default function App() {
       };
       // Set the profile directly on the user document
       batch.set(userRef, initialProfile);
-      setProfile(initialProfile);
 
       // 2. Metas
       const metasRef = collection(db, 'users', userId, 'metas');
@@ -61,7 +60,6 @@ export default function App() {
           const metaDocRef = doc(metasRef, String(meta.id));
           batch.set(metaDocRef, meta);
       });
-      setMetas(mockData.metas);
 
       // 3. Missions
       const missionsRef = collection(db, 'users', userId, 'missions');
@@ -69,7 +67,6 @@ export default function App() {
           const missionDocRef = doc(missionsRef, String(mission.id));
           batch.set(missionDocRef, mission);
       });
-      setMissions(mockData.missoes);
 
       // 4. Skills
       const skillsRef = collection(db, 'users', userId, 'skills');
@@ -77,19 +74,25 @@ export default function App() {
           const skillDocRef = doc(skillsRef, String(skill.id));
           batch.set(skillDocRef, skill);
       });
-      setSkills(mockData.habilidades);
 
       // 5. Routine
       const routineRef = doc(db, 'users', userId, 'routine', 'main');
       batch.set(routineRef, mockData.rotina);
-      setRoutine(mockData.rotina);
 
       // 6. Routine Templates
       const routineTemplatesRef = doc(db, 'users', userId, 'routine', 'templates');
       batch.set(routineTemplatesRef, mockData.rotinaTemplates);
-      setRoutineTemplates(mockData.rotinaTemplates);
 
       await batch.commit();
+
+      // Manually set the state after committing the batch
+      setProfile(initialProfile);
+      setMetas(mockData.metas);
+      setMissions(mockData.missoes);
+      setSkills(mockData.habilidades);
+      setRoutine(mockData.rotina);
+      setRoutineTemplates(mockData.rotinaTemplates);
+
       toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
   };
 
@@ -225,29 +228,58 @@ export default function App() {
         
         // Batch delete all sub-collections
         const collectionsToDelete = ['metas', 'missions', 'skills'];
-        const deleteBatch = writeBatch(db);
         for (const coll of collectionsToDelete) {
             const snapshot = await getDocs(collection(userDocRef, coll));
-            snapshot.docs.forEach(doc => {
-                deleteBatch.delete(doc.ref);
+            // Firestore doesn't allow deleting a subcollection directly, you must delete documents one by one
+            const deleteBatch = writeBatch(db);
+            snapshot.docs.forEach(docToDelete => {
+                deleteBatch.delete(docToDelete.ref);
             });
+            if (!snapshot.empty) {
+                await deleteBatch.commit();
+            }
         }
-        await deleteBatch.commit();
         
-        // Delete routine documents separately (cannot be in same batch as subcollection deletes on parent doc)
-        await deleteDoc(doc(userDocRef, 'routine', 'main'));
-        await deleteDoc(doc(userDocRef, 'routine', 'templates'));
+        // Delete routine documents separately
+        await deleteDoc(doc(userDocRef, 'routine', 'main')).catch(e => console.log("Routine/main not found, skipping."));
+        await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Routine/templates not found, skipping."));
 
-        // Reset the entire user document by setting it again with initial data
-        await setupInitialData(user.uid, user.email);
-        
+        // Overwrite the user document with initial data
+        // This is the crucial step to reset stats, level, xp, etc.
+        const initialProfile = { 
+            ...mockData.perfis[0], 
+            id: user.uid, 
+            email: user.email,
+            nome_utilizador: user.email.split('@')[0],
+            avatar_url: `https://placehold.co/100x100.png?text=${user.email.substring(0,2).toUpperCase()}`
+        };
+        await setDoc(userDocRef, initialProfile);
+
+        // Re-setup the sub-collections
+        const metasRef = collection(db, 'users', user.uid, 'metas');
+        const missionsRef = collection(db, 'users', user.uid, 'missions');
+        const skillsRef = collection(db, 'users', user.uid, 'skills');
+        const routineRef = doc(db, 'users', user.uid, 'routine', 'main');
+        const routineTemplatesRef = doc(db, 'users', user.uid, 'routine', 'templates');
+
+        const setupBatch = writeBatch(db);
+        mockData.metas.forEach(meta => setupBatch.set(doc(metasRef, String(meta.id)), meta));
+        mockData.missoes.forEach(mission => setupBatch.set(doc(missionsRef, String(mission.id)), mission));
+        mockData.habilidades.forEach(skill => setupBatch.set(doc(skillsRef, String(skill.id)), skill));
+        setupBatch.set(routineRef, mockData.rotina);
+        setupBatch.set(routineTemplatesRef, mockData.rotinaTemplates);
+        await setupBatch.commit();
+
         toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa e reconfigurada." });
+
+        // Trigger a complete re-fetch by setting data loaded to false
+        setIsDataLoaded(false);
 
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
-        toast({ variant: 'destructive', title: "Erro no Reset", description: "Não foi possível apagar os seus dados." });
-    } finally {
-        setIsDataLoaded(true); // Trigger re-fetch
+        toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
+        // Still try to reload data even if there was an error
+        setIsDataLoaded(true);
     }
   };
 
@@ -329,3 +361,5 @@ export default function App() {
     </div>
   );
 }
+
+    
