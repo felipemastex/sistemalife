@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2 } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -11,10 +11,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { statCategoryMapping } from '@/lib/mappings';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
@@ -76,7 +77,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
-    const [hackerMode, setHackerMode] = useState(false);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
 
     const { toast } = useToast();
@@ -135,16 +135,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
     
-    useEffect(() => {
-        if (hackerMode) {
-            setMissions(currentMissions => currentMissions.map(m => ({ ...m, ultima_missao_concluida_em: null })));
-            toast({
-                title: "Modo Hacker Ativado!",
-                description: "Tempos de espera das missões eliminados.",
-            });
-            setHackerMode(false); // Reset switch after use
-        }
-    }, [hackerMode, setMissions, toast]);
+    const handleHackerMode = () => {
+        setMissions(currentMissions => currentMissions.map(m => ({ ...m, ultima_missao_concluida_em: null })));
+        toast({
+            title: "Modo Hacker Ativado!",
+            description: "Tempos de espera das missões eliminados.",
+        });
+    };
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
@@ -187,7 +184,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 
                 const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
                 if (rankedMission) {
-                    setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
+                     setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
                 }
             }
         } catch (error) {
@@ -393,6 +390,49 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
     
+    const revertLastDailyMission = (rankedMissionId) => {
+        let xpToSubtract = 0;
+        let missionReverted = false;
+
+        const updatedMissions = missions.map(rm => {
+            if (rm.id === rankedMissionId && !missionReverted) {
+                const completedMissions = rm.missoes_diarias.filter(dm => dm.concluido);
+                const activeMission = rm.missoes_diarias.find(dm => !dm.concluido);
+
+                if (completedMissions.length > 0) {
+                    const lastCompleted = completedMissions[completedMissions.length - 1];
+                    xpToSubtract = lastCompleted.xp_conclusao;
+
+                    const newDailyMissions = rm.missoes_diarias
+                        .map(dm => {
+                            if (dm.id === lastCompleted.id) {
+                                return { ...dm, concluido: false };
+                            }
+                            return dm;
+                        })
+                        .filter(dm => dm.id !== activeMission?.id);
+
+                    missionReverted = true;
+                    return {
+                        ...rm,
+                        missoes_diarias: newDailyMissions,
+                        ultima_missao_concluida_em: null, // Reset cooldown
+                    };
+                }
+            }
+            return rm;
+        });
+
+        if (missionReverted) {
+            setMissions(updatedMissions);
+            setProfile(prev => ({...prev, xp: Math.max(0, prev.xp - xpToSubtract)}));
+            toast({
+                title: "Missão Revertida",
+                description: "A missão anterior está ativa novamente. O XP foi ajustado.",
+            });
+        }
+    };
+    
     const handleShowProgression = (clickedMission) => {
         const goalMissions = missions
             .filter(m => m.meta_associada === clickedMission.meta_associada)
@@ -444,10 +484,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-cyan-400">Diário de Missões</h1>
-                 <div className="flex items-center space-x-2">
-                    <Switch id="hacker-mode" onCheckedChange={setHackerMode} checked={hackerMode} />
-                    <Label htmlFor="hacker-mode" className="text-sm text-gray-400">Modo Hacker</Label>
-                </div>
+                 <Button onClick={handleHackerMode} variant="outline" size="sm">
+                    Modo Hacker
+                </Button>
             </div>
             <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
 
@@ -461,26 +500,24 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                             <div className="flex flex-col sm:flex-row items-start sm:items-center w-full">
-                                <AccordionTrigger className="flex-1 hover:no-underline text-left px-4 py-3 w-full">
-                                    <div className="flex-1 text-left">
-                                        <div className="flex justify-between items-center">
-                                            <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
-                                        </div>
-                                        <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
+                             <div className="flex items-center w-full">
+                                <AccordionTrigger className="flex-1 hover:no-underline text-left px-4 py-3">
+                                    <div className="flex-1 text-left min-w-0">
+                                        <p className="text-lg font-bold text-gray-200 truncate">{mission.nome}</p>
+                                        <p className="text-sm text-gray-400 mt-1 truncate">{mission.descricao}</p>
                                         <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
                                              <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <div className="flex items-center space-x-2 p-4 pt-0 sm:pt-4 sm:pl-0 w-full sm:w-auto justify-end">
+                                <div className="flex items-center space-x-2 p-4">
                                      {onCooldown && (
                                         <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
                                             {timers[mission.id]}
                                         </div>
                                      )}
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={() => handleShowProgression(mission)}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
                                           <GitMerge className="h-5 w-5" />
                                       </Button>
                                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
@@ -578,13 +615,34 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                      <div className="pt-4 mt-4 border-t border-gray-700/50">
                                          <h4 className="text-md font-bold text-gray-400 mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
                                          <div className="space-y-2">
-                                         {completedDailyMissions.map(completed => (
+                                         {completedDailyMissions.map((completed, index) => (
                                               <div key={completed.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-3 flex items-center opacity-60">
                                                 <CheckCircle className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
                                                 <div className="flex-grow">
                                                     <p className="text-md font-medium text-gray-400 line-through">{completed.nome}</p>
                                                 </div>
-                                                <div className="text-right ml-3 flex-shrink-0">
+                                                <div className="text-right ml-3 flex-shrink-0 flex items-center gap-2">
+                                                    {index === 0 && !timers[mission.id] && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-yellow-400">
+                                                                    <Undo2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Reverter Missão?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Isto irá reativar a missão "{completed.nome}" e remover o XP ganho. A missão ativa atual será apagada. Tem a certeza?
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => revertLastDailyMission(mission.id)}>Sim, Reverter</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
                                                     <p className="text-xs font-semibold text-green-400/80">+{completed.xp_conclusao} XP</p>
                                                 </div>
                                             </div>
@@ -638,5 +696,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
+
+    
+
+
 
     
