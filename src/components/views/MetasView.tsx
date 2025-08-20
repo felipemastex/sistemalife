@@ -322,8 +322,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
 
 
     return (
-         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
                 <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
                     <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
                         <X className="h-6 w-6" />
@@ -331,13 +331,13 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                     {renderContent()}
                 </div>
             </DialogContent>
-         </Dialog>
+        </Dialog>
     )
 }
 
 export const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
     const [showWizard, setShowWizard] = useState(false);
-    const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed'
+    const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
     const [wizardInitialName, setWizardInitialName] = useState('');
     const [metaToEdit, setMetaToEdit] = useState(null);
     const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
@@ -517,7 +517,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     };
                 });
                 
-                setSkills([...skills, newSkill]);
+                setSkills(currentSkills => [...currentSkills, newSkill]);
                 setMetas([...metas, newMetaWithId]);
                 setMissions([...missions, ...newMissions]);
             }
@@ -712,11 +712,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 )})}
             </Accordion>
             
-            {showWizard && (
-              <Dialog open={showWizard} onOpenChange={(open) => !open && handleCloseWizard()}>
+            <Dialog open={showWizard} onOpenChange={(open) => !open && handleCloseWizard()}>
                 {renderWizardContent()}
-              </Dialog>
-            )}
+            </Dialog>
             
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
                 <DialogContent className="max-w-2xl">
