@@ -565,17 +565,11 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, se
 
 
     const handleDelete = (id) => {
-        setMetas(currentMetas => {
-            const metaToDelete = currentMetas.find(m => m.id === id);
-            if (metaToDelete) {
-                // Filter out the associated skill
-                setSkills(currentSkills => currentSkills.filter(skill => skill.id !== metaToDelete.habilidade_associada_id));
-                // Filter out the associated missions
-                setMissions(currentMissions => currentMissions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            }
-            // Filter out the goal itself
-            return currentMetas.filter(m => m.id !== id);
-        });
+        const metaToDelete = metas.find(m => m.id === id);
+        if (metaToDelete) {
+            setMissions(currentMissions => currentMissions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+        }
+        setMetas(currentMetas => currentMetas.filter(m => m.id !== id));
     };
 
     const startDetailedMode = (meta = null) => {
