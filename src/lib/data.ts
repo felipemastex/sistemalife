@@ -216,12 +216,6 @@ export const missoes = [
   }
 ];
 
-export const initialSkills = [
-    { id: 1, nome: 'Programação Python', descricao: 'Capacidade de escrever código em Python.', categoria: 'Desenvolvimento de Carreira', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 50, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
-    { id: 2, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', categoria: 'Saúde & Fitness', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 30, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
-    { id: 3, nome: 'Leitura Focada', descricao: 'Capacidade de ler e reter informações de forma eficiente.', categoria: 'Crescimento Pessoal', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 40, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
-];
-
 
 export const categoriasMetas = [
     'Desenvolvimento de Carreira',

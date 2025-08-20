@@ -568,8 +568,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, se
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
             setMissions(currentMissions => currentMissions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            setMetas(currentMetas => currentMetas.filter(m => m.id !== id));
         }
-        setMetas(currentMetas => currentMetas.filter(m => m.id !== id));
     };
 
     const startDetailedMode = (meta = null) => {
@@ -607,7 +607,23 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, se
                            </AccordionTrigger>
                            <div className="flex space-x-2 p-4">
                                 <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                            </div>
                        </div>
                         <AccordionContent className="p-4 pt-0">
@@ -1276,7 +1292,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skill
     );
 };
 
-const SkillsView = ({ skills, profile }) => {
+const SkillsView = ({ skills, setSkills }) => {
     const getSkillColor = (category) => {
         switch(category){
             case 'Desenvolvimento de Carreira': return 'border-blue-500';
@@ -1284,7 +1300,11 @@ const SkillsView = ({ skills, profile }) => {
             case 'Crescimento Pessoal': return 'border-purple-500';
             default: return 'border-gray-500';
         }
-    }
+    };
+
+    const handleDeleteSkill = (skillId) => {
+        setSkills(currentSkills => currentSkills.filter(s => s.id !== skillId));
+    };
     
     return (
         <div className="p-6">
@@ -1301,15 +1321,37 @@ const SkillsView = ({ skills, profile }) => {
                     <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4 transition-opacity ${!canLevelUp ? 'opacity-60' : ''}`}>
                         <div className="flex justify-between items-start">
                             <div className="flex-1">
-                                <p className="text-lg font-bold text-gray-200">{skill.nome}</p>
-                                <p className="text-sm text-gray-400">{skill.descricao}</p>
+                                <div className="flex justify-between items-center">
+                                    <p className="text-lg font-bold text-gray-200">{skill.nome}</p>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Tem a certeza que quer excluir a habilidade "{skill.nome}"? Esta ação não pode ser desfeita. Todo o progresso nesta habilidade será perdido.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+
+                                <p className="text-sm text-gray-400 mt-1">{skill.descricao}</p>
                                 {skill.pre_requisito && (
                                     <p className="text-xs text-yellow-400/70 mt-2">
                                         Requer: {skills.find(s => s.id === skill.pre_requisito)?.nome} Nv. {skills.find(s => s.id === skill.pre_requisito)?.nivel_minimo_para_desbloqueio || 1}
                                     </p>
                                 )}
                             </div>
-                            <div className="text-center ml-4 w-28">
+                            <div className="text-center ml-4 w-28 flex-shrink-0">
                                 <p className="text-sm text-gray-400">Nível</p>
                                 <p className="text-2xl font-bold text-cyan-400">{skill.nivel_atual}</p>
                                 <p className="text-xs text-gray-500">Máx {skill.nivel_maximo}</p>
@@ -1873,7 +1915,21 @@ export default function App() {
     const initialProfile = mockData.perfis[0];
     const initialMetas = mockData.metas;
     const initialMissions = [...mockData.missoes];
-    const initialSkills = mockData.initialSkills;
+    
+    // Start with skills derived from existing goals for consistency
+    const initialSkills = mockData.metas.map(meta => ({
+        id: meta.habilidade_associada_id,
+        nome: `Maestria em ${meta.nome}`,
+        descricao: `Habilidade relacionada ao objetivo: ${meta.nome}`,
+        categoria: meta.categoria,
+        nivel_atual: 1, 
+        nivel_maximo: 10, 
+        xp_atual: 0, 
+        xp_para_proximo_nivel: 50, 
+        pre_requisito: null, 
+        nivel_minimo_para_desbloqueio: null,
+    }));
+
     const initialRoutine = mockData.rotina;
     const initialRoutineTemplates = mockData.rotinaTemplates;
     
@@ -1937,7 +1993,7 @@ export default function App() {
       case 'missions':
         return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} skills={skills} setSkills={setSkills} />;
       case 'skills':
-        return <SkillsView skills={skills} profile={profile} />;
+        return <SkillsView skills={skills} setSkills={setSkills} />;
       case 'routine':
         return <RoutineView routine={routine} setRoutine={setRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={setRoutineTemplates} />;
       case 'ai-chat':
