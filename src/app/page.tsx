@@ -332,18 +332,18 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
             <Accordion type="multiple" className="space-y-4">
                 {metas.map(meta => (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                        <AccordionTrigger className="hover:no-underline p-4">
-                            <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center w-full p-4">
+                            <AccordionTrigger className="flex-1 hover:no-underline text-left">
                                 <div>
                                     <p className="text-lg text-gray-200">{meta.nome}</p>
                                     <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
                                 </div>
-                                <div className="flex space-x-2">
-                                    <Button onClick={(e) => {e.stopPropagation(); handleOpenWizard(meta)}} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                    <Button onClick={(e) => {e.stopPropagation(); handleDelete(meta.id)}} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
-                                </div>
+                            </AccordionTrigger>
+                            <div className="flex space-x-2 pl-4">
+                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                             </div>
-                        </AccordionTrigger>
+                        </div>
                         <AccordionContent className="p-4 pt-0">
                            <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
                                 <p><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
@@ -842,3 +842,5 @@ export default function App() {
     </div>
   );
 }
+
+    
