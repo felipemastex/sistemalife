@@ -2,7 +2,6 @@ import {config} from 'dotenv';
 config();
 
 import './flows/generate-personalized-advice.js';
-import './flows/generate-motivational-messages.js';
 import './flows/generate-daily-mission.js';
 import './flows/generate-goal-category.js';
 import './flows/generate-smart-goal-questions.js';

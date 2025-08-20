@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
-import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/flows/generate-smart-goal-questions';
@@ -28,33 +27,6 @@ import { Label } from '@/components/ui/label';
 // --- COMPONENTES ---
 
 const Dashboard = ({ profile }) => {
-  const [aiAdvice, setAiAdvice] = useState('A analisar dados...');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const getInitialMessage = async () => {
-      if (!profile) return;
-      setLoading(true);
-      try {
-        const result = await generateMotivationalMessage({
-          userName: profile.nome_utilizador,
-          profileData: JSON.stringify(profile)
-        });
-        setAiAdvice(result.message);
-      } catch (e) {
-        console.error("Erro ao buscar mensagem motivacional:", e);
-        if (e instanceof Error && e.message.includes('429')) {
-             setAiAdvice("Quota diária de IA excedida. Mensagens do sistema retornarão amanhã.");
-        } else {
-             setAiAdvice("Erro: Não foi possível comunicar com o Sistema.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    getInitialMessage();
-  }, [profile]);
-
   const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
@@ -118,13 +90,7 @@ const Dashboard = ({ profile }) => {
             </div>
         </div>
       </div>
-      <div className="bg-gray-800/50 border border-cyan-500/30 rounded-lg p-4 flex items-start space-x-4">
-        <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1" />
-        <div>
-            <h3 className="font-bold text-cyan-400">Mensagem do Sistema</h3>
-             {loading ? <p className="text-gray-300 text-sm">A analisar dados...</p> : <p className="text-gray-300 text-sm">{aiAdvice}</p>}
-        </div>
-      </div>
+      
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {stats.map(stat => (
           <div key={stat.name} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col items-center justify-center space-y-2">
@@ -814,9 +780,9 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         let newProfile = { ...profile, xp: profile.xp + xpGained };
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
-            newProfile = handleLevelUp(newProfile);
-            setProfile(newProfile);
-            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
+            const leveledUpProfile = handleLevelUp(newProfile);
+            setProfile(leveledUpProfile);
+            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${leveledUpProfile.nivel}!` });
         } else {
              setProfile(newProfile);
         }
