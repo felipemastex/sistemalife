@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
-import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
+import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/flows/generate-smart-goal-questions';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,114 +95,99 @@ const Dashboard = ({ profile }) => {
 };
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
-    const [conversation, setConversation] = useState([]);
+    const [currentQuestion, setCurrentQuestion] = useState('');
     const [userInput, setUserInput] = useState('');
     const [goalState, setGoalState] = useState(metaToEdit ? {name: metaToEdit.nome, ...metaToEdit.detalhes_smart} : { name: '' });
     const [isLoading, setIsLoading] = useState(false);
+    const [history, setHistory] = useState([]);
     const { toast } = useToast();
-    const conversationEndRef = useRef(null);
 
-    const scrollToBottom = () => {
-        conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-
-    useEffect(scrollToBottom, [conversation]);
-
-    useEffect(() => {
-        if (metaToEdit) {
-            setConversation([{ sender: 'ai', text: `Vamos editar a sua meta: "${metaToEdit.nome}". O que você gostaria de alterar primeiro?` }]);
-        } else {
-             setConversation([{ sender: 'ai', text: 'Olá! Estou aqui para o ajudar a definir uma meta poderosa usando o método SMART. Qual é a meta que você tem em mente?' }]);
-        }
-    }, [metaToEdit]);
-
-    const askNextQuestion = useCallback(async (currentGoal, history = []) => {
+    const handleInitialQuestion = async (goalName) => {
         setIsLoading(true);
+        const initialGoal = { name: goalName };
+        setGoalState(initialGoal);
         try {
-            const result = await generateSmartGoalQuestion({ goal: currentGoal, history });
-
-            if (result.isComplete && result.refinedGoal) {
-                setConversation(prev => [...prev, { sender: 'ai', text: "Excelente! A sua meta SMART está definida. Aqui está o resumo final. Pode salvar agora." }]);
-                setGoalState(result.refinedGoal);
-            } else if (result.nextQuestion) {
-                 setConversation(prev => [...prev, { sender: 'ai', text: result.nextQuestion }]);
+            const result = await generateSmartGoalQuestion({ goal: initialGoal });
+            if (result.nextQuestion) {
+                setCurrentQuestion(result.nextQuestion);
             }
         } catch (error) {
-            console.error("Erro ao gerar pergunta SMART:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a próxima pergunta.' });
-            setConversation(prev => [...prev, { sender: 'ai', text: "Ocorreu um erro. Vamos tentar novamente. Qual é a sua meta?"}])
+            console.error("Erro ao gerar a primeira pergunta:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível iniciar o assistente.' });
+            onClose();
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }
 
-    const handleSend = async () => {
+    const handleNextStep = async () => {
         if (!userInput.trim() || isLoading) return;
 
-        const newUserMessage = { sender: 'user', text: userInput };
-        const newConversation = [...conversation, newUserMessage];
-        setConversation(newConversation);
-        setUserInput('');
+        const lastQuestion = currentQuestion;
+        const newHistory = [...history, { question: lastQuestion, answer: userInput }];
+        setHistory(newHistory);
         setIsLoading(true);
-
-        let updatedGoal = { ...goalState };
-        let history = conversation.filter(m => m.sender === 'user').map((m, i) => ({
-            question: conversation.filter(msg => msg.sender === 'ai')[i]?.text,
-            answer: m.text
-        }));
-
-        if (!goalState.name) {
-            updatedGoal.name = userInput;
-        } else {
-            const lastQuestion = conversation.filter(m => m.sender === 'ai').slice(-1)[0]?.text.toLowerCase();
-            if (lastQuestion) {
-                 if (lastQuestion.includes('especificamente')) updatedGoal.specific = userInput;
-                 else if (lastQuestion.includes('medirá') || lastQuestion.includes('indicadores')) updatedGoal.measurable = userInput;
-                 else if (lastQuestion.includes('atingir') || lastQuestion.includes('passos')) updatedGoal.achievable = userInput;
-                 else if (lastQuestion.includes('importante') || lastQuestion.includes('relevante')) updatedGoal.relevant = userInput;
-                 else if (lastQuestion.includes('prazo') || lastQuestion.includes('quando')) updatedGoal.timeBound = userInput;
-            }
-        }
         
+        let updatedGoal = { ...goalState };
+        const lastQuestionLower = lastQuestion.toLowerCase();
+        
+        // Update goal state based on the question that was just answered
+        if (lastQuestionLower.includes('específico')) updatedGoal.specific = userInput;
+        else if (lastQuestionLower.includes('medirá') || lastQuestionLower.includes('progresso')) updatedGoal.measurable = userInput;
+        else if (lastQuestionLower.includes('atingir') || lastQuestionLower.includes('passos')) updatedGoal.achievable = userInput;
+        else if (lastQuestionLower.includes('relevante') || lastQuestionLower.includes('importante')) updatedGoal.relevant = userInput;
+        else if (lastQuestionLower.includes('prazo') || lastQuestionLower.includes('data final')) updatedGoal.timeBound = userInput;
+        
+        setUserInput(''); // Clear input after processing
         setGoalState(updatedGoal);
-        await askNextQuestion(updatedGoal, history);
-    };
 
-    const handleSaveGoal = async () => {
-        if (!goalState.name || !goalState.specific || !goalState.measurable || !goalState.achievable || !goalState.relevant || !goalState.timeBound) {
-            toast({ variant: 'destructive', title: 'Meta Incompleta', description: 'Por favor, complete a definição da meta SMART antes de salvar.' });
-            return;
+        try {
+            const result = await generateSmartGoalQuestion({ goal: updatedGoal, history: newHistory });
+
+            if (result.isComplete && result.refinedGoal) {
+                // Processo finalizado, salvar a meta
+                await handleSaveGoal(result.refinedGoal);
+            } else if (result.nextQuestion) {
+                setCurrentQuestion(result.nextQuestion);
+            }
+        } catch (error) {
+            console.error("Erro ao gerar próxima pergunta:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível continuar. Tente novamente.' });
+        } finally {
+            setIsLoading(false);
         }
-
-        // Sugerir categoria antes de salvar
+    };
+    
+    const handleSaveGoal = async (finalGoal) => {
         setIsLoading(true);
         try {
             const categoryResult = await generateGoalCategory({
-                goalName: goalState.name,
+                goalName: finalGoal.name,
                 categories: mockData.categoriasMetas,
             });
             const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
-                nome: goalState.name,
+                nome: finalGoal.name,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: {
-                    specific: goalState.specific,
-                    measurable: goalState.measurable,
-                    achievable: goalState.achievable,
-                    relevant: goalState.relevant,
-                    timeBound: goalState.timeBound,
+                    specific: finalGoal.specific,
+                    measurable: finalGoal.measurable,
+                    achievable: finalGoal.achievable,
+                    relevant: finalGoal.relevant,
+                    timeBound: finalGoal.timeBound,
                 }
             };
             onSave(newMeta);
-            onClose();
+            toast({ title: "Meta SMART Salva!", description: "A sua nova meta foi definida com sucesso." });
+            onClose(); // Fechar o wizard após salvar
         } catch (error) {
              console.error("Erro ao sugerir categoria:", error);
              toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. Salvando com categoria padrão.' });
              const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
-                nome: goalState.name,
+                nome: finalGoal.name,
                 categoria: 'Desenvolvimento Pessoal',
-                detalhes_smart: { ...goalState }
+                detalhes_smart: { ...finalGoal }
              };
              onSave(newMeta);
              onClose();
@@ -210,47 +195,64 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             setIsLoading(false);
         }
     }
-
-    return (
-         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-cyan-500 rounded-lg w-full max-w-2xl h-[90vh] flex flex-col">
-                <h2 className="text-xl font-bold text-cyan-400 p-4 border-b border-gray-700">{metaToEdit ? 'Editar Meta SMART' : 'Assistente de Metas SMART'}</h2>
-
-                <div className="flex-1 p-4 overflow-y-auto space-y-4">
-                    {conversation.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
-                            {msg.sender === 'ai' && <Bot className="h-6 w-6 text-cyan-400 flex-shrink-0" />}
-                            <div className={`max-w-lg p-3 rounded-lg ${msg.sender === 'user' ? 'bg-cyan-800 text-white' : 'bg-gray-700 text-gray-300'}`}>
-                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                            </div>
-                            {msg.sender === 'user' && <User className="h-6 w-6 text-gray-400 flex-shrink-0" />}
-                        </div>
-                    ))}
-                    {isLoading && ( <div className="flex items-start gap-3"><Bot className="h-6 w-6 text-cyan-400 flex-shrink-0" /><div className="max-w-lg p-3 rounded-lg bg-gray-700 text-gray-300"><div className="flex items-center space-x-2"><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div><div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse"></div></div></div></div>)}
-                    <div ref={conversationEndRef} />
-                </div>
-
-                <div className="p-4 border-t border-gray-700 flex items-center gap-2">
-                    <Input
+    
+    const renderContent = () => {
+        if (!goalState.name) {
+            return (
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-cyan-400 mb-4">Qual é a meta que você tem em mente?</h2>
+                    <p className="text-gray-400 mb-6">Descreva o seu objetivo inicial. Vamos refiná-lo juntos.</p>
+                     <Input
                         type="text"
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Digite a sua resposta..."
-                        className="flex-1"
-                        disabled={isLoading || goalState.isComplete}
+                        onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion(userInput)}
+                        placeholder="Ex: Aprender a programar, correr uma maratona, ler mais livros..."
+                        className="max-w-lg mx-auto"
+                        disabled={isLoading}
                     />
-                    <Button onClick={handleSend} disabled={isLoading || goalState.isComplete} size="icon">
-                        <Send className="h-5 w-5" />
+                    <Button onClick={() => userInput.trim() && handleInitialQuestion(userInput)} className="mt-4" disabled={isLoading || !userInput.trim()}>
+                        Começar a Definir
                     </Button>
                 </div>
-                 <div className="p-4 border-t border-gray-700 flex justify-end space-x-2">
-                    <Button onClick={onClose} variant="secondary">Cancelar</Button>
-                    <Button onClick={handleSaveGoal} className="bg-cyan-600 hover:bg-cyan-500" disabled={isLoading}>
-                        Salvar Meta
+            )
+        }
+
+        return (
+             <div className="w-full max-w-3xl">
+                <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.name}</span></p>
+                <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 text-center shadow-lg">
+                    {isLoading ? (
+                         <div className="flex items-center justify-center space-x-2 h-24">
+                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse"></div>
+                         </div>
+                    ) : (
+                        <h2 className="text-2xl text-cyan-400 mb-6 min-h-[6rem] flex items-center justify-center">{currentQuestion}</h2>
+                    )}
+                     <Textarea
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        placeholder="Seja detalhado na sua resposta..."
+                        className="min-h-[100px] text-base"
+                        disabled={isLoading}
+                    />
+                     <Button onClick={handleNextStep} className="mt-6" disabled={isLoading || !userInput.trim()}>
+                        Próximo Passo
+                        <Send className="h-4 w-4 ml-2" />
                     </Button>
                 </div>
-            </div>
+             </div>
+        )
+    }
+
+    return (
+         <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
+            <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <X className="h-6 w-6" />
+            </Button>
+            {renderContent()}
         </div>
     )
 }
@@ -475,6 +477,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 .join('\n');
 
             const meta = metas.find(m => m.nome.includes(rankedMission.meta_associada))
+
+            const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos com base no livro "Hábitos Atómicos". O utilizador (Nível ${profile.nivel}) está a trabalhar na missão épica "${rankedMission.nome}", que está ligada à sua meta de longo prazo: "${meta?.nome || "Objetivo geral"}". ${history ? `O histórico de missões concluídas recentemente é: ${history}` : `O utilizador acabou de completar: "${completedDailyMission.nome}".`} Sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico. A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA. Não crie missões genéricas como "estude mais". Siga os princípios de "Hábitos Atómicos": 1. **Torne-a Óbvia:** A missão deve ser clara e inequívoca. Ex: "Abra o seu editor de código e encontre a função 'calcularTotal'." 2. **Torne-a Atraente:** Formule a missão de uma forma que soe como um progresso, não uma tarefa. Ex: "Execute o seu primeiro teste unitário para validar o cálculo." 3. **Torne-a Fácil:** Deve ser um passo muito pequeno, uma melhoria de 1%. Algo que pode ser feito em menos de 15 minutos. Aumente a dificuldade apenas ligeiramente em relação à tarefa anterior. 4. **Torne-a Satisfatória:** A descrição deve implicar a sensação de realização. Gere uma única missão que seja o próximo passo lógico, específico e pequeno. A recompensa de XP deve ser pequena, refletindo o pequeno esforço (entre 15 e 50 XP). Não repita as missões do histórico.`;
 
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
@@ -842,5 +846,3 @@ export default function App() {
     </div>
   );
 }
-
-    
