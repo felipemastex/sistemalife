@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
@@ -343,10 +343,9 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {availableMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
-                    const lastCompletedMission = mission.missoes_diarias.slice().reverse().find(d => d.concluido);
+                    const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
                     const missionProgress = (mission.missoes_diarias.filter(d => d.concluido).length / (mission.total_missoes_diarias || 10)) * 100;
                     const onCooldown = !!timers[mission.id];
-                    const wasCompletedToday = onCooldown && lastCompletedMission;
                     
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -363,19 +362,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                {wasCompletedToday && lastCompletedMission && (
-                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4 flex-shrink-0" />
-                                        <div className="flex-grow">
-                                            <p className="text-lg font-bold text-gray-400 line-through">{lastCompletedMission.nome}</p>
-                                            <p className="text-sm text-gray-500">Missão do dia concluída. Bom trabalho!</p>
-                                        </div>
-                                        <div className="text-right ml-4 flex-shrink-0">
-                                            <p className="text-sm font-semibold text-green-400">+{lastCompletedMission.xp_conclusao} XP</p>
-                                        </div>
-                                    </div>
-                                )}
-
                                 {onCooldown ? (
                                     <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
                                         <div className="blur-sm flex-grow text-left">
@@ -405,16 +391,34 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                         </div>
                                     </div>
                                 ) : (
-                                     !wasCompletedToday && (
-                                        <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                            <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
-                                            <div>
-                                                <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
-                                                <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
-                                            </div>
+                                    <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
+                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
                                         </div>
-                                     )
+                                    </div>
                                 )}
+                                
+                                {completedDailyMissions.length > 0 && (
+                                     <div className="pt-4 mt-4 border-t border-gray-700/50">
+                                         <h4 className="text-md font-bold text-gray-400 mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
+                                         <div className="space-y-2">
+                                         {completedDailyMissions.map(completed => (
+                                              <div key={completed.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-3 flex items-center opacity-70">
+                                                <CheckCircle className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
+                                                <div className="flex-grow">
+                                                    <p className="text-md font-bold text-gray-400 line-through">{completed.nome}</p>
+                                                </div>
+                                                <div className="text-right ml-3 flex-shrink-0">
+                                                    <p className="text-xs font-semibold text-green-400">+{completed.xp_conclusao} XP</p>
+                                                </div>
+                                            </div>
+                                         ))}
+                                         </div>
+                                     </div>
+                                )}
+
                             </AccordionContent>
                         </AccordionItem>
                     )
