@@ -202,6 +202,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             xp_atual: skill.xp_atual - skill.xp_para_proximo_nivel,
             xp_para_proximo_nivel: Math.floor(skill.xp_para_proximo_nivel * 1.5)
         };
+        
         setSkills(currentSkills => currentSkills.map(s => s.id === skill.id ? leveledUpSkill : s));
         
         let toastDescription = `A sua habilidade "${skill.nome}" subiu para o nível ${leveledUpSkill.nivel_atual}!`;
@@ -637,7 +638,5 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
-
-    
 
     
