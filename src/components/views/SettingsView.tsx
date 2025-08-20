@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -48,13 +48,12 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     
     const hasChanges = () => {
         if (!profile) return false;
-        const profileFields = profileData;
         return (
-            profileFields.primeiro_nome !== profile.primeiro_nome ||
-            profileFields.apelido !== profile.apelido ||
-            profileFields.genero !== profile.genero ||
-            profileFields.nacionalidade !== profile.nacionalidade ||
-            profileFields.avatar_url !== profile.avatar_url
+            profileData.primeiro_nome !== profile.primeiro_nome ||
+            profileData.apelido !== profile.apelido ||
+            profileData.genero !== profile.genero ||
+            profileData.nacionalidade !== profile.nacionalidade ||
+            profileData.avatar_url !== profile.avatar_url
         );
     };
 
