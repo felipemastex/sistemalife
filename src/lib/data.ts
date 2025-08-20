@@ -1,120 +1,108 @@
 import type { LucideIcon } from "lucide-react";
-import { HeartPulse, Landmark, BrainCircuit, Repeat, Trophy, Award, BookOpen } from 'lucide-react';
+import { Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 
-export interface Stat {
-    title: string;
-    value: string;
-    progress: number;
-    Icon: LucideIcon;
-}
-
-export const stats: Stat[] = [
-    { title: 'Health', value: 'Level 8', progress: 80, Icon: HeartPulse },
-    { title: 'Finance', value: 'Level 5', progress: 50, Icon: Landmark },
-    { title: 'Skills', value: 'Level 7', progress: 70, Icon: BrainCircuit },
+export const perfis = [
+  {
+    id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome_utilizador: 'Utilizador_01',
+    nivel: 12,
+    xp: 450,
+    xp_para_proximo_nivel: 1200,
+    estatisticas: {
+      forca: 15,
+      inteligencia: 22,
+      destreza: 18,
+      constituicao: 16,
+      sabedoria: 20,
+      carisma: 17,
+    },
+  },
 ];
 
-export interface Habit {
-    id: string;
-    text: string;
-    completed: boolean;
-}
-
-export interface Goal {
-    id: string;
-    title: string;
-    description: string;
-    progress: number;
-    habits: Habit[];
-}
-
-export const goals: Goal[] = [
-    {
-        id: 'goal1',
-        title: 'Run a 5k Marathon',
-        description: 'Train consistently to complete a 5k marathon in under 30 minutes.',
-        progress: 50,
-        habits: [
-            { id: 'h1', text: 'Run 3 times a week', completed: true },
-            { id: 'h2', text: 'Stretch daily', completed: true },
-            { id: 'h3', text: 'Follow a healthy diet plan', completed: false },
-            { id: 'h4', text: 'Get 8 hours of sleep', completed: false },
-        ]
-    },
-    {
-        id: 'goal2',
-        title: 'Learn a new programming language',
-        description: 'Become proficient in Python by building 3 projects.',
-        progress: 66,
-        habits: [
-            { id: 'h5', text: 'Code for 1 hour daily', completed: true },
-            { id: 'h6', text: 'Complete a tutorial chapter weekly', completed: true },
-            { id: 'h7', text: 'Start building the first project', completed: false },
-        ]
-    }
+export const metas = [
+  {
+    id: 1,
+    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome: 'Aprender a programar em Python',
+    categoria: 'Desenvolvimento Pessoal',
+  },
+  {
+    id: 2,
+    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome: 'Correr uma maratona de 5km',
+    categoria: 'Saúde & Fitness',
+  },
+  {
+    id: 3,
+    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome: 'Ler 12 livros este ano',
+    categoria: 'Cultura',
+  },
 ];
 
-export interface Challenge {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: 'Easy' | 'Medium' | 'Hard';
-    points: number;
-    Icon: LucideIcon;
-}
-
-export const challenges: Challenge[] = [
-    {
-        id: 'c1',
-        title: '30-Day Fitness Streak',
-        description: 'Exercise for 30 consecutive days.',
-        difficulty: 'Medium',
-        points: 500,
-        Icon: Trophy,
-    },
-    {
-        id: 'c2',
-        title: 'Read a Book a Week',
-        description: 'Finish reading one book every week for a month.',
-        difficulty: 'Hard',
-        points: 1000,
-        Icon: BookOpen,
-    },
-    {
-        id: 'c3',
-        title: 'Digital Detox Weekend',
-        description: 'No screens for an entire weekend.',
-        difficulty: 'Easy',
-        points: 250,
-        Icon: Award,
-    },
+export const missoes = [
+  // Missões Diárias (serão geradas pela IA)
+  {
+    id: 101,
+    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome: 'Estudar Python por 30 minutos',
+    descricao: 'Complete uma lição no seu curso de Python.',
+    concluido: true,
+    tipo: 'diaria',
+    xp_conclusao: 25,
+  },
+  {
+    id: 102,
+    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+    nome: 'Caminhada de 15 minutos',
+    descricao: 'Faça uma pequena pausa para se movimentar.',
+    concluido: false,
+    tipo: 'diaria',
+    xp_conclusao: 15,
+  },
+  // Missões Ranqueadas
+  {
+    id: 201,
+    nome: 'O Primeiro "Hello World"',
+    descricao: 'Escreva e execute o seu primeiro script em Python.',
+    concluido: true,
+    xp_conclusao: 100,
+    rank: 'E',
+    level_requirement: 1,
+  },
+  {
+    id: 202,
+    nome: 'O Despertar do Corredor',
+    descricao: 'Complete a sua primeira corrida de 1km sem parar.',
+    concluido: false,
+    xp_conclusao: 150,
+    rank: 'E',
+    level_requirement: 3,
+  },
+  {
+    id: 203,
+    nome: 'Iniciativa do Investidor',
+    descricao: 'Abra uma conta numa corretora e faça o seu primeiro investimento.',
+    concluido: false,
+    xp_conclusao: 500,
+    rank: 'D',
+    level_requirement: 10,
+  },
+   {
+    id: 204,
+    nome: 'Conquistador de Algoritmos',
+    descricao: 'Resolva 10 problemas de algoritmos de nível fácil em qualquer plataforma online.',
+    concluido: false,
+    xp_conclusao: 1200,
+    rank: 'C',
+    level_requirement: 15,
+  }
 ];
 
-export interface DailyHabit {
-    id: string;
-    text: string;
-    Icon: LucideIcon;
-}
-
-export const dailyHabits: DailyHabit[] = [
-    { id: 'dh1', text: 'Morning Meditation (10 min)' },
-    { id: 'dh2', text: 'Plan your day' },
-    { id: 'dh3', text: '30 minutes of exercise' },
-    { id: 'dh4', text: 'Review your goals' },
+export const habilidades = [
+    { id: 1, nome: 'Programação Python', descricao: 'Capacidade de escrever código em Python.', nivel_atual: 2, nivel_maximo: 10, pre_requisito: null },
+    { id: 2, nome: 'Lógica de Programação', descricao: 'Compreensão fundamental de algoritmos e estruturas de dados.', nivel_atual: 3, nivel_maximo: 10, pre_requisito: null },
+    { id: 3, nome: 'Web Scraping com Python', descricao: 'Extrair dados de websites usando bibliotecas como BeautifulSoup e Scrapy.', nivel_atual: 0, nivel_maximo: 5, pre_requisito: 1 },
+    { id: 4, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', nivel_atual: 1, nivel_maximo: 10, pre_requisito: null },
+    { id: 5, nome: 'Gestão Financeira Pessoal', descricao: 'Capacidade de gerir orçamento, investimentos e poupanças.', nivel_atual: 2, nivel_maximo: 10, pre_requisito: null },
 ];
-
-export const userDataForAI = JSON.stringify({
-    name: "Alex",
-    trackedData: {
-        health: { level: 8, activity: "Active", sleep: "7 hours/night" },
-        finance: { level: 5, savings_rate: "15%", investments: "Beginner" },
-        skills: { level: 7, learning: ["Python", "Guitar"], focus: "Python" }
-    },
-    goals: [
-        { goal: "Run a 5k Marathon", progress: "50%", status: "On track" },
-        { goal: "Learn Python", progress: "66%", status: "Ahead of schedule" }
-    ],
-    challenges: [
-        { challenge: "30-Day Fitness Streak", status: "In Progress (Day 12)" }
-    ]
-}, null, 2);
