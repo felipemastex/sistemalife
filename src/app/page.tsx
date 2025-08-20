@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
@@ -446,7 +446,8 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: smartResult.refinedGoal
             });
-        } catch (error) {
+        } catch (error)
+{
             console.error("Erro ao criar meta simples:", error);
             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. Tente novamente.' });
         } finally {
@@ -580,7 +581,10 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
+    const [showProgressionTree, setShowProgressionTree] = useState(false);
+    const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const { toast } = useToast();
+    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -732,6 +736,14 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             setGenerating(null);
         }
     };
+    
+    const handleShowProgression = (clickedMission) => {
+        const goalMissions = missions
+            .filter(m => m.meta_associada === clickedMission.meta_associada)
+            .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+        setSelectedGoalMissions(goalMissions);
+        setShowProgressionTree(true);
+    };
 
     const getRankColor = (rank) => {
         switch (rank) {
@@ -748,8 +760,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
     }
     
-    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
-
     const getVisibleMissions = () => {
         const visible = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
@@ -800,6 +810,9 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                                 {timers[mission.id]}
                                             </div>
                                          )}
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => {e.stopPropagation(); handleShowProgression(mission);}}>
+                                              <GitMerge className="h-5 w-5" />
+                                          </Button>
                                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
                                         </div>
                                     </div>
@@ -888,6 +901,35 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                     )
                 })}
             </Accordion>
+            
+            <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-cyan-400 text-2xl">Árvore de Progressão da Missão</DialogTitle>
+                        <DialogDescription>
+                            Esta é a sequência de missões épicas para a meta "{selectedGoalMissions[0]?.meta_associada}".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                        {selectedGoalMissions.map((m, index) => (
+                             <div key={m.id} className={`p-4 rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-gray-800/50 opacity-70' : 'border-yellow-500 bg-gray-800'}`}>
+                                <div className="flex justify-between items-center">
+                                    <p className={`font-bold ${m.concluido ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{m.nome}</p>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(m.rank)}`}>Rank {m.rank}</span>
+                                </div>
+                                <p className="text-sm text-gray-400 mt-1">{m.descricao}</p>
+                                {m.concluido && (
+                                     <div className="flex items-center text-green-400 text-sm mt-2">
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        <span>Concluída</span>
+                                     </div>
+                                )}
+                             </div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
