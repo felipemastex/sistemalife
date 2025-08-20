@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
-// --- COMPONENTS ---
+// --- COMPONENTES ---
 
 const Dashboard = ({ profile }) => {
   const [aiAdvice, setAiAdvice] = useState('A analisar dados...');
@@ -27,7 +27,7 @@ const Dashboard = ({ profile }) => {
         });
         setAiAdvice(result.message);
       } catch (e) {
-        console.error("Error fetching motivational message:", e);
+        console.error("Erro ao buscar mensagem motivacional:", e);
         setAiAdvice("Erro: Não foi possível comunicar com o Sistema.");
       } finally {
         setLoading(false);
@@ -333,7 +333,7 @@ const AIChatView = ({ profile, metas }) => {
           const aiMessage = { sender: 'ai', text: result.response };
           setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
-            console.error("Error fetching AI advice:", error);
+            console.error("Erro ao buscar conselho da IA:", error);
             toast({
               variant: 'destructive',
               title: 'Erro de comunicação com o sistema',
@@ -389,7 +389,7 @@ export default function App() {
   const [skills, setSkills] = useState([]);
   
   useEffect(() => {
-    // Simulate fetching data
+    // Simula o carregamento de dados
     setProfile(mockData.perfis[0]);
     setMetas(mockData.metas);
     setMissions(mockData.missoes);
@@ -462,5 +462,3 @@ export default function App() {
     </div>
   );
 }
-
-    
