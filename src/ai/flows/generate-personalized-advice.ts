@@ -76,7 +76,7 @@ Responda de forma concisa, no personagem do Sistema. Seja útil e estratégico. 
         tools: [suggestRoutineTool],
     });
 
-    if (output.toolCalls) {
+    if (output?.toolCalls) {
         for (const toolCall of output.toolCalls) {
             if (toolCall.name === 'suggestRoutineTool' && toolCall.input) {
                 const suggestion = await generateRoutineSuggestion({
@@ -89,6 +89,6 @@ Responda de forma concisa, no personagem do Sistema. Seja útil e estratégico. 
         }
     }
 
-    return { response: output.text! };
+    return { response: output?.text || "Não foi possível gerar uma resposta." };
   }
 );
