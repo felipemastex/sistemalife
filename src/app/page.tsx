@@ -686,15 +686,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
     }
     
-    const availableMissions = missions.filter(m => profile.nivel >= m.level_requirement);
-
     return (
         <div className="p-6">
             <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
             <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
-                {availableMissions.map(mission => {
+                {missions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
                     const lastCompletedMission = completedDailyMissions[0];
