@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useFlowState } from '@genkit-ai/next/client';
 import { generatePersonalizedAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,30 +11,26 @@ import { useToast } from '@/hooks/use-toast';
 export function SystemGuide() {
     const [query, setQuery] = useState('');
     const [advice, setAdvice] = useState('');
+    const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
-    const [generate, state] = useFlowState(generatePersonalizedAdvice);
-    const { loading, data: result, error } = state;
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setAdvice('');
-        generate({ userData: userDataForAI, query });
-    };
-
-    useEffect(() => {
-        if (result) {
+        setLoading(true);
+        try {
+            const result = await generatePersonalizedAdvice({ userData: userDataForAI, query });
             setAdvice(result.advice);
-        } else if (error) { 
-             toast({
+        } catch (error) {
+            toast({
                 variant: 'destructive',
                 title: 'Error generating advice',
                 description: 'Please try again later.'
             });
+        } finally {
+            setLoading(false);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [result, error]);
-
+    };
 
     return (
         <Card className="shadow-sm">

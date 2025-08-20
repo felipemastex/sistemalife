@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { useFlowState } from '@genkit-ai/next/client';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,27 +9,28 @@ import { Loader2, Quote, RefreshCw } from 'lucide-react';
 export function MotivationalMessage() {
     const [category, setCategory] = useState('fitness');
     const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
 
-    const [generate, state] = useFlowState(generateMotivationalMessage);
-    const { loading, data: result, error } = state;
-    
-    const handleGenerate = useCallback((cat: string) => {
+    const handleGenerate = useCallback(async (cat: string) => {
+        setLoading(true);
+        setError(null);
         setMessage('');
-        generate({ userName: 'Alex', category: cat });
-    }, [generate]);
+        try {
+            const result = await generateMotivationalMessage({ userName: 'Alex', category: cat });
+            setMessage(result.message);
+        } catch (e: any) {
+            setError(e);
+            setMessage(`Couldn't get a message. Please try again.`);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
     
     useEffect(() => {
         handleGenerate(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    useEffect(() => {
-        if (result) {
-            setMessage(result.message);
-        } else if (error) {
-            setMessage(`Couldn't get a message. Please try again.`);
-        }
-    }, [result, error]);
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
