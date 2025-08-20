@@ -106,13 +106,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
 
-    useEffect(() => {
-      if (goalState.name && !currentQuestion) {
-        handleInitialQuestion(goalState.name)
-      }
-    }, [goalState.name, currentQuestion]);
-
-    const handleInitialQuestion = async (goalName) => {
+    const handleInitialQuestion = useCallback(async (goalName) => {
         setIsLoading(true);
         const initialGoal = metaToEdit ? goalState : { name: goalName };
         if (!metaToEdit) {
@@ -134,7 +128,13 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         } finally {
             setIsLoading(false);
         }
-    }
+    },[goalState, metaToEdit, onClose, toast]);
+
+    useEffect(() => {
+      if (goalState.name && !currentQuestion) {
+        handleInitialQuestion(goalState.name)
+      }
+    }, [goalState.name, currentQuestion, handleInitialQuestion]);
 
     const handleNextStep = async () => {
         if (!userInput.trim() || isLoading) return;
@@ -146,13 +146,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         setExampleAnswers([]);
         
         let updatedGoal = { ...goalState };
-        const lastQuestionLower = lastQuestion.toLowerCase();
-        
-        if (lastQuestionLower.includes('específico') || lastQuestionLower.includes('exatamente')) updatedGoal.specific = userInput;
-        else if (lastQuestionLower.includes('medirá') || lastQuestionLower.includes('progresso')) updatedGoal.measurable = userInput;
-        else if (lastQuestionLower.includes('atingir') || lastQuestionLower.includes('passos')) updatedGoal.achievable = userInput;
-        else if (lastQuestionLower.includes('relevante') || lastQuestionLower.includes('importante')) updatedGoal.relevant = userInput;
-        else if (lastQuestionLower.includes('prazo') || lastQuestionLower.includes('data final')) updatedGoal.timeBound = userInput;
+        // This is a bit naive, a better approach would be to know which field we are asking about
+        if (!updatedGoal.specific) updatedGoal.specific = userInput;
+        else if (!updatedGoal.measurable) updatedGoal.measurable = userInput;
+        else if (!updatedGoal.achievable) updatedGoal.achievable = userInput;
+        else if (!updatedGoal.relevant) updatedGoal.relevant = userInput;
+        else if (!updatedGoal.timeBound) updatedGoal.timeBound = userInput;
         
         setUserInput(''); 
         setGoalState(updatedGoal);
@@ -247,6 +246,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
                         <Textarea
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleNextStep();
+                              }
+                            }}
                             placeholder="Seja detalhado na sua resposta ou escolha um exemplo abaixo..."
                             className="min-h-[100px] text-base"
                             disabled={isLoading}
@@ -300,8 +305,10 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const handleOpenWizard = (meta = null) => {
         setMetaToEdit(meta);
         if (meta) {
+            // Directly open the detailed wizard for editing
             startDetailedMode(meta);
         } else {
+            // Show mode selection for creating a new goal
             setShowModeSelection(true);
         }
     };
@@ -315,24 +322,33 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     };
 
     const handleSave = async (newOrUpdatedMeta) => {
+        // This function handles both create and update
+        // For simplicity, we'll use a loading state here
         setIsLoadingSimpleGoal(true);
+        
         if (metaToEdit) {
-            // Logic for updating an existing goal
-            const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m);
+            // --- UPDATE LOGIC ---
+            // Replace the existing meta with the updated version
+            const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
             setMetas(updatedMetas);
-            // Update the associated mission's meta link
-             setMissions(prev => prev.map(mission => 
-                mission.meta_associada === metaToEdit.nome 
-                ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
-                : mission
-            ));
+            
+            // If the goal name changed, we need to update the associated mission link
+            if (metaToEdit.nome !== newOrUpdatedMeta.nome) {
+                setMissions(prev => prev.map(mission => 
+                    mission.meta_associada === metaToEdit.nome 
+                    ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
+                    : mission
+                ));
+            }
+            toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
+
         } else {
-            // Logic for creating a new goal and its epic mission
+            // --- CREATE LOGIC ---
+            // Assign a new ID
             const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
-            setMetas(prev => [...prev, newMetaWithId]);
             
             try {
-                // Find related history
+                // Find related history from already completed goals
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
                     .map(m => `- Meta Concluída: ${m.nome}`)
@@ -351,9 +367,9 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                     descricao: result.epicMissionDescription,
                     concluido: false, 
                     rank: result.rank, 
-                    level_requirement: 1,
+                    level_requirement: 1, // Level requirement can be adjusted later
                     meta_associada: newMetaWithId.nome, 
-                    total_missoes_diarias: 10, 
+                    total_missoes_diarias: 10, // Default value, can be dynamic
                     ultima_missao_concluida_em: null,
                     missoes_diarias: [{
                         id: Date.now() + 2,
@@ -364,13 +380,15 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                         tipo: 'diaria',
                     }]
                 };
+                
+                // Add new meta and new mission to state
+                setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, newRankedMission]);
 
             } catch (error) {
                 console.error("Erro ao gerar missão épica inicial:", error);
-                toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a missão épica. Tente novamente.' });
-                // Rollback meta creation if mission generation fails
-                setMetas(prev => prev.filter(m => m.id !== newMetaWithId.id));
+                toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a missão épica para esta meta.' });
+                // Do not add the meta if mission generation fails
             }
         }
         setIsLoadingSimpleGoal(false);
@@ -381,23 +399,27 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         if (!simpleGoalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            const result = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            // 1. Generate SMART details from a simple name
+            const smartResult = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            
+            // 2. Generate a category for the new goal
             const categoryResult = await generateGoalCategory({
-                goalName: result.refinedGoal.name,
+                goalName: smartResult.refinedGoal.name,
                 categories: mockData.categoriasMetas,
             });
+
+            // 3. Call the main save function with the newly generated data
             await handleSave({
-                nome: result.refinedGoal.name,
+                nome: smartResult.refinedGoal.name,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
-                detalhes_smart: result.refinedGoal
+                detalhes_smart: smartResult.refinedGoal
             });
         } catch (error) {
             console.error("Erro ao criar meta simples:", error);
             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. Tente novamente.' });
         } finally {
             setIsLoadingSimpleGoal(false);
-            setShowSimpleModeDialog(false);
-            setSimpleGoalName('');
+            handleCloseWizard();
         }
     };
 
@@ -405,6 +427,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const handleDelete = (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
+            // Also delete the associated epic mission
             setMissions(prev => prev.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(metas.filter(m => m.id !== id));
         }
@@ -492,7 +515,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={showSimpleModeDialog} onOpenChange={setShowSimpleModeDialog}>
+            <Dialog open={showSimpleModeDialog} onOpenChange={(isOpen) => { if (!isOpen) handleCloseWizard(); else setShowSimpleModeDialog(true);}}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Modo Rápido: Nova Meta</DialogTitle>
@@ -547,7 +570,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                     } else {
                         if(timers[mission.id]){
-                            // Timer finished, reset the cooldown date
+                            // Timer finished, reset the cooldown date by removing it
                             setMissions(currentMissions => currentMissions.map(m => m.id === mission.id ? {...m, ultima_missao_concluida_em: null} : m));
                         }
                     }
@@ -562,7 +585,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
-        const newXpToNextLevel = currentProfile.xp_para_proximo_nivel + 25; 
+        const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel + 25);
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         
         toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newLevel}!` });
@@ -578,28 +601,21 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
         const now = new Date();
         const rankedMission = missions.find(m => m.id === rankedMissionId);
+        if (!rankedMission) return;
         
-        // Prevent completing if on cooldown
-        if (rankedMission?.ultima_missao_concluida_em) {
-            const completionDate = new Date(rankedMission.ultima_missao_concluida_em);
-            const midnight = new Date(completionDate);
-            midnight.setDate(midnight.getDate() + 1);
-            midnight.setHours(0, 0, 0, 0);
-            if(now < midnight) {
-                 toast({
-                    variant: "destructive",
-                    title: "Aguarde o Cooldown!",
-                    description: "A próxima missão estará disponível quando o temporizador zerar.",
-                });
-                return;
-            }
+        const isOnCooldown = !!rankedMission.ultima_missao_concluida_em;
+        if (isOnCooldown) {
+            toast({
+                variant: "destructive",
+                title: "Aguarde o Cooldown!",
+                description: "A próxima missão estará disponível quando o temporizador zerar.",
+            });
+            return;
         }
-
 
         setGenerating(dailyMissionId);
         let xpGained = 0;
 
-        // Mark the daily mission as complete and set cooldown
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
@@ -616,7 +632,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setMissions(updatedMissions);
 
-        // Update profile XP and check for level up
         setProfile(currentProfile => {
             let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
             while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
@@ -625,7 +640,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return updatedProfile;
         });
         
-        // Generate the next mission
         try {
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
@@ -633,7 +647,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 .map(d => `- ${d.nome}`)
                 .join('\n');
 
-            const meta = metas.find(m => m.nome.includes(rankedMission.meta_associada))
+            const meta = metas.find(m => m.nome === rankedMission.meta_associada)
 
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
@@ -651,7 +665,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 tipo: 'diaria',
             };
             
-            // Add the new mission to the list
             setMissions(currentMissions => currentMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
                      return { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
@@ -674,6 +687,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const getRankColor = (rank) => {
         switch (rank) {
+            case 'F': return 'bg-gray-500 text-gray-100';
             case 'E': return 'bg-gray-600 text-gray-200';
             case 'D': return 'bg-green-700 text-green-200';
             case 'C': return 'bg-blue-700 text-blue-200';
@@ -686,19 +700,21 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
     }
     
+    const visibleMissions = missions;
+
     return (
         <div className="p-6">
             <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
             <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
-                {missions.map(mission => {
+                {visibleMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
-                    const lastCompletedMission = completedDailyMissions[0];
                     const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     const onCooldown = !!timers[mission.id];
-                    
+                    const lastCompletedMission = onCooldown ? completedDailyMissions[0] : null;
+
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
                             <AccordionTrigger className="hover:no-underline px-4 py-3">
@@ -722,7 +738,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                {activeDailyMission ? (
+                                
+                                {activeDailyMission && !onCooldown && (
                                      <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
                                         <div className="flex-shrink-0 mr-4">
                                             <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
@@ -739,20 +756,25 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                             <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
                                         </div>
                                     </div>
-                                ) : onCooldown ? (
-                                    <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
-                                        <div className="blur-sm flex-grow text-left">
-                                           <p className="text-lg font-bold text-gray-500">Próxima Missão Bloqueada</p>
-                                           <p className="text-sm text-gray-600">A transmissão estará disponível em breve.</p>
+                                )}
+                                
+                                {onCooldown && lastCompletedMission && (
+                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center opacity-80">
+                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4 flex-shrink-0" />
+                                        <div className="flex-grow">
+                                            <p className="text-lg font-bold text-gray-300 line-through">{lastCompletedMission.nome}</p>
+                                            <p className="text-sm text-gray-400">Concluída! Próxima missão disponível à meia-noite.</p>
                                         </div>
-                                        <div className="flex items-center text-cyan-400 ml-4">
-                                            <Timer className="h-6 w-6 mr-2"/>
-                                            <p className="text-xl font-mono">{timers[mission.id]}</p>
+                                        <div className="flex items-center text-cyan-400 ml-4 flex-shrink-0">
+                                            <Timer className="h-5 w-5 mr-2"/>
+                                            <p className="text-lg font-mono">{timers[mission.id]}</p>
                                         </div>
                                     </div>
-                                ) : (
+                                )}
+
+                                {!activeDailyMission && !onCooldown && (
                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
+                                        <Sparkles className="h-8 w-8 text-yellow-400 mr-4"/>
                                         <div>
                                             <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
                                             <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
@@ -765,13 +787,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                          <h4 className="text-md font-bold text-gray-400 mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
                                          <div className="space-y-2">
                                          {completedDailyMissions.map(completed => (
-                                              <div key={completed.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-3 flex items-center opacity-70">
+                                              <div key={completed.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-3 flex items-center opacity-60">
                                                 <CheckCircle className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
                                                 <div className="flex-grow">
-                                                    <p className="text-md font-bold text-gray-400 line-through">{completed.nome}</p>
+                                                    <p className="text-md font-medium text-gray-400 line-through">{completed.nome}</p>
                                                 </div>
                                                 <div className="text-right ml-3 flex-shrink-0">
-                                                    <p className="text-xs font-semibold text-green-400">+{completed.xp_conclusao} XP</p>
+                                                    <p className="text-xs font-semibold text-green-400/80">+{completed.xp_conclusao} XP</p>
                                                 </div>
                                             </div>
                                          ))}
@@ -908,13 +930,12 @@ export default function App() {
     const initialMissions = [...mockData.missoes];
     const initialSkills = mockData.habilidades;
     
-    // Ensure every goal from mockData has a corresponding mission
     initialMetas.forEach(meta => {
         const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
         if (!hasMission) {
             console.log(`Creating mission for goal: ${meta.nome}`);
             initialMissions.push({
-                id: Date.now() + Math.random(), // simple unique id
+                id: Date.now() + Math.random(), 
                 nome: `Missão Épica: ${meta.nome}`,
                 descricao: `Um grande passo em direção a: ${meta.nome}.`,
                 concluido: false, 
