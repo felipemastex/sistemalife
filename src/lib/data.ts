@@ -5,6 +5,7 @@ export const perfis = [
   {
     id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome_utilizador: 'Cazador_01',
+    avatar_url: 'https://placehold.co/100x100.png',
     nivel: 1,
     xp: 0,
     xp_para_proximo_nivel: 100, // XP necessário para ir do nível 1 para o 2

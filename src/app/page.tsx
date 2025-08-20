@@ -48,7 +48,8 @@ export default function App() {
             ...mockData.perfis[0], 
             id: userId, 
             email: userEmail,
-            nome_utilizador: userEmail.split('@')[0]
+            nome_utilizador: userEmail.split('@')[0],
+            avatar_url: `https://placehold.co/100x100.png?text=${userEmail.substring(0,2).toUpperCase()}`
         };
         const profileRef = doc(db, 'users', userId);
         batch.set(profileRef, { profile: initialProfile });
@@ -290,5 +291,3 @@ export default function App() {
     </div>
   );
 }
-
-    

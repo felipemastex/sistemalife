@@ -7,31 +7,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export const SettingsView = ({ profile, setProfile }) => {
     const [username, setUsername] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
         if (profile) {
-            setUsername(profile.nome_utilizador);
+            setUsername(profile.nome_utilizador || '');
+            setAvatarUrl(profile.avatar_url || '');
         }
     }, [profile]);
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!username.trim() || username.trim() === profile.nome_utilizador) {
+        const trimmedUsername = username.trim();
+        const trimmedAvatarUrl = avatarUrl.trim();
+
+        if (!trimmedUsername) {
+            toast({ variant: 'destructive', title: "Nome de Utilizador Inválido", description: "O nome de utilizador não pode estar em branco." });
+            return;
+        }
+
+        if (trimmedUsername === profile.nome_utilizador && trimmedAvatarUrl === profile.avatar_url) {
             return;
         }
 
         setIsSaving(true);
         try {
-            const updatedProfile = { ...profile, nome_utilizador: username.trim() };
+            const updatedProfile = { ...profile, nome_utilizador: trimmedUsername, avatar_url: trimmedAvatarUrl };
             await setProfile(updatedProfile);
             toast({
                 title: "Perfil Atualizado!",
-                description: "O seu nome de utilizador foi alterado com sucesso.",
+                description: "Os seus dados foram alterados com sucesso.",
             });
         } catch (error) {
             console.error("Erro ao salvar perfil:", error);
@@ -60,17 +71,24 @@ export const SettingsView = ({ profile, setProfile }) => {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSave} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={profile.email}
-                                disabled
-                                className="bg-gray-700/50 border-gray-600 cursor-not-allowed"
-                            />
-                             <p className="text-xs text-gray-500">O seu email de login não pode ser alterado.</p>
+                        <div className="flex items-center space-x-4">
+                            <Avatar className="h-20 w-20">
+                                <AvatarImage src={avatarUrl} alt={username} />
+                                <AvatarFallback>{username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-2 w-full">
+                                <Label htmlFor="avatar_url">URL do Avatar</Label>
+                                <Input
+                                    id="avatar_url"
+                                    type="url"
+                                    value={avatarUrl}
+                                    onChange={(e) => setAvatarUrl(e.target.value)}
+                                    placeholder="https://exemplo.com/imagem.png"
+                                    className="bg-gray-700 border-gray-600"
+                                />
+                            </div>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="username">Nome de Utilizador</Label>
                             <Input
@@ -82,9 +100,21 @@ export const SettingsView = ({ profile, setProfile }) => {
                                 className="bg-gray-700 border-gray-600"
                             />
                         </div>
+
+                         <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                value={profile.email}
+                                disabled
+                                className="bg-gray-700/50 border-gray-600 cursor-not-allowed"
+                            />
+                             <p className="text-xs text-gray-500">O seu email de login não pode ser alterado.</p>
+                        </div>
                         
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={isSaving || username === profile.nome_utilizador}>
+                            <Button type="submit" disabled={isSaving || (username === profile.nome_utilizador && avatarUrl === profile.avatar_url)}>
                                 {isSaving ? "A salvar..." : "Salvar Alterações"}
                             </Button>
                         </div>
@@ -94,5 +124,3 @@ export const SettingsView = ({ profile, setProfile }) => {
         </div>
     );
 };
-
-    

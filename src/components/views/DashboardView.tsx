@@ -2,6 +2,8 @@
 "use client";
 
 import { Swords, Brain, Zap, ShieldCheck, BookOpen, Star } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 export const DashboardView = ({ profile }) => {
   const getProfileRank = (level) => {
@@ -50,10 +52,16 @@ export const DashboardView = ({ profile }) => {
       <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 shadow-lg">
         <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-                <h2 className="text-2xl font-bold text-cyan-400">{profile.nome_utilizador}</h2>
-                <span className={`px-3 py-1 text-sm font-bold rounded-full ${getRankColor(profileRank.rank)}`}>
-                    Rank {profileRank.rank}
-                </span>
+                <Avatar className="h-16 w-16">
+                    <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
+                    <AvatarFallback>{profile.nome_utilizador?.substring(0,2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h2 className="text-2xl font-bold text-cyan-400">{profile.nome_utilizador}</h2>
+                     <span className={`px-3 py-1 text-sm font-bold rounded-full ${getRankColor(profileRank.rank)}`}>
+                        Rank {profileRank.rank}
+                    </span>
+                </div>
             </div>
              <p className="text-gray-400">Nível {profile.nivel} <span className="text-gray-500">({profileRank.title})</span></p>
         </div>
