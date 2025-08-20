@@ -105,36 +105,45 @@ const Dashboard = ({ profile }) => {
 };
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
+    const isEditing = !!metaToEdit;
+    const getInitialGoalState = () => {
+        if (isEditing) {
+            return {
+                name: metaToEdit.nome,
+                ...metaToEdit.detalhes_smart,
+            };
+        }
+        return {
+            name: '',
+            specific: '',
+            measurable: '',
+            achievable: '',
+            relevant: '',
+            timeBound: '',
+        };
+    };
+
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [goalState, setGoalState] = useState({ name: '' });
+    const [goalState, setGoalState] = useState(getInitialGoalState);
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
-    const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
-    
+
+    // This effect ensures that if we start editing, we check if we need to ask a question
     useEffect(() => {
-        if (metaToEdit) {
-            setGoalState({ name: metaToEdit.nome, ...metaToEdit.detalhes_smart });
-            setIsEditing(true);
-            // Directly ask the first question if a field is empty
-            const firstEmptyField = ['specific', 'measurable', 'achievable', 'relevant', 'timeBound'].find(field => !metaToEdit.detalhes_smart[field]);
-            if(firstEmptyField){
-                 handleInitialQuestion({ name: metaToEdit.nome, ...metaToEdit.detalhes_smart });
+        if (isEditing) {
+            // Check if any SMART field is empty to start the questionnaire
+            const firstEmptyField = ['specific', 'measurable', 'achievable', 'relevant', 'timeBound'].find(field => !goalState[field]);
+            if (firstEmptyField) {
+                // If a field is empty, start the wizard to fill it
+                handleInitialQuestion(goalState);
             } else {
-                // If all fields are filled, maybe just allow saving or show a summary
                  setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
             }
-        } else {
-            // Reset for new goal creation
-            setGoalState({ name: '' });
-            setCurrentQuestion('');
-            setUserInput('');
-            setHistory([]);
-            setIsEditing(false);
         }
-    }, [metaToEdit]);
+    }, []); // Run only once on mount
 
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
@@ -242,7 +251,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     
     // Simplified save for edit mode
     const handleEditSave = () => {
-        handleSaveGoal(goalState);
+        // Ensure name is preserved correctly if it's not editable in this screen
+        const finalGoalState = {
+             ...goalState,
+             name: metaToEdit.nome // keep original name
+        };
+        handleSaveGoal(finalGoalState);
     }
 
     const renderInitialScreen = () => (
@@ -1369,5 +1383,3 @@ export default function App() {
     </div>
   );
 }
-
-    
