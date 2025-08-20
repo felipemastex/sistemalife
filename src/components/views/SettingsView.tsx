@@ -12,8 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '@/components/ui/separator';
 
 export const SettingsView = ({ profile, setProfile, onReset }) => {
-    const [username, setUsername] = useState(profile?.nome_utilizador || '');
-    const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+    const [username, setUsername] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const { toast } = useToast();
@@ -71,10 +71,10 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
 
     return (
         <div className="p-6">
-            <h1 className="text-3xl font-bold text-cyan-400 mb-6">Configurações</h1>
+            <h1 className="text-3xl font-bold text-primary mb-6">Configurações</h1>
             
             <div className="max-w-2xl space-y-8">
-                <Card className="bg-gray-800/50 border-gray-700 text-gray-200">
+                <Card>
                     <CardHeader>
                         <CardTitle>Perfil</CardTitle>
                         <CardDescription>Atualize os seus dados de perfil aqui.</CardDescription>
@@ -94,7 +94,6 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                                         value={avatarUrl}
                                         onChange={(e) => setAvatarUrl(e.target.value)}
                                         placeholder="https://exemplo.com/imagem.png"
-                                        className="bg-gray-700 border-gray-600"
                                     />
                                 </div>
                             </div>
@@ -107,7 +106,6 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="O seu nome no sistema"
-                                    className="bg-gray-700 border-gray-600"
                                 />
                             </div>
 
@@ -118,9 +116,9 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                                     type="email"
                                     value={profile.email}
                                     disabled
-                                    className="bg-gray-700/50 border-gray-600 cursor-not-allowed"
+                                    className="cursor-not-allowed opacity-50"
                                 />
-                                 <p className="text-xs text-gray-500">O seu email de login não pode ser alterado.</p>
+                                 <p className="text-xs text-muted-foreground">O seu email de login não pode ser alterado.</p>
                             </div>
                             
                             <div className="flex justify-end">
@@ -132,7 +130,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                     </CardContent>
                 </Card>
 
-                 <Card className="border-red-500/50 bg-gray-800/50 text-gray-200">
+                 <Card className="border-red-500/50">
                     <CardHeader>
                         <CardTitle className="text-red-400">Zona de Perigo</CardTitle>
                         <CardDescription>Estas ações são destrutivas e não podem ser revertidas.</CardDescription>
@@ -141,7 +139,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                        <div className="flex justify-between items-center">
                            <div>
                                <p className="font-bold">Resetar a sua conta</p>
-                               <p className="text-sm text-gray-400">Isto irá apagar permanentemente todos os seus dados.</p>
+                               <p className="text-sm text-muted-foreground">Isto irá apagar permanentemente todos os seus dados.</p>
                            </div>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
