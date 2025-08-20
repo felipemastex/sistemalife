@@ -41,61 +41,48 @@ export const metas = [
 ];
 
 export const missoes = [
-  // Missões Diárias (serão geradas pela IA)
-  {
-    id: 101,
-    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome: 'Estudar Python por 30 minutos',
-    descricao: 'Complete uma lição no seu curso de Python.',
-    concluido: true,
-    tipo: 'diaria',
-    xp_conclusao: 25,
-  },
-  {
-    id: 102,
-    user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome: 'Caminhada de 15 minutos',
-    descricao: 'Faça uma pequena pausa para se movimentar.',
-    concluido: false,
-    tipo: 'diaria',
-    xp_conclusao: 15,
-  },
-  // Missões Ranqueadas
+  // Missões Épicas (Ranqueadas)
   {
     id: 201,
     nome: 'O Primeiro "Hello World"',
     descricao: 'Escreva e execute o seu primeiro script em Python.',
-    concluido: true,
-    xp_conclusao: 100,
+    concluido: false,
     rank: 'E',
     level_requirement: 1,
+    meta_associada: "Aprender a programar em Python",
+    total_missoes_diarias: 5,
+    missoes_diarias: [
+        { id: 101, nome: 'Instalar o Python', descricao: 'Instale a versão mais recente do Python no seu sistema.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
+        { id: 102, nome: 'Abrir um Editor de Código', descricao: 'Abra o VS Code ou outro editor e crie um novo ficheiro chamado hello.py.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
+        { id: 103, nome: 'Escrever uma linha de código', descricao: 'Digite `print("Hello, World!")` no seu ficheiro hello.py.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+    ]
   },
   {
     id: 202,
     nome: 'O Despertar do Corredor',
     descricao: 'Complete a sua primeira corrida de 1km sem parar.',
     concluido: false,
-    xp_conclusao: 150,
     rank: 'E',
     level_requirement: 3,
+    meta_associada: "Correr uma maratona de 5km",
+    total_missoes_diarias: 10,
+    missoes_diarias: [
+       { id: 104, nome: 'Prepare o seu equipamento', descricao: 'Separe os seus sapatos de corrida e roupas adequadas.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
+       { id: 105, nome: 'Caminhada Rápida de 5 Minutos', descricao: 'Faça uma caminhada rápida de 5 minutos para aquecer o corpo.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+    ]
   },
   {
-    id: 203,
-    nome: 'Iniciativa do Investidor',
-    descricao: 'Abra uma conta numa corretora e faça o seu primeiro investimento.',
-    concluido: false,
-    xp_conclusao: 500,
-    rank: 'D',
-    level_requirement: 10,
-  },
-   {
     id: 204,
     nome: 'Conquistador de Algoritmos',
     descricao: 'Resolva 10 problemas de algoritmos de nível fácil em qualquer plataforma online.',
     concluido: false,
-    xp_conclusao: 1200,
     rank: 'C',
     level_requirement: 15,
+    meta_associada: "Aprender a programar em Python",
+    total_missoes_diarias: 10,
+     missoes_diarias: [
+        { id: 106, nome: 'Escolha a sua plataforma', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+    ]
   }
 ];
 
@@ -106,3 +93,5 @@ export const habilidades = [
     { id: 4, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', nivel_atual: 1, nivel_maximo: 10, pre_requisito: null },
     { id: 5, nome: 'Gestão Financeira Pessoal', descricao: 'Capacidade de gerir orçamento, investimentos e poupanças.', nivel_atual: 2, nivel_maximo: 10, pre_requisito: null },
 ];
+
+    

@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
+import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 // --- COMPONENTES ---
 
@@ -130,7 +133,7 @@ const MetasView = ({ metas, setMetas }) => {
                     <span>Adicionar Meta</span>
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. O Sistema irá gerar missões diárias para o ajudar a progredir nelas.</p>
+            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. O Sistema irá gerar missões épicas para o ajudar a progredir nelas.</p>
             <div className="space-y-4">
                 {metas.map(meta => (
                     <div key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
@@ -171,13 +174,15 @@ const MetasView = ({ metas, setMetas }) => {
     );
 };
 
-const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
+const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
+    const [generating, setGenerating] = useState(null);
+    const { toast } = useToast();
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel * 1.5);
-        
+        toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newLevel}!` });
         return {
             ...currentProfile,
             nivel: newLevel,
@@ -186,53 +191,80 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
         };
     };
 
-    const completeMission = (id) => {
+    const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
+        setGenerating(dailyMissionId);
         let xpGained = 0;
-        const updatedMissions = missions.map(m => {
-            if (m.id === id && !m.concluido) {
-                xpGained = m.xp_conclusao;
-                return { ...m, concluido: true };
-            }
-            return m;
-        });
-        
-        if (xpGained > 0) {
-            setMissions(updatedMissions);
-            setProfile(currentProfile => {
-                let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
-                while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
-                    updatedProfile = handleLevelUp(updatedProfile);
-                }
-                return updatedProfile;
-            });
-        }
-    };
 
-    const toggleDailyMission = (id) => {
-        let xpChange = 0;
-        const updatedMissions = missions.map(m => {
-            if (m.id === id && m.tipo === 'diaria') {
-                xpChange = m.concluido ? -m.xp_conclusao : m.xp_conclusao;
-                return { ...m, concluido: !m.concluido };
+        // Encontra a missão diária e marca como concluída
+        const updatedMissions = missions.map(rankedMission => {
+            if (rankedMission.id === rankedMissionId) {
+                const updatedDailyMissions = rankedMission.missoes_diarias.map(daily => {
+                    if (daily.id === dailyMissionId) {
+                        xpGained = daily.xp_conclusao;
+                        return { ...daily, concluido: true };
+                    }
+                    return daily;
+                });
+                return { ...rankedMission, missoes_diarias: updatedDailyMissions };
             }
-            return m;
+            return rankedMission;
         });
+
         setMissions(updatedMissions);
 
-        if (xpChange !== 0) {
-            setProfile(currentProfile => {
-                let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpChange };
-                while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
-                    updatedProfile = handleLevelUp(updatedProfile);
-                }
-                return updatedProfile;
+        // Atualiza o perfil com o XP ganho
+        setProfile(currentProfile => {
+            let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
+            while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
+                updatedProfile = handleLevelUp(updatedProfile);
+            }
+            return updatedProfile;
+        });
+
+        // Gera a próxima missão diária
+        try {
+            const rankedMission = missions.find(m => m.id === rankedMissionId);
+            const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
+            const meta = metas.find(m => m.nome.includes(rankedMission.meta_associada))
+
+            const result = await generateNextDailyMission({
+                rankedMissionName: rankedMission.nome,
+                metaName: meta?.nome || "Objetivo geral",
+                lastCompletedMission: `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
+                userLevel: profile.nivel,
             });
+
+            const newDailyMission = {
+                id: Date.now(),
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp,
+                concluido: false,
+                tipo: 'diaria',
+            };
+
+            const finalMissions = updatedMissions.map(rm => {
+                if (rm.id === rankedMissionId) {
+                    return { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
+                }
+                return rm;
+            });
+            setMissions(finalMissions);
+
+        } catch (error) {
+            console.error("Erro ao gerar nova missão diária:", error);
+            toast({
+                variant: "destructive",
+                title: "Erro do Sistema",
+                description: "Não foi possível gerar a próxima missão diária.",
+            });
+        } finally {
+            setGenerating(null);
         }
     };
 
-
     const getRankColor = (rank) => {
-        switch(rank) {
+        switch (rank) {
             case 'F': return 'bg-gray-600 text-gray-200';
             case 'E': return 'bg-green-700 text-green-200';
             case 'D': return 'bg-blue-700 text-blue-200';
@@ -245,63 +277,65 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
             default: return 'bg-gray-700 text-gray-400';
         }
     }
-
-    const dailyMissions = missions.filter(m => m.tipo === 'diaria');
-    const rankedMissions = missions
-        .filter(m => m.rank && profile.nivel >= m.level_requirement)
-        .sort((a,b) => a.level_requirement - b.level_requirement);
+    
+    const availableMissions = missions.filter(m => profile.nivel >= m.level_requirement);
 
     return (
         <div className="p-6">
-            <h1 className="text-3xl font-bold text-cyan-400 mb-6">Diário de Missões</h1>
-            
-            <div className="mb-8">
-                <h2 className="text-xl font-bold text-yellow-400 mb-4">Treino Diário</h2>
-                {dailyMissions.length > 0 ? dailyMissions.map(mission => (
-                     <div key={mission.id} className={`bg-gray-800/50 border-l-4 ${mission.concluido ? 'border-green-500' : 'border-yellow-500'} rounded-r-lg p-4 flex items-center mb-2`}>
-                        <div className="flex-shrink-0 mr-4">
-                            <button onClick={() => toggleDailyMission(mission.id)}>
-                                {mission.concluido ? <CheckCircle className="h-8 w-8 text-green-500" /> : <Circle className="h-8 w-8 text-gray-500" />}
-                            </button>
-                        </div>
-                        <div className="flex-grow">
-                            <p className={`text-lg font-bold ${mission.concluido ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{mission.nome}</p>
-                            <p className="text-sm text-gray-400">{mission.descricao}</p>
-                        </div>
-                        <div className="text-right ml-4 flex-shrink-0">
-                            <p className="text-sm font-semibold text-cyan-400">+{mission.xp_conclusao} XP</p>
-                        </div>
-                    </div>
-                )) : <p className="text-gray-500">Nenhum treino diário gerado. Complete o treino atual para receber um novo amanhã.</p>}
-            </div>
+            <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
+            <p className="text-gray-400 mb-6">Complete missões diárias para progredir nas suas missões épicas e ganhar XP.</p>
 
-            <div>
-                <h2 className="text-xl font-bold text-purple-400 mb-4">Missões Ranqueadas</h2>
-                <div className="space-y-4">
-                    {rankedMissions.map(mission => (
-                        <div key={mission.id} className={`bg-gray-800/50 border-l-4 ${mission.concluido ? 'border-green-500' : 'border-purple-500'} rounded-r-lg p-4`}>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className={`text-lg font-bold ${mission.concluido ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{mission.nome}</p>
-                                    <p className="text-sm text-gray-400">{mission.descricao}</p>
+            <Accordion type="single" collapsible className="w-full space-y-4">
+                {availableMissions.map(mission => {
+                    const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
+                    const missionProgress = (mission.missoes_diarias.filter(d => d.concluido).length / (mission.total_missoes_diarias || 10)) * 100;
+                    
+                    return (
+                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
+                            <AccordionTrigger className="hover:no-underline px-4 py-3">
+                                <div className="flex-1 text-left">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
+                                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
+                                    <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
+                                         <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
+                                    </div>
                                 </div>
-                                <div className="text-right ml-4 flex-shrink-0 space-y-2">
-                                    <p className="text-sm font-semibold text-cyan-400">+{mission.xp_conclusao.toLocaleString('pt-PT')} XP</p>
-                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
-                                </div>
-                            </div>
-                             {!mission.concluido && (
-                                <div className="mt-4 pt-4 border-t border-gray-700 flex justify-end">
-                                    <Button onClick={() => completeMission(mission.id)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center space-x-2">
-                                        <CheckCircle className="h-5 w-5" />
-                                        <span>Completar Missão</span>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4">
+                                {activeDailyMission ? (
+                                    <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
+                                        <div className="flex-shrink-0 mr-4">
+                                            <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
+                                                {generating === activeDailyMission.id ? 
+                                                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-500 border-t-cyan-400" />
+                                                  : <Circle className="h-8 w-8 text-gray-500 hover:text-green-500 transition-colors" />}
+                                            </button>
+                                        </div>
+                                        <div className="flex-grow">
+                                            <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
+                                            <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
+                                        </div>
+                                        <div className="text-right ml-4 flex-shrink-0">
+                                            <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
+                                        <div>
+                                            <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
+                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho!</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                })}
+            </Accordion>
         </div>
     );
 };
@@ -346,7 +380,7 @@ const AIChatView = ({ profile, metas }) => {
 
     useEffect(scrollToBottom, [messages]);
 
-    const handleSend = async () => {
+    const handleSend = useCallback(async () => {
         if (!input.trim() || isLoading) return;
 
         const userMessage = { sender: 'user', text: input };
@@ -374,7 +408,8 @@ const AIChatView = ({ profile, metas }) => {
         } finally {
           setIsLoading(false);
         }
-    };
+    }, [input, isLoading, profile, metas, toast]);
+
 
     return (
         <div className="p-6 h-full flex flex-col">
@@ -451,7 +486,7 @@ export default function App() {
       case 'metas':
         return <MetasView metas={metas} setMetas={setMetas} />;
       case 'missions':
-        return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} />;
+        return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} />;
       case 'skills':
         return <SkillsView skills={skills} profile={profile} />;
       case 'ai-chat':
@@ -493,3 +528,5 @@ export default function App() {
     </div>
   );
 }
+
+    
