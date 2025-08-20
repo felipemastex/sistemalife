@@ -63,7 +63,7 @@ export const metas = [
 
 
 export const missoes = [
-  // Missões Épicas (Ranqueadas)
+  // --- Cadeia de Missões: Dominar os Fundamentos de Python ---
   {
     id: 201,
     nome: 'O Primeiro "Hello World"',
@@ -73,13 +73,71 @@ export const missoes = [
     level_requirement: 1,
     meta_associada: "Dominar os Fundamentos de Python",
     total_missoes_diarias: 10,
-    ultima_missao_concluida_em: null, // Novo campo
+    ultima_missao_concluida_em: null,
     missoes_diarias: [
         { id: 101, nome: 'Instalar o Compilador Python', descricao: 'Aceda a python.org, descarregue e instale a versão mais recente do Python no seu sistema operativo.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
         { id: 102, nome: 'Configurar o Editor de Código', descricao: 'Abra o VS Code, aceda à loja de extensões e instale a extensão oficial "Python" da Microsoft.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
         { id: 103, nome: 'Invocar o Terminal', descricao: 'Crie um novo ficheiro chamado hello.py e escreva a linha: print("Hello, World!"). Execute o ficheiro no terminal com o comando `python hello.py`.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
   },
+   {
+    id: 204,
+    nome: 'O Conquistador de Algoritmos',
+    descricao: 'A lógica é a sua espada. Resolva problemas de algoritmos para afiar a sua lâmina.',
+    concluido: false,
+    rank: 'D',
+    level_requirement: 5,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 15,
+    ultima_missao_concluida_em: null,
+     missoes_diarias: [
+        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+    ]
+  },
+  {
+    id: 205,
+    nome: 'O Ferreiro de Dados',
+    descricao: 'Domine a arte de manipular dados com a biblioteca Pandas, o canivete suíço dos analistas de dados.',
+    concluido: false,
+    rank: 'C',
+    level_requirement: 10,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 20,
+    ultima_missao_concluida_em: null,
+    missoes_diarias: [
+        { id: 109, nome: 'Importar o Arsenal', descricao: 'Crie um novo Jupyter Notebook e importe a biblioteca Pandas com o alias `pd`.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
+    ]
+  },
+  {
+    id: 206,
+    nome: 'O Arquiteto de APIs',
+    descricao: 'Construa uma API RESTful totalmente funcional que sirva como a espinha dorsal para futuras aplicações.',
+    concluido: false,
+    rank: 'B',
+    level_requirement: 15,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 25,
+    ultima_missao_concluida_em: null,
+     missoes_diarias: [
+        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, tipo: 'diaria' },
+    ]
+  },
+  {
+    id: 207,
+    nome: 'O Mestre de Engenharia de Dados',
+    descricao: 'Aplique todo o seu conhecimento para construir um pipeline de dados completo, desde a extração até à visualização.',
+    concluido: false,
+    rank: 'A',
+    level_requirement: 25,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 30,
+    ultima_missao_concluida_em: null,
+     missoes_diarias: [
+        { id: 110, nome: 'Desenhar a Arquitetura', descricao: 'Num quadro branco ou ferramenta de diagramação, desenhe o fluxo do seu pipeline de dados: de onde os dados virão, como serão transformados e onde serão armazenados.', concluido: false, xp_conclusao: 40, tipo: 'diaria' },
+    ]
+  },
+  
+  // --- Cadeia de Missões: Saúde & Fitness ---
   {
     id: 202,
     nome: 'O Despertar do Corredor',
@@ -89,13 +147,43 @@ export const missoes = [
     level_requirement: 3,
     meta_associada: "Correr uma Prova de 5km",
     total_missoes_diarias: 10,
-    ultima_missao_concluida_em: null, // Novo campo
+    ultima_missao_concluida_em: null,
     missoes_diarias: [
        { id: 104, nome: 'Preparar o Equipamento de Batalha', descricao: 'Separe os seus sapatos de corrida, meias confortáveis e roupas adequadas para o clima de hoje.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
        { id: 105, nome: 'Ritual de Aquecimento', descricao: 'Faça uma caminhada rápida de 5 minutos seguida de 5 minutos de alongamentos dinâmicos focados nas pernas e ancas.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
   },
-    {
+  {
+    id: 208,
+    nome: 'Resistência do Soldado',
+    descricao: 'A marca dos 5km foi alcançada. Agora, o desafio é dobrar a distância. Prepare-se para correr 10km.',
+    concluido: false,
+    rank: 'D',
+    level_requirement: 8,
+    meta_associada: "Correr uma Prova de 5km",
+    total_missoes_diarias: 15,
+    ultima_missao_concluida_em: null,
+    missoes_diarias: [
+       { id: 111, nome: 'Análise Pós-Batalha', descricao: 'Reflita sobre o seu treino de 5km. O que funcionou? O que pode ser melhorado? Anote 3 lições aprendidas.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+    ]
+  },
+  {
+    id: 209,
+    nome: 'Fôlego do Maratonista',
+    descricao: 'O corpo e a mente estão prontos para um novo patamar. O seu próximo objetivo: completar uma meia maratona (21km).',
+    concluido: false,
+    rank: 'C',
+    level_requirement: 15,
+    meta_associada: "Correr uma Prova de 5km",
+    total_missoes_diarias: 20,
+    ultima_missao_concluida_em: null,
+    missoes_diarias: [
+       { id: 112, nome: 'Estudar o Terreno', descricao: 'Pesquise e inscreva-se num plano de treino de 12 semanas para uma meia maratona.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
+    ]
+  },
+
+  // --- Cadeia de Missões: Crescimento Pessoal ---
+  {
     id: 203,
     nome: 'Páginas do Conhecimento',
     descricao: 'A sabedoria dos antigos e modernos espera por si. Conclua a leitura do seu primeiro livro do ano.',
@@ -108,33 +196,19 @@ export const missoes = [
     missoes_diarias: [
         { id: 106, nome: 'A Escolha do Tomo', descricao: 'Pesquise e selecione o primeiro livro de não-ficção que você lerá este ano. Adicione-o à sua lista de leitura no Goodreads ou numa aplicação similar.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
-    },
-  {
-    id: 204,
-    nome: 'Conquistador de Algoritmos',
-    descricao: 'A lógica é a sua espada. Resolva 20 problemas de algoritmos de nível fácil para afiar a sua lâmina.',
-    concluido: false,
-    rank: 'B',
-    level_requirement: 15,
-    meta_associada: "Dominar os Fundamentos de Python",
-    total_missoes_diarias: 20,
-    ultima_missao_concluida_em: null, // Novo campo
-     missoes_diarias: [
-        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
-    ]
   },
-    {
-    id: 205,
-    nome: 'O Arquiteto de Dados',
-    descricao: 'Construa uma API RESTful totalmente funcional que sirva como a espinha dorsal para futuras aplicações.',
+  {
+    id: 210,
+    nome: 'A Biblioteca da Mente',
+    descricao: '12 livros foram conquistados. O hábito está formado. Agora, o desafio é dobrar a meta e ler 24 livros num ano.',
     concluido: false,
-    rank: 'A',
-    level_requirement: 25,
-    meta_associada: "Dominar os Fundamentos de Python",
-    total_missoes_diarias: 25,
+    rank: 'C',
+    level_requirement: 12,
+    meta_associada: "Ler 12 Livros de Não-Ficção",
+    total_missoes_diarias: 24,
     ultima_missao_concluida_em: null,
-     missoes_diarias: [
-        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, tipo: 'diaria' },
+    missoes_diarias: [
+        { id: 113, nome: 'Otimizar a Fila de Leitura', descricao: 'Selecione os próximos 3 livros que você lerá. Tenha-os prontos para começar assim que terminar o atual.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
     ]
   }
 ];
