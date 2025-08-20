@@ -41,7 +41,6 @@ const generateSystemAdviceFlow = ai.defineFlow(
     outputSchema: GenerateSystemAdviceOutputSchema,
   },
   async (input) => {
-    
     // Etapa 1: Verificar se a consulta é sobre agendamento de rotina.
     const analysisPrompt = `
         Analise a diretiva do utilizador. A pergunta é sobre onde, quando ou como encaixar uma tarefa, missão ou atividade na rotina diária? 
@@ -63,27 +62,12 @@ const generateSystemAdviceFlow = ai.defineFlow(
     });
 
     // Etapa 2: Se for uma consulta de rotina e uma missão válida for encontrada, gerar a sugestão.
-    if (analysis?.isRoutineQuery && analysis.missionToSchedule) {
-        const activeMissions = JSON.parse(input.missions);
-        // Tentar encontrar a missão épica que contém a missão diária
-        const targetRankedMission = activeMissions.find(m => m.nome.toLowerCase().includes(analysis.missionToSchedule.toLowerCase()));
-        
-        if (targetRankedMission) {
-            // Encontrar a missão diária ativa (não concluída) dentro da missão épica
-            const dailyMission = targetRankedMission.missoes_diarias?.find(dm => !dm.concluido);
-
-            if (dailyMission) {
-                const suggestion = await generateRoutineSuggestion({
-                    routine: JSON.parse(input.routine),
-                    missionName: dailyMission.nome,
-                    missionDescription: dailyMission.descricao,
-                });
-                return { response: suggestion.suggestion };
-            }
-        }
+    // Esta lógica agora está na RoutineView, então aqui apenas damos uma resposta informativa.
+    if (analysis?.isRoutineQuery) {
+        return { response: "Para obter sugestões de horários para as suas missões, por favor, utilize a funcionalidade 'Sugerir Horário' na aba 'Rotina'. Assim posso ajudar-lhe de forma mais eficaz." };
     }
 
-    // Etapa 3: Se não for sobre rotina ou se nenhuma missão válida for encontrada, gerar uma resposta geral.
+    // Etapa 3: Se não for sobre rotina, gerar uma resposta geral.
     const generalPrompt = `Você é o 'Sistema', uma IA de um RPG da vida real. O utilizador é ${input.userName}.
         O perfil dele: ${input.profile}
         Os seus objetivos a longo prazo (Metas): ${input.metas}

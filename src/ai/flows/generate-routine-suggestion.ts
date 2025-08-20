@@ -25,7 +25,9 @@ const GenerateRoutineSuggestionInputSchema = z.object({
 export type GenerateRoutineSuggestionInput = z.infer<typeof GenerateRoutineSuggestionInputSchema>;
 
 const GenerateRoutineSuggestionOutputSchema = z.object({
-  suggestion: z.string().describe('A sugestão gerada pela IA sobre quando e como realizar a missão.'),
+  suggestionText: z.string().describe('A sugestão gerada pela IA sobre quando e como realizar a missão. Ex: "Sugestão: Que tal realizar esta missão entre as 13:30 e as 14:00..."'),
+  suggestedStartTime: z.string().describe("O horário de início sugerido no formato HH:MM."),
+  suggestedEndTime: z.string().describe("O horário de término sugerido no formato HH:MM."),
 });
 export type GenerateRoutineSuggestionOutput = z.infer<typeof GenerateRoutineSuggestionOutputSchema>;
 
@@ -61,8 +63,12 @@ const generateRoutineSuggestionFlow = ai.defineFlow(
         2.  **Contexto:** A missão requer um computador? Um lugar silencioso? Sugira um horário compatível. (Ex: Missões de programação devem ser durante o "Trabalho Focado").
         3.  **Níveis de Energia:** Missões que exigem mais foco mental são melhores no início do dia. Missões mais leves podem ser feitas no final.
         4.  **Seja Específico:** Não diga apenas "faça no seu tempo livre". Diga "Notei que você tem um intervalo entre as 12:30 e as 13:30 para o almoço. Que tal usar os primeiros 15 minutos desse tempo para completar a sua missão?".
+        5.  **Duração:** Estime a duração da tarefa. Se for uma tarefa de 15 minutos, sugira um bloco de 15 a 20 minutos, não uma hora inteira.
 
-        Forneça uma sugestão clara, acionável e motivadora. Seja conciso.
+        Sua resposta DEVE estar em formato JSON. Gere:
+        1. 'suggestionText': Uma frase clara, acionável e motivadora. Seja conciso.
+        2. 'suggestedStartTime': O horário de início que você encontrou no formato 'HH:MM'.
+        3. 'suggestedEndTime': O horário de término que você calculou no formato 'HH:MM'.
     `;
 
     const {output} = await ai.generate({

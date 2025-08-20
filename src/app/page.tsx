@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
@@ -11,6 +11,7 @@ import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/
 import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
+import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 // --- COMPONENTES ---
@@ -135,15 +137,15 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             }
         };
     }, [isEditing, metaToEdit]);
-
+    
+    const [goalState, setGoalState] = useState(getInitialGoalState());
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
-    const [goalState, setGoalState] = useState(getInitialGoalState());
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
-
+    
     useEffect(() => {
         const initialState = getInitialGoalState();
         setGoalState(initialState);
@@ -164,7 +166,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const handleInitialQuestion = useCallback(async (initialGoalName) => {
         setIsLoading(true);
         const initialGoal = { name: initialGoalName };
-        setGoalState(prev => ({...prev, name: initialGoalName}));
+        setGoalState(prev => ({...prev, nome: initialGoalName}));
         
         try {
             const result = await generateSmartGoalQuestion({ goal: initialGoal, history: [] });
@@ -1189,11 +1191,25 @@ const SkillsView = ({ skills, profile }) => {
     );
 };
 
-const RoutineView = ({ routine, setRoutine }) => {
+const RoutineView = ({ routine, setRoutine, missions }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
     const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
+    const { toast } = useToast();
+    
+    // State for AI suggestions
+    const [suggestions, setSuggestions] = useState({}); // { missionId: { suggestionText, ... } }
+    const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(null); // missionId that is loading
 
+    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+        console.error("Erro de IA:", error);
+        if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
+        } else {
+             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+        }
+    };
+    
     const handleOpenDialog = (item = null) => {
         setCurrentItem(item);
         if (item) {
@@ -1219,7 +1235,66 @@ const RoutineView = ({ routine, setRoutine }) => {
         setRoutine(routine.filter(item => item.id !== id));
     };
 
+    const handleGetSuggestion = async (mission) => {
+        setIsLoadingSuggestion(mission.id);
+        try {
+            const result = await generateRoutineSuggestion({
+                routine: routine,
+                missionName: mission.nome,
+                missionDescription: mission.descricao,
+            });
+            setSuggestions(prev => ({...prev, [mission.id]: result}));
+        } catch(error) {
+            handleToastError(error, "Não foi possível gerar uma sugestão de horário.");
+        } finally {
+            setIsLoadingSuggestion(null);
+        }
+    };
+
+    const handleImplementSuggestion = (mission) => {
+        const suggestion = suggestions[mission.id];
+        if (!suggestion) return;
+
+        const newRoutineItem = {
+            id: Date.now(),
+            start_time: suggestion.suggestedStartTime,
+            end_time: suggestion.suggestedEndTime,
+            activity: `[Missão] ${mission.nome}`
+        };
+
+        setRoutine(prev => [...prev, newRoutineItem]);
+        // Remove suggestion after implementing
+        setSuggestions(prev => {
+            const newSuggestions = {...prev};
+            delete newSuggestions[mission.id];
+            return newSuggestions;
+        });
+    };
+
+    const handleDiscardSuggestion = (missionId) => {
+         setSuggestions(prev => {
+            const newSuggestions = {...prev};
+            delete newSuggestions[missionId];
+            return newSuggestions;
+        });
+    }
+
+    const getUnscheduledMissions = () => {
+        const routineMissionNames = routine.map(r => r.activity);
+        const unscheduled = [];
+        missions.forEach(rankedMission => {
+            if (!rankedMission.concluido) {
+                const activeDaily = rankedMission.missoes_diarias.find(dm => !dm.concluido);
+                if (activeDaily && !routineMissionNames.some(name => name.includes(activeDaily.nome))) {
+                    unscheduled.push(activeDaily);
+                }
+            }
+        });
+        return unscheduled;
+    }
+
     const sortedRoutine = [...routine].sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const unscheduledMissions = getUnscheduledMissions();
 
     return (
         <div className="p-6">
@@ -1230,28 +1305,72 @@ const RoutineView = ({ routine, setRoutine }) => {
                     Adicionar Atividade
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Mantenha a sua rotina diária atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+            
+            {/* Unscheduled Missions Section */}
+            {unscheduledMissions.length > 0 && (
+                <div className="mb-8">
+                     <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
+                     <div className="space-y-4">
+                        {unscheduledMissions.map(mission => (
+                            <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-bold text-gray-200">{mission.nome}</p>
+                                        <p className="text-sm text-gray-400">{mission.descricao}</p>
+                                    </div>
+                                    <Button 
+                                        onClick={() => handleGetSuggestion(mission)} 
+                                        disabled={isLoadingSuggestion === mission.id}
+                                        size="sm"
+                                    >
+                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                        <BrainCircuit className="ml-2 h-4 w-4"/>
+                                    </Button>
+                                </div>
+                                {suggestions[mission.id] && (
+                                    <Alert className="mt-4 border-cyan-500/50">
+                                        <Sparkles className="h-4 w-4 text-cyan-400" />
+                                        <AlertTitle className="text-cyan-400">Sugestão do Sistema</AlertTitle>
+                                        <AlertDescription className="text-gray-300">
+                                            {suggestions[mission.id].suggestionText}
+                                            <div className="flex gap-2 mt-3">
+                                                <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
+                                                <Button size="sm" variant="outline" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+                                            </div>
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        ))}
+                     </div>
+                </div>
+            )}
+            
+            <div className="border-t border-gray-700 pt-8">
+                <h2 className="text-2xl font-bold text-cyan-400 mb-4">Sua Agenda</h2>
+                 <p className="text-gray-400 mb-6">Mantenha a sua rotina diária atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
 
-            <div className="space-y-3">
-                {sortedRoutine.map(item => (
-                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex items-center">
-                            <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
-                            <span className="mx-4 text-gray-500">|</span>
-                            <p className="text-lg text-gray-200">{item.activity}</p>
+                <div className="space-y-3">
+                    {sortedRoutine.map(item => (
+                        <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
+                            <div className="flex items-center">
+                                <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
+                                <span className="mx-4 text-gray-500">|</span>
+                                <p className="text-lg text-gray-200">{item.activity}</p>
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                            </div>
                         </div>
-                        <div className="flex space-x-2">
-                            <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                            <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                    ))}
+                    {sortedRoutine.length === 0 && (
+                        <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
+                            <p className="text-gray-400">A sua rotina está vazia.</p>
+                            <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
                         </div>
-                    </div>
-                ))}
-                 {sortedRoutine.length === 0 && (
-                    <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
-                        <p className="text-gray-400">A sua rotina está vazia.</p>
-                        <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -1446,7 +1565,7 @@ export default function App() {
       case 'skills':
         return <SkillsView skills={skills} profile={profile} />;
       case 'routine':
-        return <RoutineView routine={routine} setRoutine={setRoutine} />;
+        return <RoutineView routine={routine} setRoutine={setRoutine} missions={missions} />;
       case 'ai-chat':
         return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
       default:
