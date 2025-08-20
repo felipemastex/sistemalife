@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Um agente de IA que sugere o melhor horário para uma missão com base na rotina do utilizador.
@@ -29,6 +28,7 @@ const GenerateRoutineSuggestionOutputSchema = z.object({
   suggestionText: z.string().describe('A sugestão gerada pela IA sobre quando e como realizar a missão. Ex: "Sugestão: Que tal realizar esta missão entre as 13:30 e as 14:00..."'),
   suggestedStartTime: z.string().describe("O horário de início sugerido no formato HH:MM."),
   suggestedEndTime: z.string().describe("O horário de término sugerido no formato HH:MM."),
+  modifiedBlockId: z.number().optional().describe("O ID do item da rotina que será modificado (dividido) pela sugestão. Se a sugestão for para um tempo livre, este campo deve ser nulo."),
 });
 export type GenerateRoutineSuggestionOutput = z.infer<typeof GenerateRoutineSuggestionOutputSchema>;
 
@@ -53,25 +53,26 @@ const generateRoutineSuggestionFlow = ai.defineFlow(
         - Nome: "${input.missionName}"
         - Descrição: "${input.missionDescription}"
 
-        Esta é a rotina diária do utilizador:
+        Esta é a rotina diária do utilizador (cada item possui um ID único):
         ${JSON.stringify(input.routine, null, 2)}
 
-        Analise a missão para determinar a sua natureza (ex: física, mental, estudo, tarefa rápida) e o tempo estimado necessário.
+        Analise a missão para determinar a sua natureza (ex: física, mental, estudo, tarefa rápida) e o tempo estimado necessário (normalmente 15-20 minutos).
         
         Siga esta ordem de prioridade para fazer a sua sugestão:
         1.  **Incorporação Contextual (Prioridade Máxima):** Analise o NOME e a DESCRIÇÃO da missão. Existe alguma atividade na rotina que seja contextualmente semelhante? 
-            - Exemplo 1: Se a missão é 'Fazer 20 agachamentos' e existe uma atividade 'Exercício Físico' na rotina, a sua principal sugestão DEVE ser incorporar a missão nesse bloco. Sugira algo como: "A melhor altura para fazer os seus agachamentos é durante o seu bloco de 'Exercício Físico', entre as 08:00 e as 09:00. Que tal fazer isso como aquecimento?".
-            - Exemplo 2: Se a missão é 'Ler um artigo sobre Python' e existe uma atividade 'Estudo/Leitura' ou 'Trabalho Focado', sugira encaixá-la aí.
-            - Ao fazer isso, o horário de início e fim sugerido deve ser o do bloco de atividade existente.
+            - Exemplo: Se a missão é 'Fazer 20 agachamentos' e existe uma atividade 'Exercício Físico' na rotina, a sua principal sugestão DEVE ser incorporar a missão nesse bloco. 
+            - Sugira algo como: "A melhor altura para fazer os seus agachamentos é durante o seu bloco de 'Exercício Físico'. Que tal fazer isso como aquecimento das 08:00 às 08:15?".
+            - Ao fazer isso, o horário de início e fim sugerido deve ser uma fatia do bloco de atividade existente e você DEVE retornar o 'modifiedBlockId' correspondente ao bloco original que será dividido.
 
-        2.  **Agrupamento de Hábitos (Habit Stacking):** Se não houver um bloco contextual claro, procure uma oportunidade para encaixar a missão logo ANTES ou DEPOIS de uma atividade já existente. (Ex: "Depois do seu Exercício Físico, aproveite o momento e faça...").
+        2.  **Agrupamento de Hábitos (Habit Stacking):** Se não houver um bloco contextual claro, procure uma oportunidade para encaixar a missão logo ANTES ou DEPOIS de uma atividade já existente. Neste caso, 'modifiedBlockId' deve ser nulo. (Ex: "Depois do seu Exercício Físico, aproveite o momento e faça...").
 
-        3.  **Encontrar Lacunas (Último Recurso):** Se nenhuma das opções acima for viável, analise a rotina para encontrar lacunas ou intervalos de tempo livre onde a missão poderia se encaixar. Seja específico: "Notei que você tem um intervalo entre as 12:30 e as 13:30 para o almoço. Que tal usar os primeiros 15 minutos desse tempo para completar a sua missão?".
+        3.  **Encontrar Lacunas (Último Recurso):** Se nenhuma das opções acima for viável, analise a rotina para encontrar lacunas ou intervalos de tempo livre. 'modifiedBlockId' deve ser nulo. Seja específico: "Notei que você tem um intervalo entre as 12:30 e as 13:30 para o almoço. Que tal usar os primeiros 15 minutos desse tempo?".
 
         Sua resposta DEVE estar em formato JSON. Gere:
         1. 'suggestionText': Uma frase clara, acionável e motivadora. Seja conciso.
         2. 'suggestedStartTime': O horário de início que você encontrou no formato 'HH:MM'.
         3. 'suggestedEndTime': O horário de término que você calculou no formato 'HH:MM'.
+        4. 'modifiedBlockId': O ID do item da rotina a ser modificado, se aplicável. Caso contrário, nulo.
     `;
 
     const {output} = await ai.generate({
@@ -83,4 +84,3 @@ const generateRoutineSuggestionFlow = ai.defineFlow(
     return output!;
   }
 );
-

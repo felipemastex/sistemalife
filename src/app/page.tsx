@@ -138,7 +138,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         };
     }, [isEditing, metaToEdit]);
     
-    const [goalState, setGoalState] = useState(getInitialGoalState());
+    const [goalState, setGoalState] = useState(() => getInitialGoalState());
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
@@ -416,11 +416,11 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
     const handleOpenWizard = (meta = null) => {
         if (meta) {
             setMetaToEdit(meta);
-            setShowModeSelection(false);
+            setShowModeSelection(false); // Do not show mode selection when editing
             setShowWizard(true);
         } else {
             setMetaToEdit(null);
-            setShowModeSelection(true);
+            setShowModeSelection(true); // Show mode selection for new goal
         }
     };
 
@@ -1242,15 +1242,60 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     const handleImplementSuggestion = (mission) => {
         const suggestion = suggestions[mission.id];
         if (!suggestion) return;
-
+    
         const newRoutineItem = {
             id: Date.now(),
             start_time: suggestion.suggestedStartTime,
             end_time: suggestion.suggestedEndTime,
             activity: `[Missão] ${mission.nome}`
         };
-
-        setRoutine(prev => [...prev, newRoutineItem]);
+    
+        let updatedRoutine = [...routine];
+    
+        // If the suggestion modifies an existing block, split that block
+        if (suggestion.modifiedBlockId) {
+            const blockToModify = updatedRoutine.find(item => item.id === suggestion.modifiedBlockId);
+            
+            if (blockToModify) {
+                const originalStart = blockToModify.start_time;
+                const originalEnd = blockToModify.end_time;
+                const suggestionStart = suggestion.suggestedStartTime;
+                const suggestionEnd = suggestion.suggestedEndTime;
+    
+                // Remove the original block
+                updatedRoutine = updatedRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
+    
+                // Add the new mission block
+                updatedRoutine.push(newRoutineItem);
+    
+                // Add the first part of the original block if there's time before the mission
+                if (suggestionStart > originalStart) {
+                    updatedRoutine.push({
+                        ...blockToModify,
+                        id: Date.now() + 1, // new id
+                        end_time: suggestionStart,
+                    });
+                }
+    
+                // Add the second part of the original block if there's time after the mission
+                if (suggestionEnd < originalEnd) {
+                    updatedRoutine.push({
+                        ...blockToModify,
+                        id: Date.now() + 2, // new id
+                        start_time: suggestionEnd,
+                    });
+                }
+            } else {
+                 // Fallback if block not found: just add the mission
+                 updatedRoutine.push(newRoutineItem);
+            }
+        } else {
+            // If no block is modified, just add the new item
+            updatedRoutine.push(newRoutineItem);
+        }
+    
+        setRoutine(updatedRoutine);
+    
         // Remove suggestion after implementing
         setSuggestions(prev => {
             const newSuggestions = {...prev};
