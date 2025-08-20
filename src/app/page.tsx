@@ -298,7 +298,11 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
 
     const handleOpenWizard = (meta = null) => {
         setMetaToEdit(meta);
-        setShowModeSelection(true);
+        if (meta) {
+            startDetailedMode(meta);
+        } else {
+            setShowModeSelection(true);
+        }
     };
 
     const handleCloseWizard = () => {
@@ -306,6 +310,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         setMetaToEdit(null);
         setShowSimpleModeDialog(false);
         setSimpleGoalName('');
+        setShowModeSelection(false);
     };
 
     const handleSave = (newOrUpdatedMeta) => {
@@ -343,8 +348,13 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         setIsLoadingSimpleGoal(true);
         try {
             const result = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            const categoryResult = await generateGoalCategory({
+                goalName: result.refinedGoal.name,
+                categories: mockData.categoriasMetas,
+            });
             handleSave({
                 nome: result.refinedGoal.name,
+                categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: result.refinedGoal
             });
         } catch (error) {
@@ -377,9 +387,6 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         setShowSimpleModeDialog(true);
     };
 
-    const startEditMode = (meta) => {
-        startDetailedMode(meta);
-    };
 
     return (
         <div className="p-6">
@@ -402,7 +409,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
                                 </div>
                             </AccordionTrigger>
                             <div className="flex space-x-2 pl-4">
-                                <Button onClick={() => startEditMode(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                 <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                             </div>
                         </div>
@@ -624,15 +631,14 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
     const getRankColor = (rank) => {
         switch (rank) {
-            case 'F': return 'bg-gray-600 text-gray-200';
-            case 'E': return 'bg-green-700 text-green-200';
-            case 'D': return 'bg-blue-700 text-blue-200';
-            case 'C': return 'bg-blue-500 text-white';
+            case 'E': return 'bg-gray-600 text-gray-200';
+            case 'D': return 'bg-green-700 text-green-200';
+            case 'C': return 'bg-blue-700 text-blue-200';
             case 'B': return 'bg-purple-700 text-purple-200';
-            case 'A': return 'bg-purple-500 text-white';
-            case 'S': return 'bg-yellow-500 text-black';
-            case 'SS': return 'bg-gradient-to-r from-red-500 to-yellow-500 text-white shadow-lg';
-            case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl animate-pulse';
+            case 'A': return 'bg-red-700 text-red-200';
+            case 'S': return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
+            case 'SS': return 'bg-gradient-to-r from-red-500 to-yellow-500 text-white shadow-lg shadow-red-500/50';
+            case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
             default: return 'bg-gray-700 text-gray-400';
         }
     }

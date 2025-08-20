@@ -4,7 +4,7 @@ import { Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
 export const perfis = [
   {
     id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome_utilizador: 'Utilizador_01',
+    nome_utilizador: 'Cazador_01',
     nivel: 12,
     xp: 450,
     xp_para_proximo_nivel: 1200,
@@ -23,40 +23,40 @@ export const metas = [
   {
     id: 1,
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome: 'Aprender a programar em Python',
-    categoria: 'Desenvolvimento Pessoal',
+    nome: 'Dominar os Fundamentos de Python',
+    categoria: 'Desenvolvimento de Carreira',
     detalhes_smart: {
-        specific: "Aprender os fundamentos de Python, incluindo tipos de dados, loops, funções e manipulação de dados.",
-        measurable: "Concluir um curso online de Python para iniciantes e construir 3 projetos pequenos.",
-        achievable: "Dedicar 1 hora por dia, 5 dias por semana, para estudo e prática.",
-        relevant: "Ganhar uma habilidade fundamental para avançar na minha carreira de tecnologia.",
-        timeBound: "Alcançar a proficiência básica e completar os projetos em 3 meses."
+        specific: "Aprender os fundamentos de Python, incluindo tipos de dados, loops, funções, classes e manipulação de dados com a biblioteca Pandas.",
+        measurable: "Concluir um curso online de Python para iniciantes (ex: 'Python for Everybody') e construir 3 projetos pequenos: um web scraper, uma API simples com Flask e uma análise de dados básica.",
+        achievable: "Dedicar 1 hora por dia, 5 dias por semana, para estudo e prática focada.",
+        relevant: "Ganhar uma habilidade fundamental para fazer a transição para uma carreira em Engenharia de Dados.",
+        timeBound: "Alcançar a proficiência básica e completar todos os projetos em 3 meses."
     }
   },
   {
     id: 2,
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome: 'Correr uma maratona de 5km',
+    nome: 'Correr uma Prova de 5km',
     categoria: 'Saúde & Fitness',
     detalhes_smart: {
-        specific: "Treinar para conseguir correr 5 quilómetros sem parar.",
-        measurable: "Aumentar a distância de corrida em 500 metros a cada semana.",
-        achievable: "Seguir um plano de treino para iniciantes, correndo 3 vezes por semana.",
-        relevant: "Melhorar a minha saúde cardiovascular e bem-estar geral.",
-        timeBound: "Estar pronto para correr os 5km em 8 semanas."
+        specific: "Treinar consistentemente para conseguir correr 5 quilómetros sem parar e participar de um evento de corrida oficial.",
+        measurable: "Aumentar a distância de corrida em 500 metros a cada semana e registar todos os treinos numa aplicação como o Strava.",
+        achievable: "Seguir um plano de treino para iniciantes 'Couch to 5k', correndo 3 vezes por semana e fazendo treino de força 2 vezes por semana.",
+        relevant: "Melhorar a minha saúde cardiovascular, aumentar os meus níveis de energia e bem-estar geral.",
+        timeBound: "Estar pronto para correr os 5km numa prova oficial dentro de 8 semanas."
     }
   },
   {
     id: 3,
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    nome: 'Ler 12 livros este ano',
-    categoria: 'Cultura',
+    nome: 'Ler 12 Livros de Não-Ficção',
+    categoria: 'Crescimento Pessoal',
     detalhes_smart: {
-        specific: "Ler um livro de não-ficção por mês.",
-        measurable: "Acompanhar o progresso de leitura e terminar um livro a cada 4 semanas.",
-        achievable: "Ler durante 30 minutos antes de dormir todas as noites.",
-        relevant: "Expandir o meu conhecimento em diferentes áreas e desenvolver o hábito da leitura.",
-        timeBound: "Ler 12 livros até o final do ano."
+        specific: "Ler um livro de não-ficção por mês, cobrindo tópicos como ciência, história, psicologia e produtividade.",
+        measurable: "Acompanhar o progresso no Goodreads e escrever um breve resumo ou os 3 principais insights de cada livro lido.",
+        achievable: "Ler durante 30 minutos sem distrações todas as noites antes de dormir.",
+        relevant: "Expandir o meu conhecimento em diferentes áreas, melhorar o meu pensamento crítico e desenvolver o hábito da leitura.",
+        timeBound: "Ler 12 livros até 31 de dezembro."
     }
   },
 ];
@@ -67,60 +67,74 @@ export const missoes = [
   {
     id: 201,
     nome: 'O Primeiro "Hello World"',
-    descricao: 'Escreva e execute o seu primeiro script em Python.',
+    descricao: 'A jornada para se tornar um mestre em Python começa com uma única linha de código. Execute o seu primeiro script.',
     concluido: false,
     rank: 'E',
     level_requirement: 1,
-    meta_associada: "Aprender a programar em Python",
-    total_missoes_diarias: 5,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 10,
     ultima_missao_concluida_em: null, // Novo campo
     missoes_diarias: [
-        { id: 101, nome: 'Instalar o Python', descricao: 'Instale a versão mais recente do Python no seu sistema.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
-        { id: 102, nome: 'Abrir um Editor de Código', descricao: 'Abra o VS Code ou outro editor e crie um novo ficheiro chamado hello.py.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
-        { id: 103, nome: 'Escrever uma linha de código', descricao: 'Digite `print("Hello, World!")` no seu ficheiro hello.py.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+        { id: 101, nome: 'Instalar o Compilador Python', descricao: 'Aceda a python.org, descarregue e instale a versão mais recente do Python no seu sistema operativo.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
+        { id: 102, nome: 'Configurar o Editor de Código', descricao: 'Abra o VS Code, aceda à loja de extensões e instale a extensão oficial "Python" da Microsoft.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
+        { id: 103, nome: 'Invocar o Terminal', descricao: 'Crie um novo ficheiro chamado hello.py e escreva a linha: print("Hello, World!"). Execute o ficheiro no terminal com o comando `python hello.py`.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
   },
   {
     id: 202,
     nome: 'O Despertar do Corredor',
-    descricao: 'Complete a sua primeira corrida de 1km sem parar.',
+    descricao: 'Sinta o vento no rosto e o chão sob os seus pés. Complete a sua primeira corrida de 1km sem parar.',
     concluido: false,
     rank: 'E',
     level_requirement: 3,
-    meta_associada: "Correr uma maratona de 5km",
+    meta_associada: "Correr uma Prova de 5km",
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null, // Novo campo
     missoes_diarias: [
-       { id: 104, nome: 'Prepare o seu equipamento', descricao: 'Separe os seus sapatos de corrida e roupas adequadas.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
-       { id: 105, nome: 'Caminhada Rápida de 5 Minutos', descricao: 'Faça uma caminhada rápida de 5 minutos para aquecer o corpo.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+       { id: 104, nome: 'Preparar o Equipamento de Batalha', descricao: 'Separe os seus sapatos de corrida, meias confortáveis e roupas adequadas para o clima de hoje.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
+       { id: 105, nome: 'Ritual de Aquecimento', descricao: 'Faça uma caminhada rápida de 5 minutos seguida de 5 minutos de alongamentos dinâmicos focados nas pernas e ancas.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
   },
     {
     id: 203,
     nome: 'Páginas do Conhecimento',
-    descricao: 'Conclua a leitura do seu primeiro livro do ano.',
+    descricao: 'A sabedoria dos antigos e modernos espera por si. Conclua a leitura do seu primeiro livro do ano.',
     concluido: false,
     rank: 'D',
     level_requirement: 5,
-    meta_associada: "Ler 12 livros este ano",
+    meta_associada: "Ler 12 Livros de Não-Ficção",
     total_missoes_diarias: 12,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 106, nome: 'Escolha seu primeiro livro', descricao: 'Selecione o primeiro livro que você lerá este ano.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+        { id: 106, nome: 'A Escolha do Tomo', descricao: 'Pesquise e selecione o primeiro livro de não-ficção que você lerá este ano. Adicione-o à sua lista de leitura no Goodreads ou numa aplicação similar.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
     },
   {
     id: 204,
     nome: 'Conquistador de Algoritmos',
-    descricao: 'Resolva 10 problemas de algoritmos de nível fácil em qualquer plataforma online.',
+    descricao: 'A lógica é a sua espada. Resolva 20 problemas de algoritmos de nível fácil para afiar a sua lâmina.',
     concluido: false,
-    rank: 'C',
+    rank: 'B',
     level_requirement: 15,
-    meta_associada: "Aprender a programar em Python",
-    total_missoes_diarias: 10,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 20,
     ultima_missao_concluida_em: null, // Novo campo
      missoes_diarias: [
-        { id: 107, nome: 'Escolha a sua plataforma', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+    ]
+  },
+    {
+    id: 205,
+    nome: 'O Arquiteto de Dados',
+    descricao: 'Construa uma API RESTful totalmente funcional que sirva como a espinha dorsal para futuras aplicações.',
+    concluido: false,
+    rank: 'A',
+    level_requirement: 25,
+    meta_associada: "Dominar os Fundamentos de Python",
+    total_missoes_diarias: 25,
+    ultima_missao_concluida_em: null,
+     missoes_diarias: [
+        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, tipo: 'diaria' },
     ]
   }
 ];
@@ -134,9 +148,9 @@ export const habilidades = [
 ];
 
 export const categoriasMetas = [
-    'Desenvolvimento Pessoal',
+    'Desenvolvimento de Carreira',
     'Saúde & Fitness',
-    'Carreira',
+    'Crescimento Pessoal',
     'Finanças',
     'Hobbies & Criatividade',
     'Social & Relacionamentos',
