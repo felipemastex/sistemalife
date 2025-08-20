@@ -128,9 +128,9 @@ const MetasView = ({ metas, setMetas }) => {
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Metas</h1>
-                <Button onClick={() => handleOpenModal()} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center space-x-2">
-                    <PlusCircle className="h-5 w-5" />
-                    <span>Adicionar Meta</span>
+                <Button onClick={() => handleOpenModal()} className="bg-cyan-600 hover:bg-cyan-500">
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Adicionar Meta
                 </Button>
             </div>
             <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. O Sistema irá gerar missões épicas para o ajudar a progredir nelas.</p>
@@ -156,11 +156,11 @@ const MetasView = ({ metas, setMetas }) => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold mb-2 text-gray-400">Nome da Meta</label>
-                                <Input type="text" value={nome} onChange={e => setNome(e.target.value)} />
+                                <Input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Aprender a programar" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold mb-2 text-gray-400">Categoria</label>
-                                <Input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} />
+                                <Input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} placeholder="Ex: Desenvolvimento Pessoal"/>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end space-x-2">
@@ -229,7 +229,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         const now = new Date();
         const rankedMission = missions.find(m => m.id === rankedMissionId);
         
-        // Esta verificação agora é redundante se a UI desabilita o botão, mas é uma boa proteção
         if (rankedMission?.ultima_missao_concluida_em) {
             const completionDate = new Date(rankedMission.ultima_missao_concluida_em);
             const midnight = new Date(completionDate);
@@ -624,3 +623,5 @@ export default function App() {
     </div>
   );
 }
+
+    
