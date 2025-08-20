@@ -6,11 +6,13 @@ import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
+import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 // --- COMPONENTES ---
@@ -90,11 +92,45 @@ const Dashboard = ({ profile }) => {
   );
 };
 
-const MetasView = ({ metas, setMetas }) => {
+const MetasView = ({ metas, setMetas, setMissions }) => {
     const [showModal, setShowModal] = useState(false);
     const [currentMeta, setCurrentMeta] = useState(null);
     const [nome, setNome] = useState('');
     const [categoria, setCategoria] = useState('');
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const debounceTimeout = useRef(null);
+    const { toast } = useToast();
+
+
+    const suggestCategory = useCallback(async (goalName) => {
+        if (!goalName || goalName.length < 5) return;
+        setIsSuggesting(true);
+        try {
+            const result = await generateGoalCategory({
+                goalName: goalName,
+                categories: mockData.categoriasMetas,
+            });
+            if (result.category && mockData.categoriasMetas.includes(result.category)) {
+                setCategoria(result.category);
+            }
+        } catch (error) {
+            console.error("Erro ao sugerir categoria:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria.' });
+        } finally {
+            setIsSuggesting(false);
+        }
+    }, [toast]);
+
+    const handleNomeChange = (e) => {
+        const newName = e.target.value;
+        setNome(newName);
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+        debounceTimeout.current = setTimeout(() => {
+            suggestCategory(newName);
+        }, 1000); // 1 segundo de debounce
+    };
 
     const handleOpenModal = (meta = null) => {
         setCurrentMeta(meta);
@@ -108,21 +144,58 @@ const MetasView = ({ metas, setMetas }) => {
         setCurrentMeta(null);
         setNome('');
         setCategoria('');
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
     };
 
     const handleSave = () => {
+        if (!nome || !categoria) {
+            toast({ variant: "destructive", title: "Campos em falta", description: "Por favor preencha o nome e a categoria." });
+            return;
+        }
+
         if (currentMeta) {
+            // Edição
             setMetas(metas.map(m => m.id === currentMeta.id ? { ...m, nome, categoria } : m));
         } else {
+            // Criação
             const newMeta = { id: Date.now(), nome, categoria, user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
-            setMetas([...metas, newMeta]);
+            setMetas(prev => [...prev, newMeta]);
+
+            // Criar missão épica associada
+            const newRankedMission = {
+                id: Date.now() + 1, // Evitar colisão de id
+                nome: `Missão Épica: ${nome}`,
+                descricao: `Um grande passo em direção a: ${nome}.`,
+                concluido: false,
+                rank: 'E', // Rank inicial
+                level_requirement: 1,
+                meta_associada: nome,
+                total_missoes_diarias: 10, // Default
+                ultima_missao_concluida_em: null,
+                missoes_diarias: [{
+                    id: Date.now() + 2,
+                    nome: `Iniciar a jornada para "${nome}"`,
+                    descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
+                    xp_conclusao: 10,
+                    concluido: false,
+                    tipo: 'diaria',
+                }]
+            };
+            setMissions(prev => [...prev, newRankedMission]);
         }
         handleCloseModal();
     };
 
     const handleDelete = (id) => {
-        setMetas(metas.filter(m => m.id !== id));
+        const metaToDelete = metas.find(m => m.id === id);
+        if (metaToDelete) {
+            setMissions(prev => prev.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            setMetas(metas.filter(m => m.id !== id));
+        }
     };
+
 
     return (
         <div className="p-6">
@@ -133,7 +206,7 @@ const MetasView = ({ metas, setMetas }) => {
                     Adicionar Meta
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. O Sistema irá gerar missões épicas para o ajudar a progredir nelas.</p>
+            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma missão épica será criada.</p>
             <div className="space-y-4">
                 {metas.map(meta => (
                     <div key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex items-center justify-between">
@@ -156,11 +229,25 @@ const MetasView = ({ metas, setMetas }) => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold mb-2 text-gray-400">Nome da Meta</label>
-                                <Input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Aprender a programar" />
+                                <Input
+                                    type="text"
+                                    value={nome}
+                                    onChange={handleNomeChange}
+                                    placeholder="Ex: Aprender a programar em 6 meses"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold mb-2 text-gray-400">Categoria</label>
-                                <Input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} placeholder="Ex: Desenvolvimento Pessoal"/>
+                                <Select onValueChange={setCategoria} value={categoria}>
+                                    <SelectTrigger disabled={isSuggesting}>
+                                        <SelectValue placeholder={isSuggesting ? "A IA está a pensar..." : "Selecione uma categoria"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {mockData.categoriasMetas.map(cat => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end space-x-2">
@@ -551,9 +638,33 @@ export default function App() {
   
   useEffect(() => {
     // Simula o carregamento de dados
+    const initialMetas = mockData.metas;
+    const initialMissions = mockData.missoes;
+    
+    // Garantir que cada meta tem uma missão
+    initialMetas.forEach(meta => {
+        const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
+        if (!hasMission) {
+            initialMissions.push({
+                id: Date.now() + Math.random(),
+                nome: `Missão Épica: ${meta.nome}`,
+                descricao: `Um grande passo em direção a: ${meta.nome}.`,
+                concluido: false, rank: 'E', level_requirement: 1,
+                meta_associada: meta.nome, total_missoes_diarias: 10,
+                ultima_missao_concluida_em: null,
+                missoes_diarias: [{
+                    id: Date.now() + Math.random(),
+                    nome: `Iniciar a jornada para "${meta.nome}"`,
+                    descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
+                    xp_conclusao: 10, concluido: false, tipo: 'diaria',
+                }]
+            });
+        }
+    });
+
     setProfile(mockData.perfis[0]);
-    setMetas(mockData.metas);
-    setMissions(mockData.missoes);
+    setMetas(initialMetas);
+    setMissions(initialMissions);
     setSkills(mockData.habilidades);
   }, []);
   
@@ -579,7 +690,7 @@ export default function App() {
       case 'dashboard':
         return <Dashboard profile={profile} />;
       case 'metas':
-        return <MetasView metas={metas} setMetas={setMetas} />;
+        return <MetasView metas={metas} setMetas={setMetas} setMissions={setMissions} />;
       case 'missions':
         return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} />;
       case 'skills':
@@ -623,5 +734,3 @@ export default function App() {
     </div>
   );
 }
-
-    

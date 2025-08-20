@@ -73,6 +73,20 @@ export const missoes = [
        { id: 105, nome: 'Caminhada Rápida de 5 Minutos', descricao: 'Faça uma caminhada rápida de 5 minutos para aquecer o corpo.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
     ]
   },
+    {
+    id: 203,
+    nome: 'Páginas do Conhecimento',
+    descricao: 'Conclua a leitura do seu primeiro livro do ano.',
+    concluido: false,
+    rank: 'D',
+    level_requirement: 5,
+    meta_associada: "Ler 12 livros este ano",
+    total_missoes_diarias: 12,
+    ultima_missao_concluida_em: null,
+    missoes_diarias: [
+        { id: 106, nome: 'Escolha seu primeiro livro', descricao: 'Selecione o primeiro livro que você lerá este ano.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+    ]
+    },
   {
     id: 204,
     nome: 'Conquistador de Algoritmos',
@@ -84,7 +98,7 @@ export const missoes = [
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null, // Novo campo
      missoes_diarias: [
-        { id: 106, nome: 'Escolha a sua plataforma', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+        { id: 107, nome: 'Escolha a sua plataforma', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
     ]
   }
 ];
@@ -95,4 +109,15 @@ export const habilidades = [
     { id: 3, nome: 'Web Scraping com Python', descricao: 'Extrair dados de websites usando bibliotecas como BeautifulSoup e Scrapy.', nivel_atual: 0, nivel_maximo: 5, pre_requisito: 1 },
     { id: 4, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', nivel_atual: 1, nivel_maximo: 10, pre_requisito: null },
     { id: 5, nome: 'Gestão Financeira Pessoal', descricao: 'Capacidade de gerir orçamento, investimentos e poupanças.', nivel_atual: 2, nivel_maximo: 10, pre_requisito: null },
+];
+
+export const categoriasMetas = [
+    'Desenvolvimento Pessoal',
+    'Saúde & Fitness',
+    'Carreira',
+    'Finanças',
+    'Hobbies & Criatividade',
+    'Social & Relacionamentos',
+    'Cultura & Conhecimento',
+    'Viagens & Aventura'
 ];
