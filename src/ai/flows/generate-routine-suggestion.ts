@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA que sugere o melhor horário para uma missão com base na rotina do utilizador.
@@ -55,15 +56,17 @@ const generateRoutineSuggestionFlow = ai.defineFlow(
         Esta é a rotina diária do utilizador:
         ${JSON.stringify(input.routine, null, 2)}
 
-        Analise a missão para estimar o tempo necessário (geralmente menos de 30 minutos) e o tipo de esforço (mental, físico, rápido, focado).
-        Analise a rotina para encontrar lacunas, intervalos ou momentos onde a missão poderia se encaixar naturalmente.
+        Analise a missão para determinar a sua natureza (ex: física, mental, estudo, tarefa rápida) e o tempo estimado necessário.
         
-        Considere os seguintes princípios:
-        1.  **Agrupamento de Hábitos (Habit Stacking):** É possível encaixar a missão logo ANTES ou DEPOIS de uma atividade já existente? (Ex: "Depois do seu Exercício Físico, aproveite o momento e faça...")
-        2.  **Contexto:** A missão requer um computador? Um lugar silencioso? Sugira um horário compatível. (Ex: Missões de programação devem ser durante o "Trabalho Focado").
-        3.  **Níveis de Energia:** Missões que exigem mais foco mental são melhores no início do dia. Missões mais leves podem ser feitas no final.
-        4.  **Seja Específico:** Não diga apenas "faça no seu tempo livre". Diga "Notei que você tem um intervalo entre as 12:30 e as 13:30 para o almoço. Que tal usar os primeiros 15 minutos desse tempo para completar a sua missão?".
-        5.  **Duração:** Estime a duração da tarefa. Se for uma tarefa de 15 minutos, sugira um bloco de 15 a 20 minutos, não uma hora inteira.
+        Siga esta ordem de prioridade para fazer a sua sugestão:
+        1.  **Incorporação Contextual (Prioridade Máxima):** Analise o NOME e a DESCRIÇÃO da missão. Existe alguma atividade na rotina que seja contextualmente semelhante? 
+            - Exemplo 1: Se a missão é 'Fazer 20 agachamentos' e existe uma atividade 'Exercício Físico' na rotina, a sua principal sugestão DEVE ser incorporar a missão nesse bloco. Sugira algo como: "A melhor altura para fazer os seus agachamentos é durante o seu bloco de 'Exercício Físico', entre as 08:00 e as 09:00. Que tal fazer isso como aquecimento?".
+            - Exemplo 2: Se a missão é 'Ler um artigo sobre Python' e existe uma atividade 'Estudo/Leitura' ou 'Trabalho Focado', sugira encaixá-la aí.
+            - Ao fazer isso, o horário de início e fim sugerido deve ser o do bloco de atividade existente.
+
+        2.  **Agrupamento de Hábitos (Habit Stacking):** Se não houver um bloco contextual claro, procure uma oportunidade para encaixar a missão logo ANTES ou DEPOIS de uma atividade já existente. (Ex: "Depois do seu Exercício Físico, aproveite o momento e faça...").
+
+        3.  **Encontrar Lacunas (Último Recurso):** Se nenhuma das opções acima for viável, analise a rotina para encontrar lacunas ou intervalos de tempo livre onde a missão poderia se encaixar. Seja específico: "Notei que você tem um intervalo entre as 12:30 e as 13:30 para o almoço. Que tal usar os primeiros 15 minutos desse tempo para completar a sua missão?".
 
         Sua resposta DEVE estar em formato JSON. Gere:
         1. 'suggestionText': Uma frase clara, acionável e motivadora. Seja conciso.
@@ -80,3 +83,4 @@ const generateRoutineSuggestionFlow = ai.defineFlow(
     return output!;
   }
 );
+
