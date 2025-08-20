@@ -64,6 +64,44 @@ export const metas = [
   },
 ];
 
+export const habilidades = [
+    { 
+        id: 1, 
+        nome: 'Programação Python', 
+        descricao: 'A capacidade de escrever código limpo, eficiente e robusto em Python.', 
+        categoria: 'Desenvolvimento de Carreira',
+        nivel_atual: 5, 
+        nivel_maximo: 10,
+        xp_atual: 120, 
+        xp_para_proximo_nivel: 250, 
+        pre_requisito: null, 
+        nivel_minimo_para_desbloqueio: null,
+    },
+    { 
+        id: 2, 
+        nome: 'Corrida de Resistência', 
+        descricao: 'A capacidade de correr longas distâncias mantendo um ritmo consistente.', 
+        categoria: 'Saúde & Fitness',
+        nivel_atual: 3, 
+        nivel_maximo: 10,
+        xp_atual: 50, 
+        xp_para_proximo_nivel: 150, 
+        pre_requisito: null, 
+        nivel_minimo_para_desbloqueio: null,
+    },
+    { 
+        id: 3, 
+        nome: 'Leitura Focada', 
+        descricao: 'A capacidade de ler, compreender e reter informações de textos complexos.', 
+        categoria: 'Crescimento Pessoal',
+        nivel_atual: 7, 
+        nivel_maximo: 10,
+        xp_atual: 400, 
+        xp_para_proximo_nivel: 600, 
+        pre_requisito: null, 
+        nivel_minimo_para_desbloqueio: null,
+    },
+];
 
 export const missoes = [
   // --- Cadeia de Missões: Dominar os Fundamentos de Python ---
