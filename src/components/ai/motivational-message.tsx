@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useFlow } from '@genkit-ai/next/client';
+import { useState, useEffect, useCallback } from 'react';
+import { useFlowState } from '@genkit-ai/next/client';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,22 +11,25 @@ export function MotivationalMessage() {
     const [category, setCategory] = useState('fitness');
     const [message, setMessage] = useState('');
 
-    const {run: generate, inProgress: generating} = useFlow(generateMotivationalMessage);
+    const {run: generate, loading: generating, result} = useFlowState(generateMotivationalMessage);
+    
+    const handleGenerate = useCallback(async (cat: string) => {
+        setMessage('');
+        generate({ userName: 'Alex', category: cat });
+    }, [generate]);
     
     useEffect(() => {
         handleGenerate(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleGenerate = async (cat: string) => {
-        setMessage('');
-        const result = await generate({ userName: 'Alex', category: cat });
+    useEffect(() => {
         if (result) {
             setMessage(result.message);
-        } else {
+        } else if (!generating && !result) {
             setMessage(`Couldn't get a message. Please try again.`);
         }
-    };
+    }, [result, generating]);
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
