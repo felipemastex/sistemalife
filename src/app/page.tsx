@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit, Link, FileDown } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather, GitMerge, MoreVertical, LifeBuoy, BrainCircuit, Link, FileDown, Save } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
@@ -1245,7 +1245,7 @@ const SkillsView = ({ skills, profile }) => {
     );
 };
 
-const RoutineView = ({ routine, setRoutine, missions }) => {
+const RoutineView = ({ routine, setRoutine, missions, routineTemplates, setRoutineTemplates }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
     const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
@@ -1263,6 +1263,10 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     // State for template loading dialog
     const [showTemplateDialog, setShowTemplateDialog] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+    // State for saving template dialog
+    const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+    const [newTemplateName, setNewTemplateName] = useState('');
 
 
     const getWeekDays = () => {
@@ -1324,7 +1328,7 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     };
     
     const handleLoadTemplate = (templateName) => {
-        const template = mockData.rotinaTemplates[templateName];
+        const template = routineTemplates[templateName];
         if (template) {
             setSelectedTemplate(template);
             setShowTemplateDialog(true);
@@ -1341,6 +1345,23 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
         setShowTemplateDialog(false);
         setSelectedTemplate(null);
     };
+
+    const handleSaveTemplate = () => {
+        if (!newTemplateName.trim()) {
+            toast({ variant: 'destructive', title: "Nome Inválido", description: "Por favor, dê um nome ao seu template." });
+            return;
+        }
+        const currentDayRoutine = routine[selectedDay] || [];
+        if (currentDayRoutine.length === 0) {
+            toast({ variant: 'destructive', title: "Rotina Vazia", description: "Não é possível salvar um template de um dia sem atividades." });
+            return;
+        }
+
+        setRoutineTemplates(prev => ({ ...prev, [newTemplateName]: currentDayRoutine }));
+        toast({ title: "Template Salvo!", description: `O template "${newTemplateName}" foi criado com sucesso.` });
+        setShowSaveTemplateDialog(false);
+        setNewTemplateName('');
+    }
 
 
     const handleGetSuggestion = async (mission) => {
@@ -1476,6 +1497,10 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)}>
+                        <Save className="h-5 w-5 mr-2" />
+                        Salvar como Template
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline">
@@ -1484,7 +1509,7 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            {Object.keys(mockData.rotinaTemplates).map(templateName => (
+                            {Object.keys(routineTemplates).map(templateName => (
                                 <DropdownMenuItem key={templateName} onSelect={() => handleLoadTemplate(templateName)}>
                                     {templateName}
                                 </DropdownMenuItem>
@@ -1632,6 +1657,29 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
                 </AlertDialogContent>
             </AlertDialog>
 
+             <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Salvar Rotina como Template</DialogTitle>
+                        <DialogDescription>
+                           Dê um nome ao seu template para a rotina de <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                         <Input 
+                            id="templateName" 
+                            placeholder="Ex: Dia de Semana Produtivo"
+                            value={newTemplateName}
+                            onChange={(e) => setNewTemplateName(e.target.value)}
+                         />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveTemplate}>Salvar Template</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
@@ -1731,6 +1779,7 @@ export default function App() {
   const [missions, setMissions] = useState([]);
   const [skills, setSkills] = useState([]);
   const [routine, setRoutine] = useState({});
+  const [routineTemplates, setRoutineTemplates] = useState({});
   
   useEffect(() => {
     const initialProfile = mockData.perfis[0];
@@ -1738,6 +1787,7 @@ export default function App() {
     const initialMissions = [...mockData.missoes];
     const initialSkills = mockData.habilidades;
     const initialRoutine = mockData.rotina;
+    const initialRoutineTemplates = mockData.rotinaTemplates;
     
     initialMetas.forEach(meta => {
         const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
@@ -1770,6 +1820,7 @@ export default function App() {
     setMissions(initialMissions);
     setSkills(initialSkills);
     setRoutine(initialRoutine);
+    setRoutineTemplates(initialRoutineTemplates);
   }, []);
   
   const NavItem = ({ icon: Icon, label, page }) => (
@@ -1800,7 +1851,7 @@ export default function App() {
       case 'skills':
         return <SkillsView skills={skills} profile={profile} />;
       case 'routine':
-        return <RoutineView routine={routine} setRoutine={setRoutine} missions={missions} />;
+        return <RoutineView routine={routine} setRoutine={setRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={setRoutineTemplates} />;
       case 'ai-chat':
         return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
       default:
