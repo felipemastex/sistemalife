@@ -288,7 +288,7 @@ export default function App() {
           <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
-          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-mono" />
+          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold" />
       </nav>
       <div className="mt-auto">
           <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
