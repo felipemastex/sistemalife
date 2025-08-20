@@ -70,7 +70,7 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
 
         const {output} = await ai.generate({
             prompt: refinePrompt,
-            model: 'googleai/gemini-2.5-flash-preview',
+            model: 'googleai/gemini-2.5-flash',
             output: { schema: z.object({ refinedGoal: SmartGoalSchema }) }
         });
         
@@ -118,7 +118,7 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
 
     const {output} = await ai.generate({
         prompt: finalPrompt,
-        model: 'googleai/gemini-2.5-flash-preview',
+        model: 'googleai/gemini-2.5-flash',
         output: { schema: z.object({
             nextQuestion: z.string(),
             exampleAnswers: z.array(z.string()),

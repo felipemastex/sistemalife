@@ -57,7 +57,7 @@ const generateNextDailyMissionFlow = ai.defineFlow(
 
     const {output} = await ai.generate({
       prompt: finalPrompt,
-      model: 'googleai/gemini-2.5-flash-preview',
+      model: 'googleai/gemini-2.5-flash',
       output: {schema: MissionSchema},
     });
 
