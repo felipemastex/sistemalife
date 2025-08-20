@@ -322,12 +322,16 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
 
 
     return (
-         <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
-            <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <X className="h-6 w-6" />
-            </Button>
-            {renderContent()}
-        </div>
+         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
+                <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
+                    <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
+                        <X className="h-6 w-6" />
+                    </Button>
+                    {renderContent()}
+                </div>
+            </DialogContent>
+         </Dialog>
     )
 }
 
@@ -529,7 +533,16 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (!goalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            const { refinedGoal } = await generateSimpleSmartGoal({ goalName });
+            const { refinedGoal, fallback } = await generateSimpleSmartGoal({ goalName });
+            
+            if (fallback) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Sistema Sobrecarregado',
+                    description: 'Uma meta genérica foi criada. Por favor, edite-a para adicionar os detalhes SMART.',
+                });
+            }
+
             await handleSave({
                 id: null,
                 nome: refinedGoal.name,

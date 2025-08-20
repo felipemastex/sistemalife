@@ -26,6 +26,7 @@ export type GenerateSimpleSmartGoalInput = z.infer<typeof GenerateSimpleSmartGoa
 
 const GenerateSimpleSmartGoalOutputSchema = z.object({
   refinedGoal: SmartGoalSchema.describe('A meta SMART completa e detalhada.'),
+  fallback: z.boolean().optional().describe("Indica se a resposta foi gerada usando um plano de fallback devido a um erro de IA."),
 });
 export type GenerateSimpleSmartGoalOutput = z.infer<typeof GenerateSimpleSmartGoalOutputSchema>;
 
@@ -38,7 +39,7 @@ export async function generateSimpleSmartGoal(
 const prompt = ai.definePrompt({
   name: 'generateSimpleSmartGoalPrompt',
   input: {schema: GenerateSimpleSmartGoalInputSchema},
-  output: {schema: GenerateSimpleSmartGoalOutputSchema},
+  output: {schema: z.object({ refinedGoal: SmartGoalSchema })},
   prompt: `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
 Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la para uma meta SMART completa.
 
@@ -58,7 +59,25 @@ const generateSimpleSmartGoalFlow = ai.defineFlow(
     outputSchema: GenerateSimpleSmartGoalOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+        const {output} = await prompt(input);
+        return { refinedGoal: output!.refinedGoal, fallback: false };
+    } catch (error) {
+        console.error("Falha ao gerar meta SMART, acionando fallback:", error);
+        
+        const fallbackGoal = {
+            name: input.goalName,
+            specific: `Definir e alcançar o objetivo: ${input.goalName}.`,
+            measurable: 'Defina aqui os marcos e KPIs para medir o progresso.',
+            achievable: 'Liste os passos e recursos necessários para tornar isto possível.',
+            relevant: 'Descreva aqui porque esta meta é importante para si neste momento.',
+            timeBound: 'Defina um prazo realista para a conclusão desta meta.',
+        };
+
+        return {
+            refinedGoal: fallbackGoal,
+            fallback: true,
+        };
+    }
   }
 );
