@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
@@ -176,7 +176,31 @@ const MetasView = ({ metas, setMetas }) => {
 
 const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
     const [generating, setGenerating] = useState(null);
+    const [timers, setTimers] = useState({});
     const { toast } = useToast();
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const newTimers = {};
+            missions.forEach(mission => {
+                if (mission.ultima_missao_concluida_em) {
+                    const cooldownEnds = new Date(mission.ultima_missao_concluida_em).getTime() + 24 * 60 * 60 * 1000;
+                    const timeLeft = cooldownEnds - now.getTime();
+                    if (timeLeft > 0) {
+                        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                        newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    }
+                }
+            });
+            setTimers(newTimers);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [missions]);
+
 
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
@@ -195,20 +219,15 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         const now = new Date();
         const rankedMission = missions.find(m => m.id === rankedMissionId);
 
-        // Verifica se já passou tempo suficiente desde a última conclusão
-        if (rankedMission.ultima_missao_concluida_em) {
-            const lastCompletion = new Date(rankedMission.ultima_missao_concluida_em);
-            const hoursSinceLast = (now.getTime() - lastCompletion.getTime()) / (1000 * 60 * 60);
-            if (hoursSinceLast < 24) {
-                 toast({
-                    variant: "destructive",
-                    title: "Ainda não!",
-                    description: "Seja consistente. A próxima missão estará disponível amanhã.",
-                });
-                return;
-            }
+        if (timers[rankedMissionId]) {
+            toast({
+                variant: "destructive",
+                title: "Aguarde o Cooldown!",
+                description: "A próxima missão estará disponível quando o temporizador zerar.",
+            });
+            return;
         }
-        
+
         setGenerating(dailyMissionId);
         let xpGained = 0;
 
@@ -236,7 +255,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return updatedProfile;
         });
 
-        // Gera a próxima missão
         try {
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
             const history = rankedMission.missoes_diarias
@@ -264,7 +282,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
             const finalMissions = updatedMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    // Adiciona a nova missão e atualiza a data de conclusão
                     return { ...rm, ultima_missao_concluida_em: now.toISOString(), missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
                 }
                 return rm;
@@ -303,12 +320,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     return (
         <div className="p-6">
             <h1 className="text-3xl font-bold text-cyan-400 mb-2">Diário de Missões</h1>
-            <p className="text-gray-400 mb-6">Complete missões diárias para progredir nas suas missões épicas e ganhar XP.</p>
+            <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada 24h após a conclusão.</p>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {availableMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const missionProgress = (mission.missoes_diarias.filter(d => d.concluido).length / (mission.total_missoes_diarias || 10)) * 100;
+                    const onCooldown = !!timers[mission.id];
                     
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -325,7 +343,15 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4">
-                                {activeDailyMission ? (
+                                {onCooldown ? (
+                                    <div className="bg-gray-900/50 border-l-4 border-gray-600 rounded-r-lg p-4 flex items-center justify-center text-center">
+                                        <Timer className="h-8 w-8 text-cyan-400 mr-4"/>
+                                        <div>
+                                            <p className="text-lg font-bold text-cyan-400">Próxima missão em:</p>
+                                            <p className="text-2xl font-mono text-gray-200">{timers[mission.id]}</p>
+                                        </div>
+                                    </div>
+                                ) : activeDailyMission ? (
                                     <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center`}>
                                         <div className="flex-shrink-0 mr-4">
                                             <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
@@ -548,3 +574,5 @@ export default function App() {
     </div>
   );
 }
+
+    
