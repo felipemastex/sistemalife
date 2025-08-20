@@ -221,64 +221,41 @@ export default function App() {
 
   const handleFullReset = async () => {
     if (!user) return;
-    setIsDataLoaded(false);
+    setIsDataLoaded(false); // Bloqueia a UI para evitar inconsistências
 
     try {
         const userDocRef = doc(db, 'users', user.uid);
-        
-        // Batch delete all sub-collections
+
+        // Apagar todas as subcoleções (metas, missões, habilidades)
         const collectionsToDelete = ['metas', 'missions', 'skills'];
         for (const coll of collectionsToDelete) {
-            const snapshot = await getDocs(collection(userDocRef, coll));
-            // Firestore doesn't allow deleting a subcollection directly, you must delete documents one by one
-            const deleteBatch = writeBatch(db);
-            snapshot.docs.forEach(docToDelete => {
-                deleteBatch.delete(docToDelete.ref);
-            });
+            const subcollectionRef = collection(userDocRef, coll);
+            const snapshot = await getDocs(subcollectionRef);
             if (!snapshot.empty) {
+                const deleteBatch = writeBatch(db);
+                snapshot.docs.forEach(docToDelete => deleteBatch.delete(docToDelete.ref));
                 await deleteBatch.commit();
             }
         }
         
-        // Delete routine documents separately
-        await deleteDoc(doc(userDocRef, 'routine', 'main')).catch(e => console.log("Routine/main not found, skipping."));
-        await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Routine/templates not found, skipping."));
+        // Apagar documentos da rotina
+        await deleteDoc(doc(userDocRef, 'routine', 'main')).catch(e => console.log("Rotina principal não encontrada, a ignorar."));
+        await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Templates de rotina não encontrados, a ignorar."));
 
-        // Overwrite the user document with initial data
-        // This is the crucial step to reset stats, level, xp, etc.
-        const initialProfile = { 
-            ...mockData.perfis[0], 
-            id: user.uid, 
-            email: user.email,
-            nome_utilizador: user.email.split('@')[0],
-            avatar_url: `https://placehold.co/100x100.png?text=${user.email.substring(0,2).toUpperCase()}`
-        };
-        await setDoc(userDocRef, initialProfile);
+        // Apagar o documento principal do utilizador, que contém o perfil (estatísticas, nível, etc.)
+        await deleteDoc(userDocRef);
 
-        // Re-setup the sub-collections
-        const metasRef = collection(db, 'users', user.uid, 'metas');
-        const missionsRef = collection(db, 'users', user.uid, 'missions');
-        const skillsRef = collection(db, 'users', user.uid, 'skills');
-        const routineRef = doc(db, 'users', user.uid, 'routine', 'main');
-        const routineTemplatesRef = doc(db, 'users', user.uid, 'routine', 'templates');
+        toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa. A reconfigurar para o estado inicial." });
 
-        const setupBatch = writeBatch(db);
-        mockData.metas.forEach(meta => setupBatch.set(doc(metasRef, String(meta.id)), meta));
-        mockData.missoes.forEach(mission => setupBatch.set(doc(missionsRef, String(mission.id)), mission));
-        mockData.habilidades.forEach(skill => setupBatch.set(doc(skillsRef, String(skill.id)), skill));
-        setupBatch.set(routineRef, mockData.rotina);
-        setupBatch.set(routineTemplatesRef, mockData.rotinaTemplates);
-        await setupBatch.commit();
-
-        toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa e reconfigurada." });
-
-        // Trigger a complete re-fetch by setting data loaded to false
-        setIsDataLoaded(false);
+        // O useEffect que depende de [user, isDataLoaded] irá re-executar,
+        // não encontrará o userDoc, e chamará setupInitialData naturalmente.
+        // Forçar isDataLoaded para false garante que este useEffect seja acionado.
+        // A lógica de recarregamento já está no sítio certo.
 
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
-        // Still try to reload data even if there was an error
+        // Tentar recarregar os dados mesmo se houver um erro, para sair do estado de bloqueio
         setIsDataLoaded(true);
     }
   };
@@ -361,5 +338,7 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
