@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -112,8 +113,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 
     const getInitialGoalState = useCallback(() => {
         if (isEditing && metaToEdit) {
-            return {
-                id: metaToEdit.id,
+             return {
+                id: metaToEdit.id || null,
                 nome: metaToEdit.nome || '',
                 categoria: metaToEdit.categoria || '',
                 detalhes_smart: {
@@ -147,11 +148,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
     
-    useEffect(() => {
+     useEffect(() => {
         const initialState = getInitialGoalState();
         setGoalState(initialState);
         setHistory([]);
         setUserInput('');
+
         if (isEditing) {
             setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
         } else {
@@ -491,7 +493,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 
                 setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, newRankedMission]);
-
+                 toast({ title: "Nova Missão Épica Iniciada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta ou gerar a missão épica.');
@@ -1190,9 +1192,28 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
     const [suggestions, setSuggestions] = useState({}); // { missionId: { suggestionText, ... } }
     const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(null); // missionId that is loading
 
-    const today = new Date();
     const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+    const today = new Date();
     const [selectedDay, setSelectedDay] = useState(dayNames[today.getDay()]);
+
+    const getWeekDays = () => {
+        const todayDate = new Date();
+        const week = [];
+        const dayOfWeek = todayDate.getDay(); 
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(todayDate);
+            date.setDate(todayDate.getDate() - dayOfWeek + i);
+            week.push({
+                name: dayNames[date.getDay()],
+                date: date.getDate(),
+                isToday: date.toDateString() === todayDate.toDateString(),
+            });
+        }
+        return week;
+    };
+    const weekDays = getWeekDays();
+
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -1376,8 +1397,18 @@ const RoutineView = ({ routine, setRoutine, missions }) => {
 
             <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
                 <TabsList className="grid w-full grid-cols-7">
-                    {dayNames.map(day => (
-                       <TabsTrigger key={day} value={day} className="capitalize">{day.substring(0,3)}</TabsTrigger>
+                    {weekDays.map(day => (
+                       <TabsTrigger 
+                            key={day.name} 
+                            value={day.name} 
+                            className={cn(
+                                "flex-col p-2 h-auto capitalize data-[state=active]:bg-gray-700",
+                                day.isToday && "bg-cyan-500/20 text-cyan-300"
+                            )}
+                        >
+                            <span>{day.name.substring(0,3)}</span>
+                            <span className="font-bold text-lg">{day.date}</span>
+                        </TabsTrigger>
                     ))}
                 </TabsList>
                 
@@ -1689,3 +1720,4 @@ export default function App() {
     </div>
   );
 }
+
