@@ -218,28 +218,27 @@ export default function App() {
 
   const handleFullReset = async () => {
     if (!user) return;
-    setIsDataLoaded(false); // Show loading state
-    
+    setIsDataLoaded(false);
+
     try {
         const userDocRef = doc(db, 'users', user.uid);
+        
+        // Batch delete all sub-collections
         const collectionsToDelete = ['metas', 'missions', 'skills'];
-        const batch = writeBatch(db);
-
-        // Delete all documents in sub-collections
+        const deleteBatch = writeBatch(db);
         for (const coll of collectionsToDelete) {
             const snapshot = await getDocs(collection(userDocRef, coll));
             snapshot.docs.forEach(doc => {
-                batch.delete(doc.ref);
+                deleteBatch.delete(doc.ref);
             });
         }
+        await deleteBatch.commit();
         
-        // Delete nested routine documents
-        batch.delete(doc(userDocRef, 'routine', 'main'));
-        batch.delete(doc(userDocRef, 'routine', 'templates'));
-        
-        await batch.commit();
+        // Delete routine documents separately (cannot be in same batch as subcollection deletes on parent doc)
+        await deleteDoc(doc(userDocRef, 'routine', 'main'));
+        await deleteDoc(doc(userDocRef, 'routine', 'templates'));
 
-        // Overwrite the main user document with initial data, effectively resetting it
+        // Reset the entire user document by setting it again with initial data
         await setupInitialData(user.uid, user.email);
         
         toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa e reconfigurada." });
@@ -248,34 +247,10 @@ export default function App() {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: "Não foi possível apagar os seus dados." });
     } finally {
-        // Re-fetch data to update the UI
-        const fetchData = async (userId) => {
-            const userDoc = await getDoc(doc(db, 'users', userId));
-            if (userDoc.exists()) {
-                setProfile(userDoc.data());
-                setMetas([]); // Clear old state
-                setMissions([]);
-                setSkills([]);
-                setRoutine({});
-                setRoutineTemplates({});
-                
-                // Now fetch fresh data
-                const metasSnapshot = await getDocs(collection(db, 'users', userId, 'metas'));
-                setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
-                const missionsSnapshot = await getDocs(collection(db, 'users', userId, 'missions'));
-                setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
-                const skillsSnapshot = await getDocs(collection(db, 'users', userId, 'skills'));
-                setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
-                const routineDoc = await getDoc(doc(db, 'users', userId, 'routine', 'main'));
-                setRoutine(routineDoc.exists() ? routineDoc.data() : {});
-                const routineTemplatesDoc = await getDoc(doc(db, 'users', userId, 'routine', 'templates'));
-                setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
-            }
-        };
-        await fetchData(user.uid);
-        setIsDataLoaded(true); // Hide loading state
+        setIsDataLoaded(true); // Trigger re-fetch
     }
   };
+
 
   const NavItem = ({ icon: Icon, label, page }) => (
     <button 
