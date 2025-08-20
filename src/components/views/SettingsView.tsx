@@ -22,7 +22,7 @@ const getProfileRank = (level) => {
     return 'SSS';
 };
 
-// Define the component as a standard function component.
+// 1. Define the component as a standard function component.
 const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
@@ -154,7 +154,7 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
                                     />
                                     <InfoField label="Classe" value={getProfileRank(profile.nivel)} />
                                     <InfoField label="Status" value={profile.status || 'Ativo'} />
-                                <InfoField 
+                                    <InfoField 
                                         label="Género" 
                                         value={profileData.genero}
                                         editable
@@ -201,7 +201,7 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
                                         <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                             Esta ação é irreversível. Todos os seus dados, incluindo perfil, metas, missões e habilidades, serão apagados permanentemente. Não será possível recuperar a sua conta.
-                                        </dialogDescription>
+                                        </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -220,5 +220,5 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     );
 };
 
-// Wrap the component with memo at export time. This is the correct pattern.
+// 2. Wrap the component with memo at export time. This is the correct pattern.
 export const SettingsView = memo(SettingsViewComponent);
