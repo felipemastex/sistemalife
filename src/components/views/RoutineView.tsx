@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
@@ -16,7 +16,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, setRoutineTemplates }) => {
+export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
+    const [routine, setRoutine] = useState(initialRoutine);
+    const [routineTemplates, setRoutineTemplates] = useState(initialTemplates);
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
     const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
@@ -39,6 +42,23 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
     const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
 
+    useEffect(() => {
+        setRoutine(initialRoutine);
+    }, [initialRoutine]);
+    
+    useEffect(() => {
+        setRoutineTemplates(initialTemplates);
+    }, [initialTemplates]);
+
+    const handleRoutineChange = (newRoutine) => {
+        setRoutine(newRoutine);
+        persistRoutine(newRoutine);
+    }
+    
+    const handleTemplateChange = (newTemplates) => {
+        setRoutineTemplates(newTemplates);
+        persistTemplates(newTemplates);
+    }
 
     const getWeekDays = () => {
         const todayDate = new Date();
@@ -80,22 +100,24 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
 
     const handleSave = () => {
         const currentDayRoutine = routine[selectedDay] || [];
+        let updatedRoutine;
         if (currentItem) {
             // Edit
             const updatedDayRoutine = currentDayRoutine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item);
-            setRoutine(prev => ({...prev, [selectedDay]: updatedDayRoutine }));
+            updatedRoutine = {...routine, [selectedDay]: updatedDayRoutine };
         } else {
             // Add
             const newDayRoutine = [...currentDayRoutine, { ...editedItem, id: Date.now() }];
-            setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
+            updatedRoutine = {...routine, [selectedDay]: newDayRoutine};
         }
+        handleRoutineChange(updatedRoutine);
         setIsDialogOpen(false);
     };
 
     const handleDelete = (id) => {
         const currentDayRoutine = routine[selectedDay] || [];
         const updatedDayRoutine = currentDayRoutine.filter(item => item.id !== id);
-        setRoutine(prev => ({...prev, [selectedDay]: updatedDayRoutine}));
+        handleRoutineChange({...routine, [selectedDay]: updatedDayRoutine});
     };
     
     const handleLoadTemplate = (templateName) => {
@@ -110,7 +132,7 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
         if (selectedTemplate) {
             // Add new unique IDs to template items to avoid key conflicts
             const templateWithNewIds = selectedTemplate.map(item => ({...item, id: Date.now() + Math.random()}));
-            setRoutine(prev => ({ ...prev, [selectedDay]: templateWithNewIds }));
+            handleRoutineChange({ ...routine, [selectedDay]: templateWithNewIds });
             toast({ title: "Template Carregado!", description: `A rotina de ${selectedDay} foi atualizada.` });
         }
         setShowTemplateDialog(false);
@@ -128,7 +150,7 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
             return;
         }
 
-        setRoutineTemplates(prev => ({ ...prev, [newTemplateName]: currentDayRoutine }));
+        handleTemplateChange({ ...routineTemplates, [newTemplateName]: currentDayRoutine });
         toast({ title: "Template Salvo!", description: `O template "${newTemplateName}" foi criado com sucesso.` });
         setShowSaveTemplateDialog(false);
         setNewTemplateName('');
@@ -164,6 +186,7 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
         };
     
         let dayRoutine = routine[selectedDay] || [];
+        let newDayRoutine;
     
         // If the suggestion modifies an existing block, split that block
         if (suggestion.modifiedBlockId) {
@@ -176,14 +199,14 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
                 const suggestionEnd = suggestion.suggestedEndTime;
     
                 // Remove the original block
-                let updatedRoutine = dayRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
+                let updatedRoutineItems = dayRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
     
                 // Add the new mission block
-                updatedRoutine.push(newRoutineItem);
+                updatedRoutineItems.push(newRoutineItem);
     
                 // Add the first part of the original block if there's time before the mission
                 if (suggestionStart > originalStart) {
-                    updatedRoutine.push({
+                    updatedRoutineItems.push({
                         ...blockToModify,
                         id: Date.now() + 1, // new id
                         end_time: suggestionStart,
@@ -192,23 +215,23 @@ export const RoutineView = ({ routine, setRoutine, missions, routineTemplates, s
     
                 // Add the second part of the original block if there's time after the mission
                 if (suggestionEnd < originalEnd) {
-                    updatedRoutine.push({
+                    updatedRoutineItems.push({
                         ...blockToModify,
                         id: Date.now() + 2, // new id
                         start_time: suggestionEnd,
                     });
                 }
-                setRoutine(prev => ({...prev, [selectedDay]: updatedRoutine}));
+                newDayRoutine = updatedRoutineItems;
             } else {
                  // Fallback if block not found: just add the mission
-                const newDayRoutine = [...dayRoutine, newRoutineItem];
-                setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
+                newDayRoutine = [...dayRoutine, newRoutineItem];
             }
         } else {
             // If no block is modified, just add the new item
-            const newDayRoutine = [...dayRoutine, newRoutineItem];
-            setRoutine(prev => ({...prev, [selectedDay]: newDayRoutine}));
+            newDayRoutine = [...dayRoutine, newRoutineItem];
         }
+        
+        handleRoutineChange({...routine, [selectedDay]: newDayRoutine});
     
         // Remove suggestion after implementing
         setSuggestions(prev => {

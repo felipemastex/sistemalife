@@ -216,7 +216,7 @@ export default function App() {
 
   const persistRoutine = useCallback(async (newRoutine) => {
       if (!user) return;
-      setRoutine(newRoutine);
+      setRoutine(newRoutine); // Update parent state for other components
       await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
   }, [user]);
   
@@ -286,7 +286,7 @@ export default function App() {
       case 'skills':
         return <SkillsView skills={skills} setSkills={persistSkills} />;
       case 'routine':
-        return <RoutineView routine={routine} setRoutine={persistRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={persistRoutineTemplates} />;
+        return <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />;
       case 'ai-chat':
         return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
       case 'settings':
