@@ -186,7 +186,29 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
         };
     };
 
-    const toggleMission = (id) => {
+    const completeMission = (id) => {
+        let xpGained = 0;
+        const updatedMissions = missions.map(m => {
+            if (m.id === id && !m.concluido) {
+                xpGained = m.xp_conclusao;
+                return { ...m, concluido: true };
+            }
+            return m;
+        });
+        
+        if (xpGained > 0) {
+            setMissions(updatedMissions);
+            setProfile(currentProfile => {
+                let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
+                while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
+                    updatedProfile = handleLevelUp(updatedProfile);
+                }
+                return updatedProfile;
+            });
+        }
+    };
+
+    const toggleDailyMission = (id) => {
         let xpChange = 0;
         const updatedMissions = missions.map(m => {
             if (m.id === id && m.tipo === 'diaria') {
@@ -207,6 +229,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
             });
         }
     };
+
 
     const getRankColor = (rank) => {
         switch(rank) {
@@ -237,7 +260,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
                 {dailyMissions.length > 0 ? dailyMissions.map(mission => (
                      <div key={mission.id} className={`bg-gray-800/50 border-l-4 ${mission.concluido ? 'border-green-500' : 'border-yellow-500'} rounded-r-lg p-4 flex items-center mb-2`}>
                         <div className="flex-shrink-0 mr-4">
-                            <button onClick={() => toggleMission(mission.id)}>
+                            <button onClick={() => toggleDailyMission(mission.id)}>
                                 {mission.concluido ? <CheckCircle className="h-8 w-8 text-green-500" /> : <Circle className="h-8 w-8 text-gray-500" />}
                             </button>
                         </div>
@@ -267,6 +290,14 @@ const MissionsView = ({ missions, setMissions, profile, setProfile }) => {
                                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
                                 </div>
                             </div>
+                             {!mission.concluido && (
+                                <div className="mt-4 pt-4 border-t border-gray-700 flex justify-end">
+                                    <Button onClick={() => completeMission(mission.id)} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-md transition duration-300 flex items-center space-x-2">
+                                        <CheckCircle className="h-5 w-5" />
+                                        <span>Completar Missão</span>
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
