@@ -29,7 +29,8 @@ const GenerateSmartGoalQuestionInputSchema = z.object({
 export type GenerateSmartGoalQuestionInput = z.infer<typeof GenerateSmartGoalQuestionInputSchema>;
 
 const GenerateSmartGoalQuestionOutputSchema = z.object({
-  nextQuestion: z.string().optional().describe('A próxima pergunta a ser feita ao utilizador para refinar a meta. Se a meta for considerada SMART, este campo pode ficar vazio.'),
+  nextQuestion: z.string().optional().describe('A próxima pergunta a ser feita ao utilizador para refinar a meta.'),
+  exampleAnswers: z.array(z.string()).optional().describe('Uma lista de três exemplos de respostas para a pergunta feita.'),
   isComplete: z.boolean().describe('Indica se a definição da meta SMART está concluída.'),
   refinedGoal: SmartGoalSchema.optional().describe('A meta final refinada após todas as perguntas terem sido respondidas.'),
 });
@@ -49,7 +50,6 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
   },
   async ({ goal, history }) => {
 
-    // 1. Determinar qual parte da meta SMART precisa ser abordada
     let nextStep = '';
     if (!goal.specific) nextStep = 'specific';
     else if (!goal.measurable) nextStep = 'measurable';
@@ -58,7 +58,6 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
     else if (!goal.timeBound) nextStep = 'timeBound';
 
 
-    // 2. Se todas as partes estiverem completas, finalize a meta.
     if (!nextStep) {
         const refinePrompt = `
             Você é um coach de produtividade. A meta a seguir foi totalmente preenchida pelo utilizador.
@@ -78,7 +77,6 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         return { isComplete: true, refinedGoal: output!.refinedGoal };
     }
 
-    // 3. Se uma parte estiver faltando, gere a próxima pergunta.
     const promptTemplate = `
         Você é um coach de produtividade de elite, especialista em ajudar pessoas a transformar ideias vagas em metas SMART acionáveis. A sua comunicação é concisa, motivadora e sempre focada no próximo passo.
         
@@ -109,22 +107,28 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         - Para 'relevant': "Vamos conectar isso ao seu 'porquê'. De que forma esta meta se alinha com os seus objetivos de vida ou carreira a longo prazo? Porque é que isto é importante para si *agora*?"
         - Para 'timeBound': "Toda grande meta precisa de um prazo. Quando, exatamente, você pretende alcançar este objetivo? Defina uma data final para criar um senso de urgência."
 
-        Gere APENAS a próxima pergunta. Não inclua saudações ou texto extra.
+        A sua tarefa é gerar um objeto JSON com dois campos: "nextQuestion" (a pergunta que você irá formular) e "exampleAnswers" (um array de 3 exemplos de respostas criativas e úteis para a sua pergunta).
+        
+        Responda APENAS com o objeto JSON. Não inclua saudações ou texto extra.
     `;
     
     const handlebars = await import('handlebars');
     const template = handlebars.compile(promptTemplate);
-    const finalPrompt = template({ history, nextStep });
+    const finalPrompt = template({ history, nextStep, goal });
 
-
-    const result = await ai.generate({
+    const {output} = await ai.generate({
         prompt: finalPrompt,
         model: 'googleai/gemini-2.0-flash',
+        output: { schema: z.object({
+            nextQuestion: z.string(),
+            exampleAnswers: z.array(z.string()),
+        }) }
     });
-
+    
     return {
         isComplete: false,
-        nextQuestion: result.text.trim()
+        nextQuestion: output!.nextQuestion,
+        exampleAnswers: output!.exampleAnswers,
     };
   }
 );

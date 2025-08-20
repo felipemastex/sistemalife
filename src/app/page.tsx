@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock, Timer, History, MessageSquareQuote, X, ZapIcon, Feather } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion, GenerateSmartGoalQuestionInput } from '@/ai/flows/generate-smart-goal-questions';
+import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
 // --- COMPONENTES ---
@@ -96,20 +98,33 @@ const Dashboard = ({ profile }) => {
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [currentQuestion, setCurrentQuestion] = useState('');
+    const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
     const [goalState, setGoalState] = useState(metaToEdit ? {name: metaToEdit.nome, ...metaToEdit.detalhes_smart} : { name: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
 
+    useEffect(() => {
+      if (goalState.name && !currentQuestion) {
+        handleInitialQuestion(goalState.name)
+      }
+    }, [goalState.name, currentQuestion]);
+
     const handleInitialQuestion = async (goalName) => {
         setIsLoading(true);
-        const initialGoal = { name: goalName };
-        setGoalState(initialGoal);
+        const initialGoal = metaToEdit ? goalState : { name: goalName };
+        if (!metaToEdit) {
+            setGoalState(initialGoal);
+        }
+        
         try {
-            const result = await generateSmartGoalQuestion({ goal: initialGoal });
+            const result = await generateSmartGoalQuestion({ goal: initialGoal, history: [] });
             if (result.nextQuestion) {
                 setCurrentQuestion(result.nextQuestion);
+                setExampleAnswers(result.exampleAnswers || []);
+            } else if (result.isComplete && result.refinedGoal) {
+                await handleSaveGoal(result.refinedGoal);
             }
         } catch (error) {
             console.error("Erro ao gerar a primeira pergunta:", error);
@@ -127,28 +142,28 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         const newHistory = [...history, { question: lastQuestion, answer: userInput }];
         setHistory(newHistory);
         setIsLoading(true);
+        setExampleAnswers([]);
         
         let updatedGoal = { ...goalState };
         const lastQuestionLower = lastQuestion.toLowerCase();
         
-        // Update goal state based on the question that was just answered
         if (lastQuestionLower.includes('específico')) updatedGoal.specific = userInput;
         else if (lastQuestionLower.includes('medirá') || lastQuestionLower.includes('progresso')) updatedGoal.measurable = userInput;
         else if (lastQuestionLower.includes('atingir') || lastQuestionLower.includes('passos')) updatedGoal.achievable = userInput;
         else if (lastQuestionLower.includes('relevante') || lastQuestionLower.includes('importante')) updatedGoal.relevant = userInput;
         else if (lastQuestionLower.includes('prazo') || lastQuestionLower.includes('data final')) updatedGoal.timeBound = userInput;
         
-        setUserInput(''); // Clear input after processing
+        setUserInput(''); 
         setGoalState(updatedGoal);
 
         try {
             const result = await generateSmartGoalQuestion({ goal: updatedGoal, history: newHistory });
 
             if (result.isComplete && result.refinedGoal) {
-                // Processo finalizado, salvar a meta
                 await handleSaveGoal(result.refinedGoal);
             } else if (result.nextQuestion) {
                 setCurrentQuestion(result.nextQuestion);
+                setExampleAnswers(result.exampleAnswers || []);
             }
         } catch (error) {
             console.error("Erro ao gerar próxima pergunta:", error);
@@ -179,7 +194,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             };
             onSave(newMeta);
             toast({ title: "Meta SMART Salva!", description: "A sua nova meta foi definida com sucesso." });
-            onClose(); // Fechar o wizard após salvar
+            onClose(); 
         } catch (error) {
              console.error("Erro ao sugerir categoria:", error);
              toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. Salvando com categoria padrão.' });
@@ -195,64 +210,78 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             setIsLoading(false);
         }
     }
-    
-    const renderContent = () => {
-        if (!goalState.name) {
-            return (
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-cyan-400 mb-4">Qual é a meta que você tem em mente?</h2>
-                    <p className="text-gray-400 mb-6">Descreva o seu objetivo inicial. Vamos refiná-lo juntos.</p>
-                     <Input
-                        type="text"
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion(userInput)}
-                        placeholder="Ex: Aprender a programar, correr uma maratona, ler mais livros..."
-                        className="max-w-lg mx-auto"
-                        disabled={isLoading}
-                    />
-                    <Button onClick={() => userInput.trim() && handleInitialQuestion(userInput)} className="mt-4" disabled={isLoading || !userInput.trim()}>
-                        Começar a Definir
-                    </Button>
-                </div>
-            )
-        }
 
-        return (
-             <div className="w-full max-w-3xl">
-                <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.name}</span></p>
-                <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 text-center shadow-lg">
-                    {isLoading ? (
-                         <div className="flex items-center justify-center space-x-2 h-24">
-                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                            <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse"></div>
-                         </div>
-                    ) : (
+    const renderInitialScreen = () => (
+        <div className="text-center">
+            <h2 className="text-2xl font-bold text-cyan-400 mb-4">Qual é a meta que você tem em mente?</h2>
+            <p className="text-gray-400 mb-6">Descreva o seu objetivo inicial. O Sistema irá ajudá-lo a refiná-lo.</p>
+             <Input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && userInput.trim() && handleInitialQuestion(userInput)}
+                placeholder="Ex: Aprender a programar, correr uma maratona, ler mais livros..."
+                className="max-w-lg mx-auto"
+                disabled={isLoading}
+            />
+            <Button onClick={() => userInput.trim() && handleInitialQuestion(userInput)} className="mt-4" disabled={isLoading || !userInput.trim()}>
+                Começar a Definir
+            </Button>
+        </div>
+    );
+    
+    const renderQuestionScreen = () => (
+         <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
+            <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.name}</span></p>
+            <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 text-center shadow-lg">
+                {isLoading && !currentQuestion ? (
+                     <div className="flex items-center justify-center space-x-2 h-48">
+                        <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                        <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                        <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse"></div>
+                     </div>
+                ) : (
+                    <>
                         <h2 className="text-2xl text-cyan-400 mb-6 min-h-[6rem] flex items-center justify-center">{currentQuestion}</h2>
-                    )}
-                     <Textarea
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        placeholder="Seja detalhado na sua resposta..."
-                        className="min-h-[100px] text-base"
-                        disabled={isLoading}
-                    />
-                     <Button onClick={handleNextStep} className="mt-6" disabled={isLoading || !userInput.trim()}>
-                        Próximo Passo
-                        <Send className="h-4 w-4 ml-2" />
-                    </Button>
-                </div>
-             </div>
-        )
-    }
+                        <Textarea
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            placeholder="Seja detalhado na sua resposta ou escolha um exemplo abaixo..."
+                            className="min-h-[100px] text-base"
+                            disabled={isLoading}
+                        />
+
+                        {exampleAnswers.length > 0 && !isLoading && (
+                            <div className="mt-6 space-y-2 text-left">
+                                 <p className="text-sm text-gray-400 mb-2">Ou inspire-se com estes exemplos:</p>
+                                {exampleAnswers.map((ex, i) => (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => setUserInput(ex)}
+                                        className="w-full text-left p-3 bg-gray-800/60 rounded-md hover:bg-gray-700/80 transition-colors text-sm text-gray-300"
+                                    >
+                                        {ex}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <Button onClick={handleNextStep} className="mt-6" disabled={isLoading || !userInput.trim()}>
+                            Próximo Passo
+                            <Send className="h-4 w-4 ml-2" />
+                        </Button>
+                    </>
+                )}
+            </div>
+         </div>
+    );
 
     return (
          <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
             <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <X className="h-6 w-6" />
             </Button>
-            {renderContent()}
+            {!goalState.name ? renderInitialScreen() : renderQuestionScreen()}
         </div>
     )
 }
@@ -260,56 +289,72 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 
 const MetasView = ({ metas, setMetas, setMissions }) => {
     const [showWizard, setShowWizard] = useState(false);
+    const [showModeSelection, setShowModeSelection] = useState(false);
+    const [showSimpleModeDialog, setShowSimpleModeDialog] = useState(false);
+    const [simpleGoalName, setSimpleGoalName] = useState('');
+    const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
     const [metaToEdit, setMetaToEdit] = useState(null);
+    const { toast } = useToast();
 
     const handleOpenWizard = (meta = null) => {
         setMetaToEdit(meta);
-        setShowWizard(true);
+        setShowModeSelection(true);
     };
 
     const handleCloseWizard = () => {
         setShowWizard(false);
         setMetaToEdit(null);
+        setShowSimpleModeDialog(false);
+        setSimpleGoalName('');
     };
 
     const handleSave = (newOrUpdatedMeta) => {
         if (metaToEdit) {
-            // Edição
             setMetas(metas.map(m => m.id === newOrUpdatedMeta.id ? { ...newOrUpdatedMeta, user_id: m.user_id } : m));
-             // Atualizar a missão épica associada
             setMissions(prev => prev.map(mission => 
                 mission.meta_associada === metaToEdit.nome 
                 ? { ...mission, nome: `Missão Épica: ${newOrUpdatedMeta.nome}`, meta_associada: newOrUpdatedMeta.nome }
                 : mission
             ));
         } else {
-            // Criação
             const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
             setMetas(prev => [...prev, newMetaWithId]);
-
-            // Criar missão épica associada
             const newRankedMission = {
-                id: Date.now() + 1, // Evitar colisão de id
+                id: Date.now() + 1, 
                 nome: `Missão Épica: ${newMetaWithId.nome}`,
-                descricao: `Um grande passo em direção a: ${newMetaWithId.nome}. Detalhes: ${newMetaWithId.detalhes_smart.specific}`,
-                concluido: false,
-                rank: 'E', // Rank inicial
-                level_requirement: 1,
-                meta_associada: newMetaWithId.nome,
-                total_missoes_diarias: 10, // Default
+                descricao: `Um grande passo em direção a: ${newMetaWithId.nome}. Detalhes: ${newOrUpdatedMeta.detalhes_smart.specific}`,
+                concluido: false, rank: 'E', level_requirement: 1,
+                meta_associada: newMetaWithId.nome, total_missoes_diarias: 10, 
                 ultima_missao_concluida_em: null,
                 missoes_diarias: [{
                     id: Date.now() + 2,
                     nome: `Iniciar a jornada para "${newMetaWithId.nome}"`,
                     descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
-                    xp_conclusao: 10,
-                    concluido: false,
-                    tipo: 'diaria',
+                    xp_conclusao: 10, concluido: false, tipo: 'diaria',
                 }]
             };
             setMissions(prev => [...prev, newRankedMission]);
         }
         handleCloseWizard();
+    };
+
+    const handleCreateSimpleGoal = async () => {
+        if (!simpleGoalName.trim()) return;
+        setIsLoadingSimpleGoal(true);
+        try {
+            const result = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            handleSave({
+                nome: result.refinedGoal.name,
+                detalhes_smart: result.refinedGoal
+            });
+        } catch (error) {
+            console.error("Erro ao criar meta simples:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. Tente novamente.' });
+        } finally {
+            setIsLoadingSimpleGoal(false);
+            setShowSimpleModeDialog(false);
+            setSimpleGoalName('');
+        }
     };
 
     const handleDelete = (id) => {
@@ -320,6 +365,21 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
         }
     };
 
+    const startDetailedMode = (meta = null) => {
+        setMetaToEdit(meta);
+        setShowModeSelection(false);
+        setShowWizard(true);
+    };
+
+    const startSimpleMode = () => {
+        setMetaToEdit(null);
+        setShowModeSelection(false);
+        setShowSimpleModeDialog(true);
+    };
+
+    const startEditMode = (meta) => {
+        startDetailedMode(meta);
+    };
 
     return (
         <div className="p-6">
@@ -330,11 +390,11 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
                     Adicionar Meta
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo, definidas com o método SMART. Para cada meta, uma missão épica será criada.</p>
+            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma missão épica será criada.</p>
             <Accordion type="multiple" className="space-y-4">
                 {metas.map(meta => (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                        <div className="flex items-center w-full p-4">
+                       <div className="flex items-center w-full p-4">
                             <AccordionTrigger className="flex-1 hover:no-underline text-left">
                                 <div>
                                     <p className="text-lg text-gray-200">{meta.nome}</p>
@@ -342,7 +402,7 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
                                 </div>
                             </AccordionTrigger>
                             <div className="flex space-x-2 pl-4">
-                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => startEditMode(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                 <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
                             </div>
                         </div>
@@ -366,6 +426,55 @@ const MetasView = ({ metas, setMetas, setMissions }) => {
                     metaToEdit={metaToEdit}
                 />
             )}
+            
+            <Dialog open={showModeSelection} onOpenChange={setShowModeSelection}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Escolha o modo de criação da meta</DialogTitle>
+                        <DialogDescription>
+                            Como você prefere definir a sua próxima grande meta?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                       <button onClick={startSimpleMode} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
+                           <Feather className="h-10 w-10 text-cyan-400 mb-2"/>
+                           <h3 className="font-bold text-gray-200">Modo Rápido</h3>
+                           <p className="text-sm text-gray-400">Apenas dê um nome à sua meta. A IA fará o resto.</p>
+                       </button>
+                       <button onClick={() => startDetailedMode()} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
+                           <ZapIcon className="h-10 w-10 text-purple-400 mb-2"/>
+                           <h3 className="font-bold text-gray-200">Modo Detalhado</h3>
+                           <p className="text-sm text-gray-400">Seja guiado pela IA para criar uma meta SMART completa.</p>
+                       </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showSimpleModeDialog} onOpenChange={setShowSimpleModeDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Modo Rápido: Nova Meta</DialogTitle>
+                        <DialogDescription>
+                            Digite o nome da sua meta. O Sistema irá transformá-la num objetivo SMART para si.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Input
+                            placeholder="Ex: Aprender a investir na bolsa"
+                            value={simpleGoalName}
+                            onChange={(e) => setSimpleGoalName(e.target.value)}
+                            disabled={isLoadingSimpleGoal}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSimpleModeDialog(false)} disabled={isLoadingSimpleGoal}>Cancelar</Button>
+                        <Button onClick={handleCreateSimpleGoal} disabled={isLoadingSimpleGoal || !simpleGoalName.trim()}>
+                            {isLoadingSimpleGoal ? "A criar..." : "Criar Meta"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
@@ -395,7 +504,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                     } else {
-                        // Limpa o temporizador se o tempo acabou
                         if(timers[mission.id]){
                             setMissions(currentMissions => currentMissions.map(m => m.id === mission.id ? {...m, ultima_missao_concluida_em: null} : m));
                         }
@@ -477,8 +585,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 .join('\n');
 
             const meta = metas.find(m => m.nome.includes(rankedMission.meta_associada))
-
-            const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos com base no livro "Hábitos Atómicos". O utilizador (Nível ${profile.nivel}) está a trabalhar na missão épica "${rankedMission.nome}", que está ligada à sua meta de longo prazo: "${meta?.nome || "Objetivo geral"}". ${history ? `O histórico de missões concluídas recentemente é: ${history}` : `O utilizador acabou de completar: "${completedDailyMission.nome}".`} Sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico. A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA. Não crie missões genéricas como "estude mais". Siga os princípios de "Hábitos Atómicos": 1. **Torne-a Óbvia:** A missão deve ser clara e inequívoca. Ex: "Abra o seu editor de código e encontre a função 'calcularTotal'." 2. **Torne-a Atraente:** Formule a missão de uma forma que soe como um progresso, não uma tarefa. Ex: "Execute o seu primeiro teste unitário para validar o cálculo." 3. **Torne-a Fácil:** Deve ser um passo muito pequeno, uma melhoria de 1%. Algo que pode ser feito em menos de 15 minutos. Aumente a dificuldade apenas ligeiramente em relação à tarefa anterior. 4. **Torne-a Satisfatória:** A descrição deve implicar a sensação de realização. Gere uma única missão que seja o próximo passo lógico, específico e pequeno. A recompensa de XP deve ser pequena, refletindo o pequeno esforço (entre 15 e 50 XP). Não repita as missões do histórico.`;
 
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
