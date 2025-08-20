@@ -106,11 +106,16 @@ const Dashboard = ({ profile }) => {
 
 const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const isEditing = !!metaToEdit;
-    const getInitialGoalState = () => {
+    
+    const getInitialGoalState = useCallback(() => {
         if (isEditing) {
             return {
                 name: metaToEdit.nome,
-                ...metaToEdit.detalhes_smart,
+                specific: metaToEdit.detalhes_smart.specific,
+                measurable: metaToEdit.detalhes_smart.measurable,
+                achievable: metaToEdit.detalhes_smart.achievable,
+                relevant: metaToEdit.detalhes_smart.relevant,
+                timeBound: metaToEdit.detalhes_smart.timeBound,
             };
         }
         return {
@@ -121,8 +126,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             relevant: '',
             timeBound: '',
         };
-    };
-
+    }, [isEditing, metaToEdit]);
+    
     const [currentQuestion, setCurrentQuestion] = useState('');
     const [exampleAnswers, setExampleAnswers] = useState([]);
     const [userInput, setUserInput] = useState('');
@@ -131,20 +136,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     const [history, setHistory] = useState([]);
     const { toast } = useToast();
 
-    // This effect ensures that if we start editing, we check if we need to ask a question
     useEffect(() => {
+        setGoalState(getInitialGoalState());
         if (isEditing) {
-            // Check if any SMART field is empty to start the questionnaire
-            const firstEmptyField = ['specific', 'measurable', 'achievable', 'relevant', 'timeBound'].find(field => !goalState[field]);
-            if (firstEmptyField) {
-                // If a field is empty, start the wizard to fill it
-                handleInitialQuestion(goalState);
-            } else {
-                 setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
-            }
+             setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
         }
-    }, []); // Run only once on mount
-
+    }, [metaToEdit, isEditing, getInitialGoalState]);
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -173,7 +170,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
         } finally {
             setIsLoading(false);
         }
-    },[onClose, toast]);
+    },[onClose]);
 
 
     const handleNextStep = async () => {
@@ -251,11 +248,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
     
     // Simplified save for edit mode
     const handleEditSave = () => {
-        // Ensure name is preserved correctly if it's not editable in this screen
-        const finalGoalState = {
-             ...goalState,
-             name: metaToEdit.nome // keep original name
-        };
+        const finalGoalState = { ...goalState };
         handleSaveGoal(finalGoalState);
     }
 
@@ -492,35 +485,26 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
         if (!simpleGoalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            // Simplified goal creation without SMART generation
-            const newSmartGoal = {
-                name: simpleGoalName,
-                specific: '',
-                measurable: '',
-                achievable: '',
-                relevant: '',
-                timeBound: '',
-            };
-            
+            const { refinedGoal } = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+
             let category = 'Desenvolvimento Pessoal';
             try {
-                 const categoryResult = await generateGoalCategory({
-                    goalName: simpleGoalName,
+                const categoryResult = await generateGoalCategory({
+                    goalName: refinedGoal.name,
                     categories: mockData.categoriasMetas,
                 });
                 category = categoryResult.category;
             } catch (categoryError) {
-                // Ignore AI error and use default
-                console.error("AI category suggestion failed:", categoryError);
+                console.error("AI category suggestion failed, using default:", categoryError);
             }
 
             await handleSave({
-                nome: newSmartGoal.name,
+                nome: refinedGoal.name,
                 categoria: category,
-                detalhes_smart: newSmartGoal
+                detalhes_smart: refinedGoal
             });
         } catch (error) {
-            handleToastError(error, 'Não foi possível criar a meta.');
+            handleToastError(error, 'Não foi possível criar a meta com a IA. Tente novamente.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
