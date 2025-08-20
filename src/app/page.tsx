@@ -4,20 +4,25 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle } from 'lucide-react';
+import { doc, getDoc, setDoc, collection, getDocs, writeBatch } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
 import { DashboardView } from '@/components/views/DashboardView';
 import { MetasView } from '@/components/views/MetasView';
 import { MissionsView } from '@/components/views/MissionsView';
 import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function App() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const { toast } = useToast();
   
   const [profile, setProfile] = useState(null);
   const [metas, setMetas] = useState([]);
@@ -25,6 +30,7 @@ export default function App() {
   const [skills, setSkills] = useState([]);
   const [routine, setRoutine] = useState({});
   const [routineTemplates, setRoutineTemplates] = useState({});
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
   useEffect(() => {
     if (!loading && !user) {
@@ -33,65 +39,179 @@ export default function App() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if(user) {
-      const initialProfile = mockData.perfis[0];
-      const initialMetas = mockData.metas;
-      const initialMissions = [...mockData.missoes];
-      
-      const initialSkills = mockData.metas.map(meta => {
-          const hasSkill = mockData.habilidades?.find(h => h.id === meta.habilidade_associada_id);
-          if (hasSkill) return hasSkill;
-          return {
-              id: meta.habilidade_associada_id,
-              nome: `Maestria em ${meta.nome}`,
-              descricao: `Habilidade relacionada ao objetivo: ${meta.nome}`,
-              categoria: meta.categoria,
-              nivel_atual: 1, 
-              nivel_maximo: 10, 
-              xp_atual: 0, 
-              xp_para_proximo_nivel: 50, 
-              pre_requisito: null, 
-              nivel_minimo_para_desbloqueio: null,
-          }
-      });
+    const setupInitialData = async (userId, userEmail) => {
+        const batch = writeBatch(db);
 
-      const initialRoutine = mockData.rotina;
-      const initialRoutineTemplates = mockData.rotinaTemplates;
-      
-      initialMetas.forEach(meta => {
-          const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
-          if (!hasMission) {
-              initialMissions.push({
-                  id: Date.now() + Math.random(), 
-                  nome: `Missão Épica: ${meta.nome}`,
-                  descricao: `Um grande passo em direção a: ${meta.nome}.`,
-                  concluido: false, 
-                  rank: 'E', 
-                  level_requirement: 1,
-                  meta_associada: meta.nome, 
-                  total_missoes_diarias: 10,
-                  ultima_missao_concluida_em: null,
-                  missoes_diarias: [{
-                      id: Date.now() + Math.random(),
-                      nome: `Iniciar a jornada para "${meta.nome}"`,
-                      descricao: `O primeiro passo é o mais importante. Complete esta missão para receber a sua primeira tarefa do Sistema.`,
-                      xp_conclusao: 10, 
-                      concluido: false, 
-                      tipo: 'diaria',
-                  }]
-              });
-          }
-      });
+        // 1. Profile
+        const initialProfile = { 
+            ...mockData.perfis[0], 
+            id: userId, 
+            email: userEmail,
+            nome_utilizador: userEmail.split('@')[0]
+        };
+        const profileRef = doc(db, 'users', userId);
+        batch.set(profileRef, { profile: initialProfile });
+        setProfile(initialProfile);
 
-      setProfile(initialProfile);
-      setMetas(initialMetas);
-      setMissions(initialMissions);
-      setSkills(initialSkills);
-      setRoutine(initialRoutine);
-      setRoutineTemplates(initialRoutineTemplates);
+        // 2. Metas
+        const metasRef = collection(db, 'users', userId, 'metas');
+        mockData.metas.forEach(meta => {
+            const metaDocRef = doc(metasRef, String(meta.id));
+            batch.set(metaDocRef, meta);
+        });
+        setMetas(mockData.metas);
+
+        // 3. Missions
+        const missionsRef = collection(db, 'users', userId, 'missions');
+        mockData.missoes.forEach(mission => {
+            const missionDocRef = doc(missionsRef, String(mission.id));
+            batch.set(missionDocRef, mission);
+        });
+        setMissions(mockData.missoes);
+
+        // 4. Skills
+        const skillsRef = collection(db, 'users', userId, 'skills');
+        mockData.habilidades.forEach(skill => {
+            const skillDocRef = doc(skillsRef, String(skill.id));
+            batch.set(skillDocRef, skill);
+        });
+        setSkills(mockData.habilidades);
+
+        // 5. Routine
+        const routineRef = doc(db, 'users', userId, 'routine', 'main');
+        batch.set(routineRef, mockData.rotina);
+        setRoutine(mockData.rotina);
+
+        // 6. Routine Templates
+        const routineTemplatesRef = doc(db, 'users', userId, 'routine', 'templates');
+        batch.set(routineTemplatesRef, mockData.rotinaTemplates);
+        setRoutineTemplates(mockData.rotinaTemplates);
+
+        await batch.commit();
+        toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
+    };
+
+    const fetchData = async (userId) => {
+        try {
+            // Profile
+            const profileDoc = await getDoc(doc(db, 'users', userId));
+            if (profileDoc.exists() && profileDoc.data().profile) {
+                setProfile(profileDoc.data().profile);
+
+                // Metas
+                const metasSnapshot = await getDocs(collection(db, 'users', userId, 'metas'));
+                setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
+                
+                // Missions
+                const missionsSnapshot = await getDocs(collection(db, 'users', userId, 'missions'));
+                setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
+
+                // Skills
+                const skillsSnapshot = await getDocs(collection(db, 'users', userId, 'skills'));
+                setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
+
+                // Routine
+                const routineDoc = await getDoc(doc(db, 'users', userId, 'routine', 'main'));
+                setRoutine(routineDoc.exists() ? routineDoc.data() : {});
+                
+                // Routine Templates
+                const routineTemplatesDoc = await getDoc(doc(db, 'users', userId, 'routine', 'templates'));
+                setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
+
+            } else {
+                console.log("Utilizador novo. A configurar dados iniciais...");
+                await setupInitialData(userId, user.email);
+            }
+        } catch (error) {
+            console.error("Erro a carregar dados do Firestore:", error);
+            toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
+        } finally {
+            setIsDataLoaded(true);
+        }
+    };
+    
+    if (user && !isDataLoaded) {
+      fetchData(user.uid);
     }
-  }, [user]);
+  }, [user, isDataLoaded, toast]);
   
+  // --- Data Persistence Functions ---
+  const persistProfile = async (newProfile) => {
+      if (!user) return;
+      setProfile(newProfile);
+      await setDoc(doc(db, 'users', user.uid), { profile: newProfile }, { merge: true });
+  }
+
+  const persistMetas = async (newMetas) => {
+      if (!user) return;
+      setMetas(newMetas);
+      const batch = writeBatch(db);
+      const metasRef = collection(db, 'users', user.uid, 'metas');
+      
+      // First, get all existing docs to find deletions
+      const existingDocsSnapshot = await getDocs(metasRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMetas.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+      
+      idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
+      newMetas.forEach(meta => {
+          const metaDocRef = doc(metasRef, String(meta.id));
+          batch.set(metaDocRef, meta);
+      });
+      await batch.commit();
+  }
+
+  const persistMissions = async (newMissions) => {
+      if (!user) return;
+      setMissions(newMissions);
+      const batch = writeBatch(db);
+      const missionsRef = collection(db, 'users', user.uid, 'missions');
+
+      const existingDocsSnapshot = await getDocs(missionsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMissions.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
+      newMissions.forEach(mission => {
+          const missionDocRef = doc(missionsRef, String(mission.id));
+          batch.set(missionDocRef, mission);
+      });
+      await batch.commit();
+  }
+  
+    const persistSkills = async (newSkills) => {
+      if (!user) return;
+      setSkills(newSkills);
+      const batch = writeBatch(db);
+      const skillsRef = collection(db, 'users', user.uid, 'skills');
+
+      const existingDocsSnapshot = await getDocs(skillsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newSkills.map(s => String(s.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
+      newSkills.forEach(skill => {
+          const skillDocRef = doc(skillsRef, String(skill.id));
+          batch.set(skillDocRef, skill);
+      });
+      await batch.commit();
+  }
+
+  const persistRoutine = async (newRoutine) => {
+      if (!user) return;
+      setRoutine(newRoutine);
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
+  }
+  
+  const persistRoutineTemplates = async (newTemplates) => {
+      if (!user) return;
+      setRoutineTemplates(newTemplates);
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
+  }
+
   const NavItem = ({ icon: Icon, label, page }) => (
     <button 
       onClick={() => setCurrentPage(page)}
@@ -114,13 +234,13 @@ export default function App() {
       case 'dashboard':
         return <DashboardView profile={profile} />;
       case 'metas':
-        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} skills={skills} setSkills={setSkills} />;
+        return <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />;
       case 'missions':
-        return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} skills={skills} setSkills={setSkills} />;
+        return <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />;
       case 'skills':
-        return <SkillsView skills={skills} setSkills={setSkills} />;
+        return <SkillsView skills={skills} setSkills={persistSkills} />;
       case 'routine':
-        return <RoutineView routine={routine} setRoutine={setRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={setRoutineTemplates} />;
+        return <RoutineView routine={routine} setRoutine={persistRoutine} missions={missions} routineTemplates={routineTemplates} setRoutineTemplates={persistRoutineTemplates} />;
       case 'ai-chat':
         return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
       default:
@@ -128,7 +248,7 @@ export default function App() {
     }
   };
   
-  if (loading || !user || !profile) {
+  if (loading || !user || !isDataLoaded) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center text-cyan-400">
         <LoaderCircle className="animate-spin h-10 w-10 mr-4" />

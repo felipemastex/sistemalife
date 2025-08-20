@@ -28,7 +28,7 @@ const statIcons = {
     carisma: <Star className="h-4 w-4 text-pink-400" />,
 };
 
-const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
+const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
     const isEditing = !!metaToEdit;
 
     const getInitialGoalState = useCallback(() => {
@@ -189,7 +189,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
                 nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
                 detalhes_smart: finalGoalDetails,
-                habilidade_associada_id: metaToEdit?.habilidade_associada_id
+                habilidade_associada_id: metaToEdit?.habilidade_associada_id,
+                user_id: profile.id,
              };
              onSave(newMeta);
              onClose();
@@ -372,20 +373,22 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 // --- UPDATE LOGIC ---
                 const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
-                setMetas(updatedMetas);
                 
                 if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
-                    setMissions(prev => prev.map(mission => 
+                    const updatedMissions = missions.map(mission => 
                         mission.meta_associada === metaOriginal.nome 
                         ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                         : mission
-                    ));
+                    );
+                    setMissions(updatedMissions);
                      // Also update skill name if it's tied to the goal name
                     const associatedSkill = skills.find(s => s.id === newOrUpdatedMeta.habilidade_associada_id);
                     if (associatedSkill) {
-                        setSkills(prevSkills => prevSkills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s));
+                        const updatedSkills = skills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s);
+                        setSkills(updatedSkills);
                     }
                 }
+                setMetas(updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
@@ -474,9 +477,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     };
                 });
                 
-                setSkills(prev => [...prev, newSkill]);
-                setMetas(prev => [...prev, newMetaWithId]);
-                setMissions(prev => [...prev, ...newMissions]);
+                setSkills([...skills, newSkill]);
+                setMetas([...metas, newMetaWithId]);
+                setMissions([...missions, ...newMissions]);
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
@@ -492,9 +495,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         try {
             const { refinedGoal } = await generateSimpleSmartGoal({ goalName: simpleGoalName });
             await handleSave({
+                id: null,
                 nome: refinedGoal.name,
                 categoria: 'Desenvolvimento Pessoal', // Default category
-                detalhes_smart: refinedGoal
+                detalhes_smart: refinedGoal,
+                user_id: profile.id
             });
         } catch (error) {
             handleToastError(error, 'Não foi possível criar a meta com a IA. Tente novamente.');
@@ -508,8 +513,8 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const handleDelete = (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
-            setMissions(currentMissions => currentMissions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            setMetas(currentMetas => currentMetas.filter(m => m.id !== id));
+            setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            setMetas(metas.filter(m => m.id !== id));
             // A habilidade não é removida aqui de propósito, como solicitado.
         }
     };
@@ -603,6 +608,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     onClose={handleCloseWizard}
                     onSave={handleSave}
                     metaToEdit={metaToEdit}
+                    profile={profile}
                 />
             )}
             
