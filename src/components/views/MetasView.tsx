@@ -250,9 +250,10 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                     <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
                     <Textarea id="timeBound" value={goalState.detalhes_smart.timeBound} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[60px]" />
                 </div>
-                <div className="flex justify-end pt-4">
+                <div className="flex flex-col-reverse sm:flex-row justify-end pt-4 gap-2">
+                     <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
                      <Button onClick={handleEditSave} disabled={isLoading}>
-                        Salvar Alterações
+                        {isLoading ? "A Salvar..." : "Salvar Alterações"}
                     </Button>
                 </div>
              </div>
@@ -336,7 +337,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
 }
 
 export const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
-    const [showWizard, setShowWizard] = useState(false);
+    const [showWizardDialog, setShowWizardDialog] = useState(false);
     const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
     const [wizardInitialName, setWizardInitialName] = useState('');
     const [metaToEdit, setMetaToEdit] = useState(null);
@@ -383,22 +384,22 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         setShowSuggestionDialog(false);
         setWizardInitialName(suggestionName);
         setWizardMode('simple');
-        setShowWizard(true);
+        setShowWizardDialog(true);
     };
 
     const handleOpenWizard = (meta = null) => {
         if (meta) {
             setMetaToEdit(meta);
             setWizardMode('detailed'); // Editing always opens in detailed mode
-            setShowWizard(true);
+            setShowWizardDialog(true);
         } else {
             setWizardMode('selection'); // Show mode selection for new goal
-            setShowWizard(true);
+            setShowWizardDialog(true);
         }
     };
 
     const handleCloseWizard = () => {
-        setShowWizard(false);
+        setShowWizardDialog(false);
         setMetaToEdit(null);
         setWizardMode(null);
         setWizardInitialName('');
@@ -611,7 +612,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 onKeyPress={(e) => e.key === 'Enter' && handleCreateSimpleGoal(wizardInitialName)}
                             />
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
                             <Button variant="outline" onClick={handleCloseWizard} disabled={isLoadingSimpleGoal}>Cancelar</Button>
                             <Button onClick={() => handleCreateSimpleGoal(wizardInitialName)} disabled={isLoadingSimpleGoal || !wizardInitialName.trim()}>
                                 {isLoadingSimpleGoal ? "A criar..." : "Criar Meta"}
@@ -636,15 +637,15 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
 
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Metas</h1>
-                <div className="flex items-center gap-2">
-                     <Button onClick={handleGetSuggestions} variant="outline" className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                     <Button onClick={handleGetSuggestions} variant="outline" className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 w-full sm:w-auto">
                         <Wand2 className="h-5 w-5 mr-2" />
                         Sugerir Novas Metas
                     </Button>
-                    <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500">
+                    <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
                         <PlusCircle className="h-5 w-5 mr-2" />
                         Adicionar Meta
                     </Button>
@@ -712,7 +713,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 )})}
             </Accordion>
             
-            <Dialog open={showWizard} onOpenChange={(open) => !open && handleCloseWizard()}>
+            <Dialog open={showWizardDialog} onOpenChange={handleCloseWizard}>
                 {renderWizardContent()}
             </Dialog>
             
@@ -737,13 +738,13 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         )}
                         {suggestions.map((s, index) => (
                             <div key={index} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition-colors">
-                                <div className="flex justify-between items-start">
-                                    <div>
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                    <div className="flex-grow">
                                         <h3 className="font-bold text-gray-200">{s.name}</h3>
                                         <p className="text-sm text-gray-400 mt-1">{s.description}</p>
                                         <span className="text-xs text-purple-400 bg-purple-900/50 px-2 py-1 rounded-full mt-2 inline-block">{s.category}</span>
                                     </div>
-                                    <Button size="sm" className="ml-4" onClick={() => handleSelectSuggestion(s.name)}>
+                                    <Button size="sm" className="ml-0 sm:ml-4 flex-shrink-0" onClick={() => handleSelectSuggestion(s.name)}>
                                         Iniciar
                                     </Button>
                                 </div>
