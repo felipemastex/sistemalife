@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Terminal } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -21,12 +21,28 @@ export default function LoginPage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const [typedTitle, setTypedTitle] = useState('');
+    const titleText = "SISTEMA";
 
     useEffect(() => {
         if (!authLoading && user) {
             router.push('/');
         }
     }, [user, authLoading, router]);
+
+    useEffect(() => {
+        setTypedTitle('');
+        const interval = setInterval(() => {
+            setTypedTitle(prev => {
+                if (prev.length < titleText.length) {
+                    return titleText.substring(0, prev.length + 1);
+                }
+                clearInterval(interval);
+                return prev;
+            });
+        }, 150);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -61,22 +77,26 @@ export default function LoginPage() {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center text-primary">
                 <LoaderCircle className="animate-spin h-10 w-10 mr-4" />
-                <span className="text-xl">A carregar...</span>
+                <span className="text-xl font-cinzel">A CARREGAR...</span>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-            <Card className="w-full max-w-md bg-card border-border text-card-foreground">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 font-sans">
+            <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
+            <Card className="w-full max-w-md bg-card/80 backdrop-blur-lg border-cyan-400/20 text-card-foreground shadow-2xl shadow-cyan-500/10 animate-in fade-in-50 duration-700">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-3xl font-bold text-primary">SISTEMA</CardTitle>
+                    <CardTitle className="font-cinzel text-5xl font-bold text-primary tracking-widest min-h-[60px]">
+                        {typedTitle}
+                        <span className="animate-pulse">_</span>
+                    </CardTitle>
                     <CardDescription className="text-muted-foreground">A sua vida, gamificada. Inicie a sessão para continuar.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Email do Utilizador</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -84,11 +104,11 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="bg-secondary border-border"
+                                className="bg-secondary border-border focus:border-primary"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password">Senha</Label>
+                            <Label htmlFor="password">Palavra-passe</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -96,12 +116,12 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="bg-secondary border-border"
+                                className="bg-secondary border-border focus:border-primary"
                             />
                         </div>
-                        {error && <p className="text-sm text-red-500">{error}</p>}
-                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
-                            {loading ? <LoaderCircle className="animate-spin" /> : "Iniciar Sessão"}
+                        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-wider" disabled={loading}>
+                            {loading ? <LoaderCircle className="animate-spin" /> : "INICIAR SESSÃO"}
                         </Button>
                     </form>
                 </CardContent>

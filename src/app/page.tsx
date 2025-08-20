@@ -269,8 +269,8 @@ export default function App() {
         <Component
           onClick={() => setCurrentPage(page)}
           className={cn(
-            'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors',
-            currentPage === page ? 'bg-primary/20 text-primary' : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+            'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors duration-200',
+            currentPage === page ? 'bg-primary/20 text-primary font-bold' : 'text-gray-400 hover:bg-secondary hover:text-white'
           )}
         >
           <Icon className="h-5 w-5" />
@@ -281,14 +281,14 @@ export default function App() {
   
   const NavContent = ({inSheet = false}) => (
     <>
-      <div className="text-2xl font-bold text-primary text-center mb-8">SISTEMA</div>
+      <div className="font-cinzel text-3xl font-bold text-primary text-center mb-8 tracking-widest">SISTEMA</div>
       <nav className="flex-grow space-y-2">
           <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
           <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
           <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
-          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold" />
+          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
       </nav>
       <div className="mt-auto">
           <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
@@ -305,60 +305,57 @@ export default function App() {
 
   const renderContent = () => {
     if (!profile) {
-      return <div className="min-h-screen bg-background flex items-center justify-center text-primary text-xl">A carregar sistema...</div>
+      return null
     }
     
-    switch (currentPage) {
-      case 'dashboard':
-        return <DashboardView profile={profile} />;
-      case 'metas':
-        return <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />;
-      case 'missions':
-        return <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />;
-      case 'skills':
-        return <SkillsView skills={skills} setSkills={persistSkills} />;
-      case 'routine':
-        return <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />;
-      case 'ai-chat':
-        return <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />;
-      case 'settings':
-        return <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />;
-      default:
-        return <DashboardView profile={profile} />;
-    }
+    const views = {
+      'dashboard': <DashboardView profile={profile} />,
+      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} />,
+      'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
+      'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
+      'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
+    };
+
+    return (
+      <div key={currentPage} className="animate-in fade-in-25 duration-500">
+        {views[currentPage] || <DashboardView profile={profile} />}
+      </div>
+    )
   };
   
   if (loading || !user || !isDataLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <LoaderCircle className="animate-spin h-10 w-10 mr-4" />
-        <span className="text-xl">A validar sessão...</span>
+        <span className="text-xl font-cinzel tracking-wider">A VALIDAR SESSÃO...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen bg-background text-foreground flex font-sans">
         {!isMobile && (
-          <aside className="w-64 bg-gray-900/80 border-r border-border/50 p-4 flex flex-col">
+          <aside className="w-64 bg-card/50 border-r border-border/50 p-4 flex flex-col">
               <NavContent />
           </aside>
         )}
         
       <main className="flex-1 overflow-y-auto relative" style={{height: '100vh'}}>
          {isMobile && (
-            <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-gray-900/80 backdrop-blur-md border-b border-border/50 flex items-center">
+            <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-background/80 backdrop-blur-md border-b border-border/50 flex items-center">
                  <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="ghost" size="icon">
                             <Menu />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" className="w-72 bg-gray-900/90 border-r border-border/50 p-4 flex flex-col">
+                    <SheetContent side="left" className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col">
                         <NavContent inSheet={true}/>
                     </SheetContent>
                 </Sheet>
-                 <h2 className="text-lg font-bold text-primary ml-4 capitalize">{currentPage}</h2>
+                 <h2 className="text-lg font-bold text-primary ml-4 capitalize font-cinzel tracking-wider">{currentPage}</h2>
             </header>
           )}
         {renderContent()}
@@ -366,5 +363,3 @@ export default function App() {
     </div>
   );
 }
-
-    

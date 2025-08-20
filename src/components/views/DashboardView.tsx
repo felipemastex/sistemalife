@@ -32,26 +32,26 @@ export const DashboardView = ({ profile }) => {
 
   const statsData = [
     { subject: 'Força', value: profile.estatisticas.forca, fullMark: 100 },
-    { subject: 'Int.', value: profile.estatisticas.inteligencia, fullMark: 100 },
-    { subject: 'Sab.', value: profile.estatisticas.sabedoria, fullMark: 100 },
-    { subject: 'Const.', value: profile.estatisticas.constituicao, fullMark: 100 },
-    { subject: 'Destr.', value: profile.estatisticas.destreza, fullMark: 100 },
+    { subject: 'Inteligência', value: profile.estatisticas.inteligencia, fullMark: 100 },
+    { subject: 'Sabedoria', value: profile.estatisticas.sabedoria, fullMark: 100 },
+    { subject: 'Constituição', value: profile.estatisticas.constituicao, fullMark: 100 },
+    { subject: 'Destreza', value: profile.estatisticas.destreza, fullMark: 100 },
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 100 },
   ];
   
   const StatItem = ({ label, value }) => (
-    <div>
+    <div className="bg-secondary/50 p-4 rounded-lg border border-border/50 transition-all hover:bg-secondary/80 hover:border-primary/50">
         <span className="text-sm text-muted-foreground">{label}</span>
         <p className="text-lg font-bold text-foreground">{value}</p>
     </div>
   );
 
   return (
-    <div className="p-4 md:p-6 h-full overflow-y-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold text-primary">STATUS</h1>
-        <div className="text-right">
-            <p className="font-bold text-foreground">{profile.nome_utilizador}</p>
+    <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
+      <div className="flex justify-between items-start mb-6">
+        <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
+         <div className="text-right">
+            <p className="font-bold text-xl text-foreground">{profile.nome_utilizador}</p>
             <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
         </div>
       </div>
@@ -59,12 +59,22 @@ export const DashboardView = ({ profile }) => {
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <div className="md:col-span-2 space-y-4">
-                   <StatItem label="Nome" value={profile.nome_utilizador}/>
-                   <StatItem label="Nível" value={profile.nivel}/>
-                   <StatItem label="Título" value={profileRank.title}/>
+                    <div className="grid grid-cols-2 gap-4">
+                      <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
+                      <StatItem label="Título" value={profileRank.title}/>
+                    </div>
+                    <div className="bg-secondary/50 p-4 rounded-lg border border-border/50">
+                      <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                          <span>XP para o próximo Nível</span>
+                          <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border/50">
+                          <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
+                      </div>
+                   </div>
                  </div>
-                 <div className="flex flex-col items-center justify-center">
-                    <div className="w-40 h-40 border-2 border-border flex items-center justify-center bg-secondary/30 p-1">
+                 <div className="flex flex-col items-center justify-center bg-secondary/50 p-4 rounded-lg border border-border/50">
+                    <div className="w-40 h-40 border-2 border-primary/50 flex items-center justify-center bg-secondary/30 p-1">
                         <Avatar className="w-full h-full rounded-sm">
                             <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
                             <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
@@ -77,7 +87,7 @@ export const DashboardView = ({ profile }) => {
             <hr className="border-border/50" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div className="w-full h-64 md:h-80 col-span-2 md:col-span-1">
+                <div className="w-full h-80">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={statsData}>
                             <defs>
@@ -94,7 +104,8 @@ export const DashboardView = ({ profile }) => {
                                 contentStyle={{
                                     backgroundColor: 'hsl(var(--popover))',
                                     borderColor: 'hsl(var(--border))',
-                                    color: 'hsl(var(--foreground))'
+                                    color: 'hsl(var(--foreground))',
+                                    borderRadius: 'var(--radius)',
                                 }}
                                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }}
                             />
@@ -102,21 +113,10 @@ export const DashboardView = ({ profile }) => {
                     </ResponsiveContainer>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6 col-span-2 md:col-span-1">
+                <div className="grid grid-cols-2 gap-4">
                     {statsData.map((stat) => (
                         <StatItem key={stat.subject} label={stat.subject} value={stat.value} />
                     ))}
-                </div>
-            </div>
-
-             {/* XP Bar */}
-            <div>
-                <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                    <span>XP para o próximo Nível</span>
-                    <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border/50">
-                    <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
                 </div>
             </div>
         </div>
