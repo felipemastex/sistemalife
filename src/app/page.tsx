@@ -19,7 +19,7 @@ import { SettingsView } from '@/components/views/SettingsView';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 
 export default function App() {
@@ -352,6 +352,12 @@ export default function App() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col">
+                        <SheetHeader>
+                            <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+                            <SheetDescription className="sr-only">
+                                Navegue pelas diferentes secções da aplicação.
+                            </SheetDescription>
+                        </SheetHeader>
                         <NavContent inSheet={true}/>
                     </SheetContent>
                 </Sheet>
@@ -363,5 +369,3 @@ export default function App() {
     </div>
   );
 }
-
-    
