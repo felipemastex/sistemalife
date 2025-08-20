@@ -158,7 +158,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             }
         } catch (error) {
             console.error("Erro ao gerar a primeira pergunta:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível iniciar o assistente.' });
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível iniciar o assistente. O Sistema pode estar sobrecarregado.' });
             onClose();
         } finally {
             setIsLoading(false);
@@ -202,7 +202,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             }
         } catch (error) {
             console.error("Erro ao gerar próxima pergunta:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível continuar. Tente novamente.' });
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível continuar. Tente novamente mais tarde.' });
         } finally {
             setIsLoading(false);
         }
@@ -232,7 +232,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
             onClose(); 
         } catch (error) {
              console.error("Erro ao sugerir categoria:", error);
-             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. Salvando com categoria padrão.' });
+             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.' });
              const newMeta = {
                 id: metaToEdit ? metaToEdit.id : Date.now(),
                 nome: finalGoal.name,
@@ -358,31 +358,30 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 
     const handleSave = async (newOrUpdatedMeta) => {
         // This function handles both create and update
-        // For simplicity, we'll use a loading state here
         setIsLoadingSimpleGoal(true);
         
-        if (metaToEdit) {
-            // --- UPDATE LOGIC ---
-            // Replace the existing meta with the updated version
-            const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
-            setMetas(updatedMetas);
-            
-            // If the goal name changed, we need to update the associated mission link
-            if (metaToEdit.nome !== newOrUpdatedMeta.nome) {
-                setMissions(prev => prev.map(mission => 
-                    mission.meta_associada === metaToEdit.nome 
-                    ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
-                    : mission
-                ));
-            }
-            toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
+        try {
+            if (metaToEdit) {
+                // --- UPDATE LOGIC ---
+                // Replace the existing meta with the updated version
+                const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
+                setMetas(updatedMetas);
+                
+                // If the goal name changed, we need to update the associated mission link
+                if (metaToEdit.nome !== newOrUpdatedMeta.nome) {
+                    setMissions(prev => prev.map(mission => 
+                        mission.meta_associada === metaToEdit.nome 
+                        ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
+                        : mission
+                    ));
+                }
+                toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
-        } else {
-            // --- CREATE LOGIC ---
-            // Assign a new ID
-            const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
-            
-            try {
+            } else {
+                // --- CREATE LOGIC ---
+                // Assign a new ID
+                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id };
+                
                 // Find related history from already completed goals
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
@@ -420,14 +419,14 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, newRankedMission]);
 
-            } catch (error) {
-                console.error("Erro ao gerar missão épica inicial:", error);
-                toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a missão épica para esta meta.' });
-                // Do not add the meta if mission generation fails
             }
+        } catch (error) {
+            console.error("Erro ao salvar meta ou gerar missão épica:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível salvar a meta ou gerar a missão épica. O Sistema pode estar sobrecarregado.' });
+        } finally {
+            setIsLoadingSimpleGoal(false);
+            handleCloseWizard();
         }
-        setIsLoadingSimpleGoal(false);
-        handleCloseWizard();
     };
 
     const handleCreateSimpleGoal = async () => {
@@ -449,10 +448,9 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 detalhes_smart: smartResult.refinedGoal
             });
-        } catch (error)
-{
+        } catch (error) {
             console.error("Erro ao criar meta simples:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. Tente novamente.' });
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível criar a meta. O Sistema pode estar sobrecarregado. Tente novamente.' });
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -664,7 +662,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             toast({
                 variant: "destructive",
                 title: "Erro de Comunicação",
-                description: "Não foi possível enviar o seu feedback ao Sistema.",
+                description: "Não foi possível enviar o seu feedback ao Sistema. Pode estar sobrecarregado.",
             });
         }
     };
@@ -777,7 +775,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             toast({
                 variant: "destructive",
                 title: "Erro do Sistema",
-                description: "Não foi possível gerar a próxima missão diária.",
+                description: "Não foi possível gerar a próxima missão diária. O servidor pode estar sobrecarregado.",
             });
         } finally {
             setGenerating(null);
@@ -1063,7 +1061,7 @@ const AIChatView = ({ profile, metas }) => {
             toast({
               variant: 'destructive',
               title: 'Erro de comunicação com o sistema',
-              description: 'Não foi possível obter uma resposta. Tente novamente.',
+              description: 'Não foi possível obter uma resposta. O Sistema pode estar sobrecarregado.',
             })
             setMessages(prev => [...prev, { sender: 'ai', text: 'Erro de comunicação. Verifique a sua conexão e tente novamente.'}])
         } finally {
@@ -1219,5 +1217,3 @@ export default function App() {
     </div>
   );
 }
-
-    
