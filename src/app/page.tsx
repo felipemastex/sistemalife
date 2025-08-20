@@ -12,6 +12,7 @@ import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mis
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
+import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -398,7 +399,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit }) => {
 }
 
 
-const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills }) => {
+const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
     const [showWizard, setShowWizard] = useState(false);
     const [showModeSelection, setShowModeSelection] = useState(false);
     const [showSimpleModeDialog, setShowSimpleModeDialog] = useState(false);
@@ -452,15 +453,39 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills }) 
                         ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                         : mission
                     ));
+                     // Also update skill name if it's tied to the goal name
+                    const associatedSkill = skills.find(s => s.id === newOrUpdatedMeta.habilidade_associada_id);
+                    if (associatedSkill) {
+                        setSkills(prevSkills => prevSkills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s));
+                    }
                 }
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
                 // --- CREATE LOGIC ---
-                 const categorySkills = skills.filter(s => s.categoria === newOrUpdatedMeta.categoria);
-                 const mainSkill = categorySkills.length > 0 ? categorySkills[0] : null;
+                const newSkillId = Date.now();
+                const goalDescription = Object.values(newOrUpdatedMeta.detalhes_smart).join(' ');
+                
+                const skillResult = await generateSkillFromGoal({
+                    goalName: newOrUpdatedMeta.nome,
+                    goalDescription: goalDescription,
+                    existingCategories: mockData.categoriasMetas
+                });
 
-                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id, habilidade_associada_id: mainSkill ? mainSkill.id : null };
+                const newSkill = {
+                    id: newSkillId,
+                    nome: skillResult.skillName,
+                    descricao: skillResult.skillDescription,
+                    categoria: skillResult.skillCategory,
+                    nivel_atual: 1,
+                    nivel_maximo: 10,
+                    xp_atual: 0,
+                    xp_para_proximo_nivel: 50,
+                    pre_requisito: null,
+                    nivel_minimo_para_desbloqueio: null,
+                };
+                
+                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id, habilidade_associada_id: newSkillId };
                 
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
@@ -507,11 +532,12 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills }) 
                     };
                 });
                 
+                setSkills(prev => [...prev, newSkill]);
                 setMetas(prev => [...prev, newMetaWithId]);
                 setMissions(prev => [...prev, ...newMissions]);
             }
         } catch (error) {
-            handleToastError(error, 'Não foi possível salvar a meta ou gerar a árvore de progressão.');
+            handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -540,6 +566,7 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills }) 
     const handleDelete = (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
+            setSkills(prev => prev.filter(skill => skill.id !== metaToDelete.habilidade_associada_id));
             setMissions(prev => prev.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(metas.filter(m => m.id !== id));
         }
@@ -1846,14 +1873,14 @@ export default function App() {
     const initialProfile = mockData.perfis[0];
     const initialMetas = mockData.metas;
     const initialMissions = [...mockData.missoes];
-    const initialSkills = mockData.habilidades;
+    const initialSkills = mockData.initialSkills;
     const initialRoutine = mockData.rotina;
     const initialRoutineTemplates = mockData.rotinaTemplates;
     
+    // Auto-create missions for goals that don't have one, for data consistency
     initialMetas.forEach(meta => {
         const hasMission = initialMissions.some(m => m.meta_associada === meta.nome);
         if (!hasMission) {
-            console.log(`Creating mission for goal: ${meta.nome}`);
             initialMissions.push({
                 id: Date.now() + Math.random(), 
                 nome: `Missão Épica: ${meta.nome}`,
@@ -1906,7 +1933,7 @@ export default function App() {
       case 'dashboard':
         return <Dashboard profile={profile} />;
       case 'metas':
-        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} skills={skills} />;
+        return <MetasView metas={metas} setMetas={setMetas} missions={missions} setMissions={setMissions} profile={profile} skills={skills} setSkills={setSkills} />;
       case 'missions':
         return <MissionsView missions={missions} setMissions={setMissions} profile={profile} setProfile={setProfile} metas={metas} skills={skills} setSkills={setSkills} />;
       case 'skills':

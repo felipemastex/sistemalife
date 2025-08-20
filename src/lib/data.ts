@@ -39,7 +39,7 @@ export const metas = [
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome: 'Correr uma Prova de 5km',
     categoria: 'Saúde & Fitness',
-    habilidade_associada_id: 4,
+    habilidade_associada_id: 2,
     detalhes_smart: {
         specific: "Treinar consistentemente para conseguir correr 5 quilómetros sem parar e participar de um evento de corrida oficial.",
         measurable: "Aumentar a distância de corrida em 500 metros a cada semana e registar todos os treinos numa aplicação como o Strava.",
@@ -53,7 +53,7 @@ export const metas = [
     user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
     nome: 'Ler 12 Livros de Não-Ficção',
     categoria: 'Crescimento Pessoal',
-    habilidade_associada_id: 6,
+    habilidade_associada_id: 3,
     detalhes_smart: {
         specific: "Ler um livro de não-ficção por mês, cobrindo tópicos como ciência, história, psicologia e produtividade.",
         measurable: "Acompanhar o progresso no Goodreads e escrever um breve resumo ou os 3 principais insights de cada livro lido.",
@@ -216,14 +216,12 @@ export const missoes = [
   }
 ];
 
-export const habilidades = [
-    { id: 1, nome: 'Programação Python', descricao: 'Capacidade de escrever código em Python.', categoria: 'Desenvolvimento de Carreira', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 50, pre_requisito: 2, nivel_minimo_para_desbloqueio: 2 },
-    { id: 2, nome: 'Lógica de Programação', descricao: 'Compreensão fundamental de algoritmos e estruturas de dados.', categoria: 'Desenvolvimento de Carreira', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 40, pre_requisito: null },
-    { id: 3, nome: 'Web Scraping com Python', descricao: 'Extrair dados de websites usando bibliotecas como BeautifulSoup e Scrapy.', categoria: 'Desenvolvimento de Carreira', nivel_atual: 0, nivel_maximo: 5, xp_atual: 0, xp_para_proximo_nivel: 100, pre_requisito: 1, nivel_minimo_para_desbloqueio: 3 },
-    { id: 4, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', categoria: 'Saúde & Fitness', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 30, pre_requisito: null },
-    { id: 5, nome: 'Gestão Financeira Pessoal', descricao: 'Capacidade de gerir orçamento, investimentos e poupanças.', categoria: 'Finanças', nivel_atual: 0, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 60, pre_requisito: null },
-    { id: 6, nome: 'Leitura Focada', descricao: 'Capacidade de ler e reter informações de forma eficiente.', categoria: 'Crescimento Pessoal', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 40, pre_requisito: null },
+export const initialSkills = [
+    { id: 1, nome: 'Programação Python', descricao: 'Capacidade de escrever código em Python.', categoria: 'Desenvolvimento de Carreira', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 50, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
+    { id: 2, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', categoria: 'Saúde & Fitness', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 30, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
+    { id: 3, nome: 'Leitura Focada', descricao: 'Capacidade de ler e reter informações de forma eficiente.', categoria: 'Crescimento Pessoal', nivel_atual: 1, nivel_maximo: 10, xp_atual: 0, xp_para_proximo_nivel: 40, pre_requisito: null, nivel_minimo_para_desbloqueio: null },
 ];
+
 
 export const categoriasMetas = [
     'Desenvolvimento de Carreira',
