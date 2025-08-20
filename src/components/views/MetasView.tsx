@@ -2,13 +2,14 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2 } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
 import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
 import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
+import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { statCategoryMapping } from '@/lib/mappings';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statIcons = {
     forca: <Swords className="h-4 w-4 text-red-400" />,
@@ -28,7 +30,7 @@ const statIcons = {
     carisma: <Star className="h-4 w-4 text-pink-400" />,
 };
 
-const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
+const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName = '' }) => {
     const isEditing = !!metaToEdit;
 
     const getInitialGoalState = useCallback(() => {
@@ -49,7 +51,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
         }
         return {
             id: null,
-            nome: '',
+            nome: initialGoalName,
             categoria: '',
             detalhes_smart: {
                 specific: '',
@@ -59,7 +61,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
                 timeBound: '',
             }
         };
-    }, [isEditing, metaToEdit]);
+    }, [isEditing, metaToEdit, initialGoalName]);
     
     const [goalState, setGoalState] = useState(getInitialGoalState);
     const [currentQuestion, setCurrentQuestion] = useState('');
@@ -77,10 +79,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
 
         if (isEditing) {
             setCurrentQuestion("A sua meta SMART está completa. Pode refinar qualquer campo ou salvar as alterações.");
+        } else if (initialGoalName) {
+            handleInitialQuestion(initialGoalName);
         } else {
             setCurrentQuestion('');
         }
-    }, [metaToEdit, isEditing, getInitialGoalState]);
+    }, [metaToEdit, isEditing, getInitialGoalState, initialGoalName]);
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -329,11 +333,15 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile }) => {
 
 export const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
     const [showWizard, setShowWizard] = useState(false);
-    const [showModeSelection, setShowModeSelection] = useState(false);
-    const [showSimpleModeDialog, setShowSimpleModeDialog] = useState(false);
-    const [simpleGoalName, setSimpleGoalName] = useState('');
-    const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
+    const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed'
+    const [wizardInitialName, setWizardInitialName] = useState('');
     const [metaToEdit, setMetaToEdit] = useState(null);
+    const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
+    
+    const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
     const { toast } = useToast();
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
@@ -344,24 +352,52 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
              toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
     };
+    
+    const handleGetSuggestions = async () => {
+        setShowSuggestionDialog(true);
+        setIsLoadingSuggestions(true);
+        setSuggestions([]);
+
+        try {
+            const completedGoals = metas.filter(m => missions.some(miss => miss.meta_associada === m.nome && miss.concluido));
+            const result = await generateGoalSuggestion({
+                profile: JSON.stringify(profile),
+                skills: JSON.stringify(skills),
+                completedGoals: JSON.stringify(completedGoals.map(m => m.nome)),
+                existingCategories: mockData.categoriasMetas,
+            });
+            setSuggestions(result.suggestions);
+        } catch(error) {
+            handleToastError(error, "Não foi possível gerar sugestões de metas.");
+            setShowSuggestionDialog(false);
+        } finally {
+            setIsLoadingSuggestions(false);
+        }
+    }
+    
+    const handleSelectSuggestion = (suggestionName) => {
+        setShowSuggestionDialog(false);
+        setWizardInitialName(suggestionName);
+        setWizardMode('simple');
+        setShowWizard(true);
+    };
 
     const handleOpenWizard = (meta = null) => {
         if (meta) {
             setMetaToEdit(meta);
-            setShowModeSelection(false); // Do not show mode selection when editing
+            setWizardMode('detailed'); // Editing always opens in detailed mode
             setShowWizard(true);
         } else {
-            setMetaToEdit(null);
-            setShowModeSelection(true); // Show mode selection for new goal
+            setWizardMode('selection'); // Show mode selection for new goal
+            setShowWizard(true);
         }
     };
 
     const handleCloseWizard = () => {
         setShowWizard(false);
         setMetaToEdit(null);
-        setShowSimpleModeDialog(false);
-        setSimpleGoalName('');
-        setShowModeSelection(false);
+        setWizardMode(null);
+        setWizardInitialName('');
     };
 
     const handleSave = async (newOrUpdatedMeta) => {
@@ -488,12 +524,12 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             handleCloseWizard();
         }
     };
-
-    const handleCreateSimpleGoal = async () => {
-        if (!simpleGoalName.trim()) return;
+    
+    const handleCreateSimpleGoal = async (goalName) => {
+        if (!goalName.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            const { refinedGoal } = await generateSimpleSmartGoal({ goalName: simpleGoalName });
+            const { refinedGoal } = await generateSimpleSmartGoal({ goalName });
             await handleSave({
                 id: null,
                 nome: refinedGoal.name,
@@ -519,16 +555,70 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         }
     };
 
-    const startDetailedMode = (meta = null) => {
-        setMetaToEdit(meta);
-        setShowModeSelection(false);
-        setShowWizard(true);
-    };
-
-    const startSimpleMode = () => {
-        setMetaToEdit(null);
-        setShowModeSelection(false);
-        setShowSimpleModeDialog(true);
+    const renderWizardContent = () => {
+        switch (wizardMode) {
+            case 'selection':
+                return (
+                     <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Escolha o modo de criação da meta</DialogTitle>
+                            <DialogDescription>
+                                Como você prefere definir a sua próxima grande meta?
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                           <button onClick={() => setWizardMode('simple')} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
+                               <Feather className="h-10 w-10 text-cyan-400 mb-2"/>
+                               <h3 className="font-bold text-gray-200">Modo Rápido</h3>
+                               <p className="text-sm text-gray-400">Apenas dê um nome à sua meta. A IA fará o resto.</p>
+                           </button>
+                           <button onClick={() => setWizardMode('detailed')} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
+                               <ZapIcon className="h-10 w-10 text-purple-400 mb-2"/>
+                               <h3 className="font-bold text-gray-200">Modo Detalhado</h3>
+                               <p className="text-sm text-gray-400">Seja guiado pela IA para criar uma meta SMART completa.</p>
+                           </button>
+                        </div>
+                    </DialogContent>
+                );
+            case 'simple':
+                 return (
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Modo Rápido: Nova Meta</DialogTitle>
+                            <DialogDescription>
+                                Digite o nome da sua meta. O Sistema irá transformá-la num objetivo SMART para si.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <Input
+                                placeholder="Ex: Aprender a investir na bolsa"
+                                value={wizardInitialName}
+                                onChange={(e) => setWizardInitialName(e.target.value)}
+                                disabled={isLoadingSimpleGoal}
+                                onKeyPress={(e) => e.key === 'Enter' && handleCreateSimpleGoal(wizardInitialName)}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={handleCloseWizard} disabled={isLoadingSimpleGoal}>Cancelar</Button>
+                            <Button onClick={() => handleCreateSimpleGoal(wizardInitialName)} disabled={isLoadingSimpleGoal || !wizardInitialName.trim()}>
+                                {isLoadingSimpleGoal ? "A criar..." : "Criar Meta"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                 );
+            case 'detailed':
+                return (
+                    <SmartGoalWizard
+                        onClose={handleCloseWizard}
+                        onSave={handleSave}
+                        metaToEdit={metaToEdit}
+                        profile={profile}
+                        initialGoalName={wizardInitialName}
+                    />
+                );
+            default:
+                return null;
+        }
     };
 
 
@@ -536,10 +626,16 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Metas</h1>
-                <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500">
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Adicionar Meta
-                </Button>
+                <div className="flex items-center gap-2">
+                     <Button onClick={handleGetSuggestions} variant="outline" className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300">
+                        <Wand2 className="h-5 w-5 mr-2" />
+                        Sugerir Novas Metas
+                    </Button>
+                    <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500">
+                        <PlusCircle className="h-5 w-5 mr-2" />
+                        Adicionar Meta
+                    </Button>
+                </div>
             </div>
             <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             <Accordion type="multiple" className="space-y-4">
@@ -603,60 +699,45 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 )})}
             </Accordion>
 
-            {showWizard && (
-                <SmartGoalWizard
-                    onClose={handleCloseWizard}
-                    onSave={handleSave}
-                    metaToEdit={metaToEdit}
-                    profile={profile}
-                />
-            )}
+            {showWizard && renderWizardContent()}
             
-            <Dialog open={showModeSelection} onOpenChange={setShowModeSelection}>
-                <DialogContent>
+            <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Escolha o modo de criação da meta</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2 text-cyan-400 text-xl">
+                            <Wand2/>
+                            Sugestões do Sistema
+                        </DialogTitle>
                         <DialogDescription>
-                            Como você prefere definir a sua próxima grande meta?
+                            Com base no seu perfil, o Sistema acredita que estes seriam os próximos passos ideais na sua jornada.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                       <button onClick={startSimpleMode} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
-                           <Feather className="h-10 w-10 text-cyan-400 mb-2"/>
-                           <h3 className="font-bold text-gray-200">Modo Rápido</h3>
-                           <p className="text-sm text-gray-400">Apenas dê um nome à sua meta. A IA fará o resto.</p>
-                       </button>
-                       <button onClick={() => startDetailedMode()} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800 transition-colors flex flex-col items-center text-center">
-                           <ZapIcon className="h-10 w-10 text-purple-400 mb-2"/>
-                           <h3 className="font-bold text-gray-200">Modo Detalhado</h3>
-                           <p className="text-sm text-gray-400">Seja guiado pela IA para criar uma meta SMART completa.</p>
-                       </button>
+                    <div className="py-4 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                        {isLoadingSuggestions && (
+                            <div className="space-y-3">
+                                <Skeleton className="h-20 w-full" />
+                                <Skeleton className="h-20 w-full" />
+                                <Skeleton className="h-20 w-full" />
+                            </div>
+                        )}
+                        {suggestions.map((s, index) => (
+                            <div key={index} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-bold text-gray-200">{s.name}</h3>
+                                        <p className="text-sm text-gray-400 mt-1">{s.description}</p>
+                                        <span className="text-xs text-purple-400 bg-purple-900/50 px-2 py-1 rounded-full mt-2 inline-block">{s.category}</span>
+                                    </div>
+                                    <Button size="sm" className="ml-4" onClick={() => handleSelectSuggestion(s.name)}>
+                                        Iniciar
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                         {!isLoadingSuggestions && suggestions.length === 0 && (
+                            <p className="text-center text-gray-400 py-8">Não foi possível gerar sugestões neste momento.</p>
+                        )}
                     </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showSimpleModeDialog} onOpenChange={(isOpen) => { if (!isOpen) handleCloseWizard(); else setShowSimpleModeDialog(true);}}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Modo Rápido: Nova Meta</DialogTitle>
-                        <DialogDescription>
-                            Digite o nome da sua meta. O Sistema irá transformá-la num objetivo SMART para si.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Input
-                            placeholder="Ex: Aprender a investir na bolsa"
-                            value={simpleGoalName}
-                            onChange={(e) => setSimpleGoalName(e.target.value)}
-                            disabled={isLoadingSimpleGoal}
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowSimpleModeDialog(false)} disabled={isLoadingSimpleGoal}>Cancelar</Button>
-                        <Button onClick={handleCreateSimpleGoal} disabled={isLoadingSimpleGoal || !simpleGoalName.trim()}>
-                            {isLoadingSimpleGoal ? "A criar..." : "Criar Meta"}
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

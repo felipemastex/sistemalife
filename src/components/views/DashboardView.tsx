@@ -74,15 +74,7 @@ export const DashboardView = ({ profile }) => {
             <hr className="border-border/50" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                   {statsData.map(stat => (
-                     <div key={stat.subject} className="flex justify-between items-baseline">
-                        <p className="text-base text-muted-foreground">{stat.subject}</p>
-                        <p className="font-mono text-xl font-medium text-primary">{stat.value}</p>
-                     </div>
-                   ))}
-                </div>
-                <div className="w-full h-64 md:h-80">
+                <div className="w-full h-64 md:h-80 col-span-2">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={statsData}>
                             <defs>
