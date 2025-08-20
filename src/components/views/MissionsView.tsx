@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { statCategoryMapping } from '@/lib/mappings';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -700,5 +700,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     
 
 
+
+    
 
     
