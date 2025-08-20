@@ -37,9 +37,11 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateNextDailyMissionOutputSchema},
   prompt: `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos com base no livro "Hábitos Atómicos".
 O utilizador (Nível {{userLevel}}) está a trabalhar na missão épica "{{rankedMissionName}}", que está ligada à sua meta de longo prazo: "{{metaName}}".
+{{#if history}}
 
 O histórico de missões concluídas recentemente é:
 {{history}}
+{{/if}}
 
 Sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico.
 A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA. Não crie missões genéricas como "estude mais".
