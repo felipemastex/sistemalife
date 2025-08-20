@@ -500,18 +500,18 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
             <Accordion type="multiple" className="space-y-4">
                 {metas.map(meta => (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                       <div className="flex items-center w-full p-4">
-                            <AccordionTrigger className="flex-1 hover:no-underline text-left">
+                       <div className="flex items-center w-full">
+                           <AccordionTrigger className="flex-1 hover:no-underline text-left p-4">
                                 <div>
                                     <p className="text-lg text-gray-200">{meta.nome}</p>
                                     <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded">{meta.categoria}</span>
                                 </div>
-                            </AccordionTrigger>
-                            <div className="flex space-x-2 pl-4">
+                           </AccordionTrigger>
+                           <div className="flex space-x-2 p-4">
                                 <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                 <Button onClick={() => handleDelete(meta.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
-                            </div>
-                        </div>
+                           </div>
+                       </div>
                         <AccordionContent className="p-4 pt-0">
                            <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
                                 <p><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
@@ -586,13 +586,69 @@ const MetasView = ({ metas, setMetas, missions, setMissions, profile }) => {
 };
 
 
+const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
+    const [feedbackText, setFeedbackText] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const dialogTitles = {
+        'hint': 'Precisa de uma Dica?',
+        'too_hard': 'Missão Muito Difícil?',
+        'too_easy': 'Missão Muito Fácil?'
+    };
+
+    const dialogDescriptions = {
+        'hint': 'Descreva onde você está bloqueado e o Sistema fornecerá uma pista.',
+        'too_hard': 'Descreva por que a missão está muito difícil. O Sistema irá ajustar o próximo passo.',
+        'too_easy': 'Descreva por que a missão foi muito fácil para que o Sistema possa aumentar o desafio.'
+    };
+
+    const handleSubmit = async () => {
+        setLoading(true);
+        await onSubmit(feedbackType, feedbackText);
+        setLoading(false);
+        onOpenChange(false);
+        setFeedbackText('');
+    };
+    
+    if (!mission || !feedbackType) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{dialogTitles[feedbackType]}</DialogTitle>
+                    <DialogDescription>{dialogDescriptions[feedbackType]}</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Textarea
+                        placeholder="Forneça mais detalhes aqui..."
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading ? "A enviar..." : "Enviar Feedback"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
-    const [missionFeedback, setMissionFeedback] = useState({});
+    const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [hackerMode, setHackerMode] = useState(false);
+    const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
+
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -648,7 +704,6 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         }
     }, [hackerMode, setMissions, toast]);
 
-
     const handleLevelUp = (currentProfile) => {
         const newLevel = currentProfile.nivel + 1;
         const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel + 25);
@@ -662,12 +717,20 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
         };
     };
     
-    const handleMissionFeedback = async (missionName, missionDescription, feedbackType) => {
+    const handleOpenFeedbackModal = (mission, type) => {
+        setFeedbackModalState({ open: true, mission, type });
+    };
+    
+    const handleMissionFeedback = async (feedbackType, userText) => {
+        const { mission } = feedbackModalState;
+        if (!mission) return;
+        
         try {
             const result = await generateMissionSuggestion({
-                missionName,
-                missionDescription,
+                missionName: mission.nome,
+                missionDescription: mission.descricao,
                 feedbackType,
+                userText: userText,
             });
 
             toast({
@@ -676,8 +739,11 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             });
 
             if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
-                const feedbackValue = feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil';
-                const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.nome === missionName));
+                const feedbackValue = userText 
+                    ? `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}' com o seguinte comentário: "${userText}"`
+                    : `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}'`;
+                
+                const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
                 if (rankedMission) {
                     setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
                 }
@@ -732,17 +798,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
         setMissions(updatedMissions);
 
-        const oldLevel = profile.nivel;
         let newProfile = { ...profile, xp: profile.xp + xpGained };
-        let leveledUp = false;
-        while (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
+        if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
-            leveledUp = true;
-        }
-        setProfile(newProfile);
-
-        if (leveledUp) {
+            setProfile(newProfile);
             toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
+        } else {
+             setProfile(newProfile);
         }
         
         if (isRankedMissionComplete) {
@@ -869,8 +931,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                             <div className="flex items-center w-full px-4 py-3">
-                                <AccordionTrigger className="flex-1 hover:no-underline text-left">
+                             <div className="flex items-center w-full">
+                                <AccordionTrigger className="flex-1 hover:no-underline text-left px-4 py-3">
                                     <div className="flex-1 text-left">
                                         <div className="flex justify-between items-center">
                                             <p className="text-lg font-bold text-gray-200">{mission.nome}</p>
@@ -881,7 +943,7 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <div className="flex items-center space-x-2 pl-4">
+                                <div className="flex items-center space-x-2 pl-4 pr-4">
                                      {onCooldown && (
                                         <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
@@ -918,13 +980,13 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'hint')}>
+                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
                                                         Preciso de uma dica
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'too_hard')}>
+                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
                                                         Está muito difícil
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleMissionFeedback(activeDailyMission.nome, activeDailyMission.descricao, 'too_easy')}>
+                                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
                                                         Está muito fácil
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -992,6 +1054,14 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
                 })}
             </Accordion>
             
+            <MissionFeedbackDialog 
+                open={feedbackModalState.open}
+                onOpenChange={(isOpen) => setFeedbackModalState(prev => ({...prev, open: isOpen}))}
+                onSubmit={handleMissionFeedback}
+                mission={feedbackModalState.mission}
+                feedbackType={feedbackModalState.type}
+            />
+
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
