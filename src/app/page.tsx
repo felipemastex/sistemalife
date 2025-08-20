@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Swords, Brain, Zap, ShieldCheck, Star, PlusCircle, Edit, Trash2, Send, CheckCircle, Circle, Sparkles, Clock } from 'lucide-react';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateMotivationalMessage } from '@/ai/flows/generate-motivational-messages';
@@ -192,27 +192,42 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
     };
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
+        const now = new Date();
+        const rankedMission = missions.find(m => m.id === rankedMissionId);
+
+        // Verifica se já passou tempo suficiente desde a última conclusão
+        if (rankedMission.ultima_missao_concluida_em) {
+            const lastCompletion = new Date(rankedMission.ultima_missao_concluida_em);
+            const hoursSinceLast = (now.getTime() - lastCompletion.getTime()) / (1000 * 60 * 60);
+            if (hoursSinceLast < 24) {
+                 toast({
+                    variant: "destructive",
+                    title: "Ainda não!",
+                    description: "Seja consistente. A próxima missão estará disponível amanhã.",
+                });
+                return;
+            }
+        }
+        
         setGenerating(dailyMissionId);
         let xpGained = 0;
 
-        // Encontra a missão diária e marca como concluída
-        const updatedMissions = missions.map(rankedMission => {
-            if (rankedMission.id === rankedMissionId) {
-                const updatedDailyMissions = rankedMission.missoes_diarias.map(daily => {
+        const updatedMissions = missions.map(rm => {
+            if (rm.id === rankedMissionId) {
+                const updatedDailyMissions = rm.missoes_diarias.map(daily => {
                     if (daily.id === dailyMissionId) {
                         xpGained = daily.xp_conclusao;
                         return { ...daily, concluido: true };
                     }
                     return daily;
                 });
-                return { ...rankedMission, missoes_diarias: updatedDailyMissions };
+                return { ...rm, missoes_diarias: updatedDailyMissions };
             }
-            return rankedMission;
+            return rm;
         });
 
         setMissions(updatedMissions);
 
-        // Atualiza o perfil com o XP ganho
         setProfile(currentProfile => {
             let updatedProfile = { ...currentProfile, xp: currentProfile.xp + xpGained };
             while (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
@@ -221,16 +236,20 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
             return updatedProfile;
         });
 
-        // Gera a próxima missão diária
+        // Gera a próxima missão
         try {
-            const rankedMission = missions.find(m => m.id === rankedMissionId);
             const completedDailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
+            const history = rankedMission.missoes_diarias
+                .filter(d => d.concluido)
+                .map(d => `- ${d.nome}`)
+                .join('\n');
+
             const meta = metas.find(m => m.nome.includes(rankedMission.meta_associada))
 
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
-                lastCompletedMission: `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
+                history: history || `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
                 userLevel: profile.nivel,
             });
 
@@ -245,7 +264,8 @@ const MissionsView = ({ missions, setMissions, profile, setProfile, metas }) => 
 
             const finalMissions = updatedMissions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    return { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
+                    // Adiciona a nova missão e atualiza a data de conclusão
+                    return { ...rm, ultima_missao_concluida_em: now.toISOString(), missoes_diarias: [...rm.missoes_diarias, newDailyMission] };
                 }
                 return rm;
             });
@@ -528,5 +548,3 @@ export default function App() {
     </div>
   );
 }
-
-    

@@ -51,6 +51,7 @@ export const missoes = [
     level_requirement: 1,
     meta_associada: "Aprender a programar em Python",
     total_missoes_diarias: 5,
+    ultima_missao_concluida_em: null, // Novo campo
     missoes_diarias: [
         { id: 101, nome: 'Instalar o Python', descricao: 'Instale a versão mais recente do Python no seu sistema.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
         { id: 102, nome: 'Abrir um Editor de Código', descricao: 'Abra o VS Code ou outro editor e crie um novo ficheiro chamado hello.py.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
@@ -66,6 +67,7 @@ export const missoes = [
     level_requirement: 3,
     meta_associada: "Correr uma maratona de 5km",
     total_missoes_diarias: 10,
+    ultima_missao_concluida_em: null, // Novo campo
     missoes_diarias: [
        { id: 104, nome: 'Prepare o seu equipamento', descricao: 'Separe os seus sapatos de corrida e roupas adequadas.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
        { id: 105, nome: 'Caminhada Rápida de 5 Minutos', descricao: 'Faça uma caminhada rápida de 5 minutos para aquecer o corpo.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
@@ -80,6 +82,7 @@ export const missoes = [
     level_requirement: 15,
     meta_associada: "Aprender a programar em Python",
     total_missoes_diarias: 10,
+    ultima_missao_concluida_em: null, // Novo campo
      missoes_diarias: [
         { id: 106, nome: 'Escolha a sua plataforma', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
     ]
@@ -93,5 +96,3 @@ export const habilidades = [
     { id: 4, nome: 'Corrida de Resistência', descricao: 'Capacidade de correr por longos períodos.', nivel_atual: 1, nivel_maximo: 10, pre_requisito: null },
     { id: 5, nome: 'Gestão Financeira Pessoal', descricao: 'Capacidade de gerir orçamento, investimentos e poupanças.', nivel_atual: 2, nivel_maximo: 10, pre_requisito: null },
 ];
-
-    
