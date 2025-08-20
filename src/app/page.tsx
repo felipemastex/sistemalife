@@ -309,7 +309,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-gray-200 flex">
+    <div className="min-h-screen bg-gray-900 text-gray-200 font-mono flex">
       <aside className="w-64 bg-gray-800/80 border-r border-gray-700/50 p-4 flex-col hidden md:flex">
         <div className="text-2xl font-bold text-cyan-400 text-center mb-8">SISTEMA</div>
         <nav className="flex-grow space-y-2">
