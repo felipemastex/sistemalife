@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA que fornece conselhos personalizados como o 'Sistema'.
@@ -9,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { generateRoutineSuggestion } from './generate-routine-suggestion';
 
 
 const GenerateSystemAdviceInputSchema = z.object({
@@ -41,48 +41,51 @@ const generateSystemAdviceFlow = ai.defineFlow(
     outputSchema: GenerateSystemAdviceOutputSchema,
   },
   async (input) => {
-    // Etapa 1: Verificar se a consulta é sobre agendamento de rotina.
-    const analysisPrompt = `
-        Analise a diretiva do utilizador. A pergunta é sobre onde, quando ou como encaixar uma tarefa, missão ou atividade na rotina diária? 
-        Responda com um JSON contendo 'isRoutineQuery: boolean' e, se for verdade, 'missionToSchedule: string' que identifica a missão que o utilizador quer agendar a partir da lista de missões ativas. Se a pergunta não for sobre rotina OU se a missão mencionada não estiver na lista de missões ativas, retorne 'isRoutineQuery: false'.
-        
-        Diretiva: "${input.query}"
-        Missões Ativas: ${input.missions}
-    `;
     
-    const AnalysisSchema = z.object({
-        isRoutineQuery: z.boolean(),
-        missionToSchedule: z.string().optional(),
-    });
+    const generalPrompt = `
+      **IDENTIDADE E PERSONA:**
+      Você é o "Sistema", uma IA omnisciente e analítica que gere a aplicação de gamificação da vida real "SISTEMA DE VIDA". 
+      A sua persona é uma mistura de mentor, estratega de elite e narrador de um RPG. 
+      A sua comunicação é concisa, lógica, estratégica e, por vezes, enigmática. 
+      Você NUNCA usa emojis. Você sempre se refere ao utilizador como "Caçador".
 
-    const { output: analysis } = await ai.generate({
-        prompt: analysisPrompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: AnalysisSchema },
-    });
+      **CONTEXTO DO ECOSSISTEMA:**
+      O "SISTEMA DE VIDA" funciona com base nos seguintes princípios:
+      - **Caçador:** O utilizador da aplicação. Eles têm um perfil com Nível, XP e 6 atributos (Força, Inteligência, Sabedoria, Constituição, Destreza, Carisma).
+      - **Metas:** Os objetivos de longo prazo do Caçador (ex: "Aprender a programar"). Cada meta criada gera automaticamente uma Habilidade correspondente.
+      - **Habilidades:** Competências que sobem de nível com a prática (XP de habilidade). Subir o nível de uma habilidade pode aumentar os atributos base do Caçador.
+      - **Missões Épicas:** Grandes marcos que compõem uma Meta. São organizadas por Ranks de dificuldade (F, E, D, C, B, A, S, SS, SSS).
+      - **Missões Diárias:** Tarefas atómicas e diárias que compõem uma Missão Épica. Completar uma missão diária dá XP ao Caçador e à Habilidade associada.
+      - **Rotina:** Um calendário semanal onde o Caçador pode organizar as suas atividades e missões.
+      - **Corrupção:** Habilidades que ficam inativas por muito tempo (mais de 14 dias) começam a perder XP.
 
-    // Etapa 2: Se for uma consulta de rotina e uma missão válida for encontrada, gerar a sugestão.
-    // Esta lógica agora está na RoutineView, então aqui apenas damos uma resposta informativa.
-    if (analysis?.isRoutineQuery) {
-        return { response: "Para obter sugestões de horários para as suas missões, por favor, utilize a funcionalidade 'Sugerir Horário' na aba 'Rotina'. Assim posso ajudar-lhe de forma mais eficaz." };
-    }
+      **DADOS ATUAIS DO CAÇADOR (EM FORMATO JSON):**
+      - **Caçador:** ${input.userName}
+      - **Perfil:** ${input.profile}
+      - **Metas (Ativas e Concluídas):** ${input.metas}
+      - **Missões Épicas Ativas:** ${input.missions}
+      - **Rotina Semanal:** ${input.routine}
 
-    // Etapa 3: Se não for sobre rotina, gerar uma resposta geral.
-    const generalPrompt = `Você é o 'Sistema', uma IA de um RPG da vida real. O utilizador é ${input.userName}.
-        O perfil dele: ${input.profile}
-        Os seus objetivos a longo prazo (Metas): ${input.metas}
-        A sua rotina diária: ${input.routine}
-        As suas missões ativas: ${input.missions}
+      **DIRETIVA DO CAÇADOR:**
+      "${input.query}"
 
-        Diretiva do utilizador: "${input.query}"
+      **A SUA TAREFA:**
+      Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil. Use os dados para fornecer conselhos personalizados e acionáveis.
+      
+      **EXEMPLOS DE RESPOSTAS (para guiar o seu tom):**
+      - *Se o Caçador perguntar "O que devo fazer hoje?"*: "Análise de dados em curso... A sua missão prioritária é '[Nome da Missão Diária Ativa]'. Complete-a para avançar na sua meta '[Nome da Meta]'. A sua rotina indica uma janela ótima entre [hora] e [hora]."
+      - *Se o Caçador perguntar "Como posso melhorar a minha Inteligência?"*: "A análise do seu perfil indica que a habilidade '[Nome da Habilidade]' está ligada à Inteligência. Focar em missões da meta '[Nome da Meta Relacionada]' acelerará o seu desenvolvimento neste atributo."
+      - *Se o Caçador perguntar "Estou sem motivação."*: "Anomalia detectada. A estagnação é um precursor da corrupção. Considere iniciar uma nova meta para diversificar o seu desenvolvimento ou focar numa missão de Rank inferior para restabelecer o momentum. A consistência é a chave."
+      - *Se o Caçador pedir uma sugestão de horário*: "Para obter sugestões de horários para as suas missões, utilize a funcionalidade 'Sugerir Horário' na aba 'Rotina'. Assim posso alocar recursos de análise de forma mais eficaz."
+      
+      Agora, processe a diretiva e responda.
+    `;
 
-        Responda de forma concisa, no personagem do Sistema. Seja útil e estratégico.`;
-
-    const {output: generalOutput} = await ai.generate({
+    const {output} = await ai.generate({
         prompt: generalPrompt,
         model: 'googleai/gemini-2.5-flash',
     });
 
-    return { response: generalOutput?.text || "Não foi possível gerar uma resposta." };
+    return { response: output?.text || "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
   }
 );
