@@ -64,7 +64,8 @@ export default function App() {
       const metasRef = collection(db, 'users', userId, 'metas');
       mockData.metas.forEach(meta => {
           const metaDocRef = doc(metasRef, String(meta.id));
-          batch.set(metaDocRef, meta);
+          const metaToSave = { ...meta, prazo: meta.prazo || null };
+          batch.set(metaDocRef, metaToSave);
       });
 
       // 3. Missions
@@ -93,7 +94,7 @@ export default function App() {
 
       // Manually set the state after committing the batch
       setProfile(initialProfile);
-      setMetas(mockData.metas);
+      setMetas(mockData.metas.map(m => ({ ...m, prazo: m.prazo || null })));
       setMissions(mockData.missoes);
       setSkills(mockData.habilidades);
       setRoutine(mockData.rotina);
@@ -174,50 +175,49 @@ export default function App() {
       idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
       newMetas.forEach(meta => {
           const metaDocRef = doc(metasRef, String(meta.id));
-          batch.set(metaDocRef, meta);
+          const metaToSave = { ...meta, prazo: meta.prazo || null };
+          batch.set(metaDocRef, metaToSave);
       });
       await batch.commit();
   }, [user]);
 
   const persistMissions = useCallback(async (newMissions) => {
-      if (!user) return;
-      const currentMissions = Array.isArray(newMissions) ? newMissions : missions;
-      setMissions(currentMissions);
+      if (!user || !Array.isArray(newMissions)) return;
+      setMissions(newMissions);
       const batch = writeBatch(db);
       const missionsRef = collection(db, 'users', user.uid, 'missions');
 
       const existingDocsSnapshot = await getDocs(missionsRef);
       const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = currentMissions.map(m => String(m.id));
+      const newIds = newMissions.map(m => String(m.id));
       const idsToDelete = existingIds.filter(id => !newIds.includes(id));
 
       idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
-      currentMissions.forEach(mission => {
+      newMissions.forEach(mission => {
           const missionDocRef = doc(missionsRef, String(mission.id));
           batch.set(missionDocRef, mission);
       });
       await batch.commit();
-  }, [user, missions]);
+  }, [user]);
   
     const persistSkills = useCallback(async (newSkills) => {
-      if (!user) return;
-      const skillsToPersist = typeof newSkills === 'function' ? newSkills(skills) : newSkills;
-      setSkills(skillsToPersist);
+      if (!user || !Array.isArray(newSkills)) return;
+      setSkills(newSkills);
       const batch = writeBatch(db);
       const skillsRef = collection(db, 'users', user.uid, 'skills');
 
       const existingDocsSnapshot = await getDocs(skillsRef);
       const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = skillsToPersist.map(s => String(s.id));
+      const newIds = newSkills.map(s => String(s.id));
       const idsToDelete = existingIds.filter(id => !newIds.includes(id));
 
       idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
-      skillsToPersist.forEach(skill => {
+      newSkills.forEach(skill => {
           const skillDocRef = doc(skillsRef, String(skill.id));
           batch.set(skillDocRef, skill);
       });
       await batch.commit();
-  }, [user, skills]);
+  }, [user]);
 
   const persistRoutine = useCallback(async (newRoutine) => {
       if (!user) return;

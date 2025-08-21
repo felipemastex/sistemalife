@@ -33,6 +33,7 @@ export const metas = [
     nome: 'Dominar os Fundamentos de Python',
     categoria: 'Desenvolvimento de Carreira',
     habilidade_associada_id: 1,
+    prazo: '2024-12-31',
     detalhes_smart: {
         specific: "Aprender os fundamentos de Python, incluindo tipos de dados, loops, funções, classes e manipulação de dados com a biblioteca Pandas.",
         measurable: "Concluir um curso online de Python para iniciantes (ex: 'Python for Everybody') e construir 3 projetos pequenos: um web scraper, uma API simples com Flask e uma análise de dados básica.",
@@ -47,6 +48,7 @@ export const metas = [
     nome: 'Correr uma Prova de 5km',
     categoria: 'Saúde & Fitness',
     habilidade_associada_id: 2,
+    prazo: '2024-10-25',
     detalhes_smart: {
         specific: "Treinar consistentemente para conseguir correr 5 quilómetros sem parar e participar de um evento de corrida oficial.",
         measurable: "Aumentar a distância de corrida em 500 metros a cada semana e registar todos os treinos numa aplicação como o Strava.",
@@ -61,6 +63,7 @@ export const metas = [
     nome: 'Ler 12 Livros de Não-Ficção',
     categoria: 'Crescimento Pessoal',
     habilidade_associada_id: 3,
+    prazo: null,
     detalhes_smart: {
         specific: "Ler um livro de não-ficção por mês, cobrindo tópicos como ciência, história, psicologia e produtividade.",
         measurable: "Acompanhar o progresso no Goodreads e escrever um breve resumo ou os 3 principais insights de cada livro lido.",

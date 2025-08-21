@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
 import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
@@ -22,6 +23,9 @@ import { statCategoryMapping } from '@/lib/mappings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+
 
 const statIcons = {
     forca: <Swords className="h-4 w-4 text-red-400" />,
@@ -41,6 +45,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 id: metaToEdit.id || null,
                 nome: metaToEdit.nome || '',
                 categoria: metaToEdit.categoria || '',
+                prazo: metaToEdit.prazo || null,
                 detalhes_smart: {
                     specific: metaToEdit.detalhes_smart?.specific || '',
                     measurable: metaToEdit.detalhes_smart?.measurable || '',
@@ -55,6 +60,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
             id: null,
             nome: initialGoalName,
             categoria: '',
+            prazo: null,
             detalhes_smart: {
                 specific: '',
                 measurable: '',
@@ -175,6 +181,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 id: metaToEdit ? metaToEdit.id : null, // Let the parent handle ID generation for new goals
                 nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
+                prazo: null,
                 detalhes_smart: {
                     specific: finalGoalDetails.specific,
                     measurable: finalGoalDetails.measurable,
@@ -194,6 +201,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 id: metaToEdit ? metaToEdit.id : null,
                 nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
+                prazo: null,
                 detalhes_smart: finalGoalDetails,
                 habilidade_associada_id: metaToEdit?.habilidade_associada_id,
                 user_id: profile.id,
@@ -411,11 +419,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
                     );
-                    await setSkills(newSkills);
+                    setSkills(newSkills);
                 }
 
-                await setMissions(updatedMissions);
-                await setMetas(updatedMetas);
+                setMissions(updatedMissions);
+                setMetas(updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
@@ -504,9 +512,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     };
                 });
                 
-                await setSkills(currentSkills => [...currentSkills, newSkill]);
-                await setMetas([...metas, newMetaWithId]);
-                await setMissions([...missions, ...newMissions]);
+                setSkills(currentSkills => [...currentSkills, newSkill]);
+                setMetas([...metas, newMetaWithId]);
+                setMissions([...missions, ...newMissions]);
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
@@ -534,6 +542,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 id: null,
                 nome: refinedGoal.name,
                 categoria: 'Desenvolvimento Pessoal', // Default category
+                prazo: null,
                 detalhes_smart: refinedGoal,
                 user_id: profile.id
             });
@@ -549,8 +558,8 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const handleDelete = async (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
-            await setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            await setMetas(metas.filter(m => m.id !== id));
+            setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            setMetas(metas.filter(m => m.id !== id));
             // A habilidade não é removida aqui de propósito.
             toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
         }
@@ -678,11 +687,14 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                        </div>
                         <AccordionContent className="p-4 pt-0">
                            <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
+                                {meta.prazo && (
+                                     <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {format(new Date(meta.prazo), "dd/MM/yyyy")}</p>
+                                )}
                                 <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
                                 <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
                                 <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
                                 <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
-                                <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {meta.detalhes_smart.timeBound}</p>
+                                <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {meta.detalhes_smart.timeBound}</p>
                                 {stats && stats.length > 0 && (
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
                                         <strong className="text-cyan-400 shrink-0">Atributos Melhorados:</strong>
@@ -719,6 +731,31 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         </DialogHeader>
                         <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                             <div>
+                                <Label htmlFor="prazo" className="text-cyan-400">Prazo (Opcional)</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal",
+                                            !metaToEdit.prazo && "text-muted-foreground"
+                                        )}
+                                        >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {metaToEdit.prazo ? format(new Date(metaToEdit.prazo), "PPP") : <span>Escolha uma data</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                        mode="single"
+                                        selected={metaToEdit.prazo ? new Date(metaToEdit.prazo) : null}
+                                        onSelect={(date) => setMetaToEdit(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                        initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div>
                                 <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
                                 <Textarea id="specific" value={metaToEdit.detalhes_smart.specific} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[80px]" />
                             </div>
@@ -735,7 +772,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 <Textarea id="relevant" value={metaToEdit.detalhes_smart.relevant} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
-                                <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
+                                <Label htmlFor="timeBound" className="text-cyan-400">Temporal</Label>
                                 <Textarea id="timeBound" value={metaToEdit.detalhes_smart.timeBound} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                         </div>
