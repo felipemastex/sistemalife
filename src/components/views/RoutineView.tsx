@@ -23,7 +23,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
-    const [editedItem, setEditedItem] = useState({ start_time: '', end_time: '', activity: '' });
+    const [editedItem, setEditedItem] = useState({ id: null, start_time: '', end_time: '', activity: '' });
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
     
@@ -96,7 +96,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     const handleOpenDialog = (item = null) => {
         setCurrentItem(item);
         if (item) {
-            setEditedItem({ start_time: item.start_time, end_time: item.end_time, activity: item.activity });
+            setEditedItem({ id: item.id, start_time: item.start_time, end_time: item.end_time, activity: item.activity });
         } else {
             setEditedItem({ id: null, start_time: '', end_time: '', activity: '' });
         }
@@ -115,20 +115,57 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     };
 
     const handleSave = () => {
-        const currentDayRoutine = routine[selectedDay] || [];
-        let updatedRoutine;
-        if (currentItem) {
-            // Edit
-            const updatedDayRoutine = currentDayRoutine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item);
-            updatedRoutine = {...routine, [selectedDay]: updatedDayRoutine };
-        } else {
-            // Add
-            const newDayRoutine = [...currentDayRoutine, { ...editedItem, id: Date.now() }];
-            updatedRoutine = {...routine, [selectedDay]: newDayRoutine};
+        if (!editedItem.start_time || !editedItem.end_time || !editedItem.activity) {
+            toast({ variant: 'destructive', title: 'Campos em Falta', description: 'Por favor, preencha todos os campos.' });
+            return;
         }
-        handleRoutineChange(updatedRoutine);
+
+        const currentDayRoutine = routine[selectedDay] || [];
+        let updatedDayRoutine;
+
+        if (currentItem) {
+            // Edit existing item
+            updatedDayRoutine = currentDayRoutine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item);
+        } else {
+            // Add new item with overlap check
+            const newItem = { ...editedItem, id: Date.now() };
+            const overlappingItem = currentDayRoutine.find(item =>
+                (newItem.start_time < item.end_time && newItem.end_time > item.start_time)
+            );
+
+            if (overlappingItem) {
+                // Handle the overlap by splitting the existing block
+                const remainingItems = currentDayRoutine.filter(item => item.id !== overlappingItem.id);
+                const newItems = [newItem];
+
+                // Check for time before the new item
+                if (overlappingItem.start_time < newItem.start_time) {
+                    newItems.push({
+                        ...overlappingItem,
+                        id: Date.now() + 1,
+                        end_time: newItem.start_time
+                    });
+                }
+                // Check for time after the new item
+                if (overlappingItem.end_time > newItem.end_time) {
+                    newItems.push({
+                        ...overlappingItem,
+                        id: Date.now() + 2,
+                        start_time: newItem.end_time
+                    });
+                }
+                updatedDayRoutine = [...remainingItems, ...newItems];
+                toast({ title: 'Rotina Ajustada', description: 'O bloco de tempo existente foi ajustado automaticamente.' });
+            } else {
+                // No overlap, just add the new item
+                updatedDayRoutine = [...currentDayRoutine, newItem];
+            }
+        }
+        
+        handleRoutineChange({ ...routine, [selectedDay]: updatedDayRoutine });
         setIsDialogOpen(false);
     };
+
 
     const handleDelete = (id) => {
         const currentDayRoutine = routine[selectedDay] || [];
@@ -327,42 +364,31 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                Carregar Template
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                             {Object.keys(routineTemplates).map(templateName => (
-                                <AlertDialog key={templateName}>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between items-center pr-2">
-                                        <span onClick={() => handleLoadTemplate(templateName)} className="flex-grow">{templateName}</span>
-                                        <AlertDialogTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 text-gray-500 hover:text-red-400"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                    </DropdownMenuItem>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Eliminar Template?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Tem a certeza que quer eliminar o template "{templateName}"? Esta ação não pode ser desfeita.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => {
-                                                const newTemplates = { ...routineTemplates };
-                                                delete newTemplates[templateName];
-                                                handleTemplateChange(newTemplates);
-                                                toast({ title: 'Template Eliminado', description: `O template "${templateName}" foi removido.` });
-                                            }}>Sim, eliminar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            ))}
-                             {Object.keys(routineTemplates).length === 0 && (
+                         <DropdownMenuContent>
+                            {Object.keys(routineTemplates).length > 0 ? (
+                                Object.keys(routineTemplates).map(templateName => (
+                                    <AlertDialog key={templateName}>
+                                        <div className="relative flex justify-between items-center w-full">
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex-grow pr-8">
+                                                <span onClick={() => handleLoadTemplate(templateName)} className="cursor-pointer">{templateName}</span>
+                                            </DropdownMenuItem>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-500 hover:text-red-400"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setTemplateToDelete(templateName);
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                        </div>
+                                    </AlertDialog>
+                                ))
+                            ) : (
                                 <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
                             )}
                         </DropdownMenuContent>
@@ -562,8 +588,3 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         </div>
     );
 };
-
-    
-
-    
-
