@@ -430,9 +430,12 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 }
                 
                 let updatedSkills = [...skills];
-                const associatedSkill = skills.find(s => s.id === newOrUpdatedMeta.habilidade_associada_id);
-                if (associatedSkill && metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
-                    updatedSkills = skills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s);
+                if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome && newOrUpdatedMeta.habilidade_associada_id) {
+                     updatedSkills = skills.map(s => 
+                        s.id === newOrUpdatedMeta.habilidade_associada_id 
+                        ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
+                        : s
+                    );
                 }
 
                 setMissions(updatedMissions);
