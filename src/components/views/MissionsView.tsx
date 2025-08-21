@@ -82,7 +82,7 @@ const getProfileRank = (level) => {
     return { rank: 'SSS', title: 'Lendário' };
 };
 
-export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification }) => {
+export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -325,32 +325,35 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
             const nextMission = goalMissions[currentIndex + 1];
 
-            if(nextMission && nextMission.missoes_diarias.length === 0){
-                try {
-                     const history = `O utilizador concluiu a missão épica anterior: "${rankedMission.nome}".`;
-                     const meta = metas.find(m => m.nome === rankedMission.meta_associada);
+            if(nextMission){
+                onNewEpicMissionNotification(nextMission.nome, nextMission.descricao);
+                if (nextMission.missoes_diarias.length === 0) {
+                    try {
+                        const history = `O utilizador concluiu a missão épica anterior: "${rankedMission.nome}".`;
+                        const meta = metas.find(m => m.nome === rankedMission.meta_associada);
 
-                     const result = await generateNextDailyMission({
-                        rankedMissionName: nextMission.nome,
-                        metaName: meta?.nome || "Objetivo geral",
-                        goalDeadline: meta?.prazo,
-                        history: history,
-                        userLevel: newProfile.nivel,
-                    });
+                        const result = await generateNextDailyMission({
+                            rankedMissionName: nextMission.nome,
+                            metaName: meta?.nome || "Objetivo geral",
+                            goalDeadline: meta?.prazo,
+                            history: history,
+                            userLevel: newProfile.nivel,
+                        });
 
-                     const newDailyMission = {
-                        id: Date.now(),
-                        nome: result.nextMissionName,
-                        descricao: result.nextMissionDescription,
-                        xp_conclusao: result.xp,
-                        concluido: false,
-                        tipo: 'diaria',
-                        learningResources: result.learningResources,
-                    };
+                        const newDailyMission = {
+                            id: Date.now(),
+                            nome: result.nextMissionName,
+                            descricao: result.nextMissionDescription,
+                            xp_conclusao: result.xp,
+                            concluido: false,
+                            tipo: 'diaria',
+                            learningResources: result.learningResources,
+                        };
 
-                    setMissions(current => current.map(m => m.id === nextMission.id ? {...m, missoes_diarias: [newDailyMission]} : m));
-                } catch (error) {
-                    handleToastError(error, "Não foi possível gerar a primeira missão da próxima etapa.");
+                        setMissions(current => current.map(m => m.id === nextMission.id ? {...m, missoes_diarias: [newDailyMission]} : m));
+                    } catch (error) {
+                        handleToastError(error, "Não foi possível gerar a primeira missão da próxima etapa.");
+                    }
                 }
             }
             

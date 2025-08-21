@@ -53,6 +53,19 @@ export default function App() {
       onClose: () => setQuestNotification(null),
     });
   };
+
+  const handleShowNewEpicMissionNotification = (newEpicMissionName: string, newEpicMissionDescription: string) => {
+    setQuestNotification({
+      title: 'NOVA MISSÃO ÉPICA',
+      description: 'Você abriu um novo capítulo na sua jornada. Um novo desafio épico o aguarda.',
+      goals: [
+        { name: '- NOME', progress: `[${newEpicMissionName}]` },
+        { name: '- OBJETIVO', progress: `[${newEpicMissionDescription}]` },
+      ],
+      caution: 'Prepare-se para o que vem a seguir. A sua lenda continua a ser escrita.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
   
   useEffect(() => {
     if (!loading && !user) {
@@ -363,9 +376,9 @@ export default function App() {
     
     const views = {
       'dashboard': <DashboardView profile={profile} />,
-      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
+      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={setSkills} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} missions={missions} setMissions={setMissions} profile={profile} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
