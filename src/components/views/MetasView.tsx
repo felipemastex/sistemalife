@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -11,6 +11,7 @@ import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
 import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
 import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
+import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Progress } from '../ui/progress';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 
 const statIcons = {
@@ -331,6 +333,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    
+    const [roadmap, setRoadmap] = useState(null);
+    const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
+    const [roadmapMeta, setRoadmapMeta] = useState(null);
 
     const { toast } = useToast();
 
@@ -364,6 +370,25 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             setIsLoadingSuggestions(false);
         }
     }
+    
+    const handleGetRoadmap = async (meta) => {
+        setRoadmapMeta(meta);
+        setIsLoadingRoadmap(true);
+        setRoadmap(null);
+        try {
+            const result = await generateGoalRoadmap({
+                goalName: meta.nome,
+                goalDetails: Object.values(meta.detalhes_smart).join(' '),
+                userLevel: profile.nivel,
+            });
+            setRoadmap(result.roadmap);
+        } catch(error) {
+            handleToastError(error, "Não foi possível gerar a estratégia.");
+            setRoadmapMeta(null);
+        } finally {
+            setIsLoadingRoadmap(false);
+        }
+    };
     
     const handleSelectSuggestion = (suggestionName) => {
         setShowSuggestionDialog(false);
@@ -724,10 +749,14 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 )}
                             </CardContent>
                              <CardFooter className="flex-col items-start gap-4">
-                                 <Button variant="outline" size="sm" onClick={() => setDetailedMeta(meta)}>
-                                    Ver Detalhes
-                                    <Info className="ml-2 h-4 w-4" />
-                                 </Button>
+                                <div className="flex flex-wrap gap-2 w-full">
+                                    <Button variant="outline" size="sm" onClick={() => setDetailedMeta(meta)} className="flex-1">
+                                        Detalhes
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleGetRoadmap(meta)} className="flex-1">
+                                        Estratégia
+                                    </Button>
+                                </div>
                                  {stats && stats.length > 0 && (
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full pt-4 border-t border-border">
                                         <strong className="text-sm text-muted-foreground shrink-0">Atributos:</strong>
@@ -878,7 +907,48 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     </div>
                 </DialogContent>
             </Dialog>
+            
+            <Dialog open={!!roadmapMeta} onOpenChange={() => setRoadmapMeta(null)}>
+                <DialogContent className="max-w-3xl">
+                     <DialogHeader>
+                        <DialogTitle className="text-2xl font-cinzel text-cyan-400 flex items-center gap-3">
+                            <MapIcon />
+                            Roteiro Estratégico
+                        </DialogTitle>
+                        <DialogDescription>
+                            O plano de batalha do Estratega Mestre para a sua meta: <span className="font-bold text-gray-300">{roadmapMeta?.nome}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                     <ScrollArea className="max-h-[60vh] mt-4 pr-4">
+                        {isLoadingRoadmap && (
+                             <div className="flex items-center justify-center p-16">
+                                <LoaderCircle className="h-10 w-10 text-cyan-400 animate-spin" />
+                            </div>
+                        )}
+                        {roadmap && (
+                             <div className="space-y-6">
+                                {roadmap.map((phase, index) => (
+                                    <div key={index}>
+                                        <h3 className="font-cinzel font-bold text-lg text-primary">{phase.phaseTitle}</h3>
+                                        <p className="text-sm text-muted-foreground mb-3">{phase.phaseDescription}</p>
+                                        <ul className="space-y-2 list-disc list-inside pl-2">
+                                            {phase.strategicMilestones.map((milestone, mIndex) => (
+                                                <li key={mIndex} className="text-card-foreground">{milestone}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                     <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={() => setRoadmapMeta(null)}>Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
     );
 };
+
+    
