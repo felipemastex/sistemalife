@@ -121,13 +121,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             });
 
             if (missionsToUpdate.length > 0) {
-                setMissions(currentMissions =>
-                    currentMissions.map(m =>
+                const currentMissions = missions.map(m =>
                         missionsToUpdate.includes(m.id)
                             ? { ...m, ultima_missao_concluida_em: null }
                             : m
-                    )
-                );
+                    );
+                setMissions(currentMissions);
             }
             setTimers(newTimers);
         }, 1000);
@@ -241,6 +240,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         let completedDailyMission = null;
 
         let isRankedMissionComplete = false;
+        
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {

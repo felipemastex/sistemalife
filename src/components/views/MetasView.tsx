@@ -289,7 +289,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
-                <DialogHeader className="sr-only">
+                 <DialogHeader className="sr-only">
                     <DialogTitle>Assistente de Metas</DialogTitle>
                     <DialogDescription>Um assistente para ajudar a criar uma meta SMART.</DialogDescription>
                 </DialogHeader>
@@ -556,13 +556,6 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         }
     };
 
-    const isMetaDeletable = (meta) => {
-        if (!meta || !meta.nome) return false;
-        // A goal is active if any of its missions are not completed
-        const isGoalActive = missions.some(miss => miss.meta_associada === meta.nome && !miss.concluido);
-        return !isGoalActive; // Can be deleted if goal is not active
-    };
-
     const renderWizardContent = () => {
         switch (wizardMode) {
             case 'selection':
@@ -650,7 +643,6 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 {metas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];
-                    const deletable = isMetaDeletable(meta);
                     
                     return (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -663,38 +655,25 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                            </AccordionTrigger>
                            <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
                                 <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                 <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                             <span tabIndex={deletable ? -1 : 0}>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400" disabled={!deletable}>
-                                                            <Trash2 className="h-5 w-5" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                             </span>
-                                        </TooltipTrigger>
-                                        {!deletable && (
-                                            <TooltipContent>
-                                                <p>Esta meta não pode ser excluída porque tem missões ativas.</p>
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                 </TooltipProvider>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400">
+                                            <Trash2 className="h-5 w-5" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                            </div>
                        </div>
                         <AccordionContent className="p-4 pt-0">
