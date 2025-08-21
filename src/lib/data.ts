@@ -86,6 +86,7 @@ export const habilidades = [
         xp_para_proximo_nivel: 250, 
         pre_requisito: null, 
         nivel_minimo_para_desbloqueio: null,
+        ultima_atividade_em: new Date().toISOString(),
     },
     { 
         id: 2, 
@@ -98,6 +99,7 @@ export const habilidades = [
         xp_para_proximo_nivel: 150, 
         pre_requisito: null, 
         nivel_minimo_para_desbloqueio: null,
+        ultima_atividade_em: new Date().toISOString(),
     },
     { 
         id: 3, 
@@ -110,6 +112,7 @@ export const habilidades = [
         xp_para_proximo_nivel: 600, 
         pre_requisito: null, 
         nivel_minimo_para_desbloqueio: null,
+        ultima_atividade_em: new Date().toISOString(),
     },
 ];
 
@@ -344,3 +347,5 @@ export const rotinaTemplates = {
         { id: 13, start_time: '15:00', end_time: '18:00', activity: 'Tempo livre / Social' },
     ]
 };
+
+    

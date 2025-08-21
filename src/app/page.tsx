@@ -102,6 +102,51 @@ export default function App() {
 
       toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
   };
+  
+  const handleSkillDecay = useCallback((currentSkills) => {
+    const now = new Date();
+    const INACTIVITY_THRESHOLD_DAYS = 14; // Days before decay starts
+    const XP_DECAY_PER_DAY = 5;
+    let skillsChanged = false;
+
+    const updatedSkills = currentSkills.map(skill => {
+        if (!skill.ultima_atividade_em) {
+            // Se não houver data de atividade, defina-a como agora para evitar decadência imediata
+            return { ...skill, ultima_atividade_em: now.toISOString() };
+        }
+
+        const lastActivity = new Date(skill.ultima_atividade_em);
+        const daysSinceActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 3600 * 24);
+
+        if (daysSinceActivity > INACTIVITY_THRESHOLD_DAYS) {
+            const daysToDecay = Math.floor(daysSinceActivity - INACTIVITY_THRESHOLD_DAYS);
+            const totalDecay = daysToDecay * XP_DECAY_PER_DAY;
+            
+            // Garante que o XP não fique abaixo de 0
+            const newXp = Math.max(0, skill.xp_atual - totalDecay);
+
+            if (newXp !== skill.xp_atual) {
+                skillsChanged = true;
+                 // Atualize a data da última atividade para hoje para que a decadência não se acumule massivamente
+                 // numa única carga se o utilizador esteve fora por muito tempo.
+                return { ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() };
+            }
+        }
+        return skill;
+    });
+
+    if (skillsChanged) {
+        toast({
+            variant: "destructive",
+            title: "Corrupção de Habilidade Detectada",
+            description: "Algumas das suas habilidades perderam XP devido à inatividade. Pratique-as para recuperar!",
+        });
+        return updatedSkills;
+    }
+    
+    return currentSkills;
+  }, [toast]);
+
 
   const fetchData = useCallback(async (userId) => {
       try {
@@ -123,7 +168,13 @@ export default function App() {
               setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
               const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
-              setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
+              const fetchedSkills = skillsSnapshot.docs.map(doc => ({ ...doc.data() }));
+              const decayedSkills = handleSkillDecay(fetchedSkills);
+              setSkills(decayedSkills);
+              if (JSON.stringify(fetchedSkills) !== JSON.stringify(decayedSkills)) {
+                  persistSkills(decayedSkills); // Save decayed state back to DB
+              }
+
 
               const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
               setRoutine(routineDoc.exists() ? routineDoc.data() : {});
@@ -141,7 +192,7 @@ export default function App() {
       } finally {
           setIsDataLoaded(true);
       }
-  }, [user, toast]);
+  }, [user, toast, handleSkillDecay]);
 
   useEffect(() => {
     if (user && !isDataLoaded) {
@@ -354,6 +405,8 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
 

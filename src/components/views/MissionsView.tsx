@@ -290,9 +290,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                      let newSkillXp = skillToUpdate.xp_atual + xp;
                      if(newSkillXp >= skillToUpdate.xp_para_proximo_nivel){
                         const statsToUpgrade = statCategoryMapping[skillToUpdate.categoria] || [];
-                        handleSkillUp({ ...skillToUpdate, xp_atual: newSkillXp }, statsToUpgrade);
+                        handleSkillUp({ ...skillToUpdate, xp_atual: newSkillXp, ultima_atividade_em: now.toISOString() }, statsToUpgrade);
                      } else {
-                        setSkills(currentSkills => currentSkills.map(s => s.id === skillToUpdate.id ? {...s, xp_atual: newSkillXp} : s));
+                        setSkills(currentSkills => currentSkills.map(s => s.id === skillToUpdate.id ? {...s, xp_atual: newSkillXp, ultima_atividade_em: now.toISOString()} : s));
                      }
                 } catch(error) {
                     handleToastError(error, "Não foi possível calcular o XP da habilidade.");
@@ -790,3 +790,5 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
+
+    

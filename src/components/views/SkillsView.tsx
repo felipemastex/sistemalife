@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2 } from 'lucide-react';
+import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -13,6 +13,8 @@ import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import * as mockData from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+
 
 const statIcons = {
     forca: <Swords className="h-4 w-4 text-red-400" />,
@@ -99,6 +101,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                 xp_para_proximo_nivel: 50,
                 pre_requisito: null, 
                 nivel_minimo_para_desbloqueio: null,
+                ultima_atividade_em: new Date().toISOString(),
             };
 
             await setSkills([...skills, newSkill]);
@@ -139,12 +142,35 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                     const stats = statCategoryMapping[skill.categoria] || [];
                     const associatedMeta = metas.find(m => m.habilidade_associada_id === skill.id);
                     
+                    const lastActivity = new Date(skill.ultima_atividade_em || new Date());
+                    const daysSinceActivity = (new Date().getTime() - lastActivity.getTime()) / (1000 * 3600 * 24);
+                    const isDecaying = daysSinceActivity > 14;
+                    const isAtRisk = daysSinceActivity > 7 && !isDecaying;
+
                     return(
-                    <div key={skill.id} className={`bg-gray-800/50 border ${getSkillColor(skill.categoria)} border-l-4 rounded-lg p-4`}>
+                    <div key={skill.id} className={cn(
+                        "bg-gray-800/50 border border-l-4 rounded-lg p-4 transition-all",
+                        isDecaying ? "border-purple-600 animate-pulse-slow" : getSkillColor(skill.categoria),
+                        isAtRisk && "border-yellow-500"
+                    )}>
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <p className="text-lg font-bold text-gray-200 break-words">{skill.nome}</p>
+                                    <div className="flex items-center gap-2">
+                                        {(isDecaying || isAtRisk) && (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <AlertTriangle className={cn("h-5 w-5", isDecaying ? "text-purple-500" : "text-yellow-500")} />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{isDecaying ? "Esta habilidade está a perder XP por inatividade!" : "Esta habilidade entrará em declínio em breve."}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        )}
+                                        <p className="text-lg font-bold text-gray-200 break-words">{skill.nome}</p>
+                                    </div>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8 -mt-1 -mr-1">
@@ -201,7 +227,10 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                                     <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel}</span>
                                 </div>
                                 <div className="w-full bg-gray-700 rounded-full h-2.5">
-                                    <div className="bg-gradient-to-r from-purple-500 to-blue-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${skillProgress}%` }}></div>
+                                    <div className={cn(
+                                        "h-2.5 rounded-full transition-all duration-500",
+                                        isDecaying ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-purple-500 to-blue-500"
+                                     )} style={{ width: `${skillProgress}%` }}></div>
                                 </div>
                             </div>
                         )}
@@ -249,3 +278,5 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         </div>
     );
 };
+
+    
