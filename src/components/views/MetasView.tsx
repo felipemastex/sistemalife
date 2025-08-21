@@ -400,11 +400,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (meta) {
             setMetaToEdit(meta);
             setWizardMode('detailed'); // Editing always opens in detailed mode
-            setShowWizardDialog(true);
         } else {
+            setMetaToEdit(null); // Clear previous edit state
             setWizardMode('selection'); // Show mode selection for new goal
-            setShowWizardDialog(true);
         }
+        setShowWizardDialog(true);
     };
 
     const handleCloseWizard = () => {
@@ -580,17 +580,15 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (metaToDelete) {
             setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(metas.filter(m => m.id !== id));
-            // A habilidade não é removida aqui de propósito, como solicitado.
+            // A habilidade não é removida aqui de propósito.
+            toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
         }
     };
 
-    const isSkillDeletable = (skillId) => {
-        const associatedMeta = metas.find(m => m.habilidade_associada_id === skillId);
-        if (!associatedMeta) {
-            return true; // No associated goal, can be deleted
-        }
+    const isMetaDeletable = (meta) => {
+        if (!meta || !meta.nome) return false;
         // A goal is active if any of its missions are not completed
-        const isGoalActive = missions.some(miss => miss.meta_associada === associatedMeta.nome && !miss.concluido);
+        const isGoalActive = missions.some(miss => miss.meta_associada === meta.nome && !miss.concluido);
         return !isGoalActive; // Can be deleted if goal is not active
     };
 
@@ -681,7 +679,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 {metas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];
-                    const deletable = isSkillDeletable(meta.id);
+                    const deletable = isMetaDeletable(meta);
                     
                     return (
                     <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
@@ -697,7 +695,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                  <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                             <span tabIndex={deletable ? -1 : 0}>
+                                             <span tabIndex={deletable ? 0 : -1}>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400" disabled={!deletable}>
@@ -803,5 +801,3 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
-
-    
