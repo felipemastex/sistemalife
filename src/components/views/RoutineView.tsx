@@ -423,102 +423,102 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                         </TabsList>
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
-                </Tabs>
-            </div>
-            
-            <div className="flex-grow mt-6 flex flex-col lg:flex-row gap-8 overflow-y-auto">
-                {/* Unscheduled Missions Column */}
-                <div className="flex flex-col lg:basis-1/3 lg:shrink-0 animate-in fade-in-50 duration-500">
-                    <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
-                     <ScrollArea className="h-full pr-4 -mr-4">
-                        <div className="space-y-4">
-                             {unscheduledMissions.length > 0 ? (
-                                unscheduledMissions.map(mission => (
-                                    <Card key={mission.id} className="bg-card/60">
-                                         <CardHeader>
-                                            <CardTitle className="text-base">{mission.nome}</CardTitle>
-                                            <CardDescription>{mission.descricao}</CardDescription>
-                                         </CardHeader>
-                                         <CardContent>
-                                            {suggestions[mission.id] && (
-                                                <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
-                                                    <Sparkles className="h-4 w-4 text-primary" />
-                                                    <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
-                                                    <AlertDescription className="text-card-foreground">
-                                                        {suggestions[mission.id].suggestionText}
-                                                        <div className="flex gap-2 mt-3">
-                                                            <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
-                                                            <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
-                                                        </div>
-                                                    </AlertDescription>
-                                                </Alert>
-                                            )}
-                                         </CardContent>
-                                         <CardFooter className="flex flex-col sm:flex-row gap-2">
-                                             <Button 
-                                                onClick={() => handleOpenManualAdd(mission)} 
-                                                size="sm"
-                                                variant="secondary"
-                                                className="w-full"
-                                            >
-                                                Adicionar Manualmente
-                                            </Button>
-                                            <Button 
-                                                onClick={() => handleGetSuggestion(mission)} 
-                                                disabled={isLoadingSuggestion === mission.id}
-                                                size="sm"
-                                                className="w-full"
-                                            >
-                                                {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                <BrainCircuit className="ml-2 h-4 w-4"/>
-                                            </Button>
-                                         </CardFooter>
-                                    </Card>
-                                ))
-                             ) : (
-                                <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
-                                    <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
-                                    <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
-                                </div>
-                             )}
-                        </div>
-                    </ScrollArea>
-                </div>
-
-                 {/* Daily Schedule Column */}
-                <div className="flex flex-col flex-1 min-w-0 animate-in fade-in-50 duration-700">
-                     <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
-                     <ScrollArea className="h-full pr-4 -mr-4">
-                        <div className="relative pl-6">
-                            {/* Timeline */}
-                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
-                            
-                            <div className="space-y-3">
-                                {sortedRoutineForDay.map(item => (
-                                    <div key={item.id} className="relative pl-6">
-                                        <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
-                                        <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                                                <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
-                                                <p className="text-base text-card-foreground break-all">{item.activity}</p>
-                                            </div>
-                                            <div className="flex space-x-1 self-end sm:self-center">
-                                                <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                                <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
-                                            </div>
+                    
+                    <TabsContent value={selectedDay} className="mt-6 flex-grow flex flex-col lg:flex-row gap-8 overflow-y-auto">
+                         {/* Unscheduled Missions Column */}
+                        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0 animate-in fade-in-50 duration-500">
+                            <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
+                            <ScrollArea className="h-full pr-4 -mr-4">
+                                <div className="space-y-4">
+                                    {unscheduledMissions.length > 0 ? (
+                                        unscheduledMissions.map(mission => (
+                                            <Card key={mission.id} className="bg-card/60">
+                                                <CardHeader>
+                                                    <CardTitle className="text-base">{mission.nome}</CardTitle>
+                                                    <CardDescription>{mission.descricao}</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {suggestions[mission.id] && (
+                                                        <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
+                                                            <Sparkles className="h-4 w-4 text-primary" />
+                                                            <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
+                                                            <AlertDescription className="text-card-foreground">
+                                                                {suggestions[mission.id].suggestionText}
+                                                                <div className="flex gap-2 mt-3">
+                                                                    <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
+                                                                    <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                                </div>
+                                                            </AlertDescription>
+                                                        </Alert>
+                                                    )}
+                                                </CardContent>
+                                                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                                    <Button 
+                                                        onClick={() => handleOpenManualAdd(mission)} 
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        className="w-full"
+                                                    >
+                                                        Adicionar Manualmente
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => handleGetSuggestion(mission)} 
+                                                        disabled={isLoadingSuggestion === mission.id}
+                                                        size="sm"
+                                                        className="w-full"
+                                                    >
+                                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                        <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                    </Button>
+                                                </CardFooter>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
+                                            <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
+                                            <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
                                         </div>
-                                    </div>
-                                ))}
-                                {sortedRoutineForDay.length === 0 && (
-                                     <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
-                                        <p className="text-muted-foreground">Nenhuma atividade agendada para este dia.</p>
-                                        <p className="text-muted-foreground/70 text-sm">Adicione atividades para começar.</p>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
                         </div>
-                    </ScrollArea>
-                </div>
+
+                        {/* Daily Schedule Column */}
+                        <div className="flex flex-col flex-1 min-w-0 animate-in fade-in-50 duration-700">
+                            <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
+                            <ScrollArea className="h-full pr-4 -mr-4">
+                                <div className="relative pl-6">
+                                    {/* Timeline */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
+                                    
+                                    <div className="space-y-3">
+                                        {sortedRoutineForDay.map(item => (
+                                            <div key={item.id} className="relative pl-6">
+                                                <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
+                                                <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                                                        <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
+                                                        <p className="text-base text-card-foreground break-all">{item.activity}</p>
+                                                    </div>
+                                                    <div className="flex space-x-1 self-end sm:self-center">
+                                                        <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                                        <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {sortedRoutineForDay.length === 0 && (
+                                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
+                                                <p className="text-muted-foreground">Nenhuma atividade agendada para este dia.</p>
+                                                <p className="text-muted-foreground/70 text-sm">Adicione atividades para começar.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
