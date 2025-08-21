@@ -289,7 +289,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
-                <DialogHeader className='sr-only'>
+                <DialogHeader className="sr-only">
                     <DialogTitle>Assistente de Metas</DialogTitle>
                     <DialogDescription>Um assistente para ajudar a criar uma meta SMART.</DialogDescription>
                 </DialogHeader>
@@ -405,17 +405,16 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     );
                 }
                 
-                let updatedSkills = [...skills];
                 if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome && newOrUpdatedMeta.habilidade_associada_id) {
-                     updatedSkills = skills.map(s => 
+                     const newSkills = skills.map(s => 
                         s.id === newOrUpdatedMeta.habilidade_associada_id 
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
                     );
+                    await setSkills(newSkills);
                 }
 
                 await setMissions(updatedMissions);
-                await setSkills(updatedSkills);
                 await setMetas(updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
@@ -667,7 +666,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                  <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                             <span tabIndex={deletable ? 0 : -1}>
+                                             <span tabIndex={deletable ? -1 : 0}>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400" disabled={!deletable}>
