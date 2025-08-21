@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +42,10 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     // State for saving template dialog
     const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
+    
+    // State for deleting template
+    const [templateToDelete, setTemplateToDelete] = useState(null);
+
 
     useEffect(() => {
         setRoutine(initialRoutine);
@@ -156,6 +160,15 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         setShowSaveTemplateDialog(false);
         setNewTemplateName('');
     }
+    
+    const handleDeleteTemplate = () => {
+        if (!templateToDelete) return;
+        const newTemplates = { ...routineTemplates };
+        delete newTemplates[templateToDelete];
+        handleTemplateChange(newTemplates);
+        toast({ title: 'Template Eliminado', description: `O template "${templateToDelete}" foi removido.` });
+        setTemplateToDelete(null);
+    };
 
 
     const handleGetSuggestion = async (mission) => {
@@ -298,17 +311,30 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full sm:w-auto">
+                            <Button variant="outline" className="w-full sm:w-auto" disabled={Object.keys(routineTemplates).length === 0}>
                                <FileDown className="h-5 w-5 mr-2" />
                                Carregar Template
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             {Object.keys(routineTemplates).map(templateName => (
-                                <DropdownMenuItem key={templateName} onSelect={() => handleLoadTemplate(templateName)}>
-                                    {templateName}
+                                <DropdownMenuItem key={templateName} onSelect={(e) => e.preventDefault()} className="flex justify-between items-center pr-2">
+                                    <span onClick={() => handleLoadTemplate(templateName)} className="flex-grow">{templateName}</span>
+                                     <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-gray-500 hover:text-red-400"
+                                            onClick={(e) => { e.stopPropagation(); setTemplateToDelete(templateName); }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
                                 </DropdownMenuItem>
                             ))}
+                             {Object.keys(routineTemplates).length === 0 && (
+                                <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -453,6 +479,21 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Eliminar Template?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem a certeza que quer eliminar o template "{templateToDelete}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteTemplate}>Sim, eliminar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
              <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
                 <DialogContent>
@@ -480,5 +521,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         </div>
     );
 };
+
+    
 
     
