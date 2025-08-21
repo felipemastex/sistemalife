@@ -103,6 +103,17 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         setIsDialogOpen(true);
     };
 
+    const handleOpenManualAdd = (mission) => {
+        setCurrentItem(null); // Ensure it's in "add new" mode
+        setEditedItem({
+            id: null,
+            start_time: '',
+            end_time: '',
+            activity: `[Missão] ${mission.nome}`
+        });
+        setIsDialogOpen(true);
+    };
+
     const handleSave = () => {
         const currentDayRoutine = routine[selectedDay] || [];
         let updatedRoutine;
@@ -161,7 +172,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         setNewTemplateName('');
     }
     
-    const handleDeleteTemplate = () => {
+    const confirmDeleteTemplate = () => {
         if (!templateToDelete) return;
         const newTemplates = { ...routineTemplates };
         delete newTemplates[templateToDelete];
@@ -317,21 +328,39 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            {Object.keys(routineTemplates).map(templateName => (
-                                <DropdownMenuItem key={templateName} onSelect={(e) => e.preventDefault()} className="flex justify-between items-center pr-2">
-                                    <span onClick={() => handleLoadTemplate(templateName)} className="flex-grow">{templateName}</span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 text-gray-500 hover:text-red-400"
-                                        onClick={(e) => { 
-                                            e.stopPropagation(); 
-                                            setTemplateToDelete(templateName); 
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuItem>
+                             {Object.keys(routineTemplates).map(templateName => (
+                                <AlertDialog key={templateName}>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between items-center pr-2">
+                                        <span onClick={() => handleLoadTemplate(templateName)} className="flex-grow">{templateName}</span>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-gray-500 hover:text-red-400"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                    </DropdownMenuItem>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Eliminar Template?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Tem a certeza que quer eliminar o template "{templateName}"? Esta ação não pode ser desfeita.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => {
+                                                const newTemplates = { ...routineTemplates };
+                                                delete newTemplates[templateName];
+                                                handleTemplateChange(newTemplates);
+                                                toast({ title: 'Template Eliminado', description: `O template "${templateName}" foi removido.` });
+                                            }}>Sim, eliminar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             ))}
                              {Object.keys(routineTemplates).length === 0 && (
                                 <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
@@ -380,15 +409,26 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                                     <p className="font-bold text-gray-200">{mission.nome}</p>
                                                     <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
                                                 </div>
-                                                <Button 
-                                                    onClick={() => handleGetSuggestion(mission)} 
-                                                    disabled={isLoadingSuggestion === mission.id}
-                                                    size="sm"
-                                                    className="w-full md:w-auto flex-shrink-0"
-                                                >
-                                                    {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                    <BrainCircuit className="ml-2 h-4 w-4"/>
-                                                </Button>
+                                                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto flex-shrink-0">
+                                                    <Button 
+                                                        onClick={() => handleOpenManualAdd(mission)} 
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        className="w-full"
+                                                    >
+                                                        Adicionar Manualmente
+                                                        <PlusCircle className="ml-2 h-4 w-4"/>
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => handleGetSuggestion(mission)} 
+                                                        disabled={isLoadingSuggestion === mission.id}
+                                                        size="sm"
+                                                        className="w-full"
+                                                    >
+                                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                        <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                    </Button>
+                                                </div>
                                             </div>
                                             {suggestions[mission.id] && (
                                                 <Alert className="mt-4 border-cyan-500/50">
@@ -491,7 +531,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteTemplate}>Sim, eliminar</AlertDialogAction>
+                        <AlertDialogAction onClick={confirmDeleteTemplate}>Sim, eliminar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -526,3 +566,4 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     
 
     
+
