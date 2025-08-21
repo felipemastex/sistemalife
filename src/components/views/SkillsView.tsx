@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -10,7 +10,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { statCategoryMapping } from '@/lib/mappings';
 import { useToast } from '@/hooks/use-toast';
 import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
-import { Skeleton } from '@/components/ui/skeleton';
 import * as mockData from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -122,7 +121,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         }
     };
 
-    const metasWithoutSkills = metas.filter(meta => !meta.habilidade_associada_id);
+    const metasWithoutSkills = metas.filter(meta => !skills.some(skill => skill.id === meta.habilidade_associada_id));
 
     return (
         <div className="p-4 md:p-6">
@@ -223,7 +222,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <Label htmlFor="meta-select">Meta a Vincular</Label>
-                        <Select onValueChange={setSelectedMetaId} value={selectedMetaId || undefined}>
+                        <Select onValueChange={setSelectedMetaId} value={selectedMetaId || ''}>
                             <SelectTrigger id="meta-select" className="w-full">
                                 <SelectValue placeholder="Selecione uma meta..." />
                             </SelectTrigger>
