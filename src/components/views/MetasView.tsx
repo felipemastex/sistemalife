@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, ChevronDown, Info } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -14,7 +14,6 @@ import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -325,6 +324,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     
     const [isEditing, setIsEditing] = useState(false);
     const [metaToEdit, setMetaToEdit] = useState(null);
+    const [detailedMeta, setDetailedMeta] = useState(null);
 
     const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
     
@@ -705,8 +705,8 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-grow">
-                                <TooltipProvider>
+                            <CardContent className="flex-grow space-y-4">
+                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger className="w-full">
                                             <Progress value={progress} className="h-3" />
@@ -716,29 +716,20 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
-                                <Accordion type="single" collapsible className="w-full mt-4">
-                                    <AccordionItem value="details" className="border-b-0">
-                                        <AccordionTrigger className="text-sm text-muted-foreground hover:no-underline py-2 flex justify-center items-center">
-                                            Ver Detalhes <Info className="ml-2 h-4 w-4" />
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pt-2">
-                                            <div className="space-y-3 text-sm text-gray-300 border-t border-border pt-3">
-                                                {meta.prazo && (
-                                                    <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {format(new Date(meta.prazo), "dd/MM/yyyy")}</p>
-                                                )}
-                                                <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
-                                                <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
-                                                <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
-                                                <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
-                                                <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {meta.detalhes_smart.timeBound}</p>
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                </Accordion>
+                                {meta.prazo && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                                        <CalendarIcon className="h-4 w-4" />
+                                        <span>Prazo: {format(new Date(meta.prazo), "dd/MM/yyyy")}</span>
+                                    </div>
+                                )}
                             </CardContent>
-                             <CardFooter>
+                             <CardFooter className="flex-col items-start gap-4">
+                                 <Button variant="outline" size="sm" onClick={() => setDetailedMeta(meta)}>
+                                    Ver Detalhes
+                                    <Info className="ml-2 h-4 w-4" />
+                                 </Button>
                                  {stats && stats.length > 0 && (
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full pt-4 border-t border-border">
                                         <strong className="text-sm text-muted-foreground shrink-0">Atributos:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
@@ -824,6 +815,29 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     </DialogContent>
                  </Dialog>
             )}
+
+            {detailedMeta && (
+                <Dialog open={!!detailedMeta} onOpenChange={() => setDetailedMeta(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>{detailedMeta.nome}</DialogTitle>
+                            <DialogDescription>
+                                Detalhes SMART da sua meta.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                             <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {detailedMeta.detalhes_smart.specific}</p>
+                            <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {detailedMeta.detalhes_smart.measurable}</p>
+                            <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {detailedMeta.detalhes_smart.achievable}</p>
+                            <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {detailedMeta.detalhes_smart.relevant}</p>
+                            <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {detailedMeta.detalhes_smart.timeBound}</p>
+                        </div>
+                         <DialogFooter>
+                            <Button variant="outline" onClick={() => setDetailedMeta(null)}>Fechar</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
             
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
                 <DialogContent className="max-w-2xl">
@@ -868,5 +882,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
+    
 
     
