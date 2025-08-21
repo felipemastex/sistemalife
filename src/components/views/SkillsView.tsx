@@ -28,7 +28,8 @@ export const SkillsView = ({ skills, setSkills, metas, missions }) => {
     };
 
     const handleDeleteSkill = (skillId) => {
-        setSkills(currentSkills => currentSkills.filter(s => s.id !== skillId));
+        const newSkills = skills.filter(s => s.id !== skillId);
+        setSkills(newSkills);
     };
 
     const isSkillDeletable = (skillId) => {
