@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, ChevronDown, Info } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -26,6 +26,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Progress } from '../ui/progress';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 
 
 const statIcons = {
@@ -639,9 +641,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const sortedMetas = [...metas].sort((a, b) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 h-full overflow-y-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h1 className="text-3xl font-bold text-cyan-400">Metas</h1>
+                <h1 className="text-3xl font-bold text-cyan-400 font-cinzel tracking-wider">Metas</h1>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                      <Button onClick={handleGetSuggestions} variant="outline" className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 w-full sm:w-auto">
                         <Wand2 className="h-5 w-5 mr-2" />
@@ -653,8 +655,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     </Button>
                 </div>
             </div>
-            <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
-            <Accordion type="multiple" className="space-y-4">
+            <p className="text-gray-400 mb-8 max-w-4xl">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedMetas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];
@@ -664,61 +667,82 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
                     
                     return (
-                    <AccordionItem value={`meta-${meta.id}`} key={meta.id} className={cn("bg-gray-800/50 border border-gray-700 rounded-lg", meta.concluida && "opacity-60")}>
-                       <div className="flex items-center w-full">
-                           <AccordionTrigger className="flex-1 hover:no-underline text-left p-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                        {meta.concluida && <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />}
-                                        <p className="text-lg text-gray-200 break-words">{meta.nome}</p>
+                        <Card key={meta.id} className={cn("bg-card/60 border-border/80 flex flex-col", meta.concluida && "bg-card/30 border-green-500/20")}>
+                            <CardHeader>
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="flex-1">
+                                         <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                                            {meta.concluida && <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                                            <span className={cn(meta.concluida && "line-through text-muted-foreground")}>{meta.nome}</span>
+                                        </CardTitle>
+                                        <CardDescription className="mt-1">
+                                            <Badge variant={meta.concluida ? "secondary" : "default"} className={cn(!meta.concluida && "bg-primary/20 text-primary")}>
+                                                {meta.categoria}
+                                            </Badge>
+                                        </CardDescription>
                                     </div>
-                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded mt-2 inline-block">{meta.categoria}</span>
-                                    {meta.concluida && <span className="text-sm font-bold text-green-400 bg-green-900/50 px-2 py-1 rounded mt-2 ml-2 inline-block">CONCLUÍDA</span>}
-                                    <div className="mt-3">
-                                        <Progress value={progress} className="h-2" />
-                                        <p className="text-xs text-gray-400 mt-1">{completedMissionsCount} de {totalMissionsCount} missões épicas concluídas</p>
+                                    <div className="flex items-center gap-1">
+                                        <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 h-8 w-8">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </div>
-                           </AccordionTrigger>
-                           <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
-                                <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400">
-                                            <Trash2 className="h-5 w-5" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta ação não pode ser desfeita. Isto irá apagar permanentemente a sua meta e toda a sua árvore de progressão de missões. A habilidade adquirida não será removida.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(meta.id)}>Continuar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                           </div>
-                       </div>
-                        <AccordionContent className="p-4 pt-0">
-                           <div className="space-y-3 text-sm text-gray-300 border-t border-gray-700 pt-3">
-                                {meta.prazo && (
-                                     <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {format(new Date(meta.prazo), "dd/MM/yyyy")}</p>
-                                )}
-                                <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
-                                <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
-                                <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
-                                <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
-                                <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {meta.detalhes_smart.timeBound}</p>
-                                {stats && stats.length > 0 && (
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
-                                        <strong className="text-cyan-400 shrink-0">Atributos Melhorados:</strong>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger className="w-full">
+                                            <Progress value={progress} className="h-3" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{completedMissionsCount} de {totalMissionsCount} missões épicas concluídas</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                <Accordion type="single" collapsible className="w-full mt-4">
+                                    <AccordionItem value="details" className="border-b-0">
+                                        <AccordionTrigger className="text-sm text-muted-foreground hover:no-underline py-2 flex justify-center items-center">
+                                            Ver Detalhes <Info className="ml-2 h-4 w-4" />
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2">
+                                            <div className="space-y-3 text-sm text-gray-300 border-t border-border pt-3">
+                                                {meta.prazo && (
+                                                    <p className="break-words"><strong className="text-cyan-400">Prazo:</strong> {format(new Date(meta.prazo), "dd/MM/yyyy")}</p>
+                                                )}
+                                                <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {meta.detalhes_smart.specific}</p>
+                                                <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {meta.detalhes_smart.measurable}</p>
+                                                <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {meta.detalhes_smart.achievable}</p>
+                                                <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {meta.detalhes_smart.relevant}</p>
+                                                <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {meta.detalhes_smart.timeBound}</p>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+                            </CardContent>
+                             <CardFooter>
+                                 {stats && stats.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full">
+                                        <strong className="text-sm text-muted-foreground shrink-0">Atributos:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
-                                            <div key={stat} className="flex items-center gap-1 text-gray-300">
+                                            <div key={stat} className="flex items-center gap-1.5 text-gray-300">
                                                 {statIcons[stat]}
                                                 <span className="capitalize text-xs">{stat}</span>
                                             </div>
@@ -726,11 +750,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                         </div>
                                     </div>
                                 )}
-                           </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                )})}
-            </Accordion>
+                            </CardFooter>
+                        </Card>
+                    )})}
+            </div>
             
             {showWizardDialog && (
                 <Dialog open={showWizardDialog} onOpenChange={handleCloseWizard}>
