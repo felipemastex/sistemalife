@@ -66,6 +66,25 @@ export default function App() {
       onClose: () => setQuestNotification(null),
     });
   };
+
+  const handleShowSkillUpNotification = (skillName, newLevel, statBonuses) => {
+     const goals = [
+        { name: `- HABILIDADE`, progress: `[${skillName}]` },
+        { name: `- NOVO NÍVEL`, progress: `[${newLevel}]` },
+     ];
+
+     if (statBonuses && statBonuses.length > 0) {
+        goals.push({ name: '- BÓNUS DE ATRIBUTO', progress: `[${statBonuses.join(', ')}]` });
+     }
+
+    setQuestNotification({
+      title: 'HABILIDADE AUMENTADA!',
+      description: 'A sua dedicação e prática foram recompensadas. Uma das suas habilidades evoluiu.',
+      goals: goals,
+      caution: 'A maestria é uma jornada sem fim. Continue a aprimorar as suas competências.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
   
   useEffect(() => {
     if (!loading && !user) {
@@ -376,8 +395,8 @@ export default function App() {
     
     const views = {
       'dashboard': <DashboardView profile={profile} />,
-      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={setSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} />,
+      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} missions={missions} setMissions={setMissions} profile={profile} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
@@ -436,3 +455,5 @@ export default function App() {
     </div>
   );
 }
+
+    

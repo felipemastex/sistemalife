@@ -82,7 +82,7 @@ const getProfileRank = (level) => {
     return { rank: 'SSS', title: 'Lendário' };
 };
 
-export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification }) => {
+export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -218,7 +218,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const newSkills = skills.map(s => s.id === skill.id ? leveledUpSkill : s);
         setSkills(newSkills);
         
-        let toastDescription = `A sua habilidade "${skill.nome}" subiu para o nível ${leveledUpSkill.nivel_atual}!`;
+        const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+        
+        onSkillUpNotification(skill.nome, leveledUpSkill.nivel_atual, statNames);
 
         if (statsToUpgrade && statsToUpgrade.length > 0) {
             setProfile(prevProfile => {
@@ -228,11 +230,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 });
                 return { ...prevProfile, estatisticas: newStats };
             });
-            const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' e ');
-            toastDescription += `\nSua ${statNames} aumentou.`
         }
-
-        toast({ title: "Habilidade Aumentada!", description: toastDescription });
     };
 
 
@@ -807,3 +805,5 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
+
+    
