@@ -84,8 +84,9 @@ const generateSystemAdviceFlow = ai.defineFlow(
     const {output} = await ai.generate({
         prompt: generalPrompt,
         model: 'googleai/gemini-2.5-flash',
+        output: { schema: GenerateSystemAdviceOutputSchema },
     });
 
-    return { response: output?.text || "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
+    return output || { response: "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
   }
 );
