@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
@@ -424,54 +425,61 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                     
-                    <TabsContent value={selectedDay} className="mt-6 flex-grow flex flex-col lg:flex-row gap-8 overflow-y-auto">
+                    <TabsContent value={selectedDay} className="mt-6 flex-grow flex flex-col lg:flex-row gap-8 overflow-hidden animate-in fade-in-50 duration-500">
                          {/* Unscheduled Missions Column */}
-                        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0 animate-in fade-in-50 duration-500">
+                        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
                             <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
                             <ScrollArea className="h-full pr-4 -mr-4">
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {unscheduledMissions.length > 0 ? (
                                         unscheduledMissions.map(mission => (
-                                            <Card key={mission.id} className="bg-card/60">
-                                                <CardHeader>
-                                                    <CardTitle className="text-base">{mission.nome}</CardTitle>
-                                                    <CardDescription>{mission.descricao}</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {suggestions[mission.id] && (
-                                                        <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
-                                                            <Sparkles className="h-4 w-4 text-primary" />
-                                                            <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
-                                                            <AlertDescription className="text-card-foreground">
-                                                                {suggestions[mission.id].suggestionText}
-                                                                <div className="flex gap-2 mt-3">
-                                                                    <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
-                                                                    <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
-                                                                </div>
-                                                            </AlertDescription>
-                                                        </Alert>
-                                                    )}
-                                                </CardContent>
-                                                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                                                    <Button 
-                                                        onClick={() => handleOpenManualAdd(mission)} 
-                                                        size="sm"
-                                                        variant="secondary"
-                                                        className="w-full"
-                                                    >
-                                                        Adicionar Manualmente
-                                                    </Button>
-                                                    <Button 
-                                                        onClick={() => handleGetSuggestion(mission)} 
-                                                        disabled={isLoadingSuggestion === mission.id}
-                                                        size="sm"
-                                                        className="w-full"
-                                                    >
-                                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                        <BrainCircuit className="ml-2 h-4 w-4"/>
-                                                    </Button>
-                                                </CardFooter>
-                                            </Card>
+                                            <Collapsible key={mission.id} className="bg-card/60 border border-border rounded-lg">
+                                                <CollapsibleTrigger className="w-full p-3 text-left">
+                                                     <div className="flex justify-between items-center gap-4">
+                                                        <CardTitle className="text-base flex-1">{mission.nome}</CardTitle>
+                                                        <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                     </div>
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent className="px-3 pb-3">
+                                                    <div className="border-t border-border pt-3 mt-3 space-y-4">
+                                                        <p className="text-sm text-muted-foreground">{mission.descricao}</p>
+                                                        
+                                                        {suggestions[mission.id] && (
+                                                            <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
+                                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                                <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
+                                                                <AlertDescription className="text-card-foreground">
+                                                                    {suggestions[mission.id].suggestionText}
+                                                                    <div className="flex gap-2 mt-3">
+                                                                        <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
+                                                                        <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                                    </div>
+                                                                </AlertDescription>
+                                                            </Alert>
+                                                        )}
+
+                                                        <div className="flex flex-col sm:flex-row gap-2">
+                                                            <Button 
+                                                                onClick={() => handleOpenManualAdd(mission)} 
+                                                                size="sm"
+                                                                variant="secondary"
+                                                                className="w-full"
+                                                            >
+                                                                Adicionar Manualmente
+                                                            </Button>
+                                                            <Button 
+                                                                onClick={() => handleGetSuggestion(mission)} 
+                                                                disabled={isLoadingSuggestion === mission.id}
+                                                                size="sm"
+                                                                className="w-full"
+                                                            >
+                                                                {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                                <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </CollapsibleContent>
+                                            </Collapsible>
                                         ))
                                     ) : (
                                         <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
@@ -484,7 +492,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                         </div>
 
                         {/* Daily Schedule Column */}
-                        <div className="flex flex-col flex-1 min-w-0 animate-in fade-in-50 duration-700">
+                        <div className="flex flex-col flex-1 min-w-0">
                             <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
                             <ScrollArea className="h-full pr-4 -mr-4">
                                 <div className="relative pl-6">
@@ -609,3 +617,4 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     
 
     
+
