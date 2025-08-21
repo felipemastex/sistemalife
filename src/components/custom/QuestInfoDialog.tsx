@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent as OriginalDialogContent } from '@/components/ui/dialog';
 import { AlertCircle, Clock, X } from 'lucide-react';
 
 export interface QuestInfoProps {
@@ -13,16 +13,48 @@ export interface QuestInfoProps {
   onClose: () => void;
 }
 
+const CustomDialogContent = React.forwardRef<
+  React.ElementRef<typeof OriginalDialogContent>,
+  React.ComponentPropsWithoutRef<typeof OriginalDialogContent> & { showCloseButton?: boolean }
+>(({ children, className, showCloseButton = true, ...props }, ref) => {
+  return (
+    <OriginalDialogContent ref={ref} className={className} {...props}>
+      {children}
+      {!showCloseButton && (
+        <button onClick={() => {
+            const event = new CustomEvent('close-dialog');
+            document.dispatchEvent(event)
+        }} className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <span className="sr-only">Close</span>
+        </button>
+      )}
+    </OriginalDialogContent>
+  );
+});
+CustomDialogContent.displayName = "DialogContent";
+
+
 export const QuestInfoDialog = ({ title, description, goals, caution, onClose }: QuestInfoProps) => {
+  
+  React.useEffect(() => {
+    const handleClose = () => onClose();
+    // Since we can't easily stop propagation from the original close button,
+    // we use a custom event system as a workaround.
+    document.addEventListener('close-dialog', handleClose);
+    return () => {
+      document.removeEventListener('close-dialog', handleClose);
+    };
+  }, [onClose]);
+
   return (
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent 
+      <CustomDialogContent 
         className="bg-gray-900/80 backdrop-blur-md border-2 border-cyan-400/30 text-white max-w-md w-full shadow-2xl shadow-cyan-500/10 rounded-lg p-0"
         showCloseButton={false}
       >
         <div className="p-6 relative font-sans">
           {/* Custom Close Button */}
-          <button onClick={onClose} className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white transition-colors z-10">
             <X className="h-5 w-5" />
           </button>
 
@@ -53,22 +85,7 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
             <Clock className="h-10 w-10 text-gray-500 mx-auto" />
           </div>
         </div>
-      </DialogContent>
+      </CustomDialogContent>
     </Dialog>
   );
 };
-
-// Extend DialogContent to accept a 'showCloseButton' prop
-const OriginalDialogContent = DialogContent;
-const CustomDialogContent = React.forwardRef<
-  React.ElementRef<typeof OriginalDialogContent>,
-  React.ComponentPropsWithoutRef<typeof OriginalDialogContent> & { showCloseButton?: boolean }
->(({ showCloseButton, ...props }, ref) => {
-    // This is a workaround since shadcn's DialogContent doesn't let us easily remove the default close button
-    // In a real scenario, we might need to fork the component or use a different approach.
-    // For this purpose, we'll let it render and just add our own custom one.
-  return <OriginalDialogContent ref={ref} {...props} />;
-});
-CustomDialogContent.displayName = "DialogContent";
-
-Dialog.Content = CustomDialogContent;
