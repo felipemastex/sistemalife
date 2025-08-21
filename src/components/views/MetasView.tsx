@@ -205,10 +205,6 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         }
     }
     
-    const handleEditSave = () => {
-        handleSaveGoal({name: goalState.nome, ...goalState.detalhes_smart});
-    }
-
     const renderInitialScreen = () => (
         <div className="text-center">
             <h2 className="text-2xl font-bold text-cyan-400 mb-4">Qual é a meta que você tem em mente?</h2>
@@ -228,40 +224,6 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         </div>
     );
     
-     const renderEditingScreen = () => (
-        <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
-             <h2 className="text-2xl text-center font-bold text-cyan-400 mb-4">Editar Meta: {goalState.nome}</h2>
-             <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 space-y-4">
-                <div>
-                    <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
-                    <Textarea id="specific" value={goalState.detalhes_smart.specific} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[60px]" />
-                </div>
-                 <div>
-                    <Label htmlFor="measurable" className="text-cyan-400">Mensurável</Label>
-                    <Textarea id="measurable" value={goalState.detalhes_smart.measurable} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[60px]" />
-                </div>
-                 <div>
-                    <Label htmlFor="achievable" className="text-cyan-400">Atingível</Label>
-                    <Textarea id="achievable" value={goalState.detalhes_smart.achievable} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[60px]" />
-                </div>
-                 <div>
-                    <Label htmlFor="relevant" className="text-cyan-400">Relevante</Label>
-                    <Textarea id="relevant" value={goalState.detalhes_smart.relevant} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[60px]" />
-                </div>
-                 <div>
-                    <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
-                    <Textarea id="timeBound" value={goalState.detalhes_smart.timeBound} onChange={(e) => setGoalState(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[60px]" />
-                </div>
-                <div className="flex flex-col-reverse sm:flex-row justify-end pt-4 gap-2">
-                     <Button variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
-                     <Button onClick={handleEditSave} disabled={isLoading}>
-                        {isLoading ? "A Salvar..." : "Salvar Alterações"}
-                    </Button>
-                </div>
-             </div>
-        </div>
-    );
-
     const renderQuestionScreen = () => (
          <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
             <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.nome}</span></p>
@@ -317,9 +279,6 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     );
     
     const renderContent = () => {
-        if(isEditing){
-            return renderEditingScreen();
-        }
         if(!goalState.nome){
             return renderInitialScreen();
         }
@@ -330,10 +289,10 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
-                 <DialogHeader className="sr-only">
+                <DialogHeader className='sr-only'>
                     <DialogTitle>Assistente de Metas</DialogTitle>
-                    <DialogDescription>Um assistente para ajudar a criar ou editar uma meta SMART.</DialogDescription>
-                 </DialogHeader>
+                    <DialogDescription>Um assistente para ajudar a criar uma meta SMART.</DialogDescription>
+                </DialogHeader>
                 <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
                     <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
                         <X className="h-6 w-6" />
@@ -349,7 +308,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const [showWizardDialog, setShowWizardDialog] = useState(false);
     const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
     const [wizardInitialName, setWizardInitialName] = useState('');
+    
+    const [isEditing, setIsEditing] = useState(false);
     const [metaToEdit, setMetaToEdit] = useState(null);
+
     const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
     
     const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
@@ -396,30 +358,40 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         setShowWizardDialog(true);
     };
 
-    const handleOpenWizard = (meta = null) => {
-        if (meta) {
-            setMetaToEdit(meta);
-            setWizardMode('detailed'); // Editing always opens in detailed mode
-        } else {
-            setMetaToEdit(null); // Clear previous edit state
-            setWizardMode('selection'); // Show mode selection for new goal
-        }
+    const handleOpenWizard = () => {
+        setWizardMode('selection');
         setShowWizardDialog(true);
     };
 
     const handleCloseWizard = () => {
         setShowWizardDialog(false);
-        setMetaToEdit(null);
         setWizardMode(null);
         setWizardInitialName('');
     };
+    
+    const handleOpenEditDialog = (meta) => {
+        setMetaToEdit({ ...meta });
+        setIsEditing(true);
+    };
+    
+    const handleCloseEditDialog = () => {
+        setIsEditing(false);
+        setMetaToEdit(null);
+    };
+    
+    const handleSaveEditedGoal = () => {
+        if (!metaToEdit) return;
+        handleSave(metaToEdit);
+        handleCloseEditDialog();
+    }
+
 
     const handleSave = async (newOrUpdatedMeta) => {
         setIsLoadingSimpleGoal(true);
-        const isEditing = !!(newOrUpdatedMeta.id && metas.some(m => m.id === newOrUpdatedMeta.id));
+        const isEditingGoal = !!(newOrUpdatedMeta.id && metas.some(m => m.id === newOrUpdatedMeta.id));
         
         try {
-            if (isEditing) {
+            if (isEditingGoal) {
                 // --- UPDATE LOGIC ---
                 const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
@@ -442,9 +414,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     );
                 }
 
-                setMissions(updatedMissions);
-                setSkills(updatedSkills);
-                setMetas(updatedMetas);
+                await setMissions(updatedMissions);
+                await setSkills(updatedSkills);
+                await setMetas(updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
@@ -533,9 +505,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     };
                 });
                 
-                setSkills(currentSkills => [...currentSkills, newSkill]);
-                setMetas([...metas, newMetaWithId]);
-                setMissions([...missions, ...newMissions]);
+                await setSkills(currentSkills => [...currentSkills, newSkill]);
+                await setMetas([...metas, newMetaWithId]);
+                await setMissions([...missions, ...newMissions]);
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
@@ -575,11 +547,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     };
 
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
-            setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            setMetas(metas.filter(m => m.id !== id));
+            await setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            await setMetas(metas.filter(m => m.id !== id));
             // A habilidade não é removida aqui de propósito.
             toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
         }
@@ -648,7 +620,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     <SmartGoalWizard
                         onClose={handleCloseWizard}
                         onSave={handleSave}
-                        metaToEdit={metaToEdit}
+                        metaToEdit={null}
                         profile={profile}
                         initialGoalName={wizardInitialName}
                     />
@@ -691,7 +663,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 </div>
                            </AccordionTrigger>
                            <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
-                                <Button onClick={() => handleOpenWizard(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
+                                <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
                                  <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -756,6 +728,45 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 <Dialog open={showWizardDialog} onOpenChange={handleCloseWizard}>
                     {renderWizardContent()}
                 </Dialog>
+            )}
+
+            {isEditing && metaToEdit && (
+                 <Dialog open={isEditing} onOpenChange={handleCloseEditDialog}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Editar Meta: {metaToEdit.nome}</DialogTitle>
+                            <DialogDescription>
+                                Refine os detalhes da sua meta SMART.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                            <div>
+                                <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
+                                <Textarea id="specific" value={metaToEdit.detalhes_smart.specific} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[80px]" />
+                            </div>
+                             <div>
+                                <Label htmlFor="measurable" className="text-cyan-400">Mensurável</Label>
+                                <Textarea id="measurable" value={metaToEdit.detalhes_smart.measurable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[80px]" />
+                            </div>
+                             <div>
+                                <Label htmlFor="achievable" className="text-cyan-400">Atingível</Label>
+                                <Textarea id="achievable" value={metaToEdit.detalhes_smart.achievable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[80px]" />
+                            </div>
+                             <div>
+                                <Label htmlFor="relevant" className="text-cyan-400">Relevante</Label>
+                                <Textarea id="relevant" value={metaToEdit.detalhes_smart.relevant} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[80px]" />
+                            </div>
+                             <div>
+                                <Label htmlFor="timeBound" className="text-cyan-400">Prazo</Label>
+                                <Textarea id="timeBound" value={metaToEdit.detalhes_smart.timeBound} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[80px]" />
+                            </div>
+                        </div>
+                         <DialogFooter>
+                            <Button variant="outline" onClick={handleCloseEditDialog}>Cancelar</Button>
+                            <Button onClick={handleSaveEditedGoal}>Salvar Alterações</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                 </Dialog>
             )}
             
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
