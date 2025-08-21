@@ -68,10 +68,12 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
 
 
     return (
-        <div className="h-full flex flex-col bg-background">
-             <div className="p-4 md:p-6 flex-shrink-0 z-10 border-b border-border/50">
+        <div className="h-full flex flex-col bg-background relative">
+             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)]"></div>
+
+             <div className="p-4 md:p-6 flex-shrink-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-sm">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Arquiteto</h1>
-                <p className="text-muted-foreground mt-2">A sua linha de comunicação direta com a IA que gere o seu progresso.</p>
+                <p className="text-muted-foreground mt-1">A sua linha de comunicação direta com a IA que gere o seu progresso.</p>
             </div>
             
             <ScrollArea className="flex-grow z-10" ref={scrollAreaRef}>
@@ -82,17 +84,17 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
                             <div className={cn(
                                 "max-w-2xl rounded-lg p-4 text-base", 
                                 msg.sender === 'user' 
-                                ? 'bg-card border border-border text-foreground' 
+                                ? 'bg-card border border-border text-foreground shadow-lg' 
                                 : 'bg-transparent text-muted-foreground'
                             )}>
-                                <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                                <p className="whitespace-pre-wrap leading-relaxed font-sans">{msg.text}</p>
                             </div>
                         </div>
                     ))}
                     {isLoading && ( 
                         <div className="flex items-start gap-4">
                             <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
-                            <div className="max-w-lg p-4 text-gray-300">
+                            <div className="max-w-lg p-4 text-muted-foreground">
                                 <div className="flex items-center space-x-2">
                                     <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
                                     <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
@@ -104,8 +106,9 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
                  </div>
             </ScrollArea>
 
-            <div className="flex-shrink-0 p-4 md:p-6 z-10 bg-background border-t border-border/50">
-                <div className="max-w-4xl mx-auto bg-card border border-border rounded-lg flex items-center p-2 backdrop-blur-sm shadow-lg">
+            <div className="flex-shrink-0 p-4 md:p-6 z-10 bg-background/80 backdrop-blur-sm border-t border-border/50">
+                <div className="max-w-4xl mx-auto bg-card border border-border rounded-lg flex items-center p-2 shadow-lg">
+                    <span className="text-cyan-400 font-mono text-lg pl-3 pr-2 select-none">&gt;</span>
                     <Input
                         type="text"
                         value={input}

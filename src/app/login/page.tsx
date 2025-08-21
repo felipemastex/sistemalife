@@ -85,7 +85,7 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4 font-sans">
             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
-            <Card className="w-full max-w-md bg-card/80 backdrop-blur-lg border-cyan-400/20 text-card-foreground shadow-2xl shadow-cyan-500/10 animate-in fade-in-50 duration-700">
+            <Card className="w-full max-w-md bg-card/80 backdrop-blur-lg border-cyan-400/20 text-card-foreground shadow-2xl shadow-cyan-500/10 animate-in fade-in-50 duration-1000">
                 <CardHeader className="text-center">
                     <CardTitle className="font-cinzel text-5xl font-bold text-primary tracking-widest min-h-[60px]">
                         {typedTitle}

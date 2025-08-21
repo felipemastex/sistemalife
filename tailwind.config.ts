@@ -105,5 +105,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate'), radialGradientPlugin],
 } satisfies Config;
-
-    

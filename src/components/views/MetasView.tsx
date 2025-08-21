@@ -126,7 +126,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         } finally {
             setIsLoading(false);
         }
-    },[onClose]);
+    },[onClose, handleToastError]);
 
 
     const handleNextStep = async () => {
@@ -220,7 +220,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     }
     
     const renderInitialScreen = () => (
-        <div className="text-center">
+        <div className="text-center animate-in fade-in-50 duration-500">
             <h2 className="text-2xl font-bold text-cyan-400 mb-4">Qual é a meta que você tem em mente?</h2>
             <p className="text-gray-400 mb-6">Descreva o seu objetivo inicial. O Sistema irá ajudá-lo a refiná-lo.</p>
              <Input
@@ -882,7 +882,3 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
-
-    
-
-    

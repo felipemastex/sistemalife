@@ -42,6 +42,91 @@ export default function App() {
   
   const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
+  // --- PERSISTENCE FUNCTIONS ---
+  const persistProfile = useCallback(async (newProfile) => {
+      if (!user) return;
+      
+      const profileToSave = {
+        ...newProfile,
+        nome_utilizador: newProfile.primeiro_nome || newProfile.nome_utilizador || '',
+      };
+
+      setProfile(profileToSave);
+      await setDoc(doc(db, 'users', user.uid), profileToSave, { merge: true });
+  }, [user]);
+
+  const persistMetas = useCallback(async (newMetas) => {
+      if (!user) return;
+      setMetas(newMetas);
+      const batch = writeBatch(db);
+      const metasRef = collection(db, 'users', user.uid, 'metas');
+      
+      const existingDocsSnapshot = await getDocs(metasRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMetas.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+      
+      idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
+      newMetas.forEach(meta => {
+          const metaDocRef = doc(metasRef, String(meta.id));
+          const metaToSave = { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false };
+          batch.set(metaDocRef, metaToSave);
+      });
+      await batch.commit();
+  }, [user]);
+
+  const persistMissions = useCallback(async (newMissions) => {
+      if (!user || !Array.isArray(newMissions)) return;
+      setMissions(newMissions);
+      const batch = writeBatch(db);
+      const missionsRef = collection(db, 'users', user.uid, 'missions');
+
+      const existingDocsSnapshot = await getDocs(missionsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMissions.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
+      newMissions.forEach(mission => {
+          const missionDocRef = doc(missionsRef, String(mission.id));
+          batch.set(missionDocRef, mission);
+      });
+      await batch.commit();
+  }, [user]);
+  
+  const persistSkills = useCallback(async (newSkills) => {
+      if (!user || !Array.isArray(newSkills)) return;
+      setSkills(newSkills);
+      const batch = writeBatch(db);
+      const skillsRef = collection(db, 'users', user.uid, 'skills');
+
+      const existingDocsSnapshot = await getDocs(skillsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newSkills.map(s => String(s.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
+      newSkills.forEach(skill => {
+          const skillDocRef = doc(skillsRef, String(skill.id));
+          batch.set(skillDocRef, skill);
+      });
+      await batch.commit();
+  }, [user]);
+
+  const persistRoutine = useCallback(async (newRoutine) => {
+      if (!user) return;
+      setRoutine(newRoutine); // Update parent state for other components
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
+  }, [user]);
+  
+  const persistRoutineTemplates = useCallback(async (newTemplates) => {
+      if (!user) return;
+      setRoutineTemplates(newTemplates);
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
+  }, [user]);
+
+
+  // --- NOTIFICATION HANDLERS ---
   const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
     setQuestNotification({
       title: 'NÍVEL AUMENTADO!',
@@ -257,7 +342,7 @@ export default function App() {
     }
     
     return { updatedSkills, skillsChanged };
-  }, []);
+  }, [handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
   
   const checkDailyLogin = useCallback((profileData, missionsData) => {
     const now = new Date();
@@ -302,7 +387,7 @@ export default function App() {
         return true; // Indicates that profile needs update
     }
     return false; // No update needed
-  }, []);
+  }, [rankOrder, handleShowDailyBriefingNotification]);
 
 
   const fetchData = useCallback(async (userId) => {
@@ -359,7 +444,7 @@ export default function App() {
       } finally {
           setIsDataLoaded(true);
       }
-  }, [user, toast, checkSkillStatus, checkDailyLogin]);
+  }, [user, toast, checkSkillStatus, checkDailyLogin, persistSkills, setupInitialData]);
 
   useEffect(() => {
     if (user && !isDataLoaded) {
@@ -367,87 +452,6 @@ export default function App() {
     }
   }, [user, isDataLoaded, fetchData]);
   
-  const persistProfile = useCallback(async (newProfile) => {
-      if (!user) return;
-      
-      const profileToSave = {
-        ...newProfile,
-        nome_utilizador: newProfile.primeiro_nome || newProfile.nome_utilizador || '',
-      };
-
-      setProfile(profileToSave);
-      await setDoc(doc(db, 'users', user.uid), profileToSave, { merge: true });
-  }, [user]);
-
-  const persistMetas = useCallback(async (newMetas) => {
-      if (!user) return;
-      setMetas(newMetas);
-      const batch = writeBatch(db);
-      const metasRef = collection(db, 'users', user.uid, 'metas');
-      
-      const existingDocsSnapshot = await getDocs(metasRef);
-      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = newMetas.map(m => String(m.id));
-      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
-      
-      idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
-      newMetas.forEach(meta => {
-          const metaDocRef = doc(metasRef, String(meta.id));
-          const metaToSave = { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false };
-          batch.set(metaDocRef, metaToSave);
-      });
-      await batch.commit();
-  }, [user]);
-
-  const persistMissions = useCallback(async (newMissions) => {
-      if (!user || !Array.isArray(newMissions)) return;
-      setMissions(newMissions);
-      const batch = writeBatch(db);
-      const missionsRef = collection(db, 'users', user.uid, 'missions');
-
-      const existingDocsSnapshot = await getDocs(missionsRef);
-      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = newMissions.map(m => String(m.id));
-      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
-
-      idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
-      newMissions.forEach(mission => {
-          const missionDocRef = doc(missionsRef, String(mission.id));
-          batch.set(missionDocRef, mission);
-      });
-      await batch.commit();
-  }, [user]);
-  
-    const persistSkills = useCallback(async (newSkills) => {
-      if (!user || !Array.isArray(newSkills)) return;
-      setSkills(newSkills);
-      const batch = writeBatch(db);
-      const skillsRef = collection(db, 'users', user.uid, 'skills');
-
-      const existingDocsSnapshot = await getDocs(skillsRef);
-      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = newSkills.map(s => String(s.id));
-      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
-
-      idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
-      newSkills.forEach(skill => {
-          const skillDocRef = doc(skillsRef, String(skill.id));
-          batch.set(skillDocRef, skill);
-      });
-      await batch.commit();
-  }, [user]);
-
-  const persistRoutine = useCallback(async (newRoutine) => {
-      if (!user) return;
-      setRoutine(newRoutine); // Update parent state for other components
-      await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
-  }, [user]);
-  
-  const persistRoutineTemplates = useCallback(async (newTemplates) => {
-      if (!user) return;
-      setRoutineTemplates(newTemplates);
-      await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
-  }, [user]);
 
   const handleFullReset = async () => {
     if (!user) return;
@@ -522,7 +526,7 @@ export default function App() {
     };
 
     return (
-      <div key={currentPage} className="animate-in fade-in-25 duration-500">
+      <div key={currentPage} className="animate-in fade-in-50 duration-500">
         {views[currentPage] || <DashboardView profile={profile} />}
       </div>
     )
@@ -573,5 +577,3 @@ export default function App() {
     </div>
   );
 }
-
-    
