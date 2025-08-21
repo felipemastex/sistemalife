@@ -297,9 +297,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
-                 <DialogHeader className="sr-only">
+                <DialogHeader className="sr-only">
                     <DialogTitle>Assistente de Metas</DialogTitle>
-                    <DialogDescription>Um assistente para ajudar a criar uma meta SMART.</DialogDescription>
                 </DialogHeader>
                 <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
                     <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
@@ -560,8 +559,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (metaToDelete) {
             setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
             setMetas(metas.filter(m => m.id !== id));
-            // A habilidade não é removida aqui de propósito.
-            toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
+            if (metaToDelete.habilidade_associada_id) {
+                setSkills(skills.filter(s => s.id !== metaToDelete.habilidade_associada_id));
+            }
+            toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" e seus componentes foram removidos.` });
         }
     };
 
@@ -827,3 +828,5 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
+    
