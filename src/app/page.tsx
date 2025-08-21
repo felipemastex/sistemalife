@@ -85,6 +85,21 @@ export default function App() {
       onClose: () => setQuestNotification(null),
     });
   };
+
+  const handleShowSkillDecayNotification = (decayedSkillsInfo: {name: string, xpLost: number}[]) => {
+     const goals = decayedSkillsInfo.map(info => ({
+        name: `- HABILIDADE`,
+        progress: `[${info.name}] (-${info.xpLost} XP)`,
+     }));
+
+    setQuestNotification({
+      title: 'CORRUPÇÃO DETETADA',
+      description: 'A inatividade prolongada corrompeu o seu progresso. Algumas habilidades perderam XP.',
+      goals: goals,
+      caution: 'A prática constante é a chave para a maestria. Use as suas habilidades para recuperar o seu poder.',
+      onClose: () => setQuestNotification(null),
+    });
+  }
   
   useEffect(() => {
     if (!loading && !user) {
@@ -157,6 +172,7 @@ export default function App() {
     const INACTIVITY_THRESHOLD_DAYS = 14; // Days before decay starts
     const XP_DECAY_PER_DAY = 5;
     let skillsChanged = false;
+    let decayedSkillsInfo = [];
 
     const updatedSkills = currentSkills.map(skill => {
         if (!skill.ultima_atividade_em) {
@@ -171,11 +187,13 @@ export default function App() {
             const daysToDecay = Math.floor(daysSinceActivity - INACTIVITY_THRESHOLD_DAYS);
             const totalDecay = daysToDecay * XP_DECAY_PER_DAY;
             
-            // Garante que o XP não fique abaixo de 0
-            const newXp = Math.max(0, skill.xp_atual - totalDecay);
+            const originalXp = skill.xp_atual;
+            const newXp = Math.max(0, originalXp - totalDecay);
 
-            if (newXp !== skill.xp_atual) {
+            if (newXp !== originalXp) {
                 skillsChanged = true;
+                const xpLost = originalXp - newXp;
+                decayedSkillsInfo.push({ name: skill.nome, xpLost: Math.round(xpLost) });
                  // Atualize a data da última atividade para hoje para que a decadência não se acumule massivamente
                  // numa única carga se o utilizador esteve fora por muito tempo.
                 return { ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() };
@@ -185,16 +203,12 @@ export default function App() {
     });
 
     if (skillsChanged) {
-        toast({
-            variant: "destructive",
-            title: "Corrupção de Habilidade Detectada",
-            description: "Algumas das suas habilidades perderam XP devido à inatividade. Pratique-as para recuperar!",
-        });
+        handleShowSkillDecayNotification(decayedSkillsInfo);
         return updatedSkills;
     }
     
     return currentSkills;
-  }, [toast]);
+  }, []);
 
 
   const fetchData = useCallback(async (userId) => {
@@ -455,5 +469,7 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
