@@ -420,20 +420,23 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 
+                let updatedMissions = [...missions];
                 if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
-                    const updatedMissions = missions.map(mission => 
+                    updatedMissions = missions.map(mission => 
                         mission.meta_associada === metaOriginal.nome 
                         ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                         : mission
                     );
-                    setMissions(updatedMissions);
-                     // Also update skill name if it's tied to the goal name
-                    const associatedSkill = skills.find(s => s.id === newOrUpdatedMeta.habilidade_associada_id);
-                    if (associatedSkill) {
-                        const updatedSkills = skills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s);
-                        setSkills(updatedSkills);
-                    }
                 }
+                
+                let updatedSkills = [...skills];
+                const associatedSkill = skills.find(s => s.id === newOrUpdatedMeta.habilidade_associada_id);
+                if (associatedSkill && metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
+                    updatedSkills = skills.map(s => s.id === associatedSkill.id ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} : s);
+                }
+
+                setMissions(updatedMissions);
+                setSkills(updatedSkills);
                 setMetas(updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
