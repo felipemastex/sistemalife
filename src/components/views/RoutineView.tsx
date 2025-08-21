@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 
 
 export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
@@ -349,167 +350,183 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     const unscheduledMissions = getUnscheduledMissions();
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)} className="w-full sm:w-auto">
-                        <Save className="h-5 w-5 mr-2" />
-                        Salvar como Template
-                    </Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full sm:w-auto" disabled={Object.keys(routineTemplates).length === 0}>
-                               <FileDown className="h-5 w-5 mr-2" />
-                               Carregar Template
-                            </Button>
-                        </DropdownMenuTrigger>
-                         <DropdownMenuContent>
-                            {Object.keys(routineTemplates).length > 0 ? (
-                                Object.keys(routineTemplates).map(templateName => (
-                                    <AlertDialog key={templateName}>
-                                        <div className="relative flex justify-between items-center w-full">
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex-grow pr-8">
-                                                <span onClick={() => handleLoadTemplate(templateName)} className="cursor-pointer">{templateName}</span>
-                                            </DropdownMenuItem>
-                                            <AlertDialogTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-500 hover:text-red-400"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setTemplateToDelete(templateName);
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                        </div>
-                                    </AlertDialog>
-                                ))
-                            ) : (
-                                <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+        <div className="p-4 md:p-6 h-full flex flex-col">
+            <div className="flex-shrink-0">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                    <h1 className="text-3xl font-bold text-cyan-400 font-cinzel tracking-wider">Rotina Semanal</h1>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)} className="w-full sm:w-auto">
+                            <Save className="h-5 w-5 mr-2" />
+                            Salvar como Template
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full sm:w-auto" disabled={Object.keys(routineTemplates).length === 0}>
+                                <FileDown className="h-5 w-5 mr-2" />
+                                Carregar Template
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {Object.keys(routineTemplates).length > 0 ? (
+                                    Object.keys(routineTemplates).map(templateName => (
+                                        <AlertDialog key={templateName}>
+                                            <div className="relative flex justify-between items-center w-full">
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex-grow pr-8">
+                                                    <span onClick={() => handleLoadTemplate(templateName)} className="cursor-pointer">{templateName}</span>
+                                                </DropdownMenuItem>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-500 hover:text-red-400"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTemplateToDelete(templateName);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                            </div>
+                                        </AlertDialog>
+                                    ))
+                                ) : (
+                                    <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                    <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
-                        <PlusCircle className="h-5 w-5 mr-2" />
-                        Adicionar Atividade
-                    </Button>
+                        <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
+                            <PlusCircle className="h-5 w-5 mr-2" />
+                            Adicionar Atividade
+                        </Button>
+                    </div>
                 </div>
-            </div>
-             <p className="text-gray-400 mb-6">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+                <p className="text-gray-400 mb-6 max-w-4xl">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
 
-            <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
-                <ScrollArea className="w-full whitespace-nowrap">
-                    <TabsList className="inline-flex h-auto">
-                        {weekDays.map(day => (
-                           <TabsTrigger 
+                 <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <TabsList className="inline-flex h-auto bg-card/60 p-1 rounded-lg">
+                            {weekDays.map(day => (
+                            <TabsTrigger 
                                 key={day.name} 
                                 value={day.name} 
                                 className={cn(
-                                    "flex-col p-2 h-auto capitalize data-[state=active]:bg-gray-700 w-24",
-                                    day.isToday && "bg-cyan-500/20 text-cyan-300"
+                                    "flex-col p-2 h-auto capitalize data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-md w-24 text-muted-foreground",
+                                    day.isToday && "border-b-2 border-primary"
                                 )}
                             >
                                 <span>{day.name.substring(0,3)}</span>
                                 <span className="font-bold text-lg">{day.date}</span>
                             </TabsTrigger>
-                        ))}
-                    </TabsList>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-                
-                {dayNames.map(day => (
-                    <TabsContent key={day} value={day} className="mt-6 animate-in fade-in-50 duration-500">
-                        {unscheduledMissions.length > 0 && (
-                            <div className="my-8 animate-in fade-in-50 duration-500">
-                                <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
-                                <div className="space-y-4">
-                                    {unscheduledMissions.map(mission => (
-                                        <div key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                                <div className="w-full">
-                                                    <p className="font-bold text-gray-200">{mission.nome}</p>
-                                                    <p className="text-sm text-gray-400 mt-1">{mission.descricao}</p>
-                                                </div>
-                                                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto flex-shrink-0">
-                                                    <Button 
-                                                        onClick={() => handleOpenManualAdd(mission)} 
-                                                        size="sm"
-                                                        variant="secondary"
-                                                        className="w-full"
-                                                    >
-                                                        Adicionar Manualmente
-                                                        <PlusCircle className="ml-2 h-4 w-4"/>
-                                                    </Button>
-                                                    <Button 
-                                                        onClick={() => handleGetSuggestion(mission)} 
-                                                        disabled={isLoadingSuggestion === mission.id}
-                                                        size="sm"
-                                                        className="w-full"
-                                                    >
-                                                        {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                        <BrainCircuit className="ml-2 h-4 w-4"/>
-                                                    </Button>
-                                                </div>
-                                            </div>
+                            ))}
+                        </TabsList>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </Tabs>
+            </div>
+            
+            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-y-auto">
+                {/* Unscheduled Missions Column */}
+                <div className="lg:col-span-1">
+                    <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
+                     <ScrollArea className="h-[60vh] pr-4">
+                        <div className="space-y-4">
+                             {unscheduledMissions.length > 0 ? (
+                                unscheduledMissions.map(mission => (
+                                    <Card key={mission.id} className="bg-card/60">
+                                         <CardHeader>
+                                            <CardTitle className="text-base">{mission.nome}</CardTitle>
+                                            <CardDescription>{mission.descricao}</CardDescription>
+                                         </CardHeader>
+                                         <CardContent>
                                             {suggestions[mission.id] && (
-                                                <Alert className="mt-4 border-cyan-500/50 animate-in fade-in-50 duration-500">
-                                                    <Sparkles className="h-4 w-4 text-cyan-400" />
-                                                    <AlertTitle className="text-cyan-400">Sugestão do Sistema</AlertTitle>
-                                                    <AlertDescription className="text-gray-300">
+                                                <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
+                                                    <Sparkles className="h-4 w-4 text-primary" />
+                                                    <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
+                                                    <AlertDescription className="text-card-foreground">
                                                         {suggestions[mission.id].suggestionText}
                                                         <div className="flex gap-2 mt-3">
                                                             <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
-                                                            <Button size="sm" variant="outline" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                            <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
                                                         </div>
                                                     </AlertDescription>
                                                 </Alert>
                                             )}
-                                        </div>
-                                    ))}
+                                         </CardContent>
+                                         <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                             <Button 
+                                                onClick={() => handleOpenManualAdd(mission)} 
+                                                size="sm"
+                                                variant="secondary"
+                                                className="w-full"
+                                            >
+                                                Adicionar Manualmente
+                                            </Button>
+                                            <Button 
+                                                onClick={() => handleGetSuggestion(mission)} 
+                                                disabled={isLoadingSuggestion === mission.id}
+                                                size="sm"
+                                                className="w-full"
+                                            >
+                                                {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                <BrainCircuit className="ml-2 h-4 w-4"/>
+                                            </Button>
+                                         </CardFooter>
+                                    </Card>
+                                ))
+                             ) : (
+                                <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
+                                    <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
+                                    <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
                                 </div>
-                            </div>
-                        )}
+                             )}
+                        </div>
+                    </ScrollArea>
+                </div>
 
-                        <div className="border-t border-gray-700 pt-8 animate-in fade-in-50 duration-500">
-                            <h2 className="text-2xl font-bold text-cyan-400 mb-4 capitalize">Agenda de {day}</h2>
+                 {/* Daily Schedule Column */}
+                <div className="lg:col-span-2">
+                     <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
+                     <ScrollArea className="h-[60vh] pr-4">
+                        <div className="relative pl-6">
+                            {/* Timeline */}
+                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
+                            
                             <div className="space-y-3">
                                 {sortedRoutineForDay.map(item => (
-                                    <div key={item.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                                            <span className="text-cyan-400 font-mono text-lg">{item.start_time} - {item.end_time}</span>
-                                            <p className="text-lg text-gray-200 break-all">{item.activity}</p>
-                                        </div>
-                                        <div className="flex space-x-2 self-end sm:self-center">
-                                            <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400"><Edit className="h-5 w-5" /></Button>
-                                            <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-gray-400 hover:text-red-400"><Trash2 className="h-5 w-5" /></Button>
+                                    <div key={item.id} className="relative pl-6">
+                                        <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
+                                        <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                                                <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
+                                                <p className="text-base text-card-foreground break-all">{item.activity}</p>
+                                            </div>
+                                            <div className="flex space-x-1 self-end sm:self-center">
+                                                <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                                <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                                 {sortedRoutineForDay.length === 0 && (
-                                    <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-lg">
-                                        <p className="text-gray-400">Nenhuma atividade agendada para este dia.</p>
-                                        <p className="text-gray-500 text-sm">Adicione atividades para começar.</p>
+                                     <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
+                                        <p className="text-muted-foreground">Nenhuma atividade agendada para este dia.</p>
+                                        <p className="text-muted-foreground/70 text-sm">Adicione atividades para começar.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
-
-                    </TabsContent>
-                ))}
-            </Tabs>
-
+                    </ScrollArea>
+                </div>
+            </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{currentItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
                         <DialogDescription>
-                            A atividade será adicionada à agenda de <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>.
+                            A atividade será adicionada à agenda de <span className="font-bold capitalize text-primary">{selectedDay}</span>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -537,7 +554,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                     <AlertDialogHeader>
                         <AlertDialogTitle>Carregar Template de Rotina?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Isto irá substituir todas as atividades agendadas para <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>. Tem a certeza?
+                            Isto irá substituir todas as atividades agendadas para <span className="font-bold capitalize text-primary">{selectedDay}</span>. Tem a certeza?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -567,7 +584,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                     <DialogHeader>
                         <DialogTitle>Salvar Rotina como Template</DialogTitle>
                         <DialogDescription>
-                           Dê um nome ao seu template para a rotina de <span className="font-bold capitalize text-cyan-400">{selectedDay}</span>.
+                           Dê um nome ao seu template para a rotina de <span className="font-bold capitalize text-primary">{selectedDay}</span>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
