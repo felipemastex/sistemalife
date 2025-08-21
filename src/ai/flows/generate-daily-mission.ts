@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA que gera a próxima missão diária com base no progresso.
@@ -14,6 +15,7 @@ import {z} from 'genkit';
 const GenerateNextDailyMissionInputSchema = z.object({
   rankedMissionName: z.string().describe("O nome da missão épica ou ranqueada principal."),
   metaName: z.string().describe("A meta de longo prazo associada a esta missão."),
+  goalDeadline: z.string().optional().describe("A data final para a meta (prazo), no formato YYYY-MM-DD."),
   history: z.string().describe("O histórico das últimas missões diárias concluídas para dar contexto."),
   userLevel: z.number().describe("O nível atual do utilizador para ajustar a dificuldade."),
   feedback: z.string().optional().describe("Feedback do utilizador sobre a missão anterior (ex: 'muito fácil', 'muito difícil', ou um texto descritivo) para calibrar a próxima."),
@@ -49,7 +51,21 @@ const generateNextDailyMissionFlow = ai.defineFlow(
         ? `IMPORTANTE: O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isso em consideração para ajustar a dificuldade da nova missão. Se o feedback indica que foi 'muito difícil', torne a próxima missão um passo menor e mais simples. Se foi 'muito fácil', aumente ligeiramente a complexidade. Se o utilizador descreveu um problema específico, use esse contexto para criar o próximo passo.`
         : '';
 
-    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos e um mentor técnico. O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", que está ligada à sua meta de longo prazo: "${input.metaName}". ${historyPrompt} ${feedbackPrompt} 
+    let deadlinePrompt = '';
+    if (input.goalDeadline) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const deadline = new Date(input.goalDeadline);
+        const diffTime = deadline.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays >= 0) {
+            deadlinePrompt = `DIRETIVA DE PRAZO: A meta final tem um prazo. Faltam ${diffDays} dias. Se o tempo for curto (menos de 14 dias), sugira uma missão um pouco mais ambiciosa ou impactante para garantir que o objetivo seja alcançado a tempo. Se o prazo estiver confortável (mais de 30 dias), mantenha um ritmo sustentável.`;
+        }
+    }
+
+
+    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos e um mentor técnico. O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", que está ligada à sua meta de longo prazo: "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
 A sua diretiva é criar a PRÓXIMA missão diária, que deve ser o próximo passo lógico. A missão deve ser EXTREMAMENTE ESPECÍFICA e DETALHADA.
 Siga os princípios de "Hábitos Atómicos": Torne-a Óbvia, Atraente, Fácil e Satisfatória.
 

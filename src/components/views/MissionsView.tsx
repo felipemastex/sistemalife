@@ -200,7 +200,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             xp_para_proximo_nivel: Math.floor(skill.xp_para_proximo_nivel * 1.5)
         };
         
-        setSkills(currentSkills => currentSkills.map(s => s.id === skill.id ? leveledUpSkill : s));
+        const newSkills = skills.map(s => s.id === skill.id ? leveledUpSkill : s);
+        setSkills(newSkills);
         
         let toastDescription = `A sua habilidade "${skill.nome}" subiu para o nível ${leveledUpSkill.nivel_atual}!`;
 
@@ -318,6 +319,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                      const result = await generateNextDailyMission({
                         rankedMissionName: nextMission.nome,
                         metaName: meta?.nome || "Objetivo geral",
+                        goalDeadline: meta?.prazo,
                         history: history,
                         userLevel: newProfile.nivel,
                     });
@@ -353,6 +355,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
+                goalDeadline: meta?.prazo,
                 history: history || `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
                 userLevel: profile.nivel,
                 feedback: feedbackForNextMission,
@@ -445,6 +448,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const result = await generateNextDailyMission({
                 rankedMissionName: missionToReactivate.nome,
                 metaName: meta?.nome || "Objetivo geral",
+                goalDeadline: meta?.prazo,
                 history: "Esta é a primeira missão para este objetivo (reativado).",
                 userLevel: profile.nivel,
             });
@@ -721,7 +725,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                              </AccordionTrigger>
                              <AccordionContent className="px-4 pb-4 space-y-4">
                                 {completedMissions.map(mission => (
-                                     <div key={mission.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70">
+                                     <div key={mission.id} className={`bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70`}>
                                          <div className="flex-grow">
                                              <p className="font-bold text-gray-300 line-through">{mission.nome}</p>
                                              <p className="text-sm text-gray-500 mt-1">{mission.descricao}</p>
