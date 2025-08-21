@@ -551,19 +551,17 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                           <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
-                                <div className="flex-1 w-full">
-                                    <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">
-                                        <div className="flex-1 text-left min-w-0">
-                                            <p className="text-lg font-bold text-gray-200 break-words">{mission.nome}</p>
-                                            <p className="text-sm text-gray-400 mt-1 break-words">{mission.descricao}</p>
-                                            <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
-                                                 <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
-                                            </div>
+                           <div className="flex items-center p-4">
+                                <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">
+                                    <div className="flex-1 text-left min-w-0">
+                                        <p className="text-lg font-bold text-gray-200 break-words">{mission.nome}</p>
+                                        <p className="text-sm text-gray-400 mt-1 break-words">{mission.descricao}</p>
+                                        <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
+                                             <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
                                         </div>
-                                    </AccordionTrigger>
-                                </div>
-                                <div className="flex items-center space-x-2 self-start sm:self-center flex-shrink-0">
+                                    </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center space-x-2 self-start flex-shrink-0 ml-4">
                                      {onCooldown && (
                                         <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
