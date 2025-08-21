@@ -551,7 +551,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
-                           <div className="flex items-center p-4">
+                           <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
                                 <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">
                                     <div className="flex-1 text-left min-w-0">
                                         <p className="text-lg font-bold text-gray-200 break-words">{mission.nome}</p>
@@ -561,7 +561,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <div className="flex items-center space-x-2 self-start flex-shrink-0 ml-4">
+                                <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
                                      {onCooldown && (
                                         <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
@@ -590,7 +590,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                 <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
                                                 <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
                                             </div>
-                                            <div className="text-right ml-4 flex-shrink-0 flex items-center gap-2">
+                                            <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                                                 <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
