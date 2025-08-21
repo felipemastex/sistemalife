@@ -4,9 +4,10 @@
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from '../ui/button';
 
 
-export const DashboardView = ({ profile }) => {
+export const DashboardView = ({ profile, onTestNotification }) => {
   const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
@@ -83,6 +84,10 @@ export const DashboardView = ({ profile }) => {
                     <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground">RANK {profileRank.rank}</p>
                  </div>
             </div>
+
+            <Button onClick={onTestNotification} variant="outline" className="w-full">
+              Testar Notificação
+            </Button>
             
             <hr className="border-border/50" />
             

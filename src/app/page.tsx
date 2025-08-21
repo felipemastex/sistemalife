@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
 
 
 export default function App() {
@@ -36,6 +37,23 @@ export default function App() {
   const [routine, setRoutine] = useState({});
   const [routineTemplates, setRoutineTemplates] = useState({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
+
+  const showTestNotification = () => {
+    setQuestNotification({
+      title: 'QUEST INFO',
+      description: 'DAILY QUEST - TRAIN TO BECOME A FORMIDABLE COMBATANT',
+      goals: [
+        { name: '-PUSH-UPS', progress: '[0/100]' },
+        { name: '-SIT-UPS', progress: '[0/100]' },
+        { name: '-SQUATS', progress: '[0/100]' },
+        { name: '-RUN', progress: '[0/10KM]' },
+      ],
+      caution: 'IF THE DAILY QUEST REMAINS INCOMPLETE, PENALTIES WILL BE GIVEN ACCORDINGLY.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
   
   useEffect(() => {
     if (!loading && !user) {
@@ -345,7 +363,7 @@ export default function App() {
     }
     
     const views = {
-      'dashboard': <DashboardView profile={profile} />,
+      'dashboard': <DashboardView profile={profile} onTestNotification={showTestNotification} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
       'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
@@ -356,7 +374,7 @@ export default function App() {
 
     return (
       <div key={currentPage} className="animate-in fade-in-25 duration-500">
-        {views[currentPage] || <DashboardView profile={profile} />}
+        {views[currentPage] || <DashboardView profile={profile} onTestNotification={showTestNotification} />}
       </div>
     )
   };
@@ -401,13 +419,8 @@ export default function App() {
             </header>
           )}
         {renderContent()}
+        {questNotification && <QuestInfoDialog {...questNotification} />}
       </main>
     </div>
   );
 }
-
-    
-
-    
-
-    
