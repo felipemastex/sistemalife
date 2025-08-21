@@ -2,8 +2,9 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogContent as OriginalDialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertCircle, Clock, X } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 export interface QuestInfoProps {
   title: string;
@@ -17,8 +18,13 @@ const CustomDialogContent = React.forwardRef<
   React.ElementRef<typeof OriginalDialogContent>,
   React.ComponentPropsWithoutRef<typeof OriginalDialogContent> & { showCloseButton?: boolean }
 >(({ children, className, showCloseButton = true, ...props }, ref) => {
+    const customProps = {...props};
+    if(showCloseButton === false) {
+        // this is a custom prop, so we need to remove it before passing to the DOM element
+        delete customProps.showCloseButton;
+    }
   return (
-    <OriginalDialogContent ref={ref} className={className} {...props}>
+    <OriginalDialogContent ref={ref} className={className} {...customProps}>
       {children}
       {!showCloseButton && (
         <button onClick={() => {
@@ -61,8 +67,11 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-cyan-400/20 pb-3 mb-4">
             <AlertCircle className="h-6 w-6 text-cyan-400" />
-            <h2 className="text-xl font-bold tracking-widest uppercase text-cyan-400 font-cinzel">{title}</h2>
+            <DialogTitle asChild>
+                <h2 className="text-xl font-bold tracking-widest uppercase text-cyan-400 font-cinzel">{title}</h2>
+            </DialogTitle>
           </div>
+            <DialogDescription className="sr-only">{description}</DialogDescription>
 
           {/* Body */}
           <div className="space-y-6 text-center">
