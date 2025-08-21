@@ -320,16 +320,17 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                             {Object.keys(routineTemplates).map(templateName => (
                                 <DropdownMenuItem key={templateName} onSelect={(e) => e.preventDefault()} className="flex justify-between items-center pr-2">
                                     <span onClick={() => handleLoadTemplate(templateName)} className="flex-grow">{templateName}</span>
-                                     <AlertDialogTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-gray-500 hover:text-red-400"
-                                            onClick={(e) => { e.stopPropagation(); setTemplateToDelete(templateName); }}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 text-gray-500 hover:text-red-400"
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            setTemplateToDelete(templateName); 
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </DropdownMenuItem>
                             ))}
                              {Object.keys(routineTemplates).length === 0 && (
