@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA que transforma uma meta simples numa meta SMART completa.
@@ -47,6 +48,7 @@ Meta do Utilizador: "{{goalName}}"
 
 Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíveis, relevantes e com prazo para a meta.
 IMPORTANTE: O campo 'name' na resposta DEVE ser exatamente igual à "Meta do Utilizador" fornecida. Não modifique o nome.
+Para o campo 'timeBound', defina um prazo realista e futuro (ex: "nos próximos 3 meses", "até ao final do ano fiscal atual"). Não use uma data específica com ano, como "até 31/12/2024".
 
 Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
 `,
