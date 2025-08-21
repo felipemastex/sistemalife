@@ -118,15 +118,18 @@ export default function App() {
     });
   };
   
-  const handleShowDailyBriefingNotification = (mission) => {
+  const handleShowDailyBriefingNotification = (briefingMissions) => {
+    if (!briefingMissions || briefingMissions.length === 0) return;
+
+    const goals = briefingMissions.map(mission => ({
+        name: `- [${mission.epicMissionName}]`,
+        progress: mission.nome,
+    }));
+    
     setQuestNotification({
       title: 'BRIEFING DIÁRIO',
-      description: 'Sistema online. O seu objetivo principal para hoje foi identificado. Concentre os seus esforços nesta missão.',
-      goals: [
-        { name: `- MISSÃO`, progress: `[${mission.nome}]` },
-        { name: `- DESCRIÇÃO`, progress: `[${mission.descricao}]` },
-        { name: `- RECOMPENSA`, progress: `[${mission.xp_conclusao} XP]` },
-      ],
+      description: 'Sistema online. Os seus objetivos para hoje foram identificados. Concentre os seus esforços nestas missões.',
+      goals,
       caution: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.',
       onClose: () => setQuestNotification(null),
     });
@@ -252,35 +255,39 @@ export default function App() {
     const lastLoginDay = lastLogin.toDateString();
 
     if (today !== lastLoginDay) {
-      // It's a new day, show briefing
-      const visibleEpicMissions = [];
-      const missionsByGoal = missionsData.reduce((acc, mission) => {
-          if (!acc[mission.meta_associada]) {
-              acc[mission.meta_associada] = [];
-          }
-          acc[mission.meta_associada].push(mission);
-          return acc;
-      }, {});
+        // It's a new day, show briefing
+        const briefingMissions = [];
+        const missionsByGoal = missionsData.reduce((acc, mission) => {
+            if (!acc[mission.meta_associada]) {
+                acc[mission.meta_associada] = [];
+            }
+            acc[mission.meta_associada].push(mission);
+            return acc;
+        }, {});
 
-      for (const goalName in missionsByGoal) {
-          const goalMissions = missionsByGoal[goalName]
-              .filter(m => !m.concluido)
-              .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+        for (const goalName in missionsByGoal) {
+            const goalMissions = missionsByGoal[goalName]
+                .filter(m => !m.concluido)
+                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
 
-          if (goalMissions.length > 0) {
-              visibleEpicMissions.push(goalMissions[0]);
-          }
-      }
-      const sortedVisibleMissions = visibleEpicMissions.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
-      const firstActiveEpicMission = sortedVisibleMissions[0];
-      const briefingMission = firstActiveEpicMission?.missoes_diarias?.find(dm => !dm.concluido);
+            if (goalMissions.length > 0) {
+                const firstActiveEpicMission = goalMissions[0];
+                const activeDailyMission = firstActiveEpicMission.missoes_diarias?.find(dm => !dm.concluido);
+                if (activeDailyMission) {
+                    briefingMissions.push({
+                        ...activeDailyMission,
+                        epicMissionName: firstActiveEpicMission.nome, // Add epic mission name for context
+                    });
+                }
+            }
+        }
+        
+        if (briefingMissions.length > 0) {
+            handleShowDailyBriefingNotification(briefingMissions);
+        }
 
-      if (briefingMission) {
-        handleShowDailyBriefingNotification(briefingMission);
-      }
-      
-      // Update last login time in profile
-      return true; // Indicates that profile needs update
+        // Update last login time in profile
+        return true; // Indicates that profile needs update
     }
     return false; // No update needed
   }, []);
@@ -554,3 +561,5 @@ export default function App() {
     </div>
   );
 }
+
+    
