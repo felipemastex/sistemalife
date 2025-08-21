@@ -236,25 +236,8 @@ export default function App() {
     setIsDataLoaded(false);
 
     try {
-        const userDocRef = doc(db, 'users', user.uid);
-
-        const collectionsToDelete = ['metas', 'missions', 'skills'];
-        for (const collName of collectionsToDelete) {
-            const subcollectionRef = collection(userDocRef, collName);
-            const snapshot = await getDocs(subcollectionRef);
-            const deleteBatch = writeBatch(db);
-            snapshot.docs.forEach(docToDelete => deleteBatch.delete(docToDelete.ref));
-            await deleteBatch.commit();
-        }
-        
-        await deleteDoc(doc(userDocRef, 'routine', 'main')).catch(e => console.log("Rotina principal não encontrada, a ignorar."));
-        await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Templates de rotina não encontrados, a ignorar."));
-
-        await deleteDoc(userDocRef);
-        
-        toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa. A reconfigurar para o estado inicial." });
-        
         await setupInitialData(user.uid, user.email);
+        
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
@@ -314,7 +297,7 @@ export default function App() {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
       'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} missions={missions} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile}/>,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
