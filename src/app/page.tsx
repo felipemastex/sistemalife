@@ -40,17 +40,16 @@ export default function App() {
 
   const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
 
-  const showTestNotification = () => {
+  const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
     setQuestNotification({
-      title: 'QUEST INFO',
-      description: 'DAILY QUEST - TRAIN TO BECOME A FORMIDABLE COMBATANT',
+      title: 'NÍVEL AUMENTADO!',
+      description: 'O seu esforço foi recompensado. Você alcançou um novo patamar de poder.',
       goals: [
-        { name: '-PUSH-UPS', progress: '[0/100]' },
-        { name: '-SIT-UPS', progress: '[0/100]' },
-        { name: '-SQUATS', progress: '[0/100]' },
-        { name: '-RUN', progress: '[0/10KM]' },
+        { name: '- NOVO NÍVEL', progress: `[${newLevel}]` },
+        { name: '- NOVO TÍTULO', progress: `[${newTitle}]` },
+        { name: '- NOVO RANK', progress: `[${newRank}]` },
       ],
-      caution: 'IF THE DAILY QUEST REMAINS INCOMPLETE, PENALTIES WILL BE GIVEN ACCORDINGLY.',
+      caution: 'Continue a sua jornada para desbloquear todo o seu potencial.',
       onClose: () => setQuestNotification(null),
     });
   };
@@ -363,9 +362,9 @@ export default function App() {
     }
     
     const views = {
-      'dashboard': <DashboardView profile={profile} onTestNotification={showTestNotification} />,
+      'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
@@ -374,7 +373,7 @@ export default function App() {
 
     return (
       <div key={currentPage} className="animate-in fade-in-25 duration-500">
-        {views[currentPage] || <DashboardView profile={profile} onTestNotification={showTestNotification} />}
+        {views[currentPage] || <DashboardView profile={profile} />}
       </div>
     )
   };

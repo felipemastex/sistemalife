@@ -70,7 +70,19 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     );
 }
 
-export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills }) => {
+const getProfileRank = (level) => {
+    if (level <= 5) return { rank: 'F', title: 'Novato' };
+    if (level <= 10) return { rank: 'E', title: 'Iniciante' };
+    if (level <= 20) return { rank: 'D', title: 'Adepto' };
+    if (level <= 30) return { rank: 'C', title: 'Experiente' };
+    if (level <= 40) return { rank: 'B', 'title': 'Perito' };
+    if (level <= 50) return { rank: 'A', title: 'Mestre' };
+    if (level <= 70) return { rank: 'S', title: 'Grão-Mestre' };
+    if (level <= 90) return { rank: 'SS', title: 'Herói' };
+    return { rank: 'SSS', title: 'Lendário' };
+};
+
+export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -147,6 +159,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const newLevel = currentProfile.nivel + 1;
         const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel + 25);
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
+        
+        const { rank, title } = getProfileRank(newLevel);
+        onLevelUpNotification(newLevel, title, rank);
         
         return {
             ...currentProfile,
@@ -272,7 +287,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         let newProfile = { ...profile, xp: profile.xp + xpGained };
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
-            toast({ title: "Nível Aumentado!", description: `Você alcançou o Nível ${newProfile.nivel}!` });
         }
         setProfile(newProfile);
 
@@ -790,5 +804,3 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
-
-    
