@@ -426,11 +426,11 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                 </Tabs>
             </div>
             
-            <div className="flex-grow mt-6 flex flex-col lg:flex-row gap-6 overflow-y-auto">
+            <div className="flex-grow mt-6 flex flex-col lg:flex-row gap-8 overflow-y-auto">
                 {/* Unscheduled Missions Column */}
-                <div className="lg:w-1/3 lg:max-w-sm flex-shrink-0 animate-in fade-in-50 duration-500">
+                <div className="flex flex-col lg:basis-1/3 lg:shrink-0 animate-in fade-in-50 duration-500">
                     <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
-                     <ScrollArea className="h-[calc(100vh-380px)] pr-4">
+                     <ScrollArea className="h-full pr-4 -mr-4">
                         <div className="space-y-4">
                              {unscheduledMissions.length > 0 ? (
                                 unscheduledMissions.map(mission => (
@@ -486,9 +486,9 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                 </div>
 
                  {/* Daily Schedule Column */}
-                <div className="flex-1 animate-in fade-in-50 duration-700">
+                <div className="flex flex-col flex-1 min-w-0 animate-in fade-in-50 duration-700">
                      <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
-                     <ScrollArea className="h-[calc(100vh-380px)] pr-4">
+                     <ScrollArea className="h-full pr-4 -mr-4">
                         <div className="relative pl-6">
                             {/* Timeline */}
                             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
@@ -605,5 +605,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         </div>
     );
 };
+
+    
 
     
