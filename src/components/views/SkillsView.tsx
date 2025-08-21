@@ -278,5 +278,3 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         </div>
     );
 };
-
-    

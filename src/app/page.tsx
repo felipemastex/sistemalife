@@ -99,7 +99,22 @@ export default function App() {
       caution: 'A prática constante é a chave para a maestria. Use as suas habilidades para recuperar o seu poder.',
       onClose: () => setQuestNotification(null),
     });
-  }
+  };
+
+  const handleShowSkillAtRiskNotification = (atRiskSkills: {name: string, daysInactive: number}[]) => {
+    const goals = atRiskSkills.map(info => ({
+        name: `- HABILIDADE`,
+        progress: `[${info.name}] (${info.daysInactive} dias inativa)`,
+    }));
+
+    setQuestNotification({
+      title: 'ALERTA DO SISTEMA',
+      description: 'Atenção, Caçador. As seguintes habilidades estão em risco de corrupção por falta de uso.',
+      goals: goals,
+      caution: 'Pratique estas habilidades em breve para evitar a perda de progresso.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
   
   useEffect(() => {
     if (!loading && !user) {
@@ -167,16 +182,17 @@ export default function App() {
       toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
   };
   
-  const handleSkillDecay = useCallback((currentSkills) => {
+  const checkSkillStatus = useCallback((currentSkills) => {
     const now = new Date();
-    const INACTIVITY_THRESHOLD_DAYS = 14; // Days before decay starts
+    const INACTIVITY_THRESHOLD_DAYS = 14;
+    const AT_RISK_THRESHOLD_DAYS = 7;
     const XP_DECAY_PER_DAY = 5;
     let skillsChanged = false;
     let decayedSkillsInfo = [];
+    let atRiskSkillsInfo = [];
 
     const updatedSkills = currentSkills.map(skill => {
         if (!skill.ultima_atividade_em) {
-            // Se não houver data de atividade, defina-a como agora para evitar decadência imediata
             return { ...skill, ultima_atividade_em: now.toISOString() };
         }
 
@@ -194,20 +210,21 @@ export default function App() {
                 skillsChanged = true;
                 const xpLost = originalXp - newXp;
                 decayedSkillsInfo.push({ name: skill.nome, xpLost: Math.round(xpLost) });
-                 // Atualize a data da última atividade para hoje para que a decadência não se acumule massivamente
-                 // numa única carga se o utilizador esteve fora por muito tempo.
                 return { ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() };
             }
+        } else if (daysSinceActivity > AT_RISK_THRESHOLD_DAYS) {
+            atRiskSkillsInfo.push({ name: skill.nome, daysInactive: Math.floor(daysSinceActivity) });
         }
         return skill;
     });
 
-    if (skillsChanged) {
+    if (decayedSkillsInfo.length > 0) {
         handleShowSkillDecayNotification(decayedSkillsInfo);
-        return updatedSkills;
+    } else if (atRiskSkillsInfo.length > 0) {
+        handleShowSkillAtRiskNotification(atRiskSkillsInfo);
     }
     
-    return currentSkills;
+    return { updatedSkills, skillsChanged };
   }, []);
 
 
@@ -232,10 +249,11 @@ export default function App() {
 
               const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
               const fetchedSkills = skillsSnapshot.docs.map(doc => ({ ...doc.data() }));
-              const decayedSkills = handleSkillDecay(fetchedSkills);
-              setSkills(decayedSkills);
-              if (JSON.stringify(fetchedSkills) !== JSON.stringify(decayedSkills)) {
-                  persistSkills(decayedSkills); // Save decayed state back to DB
+              
+              const { updatedSkills, skillsChanged } = checkSkillStatus(fetchedSkills);
+              setSkills(updatedSkills);
+              if (skillsChanged) {
+                  persistSkills(updatedSkills); // Save decayed state back to DB
               }
 
 
@@ -255,7 +273,7 @@ export default function App() {
       } finally {
           setIsDataLoaded(true);
       }
-  }, [user, toast, handleSkillDecay]);
+  }, [user, toast, checkSkillStatus]);
 
   useEffect(() => {
     if (user && !isDataLoaded) {
@@ -411,7 +429,7 @@ export default function App() {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
       'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} missions={missions} setMissions={setMissions} profile={profile} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
