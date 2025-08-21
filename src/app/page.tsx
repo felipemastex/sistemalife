@@ -102,52 +102,51 @@ export default function App() {
       toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
   };
 
+  const fetchData = useCallback(async (userId) => {
+      try {
+          const userDocRef = doc(db, 'users', userId);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+              const profileData = userDoc.data();
+              if (profileData.nome_utilizador && !profileData.primeiro_nome) {
+                  profileData.primeiro_nome = profileData.nome_utilizador;
+                  profileData.apelido = "Caçador";
+              }
+              setProfile(profileData);
+
+              const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
+              setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
+              
+              const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
+              setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
+
+              const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
+              setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
+
+              const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
+              setRoutine(routineDoc.exists() ? routineDoc.data() : {});
+              
+              const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
+              setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
+
+          } else {
+              console.log("Utilizador novo. A configurar dados iniciais...");
+              await setupInitialData(user.uid, user.email);
+          }
+      } catch (error) {
+          console.error("Erro a carregar dados do Firestore:", error);
+          toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
+      } finally {
+          setIsDataLoaded(true);
+      }
+  }, [user, toast]);
+
   useEffect(() => {
-    const fetchData = async (userId) => {
-        try {
-            const userDocRef = doc(db, 'users', userId);
-            const userDoc = await getDoc(userDocRef);
-            
-            if (userDoc.exists()) {
-                const profileData = userDoc.data();
-                // Ensure legacy `nome_utilizador` is handled
-                if (profileData.nome_utilizador && !profileData.primeiro_nome) {
-                    profileData.primeiro_nome = profileData.nome_utilizador;
-                    profileData.apelido = "Caçador";
-                }
-                setProfile(profileData);
-
-                const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
-                setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
-                
-                const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
-                setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
-
-                const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
-                setSkills(skillsSnapshot.docs.map(doc => ({ ...doc.data() })));
-
-                const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
-                setRoutine(routineDoc.exists() ? routineDoc.data() : {});
-                
-                const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
-                setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
-
-            } else {
-                console.log("Utilizador novo. A configurar dados iniciais...");
-                await setupInitialData(user.uid, user.email);
-            }
-        } catch (error) {
-            console.error("Erro a carregar dados do Firestore:", error);
-            toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
-        } finally {
-            setIsDataLoaded(true);
-        }
-    };
-    
     if (user && !isDataLoaded) {
       fetchData(user.uid);
     }
-  }, [user, isDataLoaded, toast]);
+  }, [user, isDataLoaded, fetchData]);
   
   const persistProfile = useCallback(async (newProfile) => {
       if (!user) return;
@@ -182,41 +181,43 @@ export default function App() {
 
   const persistMissions = useCallback(async (newMissions) => {
       if (!user) return;
-      setMissions(newMissions);
+      const currentMissions = Array.isArray(newMissions) ? newMissions : missions;
+      setMissions(currentMissions);
       const batch = writeBatch(db);
       const missionsRef = collection(db, 'users', user.uid, 'missions');
 
       const existingDocsSnapshot = await getDocs(missionsRef);
       const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = newMissions.map(m => String(m.id));
+      const newIds = currentMissions.map(m => String(m.id));
       const idsToDelete = existingIds.filter(id => !newIds.includes(id));
 
       idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
-      newMissions.forEach(mission => {
+      currentMissions.forEach(mission => {
           const missionDocRef = doc(missionsRef, String(mission.id));
           batch.set(missionDocRef, mission);
       });
       await batch.commit();
-  }, [user]);
+  }, [user, missions]);
   
     const persistSkills = useCallback(async (newSkills) => {
       if (!user) return;
-      setSkills(newSkills);
+      const skillsToPersist = typeof newSkills === 'function' ? newSkills(skills) : newSkills;
+      setSkills(skillsToPersist);
       const batch = writeBatch(db);
       const skillsRef = collection(db, 'users', user.uid, 'skills');
 
       const existingDocsSnapshot = await getDocs(skillsRef);
       const existingIds = existingDocsSnapshot.docs.map(d => d.id);
-      const newIds = newSkills.map(s => String(s.id));
+      const newIds = skillsToPersist.map(s => String(s.id));
       const idsToDelete = existingIds.filter(id => !newIds.includes(id));
 
       idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
-      newSkills.forEach(skill => {
+      skillsToPersist.forEach(skill => {
           const skillDocRef = doc(skillsRef, String(skill.id));
           batch.set(skillDocRef, skill);
       });
       await batch.commit();
-  }, [user]);
+  }, [user, skills]);
 
   const persistRoutine = useCallback(async (newRoutine) => {
       if (!user) return;
@@ -237,7 +238,7 @@ export default function App() {
     try {
         const userDocRef = doc(db, 'users', user.uid);
 
-        const collectionsToDelete = ['metas', 'missions', 'skills', 'routine'];
+        const collectionsToDelete = ['metas', 'missions', 'skills'];
         for (const collName of collectionsToDelete) {
             const subcollectionRef = collection(userDocRef, collName);
             const snapshot = await getDocs(subcollectionRef);
@@ -250,13 +251,14 @@ export default function App() {
         await deleteDoc(doc(userDocRef, 'routine', 'templates')).catch(e => console.log("Templates de rotina não encontrados, a ignorar."));
 
         await deleteDoc(userDocRef);
-
+        
         toast({ title: "Sistema Resetado!", description: "A sua conta foi limpa. A reconfigurar para o estado inicial." });
         
-        // Let the useEffect handle the data setup by re-triggering it.
+        await setupInitialData(user.uid, user.email);
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
         toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
+    } finally {
         setIsDataLoaded(true);
     }
   };
