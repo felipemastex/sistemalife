@@ -79,7 +79,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         }
         
         setIsLoading(true);
-        const selectedMeta = metas.find(m => m.id === selectedMetaId);
+        const selectedMeta = metas.find(m => m.id === Number(selectedMetaId));
 
         try {
             const skillResult = await generateSkillFromGoal({
@@ -105,7 +105,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
             await setSkills([...skills, newSkill]);
             
             const updatedMetas = metas.map(meta => 
-                meta.id === selectedMetaId 
+                meta.id === Number(selectedMetaId)
                 ? { ...meta, habilidade_associada_id: newSkillId }
                 : meta
             );
@@ -223,14 +223,14 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <Label htmlFor="meta-select">Meta a Vincular</Label>
-                        <Select onValueChange={setSelectedMetaId} value={selectedMetaId}>
+                        <Select onValueChange={setSelectedMetaId} value={selectedMetaId || undefined}>
                             <SelectTrigger id="meta-select" className="w-full">
                                 <SelectValue placeholder="Selecione uma meta..." />
                             </SelectTrigger>
                             <SelectContent>
                                 {metasWithoutSkills.length > 0 ? (
                                     metasWithoutSkills.map(meta => (
-                                        <SelectItem key={meta.id} value={meta.id}>{meta.nome}</SelectItem>
+                                        <SelectItem key={meta.id} value={String(meta.id)}>{meta.nome}</SelectItem>
                                     ))
                                 ) : (
                                     <SelectItem value="none" disabled>Nenhuma meta disponível para vincular.</SelectItem>
@@ -250,5 +250,3 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         </div>
     );
 };
-
-    
