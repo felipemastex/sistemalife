@@ -20,7 +20,6 @@ const CustomDialogContent = React.forwardRef<
 >(({ children, className, showCloseButton = true, ...props }, ref) => {
     const customProps = {...props};
     if(showCloseButton === false) {
-        // this is a custom prop, so we need to remove it before passing to the DOM element
         delete customProps.showCloseButton;
     }
   return (
@@ -44,8 +43,6 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
   
   React.useEffect(() => {
     const handleClose = () => onClose();
-    // Since we can't easily stop propagation from the original close button,
-    // we use a custom event system as a workaround.
     document.addEventListener('close-dialog', handleClose);
     return () => {
       document.removeEventListener('close-dialog', handleClose);
@@ -80,9 +77,9 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
             <div className="space-y-2 text-left w-full max-w-sm mx-auto">
                 <h3 className="text-center font-bold text-green-400 text-md tracking-wider mb-2">GOALS</h3>
                 {goals.map((goal, index) => (
-                    <div key={index} className="flex justify-between items-center font-mono text-gray-300 text-sm">
-                        <span>{goal.name}</span>
-                        <span>{goal.progress}</span>
+                    <div key={index} className="flex justify-between items-start gap-4 font-mono text-gray-300 text-sm">
+                        <span className="break-words whitespace-pre-wrap">{goal.name}</span>
+                        <span className="text-right break-words whitespace-pre-wrap">{goal.progress}</span>
                     </div>
                 ))}
             </div>
