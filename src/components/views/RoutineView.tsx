@@ -349,7 +349,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
     const unscheduledMissions = getUnscheduledMissions();
 
     return (
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 h-full overflow-y-auto">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <h1 className="text-3xl font-bold text-cyan-400">Rotina Semanal</h1>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -423,9 +423,9 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                 </ScrollArea>
                 
                 {dayNames.map(day => (
-                    <TabsContent key={day} value={day} className="mt-6">
+                    <TabsContent key={day} value={day} className="mt-6 animate-in fade-in-50 duration-500">
                         {unscheduledMissions.length > 0 && (
-                            <div className="my-8">
+                            <div className="my-8 animate-in fade-in-50 duration-500">
                                 <h2 className="text-2xl font-bold text-cyan-400 mb-4">Missões por Agendar</h2>
                                 <div className="space-y-4">
                                     {unscheduledMissions.map(mission => (
@@ -457,7 +457,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                                 </div>
                                             </div>
                                             {suggestions[mission.id] && (
-                                                <Alert className="mt-4 border-cyan-500/50">
+                                                <Alert className="mt-4 border-cyan-500/50 animate-in fade-in-50 duration-500">
                                                     <Sparkles className="h-4 w-4 text-cyan-400" />
                                                     <AlertTitle className="text-cyan-400">Sugestão do Sistema</AlertTitle>
                                                     <AlertDescription className="text-gray-300">
@@ -475,7 +475,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                             </div>
                         )}
 
-                        <div className="border-t border-gray-700 pt-8">
+                        <div className="border-t border-gray-700 pt-8 animate-in fade-in-50 duration-500">
                             <h2 className="text-2xl font-bold text-cyan-400 mb-4 capitalize">Agenda de {day}</h2>
                             <div className="space-y-3">
                                 {sortedRoutineForDay.map(item => (
