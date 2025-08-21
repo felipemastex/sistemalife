@@ -134,6 +134,18 @@ export default function App() {
       onClose: () => setQuestNotification(null),
     });
   };
+
+  const handleShowGoalCompletedNotification = (goalName: string) => {
+    setQuestNotification({
+      title: 'META CONCLUÍDA!',
+      description: 'Parabéns, Caçador! Você completou um dos seus maiores objetivos. O seu nome será lembrado.',
+      goals: [
+        { name: '- CONQUISTA', progress: `[${goalName}]` },
+      ],
+      caution: 'Um novo horizonte de desafios aguarda. Use esta vitória como combustível para a sua próxima jornada.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
   
   useEffect(() => {
     if (!loading && !user) {
@@ -163,7 +175,7 @@ export default function App() {
       const metasRef = collection(db, 'users', userId, 'metas');
       mockData.metas.forEach(meta => {
           const metaDocRef = doc(metasRef, String(meta.id));
-          const metaToSave = { ...meta, prazo: meta.prazo || null };
+          const metaToSave = { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false };
           batch.set(metaDocRef, metaToSave);
       });
 
@@ -193,7 +205,7 @@ export default function App() {
 
       // Manually set the state after committing the batch
       setProfile(initialProfile);
-      setMetas(mockData.metas.map(m => ({ ...m, prazo: m.prazo || null })));
+      setMetas(mockData.metas.map(m => ({ ...m, prazo: m.prazo || null, concluida: m.concluida || false })));
       setMissions(mockData.missoes);
       setSkills(mockData.habilidades);
       setRoutine(mockData.rotina);
@@ -381,7 +393,7 @@ export default function App() {
       idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
       newMetas.forEach(meta => {
           const metaDocRef = doc(metasRef, String(meta.id));
-          const metaToSave = { ...meta, prazo: meta.prazo || null };
+          const metaToSave = { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false };
           batch.set(metaDocRef, metaToSave);
       });
       await batch.commit();
@@ -502,7 +514,7 @@ export default function App() {
     const views = {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={persistMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,

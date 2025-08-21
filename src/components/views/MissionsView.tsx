@@ -82,7 +82,7 @@ const getProfileRank = (level) => {
     return { rank: 'SSS', title: 'Lendário' };
 };
 
-export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification }) => {
+export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, setMetas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -315,7 +315,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         if (isRankedMissionComplete) {
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
             
-            // Unlock first daily mission of the next ranked mission in the same goal
             const goalMissions = missions
                 .filter(m => m.meta_associada === rankedMission.meta_associada)
                 .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
@@ -352,6 +351,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     } catch (error) {
                         handleToastError(error, "Não foi possível gerar a primeira missão da próxima etapa.");
                     }
+                }
+            } else {
+                // This was the last epic mission for this goal, so the goal is complete.
+                const completedGoal = metas.find(m => m.nome === rankedMission.meta_associada);
+                if (completedGoal) {
+                    setMetas(currentMetas => currentMetas.map(m => m.id === completedGoal.id ? {...m, concluida: true} : m));
+                    onGoalCompletedNotification(completedGoal.nome);
                 }
             }
             

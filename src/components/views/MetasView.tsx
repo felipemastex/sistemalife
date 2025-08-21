@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Progress } from '../ui/progress';
 
 
 const statIcons = {
@@ -46,6 +47,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 nome: metaToEdit.nome || '',
                 categoria: metaToEdit.categoria || '',
                 prazo: metaToEdit.prazo || null,
+                concluida: metaToEdit.concluida || false,
                 detalhes_smart: {
                     specific: metaToEdit.detalhes_smart?.specific || '',
                     measurable: metaToEdit.detalhes_smart?.measurable || '',
@@ -61,6 +63,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
             nome: initialGoalName,
             categoria: '',
             prazo: null,
+            concluida: false,
             detalhes_smart: {
                 specific: '',
                 measurable: '',
@@ -182,6 +185,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 prazo: null,
+                concluida: false,
                 detalhes_smart: {
                     specific: finalGoalDetails.specific,
                     measurable: finalGoalDetails.measurable,
@@ -202,6 +206,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
                 prazo: null,
+                concluida: false,
                 detalhes_smart: finalGoalDetails,
                 habilidade_associada_id: metaToEdit?.habilidade_associada_id,
                 user_id: profile.id,
@@ -342,7 +347,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         setSuggestions([]);
 
         try {
-            const completedGoals = metas.filter(m => missions.some(miss => miss.meta_associada === m.nome && miss.concluido));
+            const completedGoals = metas.filter(m => m.concluida);
             const result = await generateGoalSuggestion({
                 profile: JSON.stringify(profile),
                 skills: JSON.stringify(skills),
@@ -447,8 +452,6 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         nivel_maximo: 10,
                         xp_atual: 0,
                         xp_para_proximo_nivel: 50,
-                        pre_requisito: null,
-                        nivel_minimo_para_desbloqueio: null,
                     };
                 } catch (skillError) {
                     handleToastError(skillError, 'Não foi possível gerar uma habilidade. A usar uma habilidade padrão.');
@@ -464,7 +467,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                     };
                 }
                 
-                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), user_id: profile.id, habilidade_associada_id: newSkillId };
+                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), concluida: false, user_id: profile.id, habilidade_associada_id: newSkillId };
                 
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
@@ -542,6 +545,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 nome: refinedGoal.name,
                 categoria: 'Desenvolvimento Pessoal', // Default category
                 prazo: null,
+                concluida: false,
                 detalhes_smart: refinedGoal,
                 user_id: profile.id
             });
@@ -632,6 +636,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         }
     };
 
+    const sortedMetas = [...metas].sort((a, b) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
         <div className="p-4 md:p-6">
@@ -650,17 +655,29 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             </div>
             <p className="text-gray-400 mb-6">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             <Accordion type="multiple" className="space-y-4">
-                {metas.map(meta => {
+                {sortedMetas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];
+                    const relatedMissions = missions.filter(m => m.meta_associada === meta.nome);
+                    const completedMissionsCount = relatedMissions.filter(m => m.concluido).length;
+                    const totalMissionsCount = relatedMissions.length;
+                    const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
                     
                     return (
-                    <AccordionItem value={`meta-${meta.id}`} key={meta.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
+                    <AccordionItem value={`meta-${meta.id}`} key={meta.id} className={cn("bg-gray-800/50 border border-gray-700 rounded-lg", meta.concluida && "opacity-60")}>
                        <div className="flex items-center w-full">
                            <AccordionTrigger className="flex-1 hover:no-underline text-left p-4">
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-lg text-gray-200 break-words">{meta.nome}</p>
-                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded mt-1 inline-block">{meta.categoria}</span>
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                        {meta.concluida && <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                                        <p className="text-lg text-gray-200 break-words">{meta.nome}</p>
+                                    </div>
+                                    <span className="text-sm text-gray-400 bg-gray-700 px-2 py-1 rounded mt-2 inline-block">{meta.categoria}</span>
+                                    {meta.concluida && <span className="text-sm font-bold text-green-400 bg-green-900/50 px-2 py-1 rounded mt-2 ml-2 inline-block">CONCLUÍDA</span>}
+                                    <div className="mt-3">
+                                        <Progress value={progress} className="h-2" />
+                                        <p className="text-xs text-gray-400 mt-1">{completedMissionsCount} de {totalMissionsCount} missões épicas concluídas</p>
+                                    </div>
                                 </div>
                            </AccordionTrigger>
                            <div className={cn("flex items-center gap-2 p-4 flex-col sm:flex-row")}>
