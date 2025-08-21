@@ -330,6 +330,10 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="bg-transparent border-none shadow-none max-w-none w-auto flex items-center justify-center p-0">
+                 <DialogHeader className="sr-only">
+                    <DialogTitle>Assistente de Metas</DialogTitle>
+                    <DialogDescription>Um assistente para ajudar a criar ou editar uma meta SMART.</DialogDescription>
+                 </DialogHeader>
                 <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
                     <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
                         <X className="h-6 w-6" />
@@ -799,3 +803,5 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
+    
