@@ -39,6 +39,8 @@ export default function App() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
+  
+  const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
   const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
     setQuestNotification({
@@ -116,6 +118,20 @@ export default function App() {
     });
   };
   
+  const handleShowDailyBriefingNotification = (mission) => {
+    setQuestNotification({
+      title: 'BRIEFING DIÁRIO',
+      description: 'Sistema online. O seu objetivo principal para hoje foi identificado. Concentre os seus esforços nesta missão.',
+      goals: [
+        { name: `- MISSÃO`, progress: `[${mission.nome}]` },
+        { name: `- DESCRIÇÃO`, progress: `[${mission.descricao}]` },
+        { name: `- RECOMPENSA`, progress: `[${mission.xp_conclusao} XP]` },
+      ],
+      caution: 'O sucesso é a soma de pequenos esforços repetidos dia após dia.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+  
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -135,7 +151,8 @@ export default function App() {
           primeiro_nome: emailUsername,
           apelido: "Caçador",
           nome_utilizador: emailUsername,
-          avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0,2).toUpperCase()}`
+          avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0,2).toUpperCase()}`,
+          ultimo_login_em: new Date().toISOString() // Add last login field
       };
       batch.set(userRef, initialProfile);
 
@@ -226,6 +243,47 @@ export default function App() {
     
     return { updatedSkills, skillsChanged };
   }, []);
+  
+  const checkDailyLogin = useCallback((profileData, missionsData) => {
+    const now = new Date();
+    const today = now.toDateString();
+    
+    const lastLogin = profileData.ultimo_login_em ? new Date(profileData.ultimo_login_em) : new Date(0);
+    const lastLoginDay = lastLogin.toDateString();
+
+    if (today !== lastLoginDay) {
+      // It's a new day, show briefing
+      const visibleEpicMissions = [];
+      const missionsByGoal = missionsData.reduce((acc, mission) => {
+          if (!acc[mission.meta_associada]) {
+              acc[mission.meta_associada] = [];
+          }
+          acc[mission.meta_associada].push(mission);
+          return acc;
+      }, {});
+
+      for (const goalName in missionsByGoal) {
+          const goalMissions = missionsByGoal[goalName]
+              .filter(m => !m.concluido)
+              .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+
+          if (goalMissions.length > 0) {
+              visibleEpicMissions.push(goalMissions[0]);
+          }
+      }
+      const sortedVisibleMissions = visibleEpicMissions.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+      const firstActiveEpicMission = sortedVisibleMissions[0];
+      const briefingMission = firstActiveEpicMission?.missoes_diarias?.find(dm => !dm.concluido);
+
+      if (briefingMission) {
+        handleShowDailyBriefingNotification(briefingMission);
+      }
+      
+      // Update last login time in profile
+      return true; // Indicates that profile needs update
+    }
+    return false; // No update needed
+  }, []);
 
 
   const fetchData = useCallback(async (userId) => {
@@ -239,13 +297,23 @@ export default function App() {
                   profileData.primeiro_nome = profileData.nome_utilizador;
                   profileData.apelido = "Caçador";
               }
-              setProfile(profileData);
+              
+              const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
+              const fetchedMissions = missionsSnapshot.docs.map(doc => ({ ...doc.data() }));
+              setMissions(fetchedMissions);
+              
+              const showBriefing = checkDailyLogin(profileData, fetchedMissions);
+
+              if (showBriefing) {
+                  const updatedProfile = { ...profileData, ultimo_login_em: new Date().toISOString() };
+                  setProfile(updatedProfile);
+                  await setDoc(userDocRef, updatedProfile, { merge: true });
+              } else {
+                  setProfile(profileData);
+              }
 
               const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
               setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
-              
-              const missionsSnapshot = await getDocs(collection(userDocRef, 'missions'));
-              setMissions(missionsSnapshot.docs.map(doc => ({ ...doc.data() })));
 
               const skillsSnapshot = await getDocs(collection(userDocRef, 'skills'));
               const fetchedSkills = skillsSnapshot.docs.map(doc => ({ ...doc.data() }));
@@ -255,7 +323,6 @@ export default function App() {
               if (skillsChanged) {
                   persistSkills(updatedSkills); // Save decayed state back to DB
               }
-
 
               const routineDoc = await getDoc(doc(userDocRef, 'routine', 'main'));
               setRoutine(routineDoc.exists() ? routineDoc.data() : {});
@@ -273,7 +340,7 @@ export default function App() {
       } finally {
           setIsDataLoaded(true);
       }
-  }, [user, toast, checkSkillStatus]);
+  }, [user, toast, checkSkillStatus, checkDailyLogin]);
 
   useEffect(() => {
     if (user && !isDataLoaded) {
@@ -487,7 +554,3 @@ export default function App() {
     </div>
   );
 }
-
-    
-
-    
