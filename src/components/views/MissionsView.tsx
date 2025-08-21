@@ -136,7 +136,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     }, [missions, setMissions, timers]);
     
     const handleHackerMode = () => {
-        setMissions(currentMissions => currentMissions.map(m => ({ ...m, ultima_missao_concluida_em: null })));
+        const updatedMissions = missions.map(m => ({ ...m, ultima_missao_concluida_em: null }));
+        setMissions(updatedMissions);
         toast({
             title: "Modo Hacker Ativado!",
             description: "Tempos de espera das missões eliminados.",
