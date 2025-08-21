@@ -154,7 +154,7 @@ export default function App() {
       
       const profileToSave = {
         ...newProfile,
-        nome_utilizador: newProfile.primeiro_nome, // Maintain compatibility
+        nome_utilizador: newProfile.primeiro_nome || newProfile.nome_utilizador || '',
       };
 
       setProfile(profileToSave);
@@ -369,3 +369,5 @@ export default function App() {
     </div>
   );
 }
+
+    
