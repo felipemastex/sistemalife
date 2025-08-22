@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -16,6 +16,62 @@ import { statCategoryMapping } from '@/lib/mappings';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { achievements } from '@/lib/achievements';
 import { differenceInCalendarDays } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
+
+    const remaining = subTask.target - (subTask.current || 0);
+
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(subTask, contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
+                    <DialogDescription>
+                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
+                    </p>
+                    <div>
+                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
+                        <Input
+                            id="contribution-amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={`Ex: 5 (Faltam ${remaining})`}
+                            min="1"
+                            max={remaining}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                        Registar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -92,6 +148,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
+    const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -148,6 +205,16 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
     
+    useEffect(() => {
+        // Check for auto-completion whenever missions state changes
+        missions.forEach(rm => {
+            const activeDaily = rm.missoes_diarias.find(dm => !dm.concluido);
+            if (activeDaily && activeDaily.subTasks?.every(st => (st.current || 0) >= st.target)) {
+                completeDailyMission(rm.id, activeDaily.id);
+            }
+        });
+    }, [missions]);
+
     const handleHackerMode = () => {
         const updatedMissions = missions.map(m => ({ ...m, ultima_missao_concluida_em: null }));
         setMissions(updatedMissions);
@@ -449,6 +516,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             concluido: false,
                             tipo: 'diaria',
                             learningResources: result.learningResources,
+                            subTasks: result.subTasks,
                         };
 
                         setMissions(current => current.map(m => m.id === nextMission.id ? {...m, missoes_diarias: [newDailyMission]} : m));
@@ -503,6 +571,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
+                subTasks: result.subTasks,
             };
             
             setMissions(currentMissions => currentMissions.map(rm => {
@@ -520,6 +589,34 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
     
+    const handleAddProgress = (subTask, amount) => {
+        const { rankedMissionId, dailyMissionId } = contributionState;
+        
+        setMissions(prevMissions => prevMissions.map(rm => {
+            if (rm.id === rankedMissionId) {
+                return {
+                    ...rm,
+                    missoes_diarias: rm.missoes_diarias.map(dm => {
+                        if (dm.id === dailyMissionId) {
+                            return {
+                                ...dm,
+                                subTasks: dm.subTasks.map(st => {
+                                    if (st.name === subTask.name) {
+                                        const newCurrent = Math.min(st.target, (st.current || 0) + amount);
+                                        return { ...st, current: newCurrent };
+                                    }
+                                    return st;
+                                })
+                            };
+                        }
+                        return dm;
+                    })
+                };
+            }
+            return rm;
+        }));
+    };
+
     const revertLastDailyMission = (rankedMissionId) => {
         let xpToSubtract = 0;
         let fragmentsToSubtract = 0;
@@ -594,6 +691,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
+                subTasks: result.subTasks,
             };
 
             const updatedMissions = missions.map(m => {
@@ -677,7 +775,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     Modo Hacker
                 </Button>
             </div>
-            <p className="text-muted-foreground mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
+            <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
             
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {visibleMissions.map(mission => {
@@ -717,17 +815,10 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 {activeDailyMission && !onCooldown && (
                                      <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                            <div className="flex-shrink-0">
-                                                <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id} aria-label={`Completar missão ${activeDailyMission.nome}`}>
-                                                    {generating === activeDailyMission.id ? 
-                                                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-                                                      : <Circle className="h-8 w-8 text-muted-foreground hover:text-green-500 transition-colors" />}
-                                                </button>
-                                            </div>
-                                            <div className="flex-grow">
+                                             <div className="flex-grow">
                                                 <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
                                                 <p className="text-sm text-muted-foreground">{activeDailyMission.descricao}</p>
-                                            </div>
+                                             </div>
                                             <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                                                 <div className="flex flex-col items-end">
                                                     <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
@@ -756,6 +847,30 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                 </DropdownMenu>
                                             </div>
                                         </div>
+
+                                        <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                                            {activeDailyMission.subTasks?.map((st, index) => (
+                                                <div key={index}>
+                                                     <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                                        <p className="font-semibold text-foreground flex-1">{st.name}</p>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                            <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
+                                                             <Button 
+                                                                size="icon" 
+                                                                variant="outline" 
+                                                                className="h-7 w-7" 
+                                                                onClick={() => setContributionState({ open: true, subTask: st, dailyMissionId: activeDailyMission.id, rankedMissionId: mission.id })}
+                                                                disabled={(st.current || 0) >= st.target}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                                </div>
+                                            ))}
+                                        </div>
+
                                          {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
                                             <div className="mt-4 pt-3 border-t border-border/50">
                                                 <h5 className="text-sm font-bold text-muted-foreground mb-2">Recursos de Aprendizagem Sugeridos</h5>
@@ -932,7 +1047,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     </div>
                 </DialogContent>
             </Dialog>
-
+            <ContributionDialog
+                open={contributionState.open}
+                onOpenChange={(isOpen) => setContributionState(prev => ({...prev, open: isOpen}))}
+                subTask={contributionState.subTask}
+                onContribute={handleAddProgress}
+            />
         </div>
     );
 };
