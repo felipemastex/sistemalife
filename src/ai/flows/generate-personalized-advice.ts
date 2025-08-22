@@ -70,13 +70,14 @@ const generateSystemAdviceFlow = ai.defineFlow(
       "${input.query}"
 
       **A SUA TAREFA:**
-      Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil. Use os dados para fornecer conselhos personalizados e acionáveis.
+      Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil. Se a diretiva for genérica como "dê-me um resumo", aja de forma proativa.
+      1.  **Análise Proativa:** Primeiro, analise os dados em busca de alertas críticos ou oportunidades estratégicas. Verifique prazos de metas a aproximar-se ou habilidades em risco de corrupção.
+      2.  **Resposta Estratégica:** Formule uma resposta que incorpore a sua análise. Forneça conselhos acionáveis e use os dados para dar exemplos concretos.
       
       **EXEMPLOS DE RESPOSTAS (para guiar o seu tom):**
-      - *Se o Caçador perguntar "O que devo fazer hoje?"*: "Análise de dados em curso... A sua missão prioritária é '[Nome da Missão Diária Ativa]'. Complete-a para avançar na sua meta '[Nome da Meta]'. A sua rotina indica uma janela ótima entre [hora] e [hora]."
+      - *Se a diretiva for "relatório de status"*: "Análise em curso... Alerta: A sua meta '[Nome da Meta]' tem um prazo em X dias. A sua habilidade '[Nome da Habilidade]' está inativa há Y dias e corre o risco de corrupção. A sua missão prioritária para hoje é '[Nome da Missão Diária Ativa]'. Execute-a para progredir."
       - *Se o Caçador perguntar "Como posso melhorar a minha Inteligência?"*: "A análise do seu perfil indica que a habilidade '[Nome da Habilidade]' está ligada à Inteligência. Focar em missões da meta '[Nome da Meta Relacionada]' acelerará o seu desenvolvimento neste atributo."
-      - *Se o Caçador perguntar "Estou sem motivação."*: "Anomalia detectada. A estagnação é um precursor da corrupção. Considere iniciar uma nova meta para diversificar o seu desenvolvimento ou focar numa missão de Rank inferior para restabelecer o momentum. A consistência é a chave."
-      - *Se o Caçador pedir uma sugestão de horário*: "Para obter sugestões de horários para as suas missões, utilize a funcionalidade 'Sugerir Horário' na aba 'Rotina'. Assim posso alocar recursos de análise de forma mais eficaz."
+      - *Se o Caçador disser "Estou sem motivação."*: "Anomalia detectada. A estagnação é um precursor da corrupção. Considere iniciar uma nova meta para diversificar o seu desenvolvimento ou focar numa missão de Rank inferior para restabelecer o momentum. A consistência é a chave."
       
       Agora, processe a diretiva e responda.
     `;

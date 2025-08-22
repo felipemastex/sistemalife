@@ -12,11 +12,13 @@ import { cn } from '@/lib/utils';
 
 
 export const AIChatView = ({ profile, metas, routine, missions }) => {
-    const [messages, setMessages] = useState([{ sender: 'ai', text: 'Sistema online. Qual é a sua diretiva, Caçador?' }]);
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
+    const isInitialMount = useRef(true);
+
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
@@ -29,14 +31,8 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
 
     useEffect(scrollToBottom, [messages, isLoading]);
 
-    const handleSend = useCallback(async () => {
-        if (!input.trim() || isLoading) return;
-
-        const userMessage = { sender: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
-
+    const getSystemResponse = useCallback(async (query, isInitial = false) => {
+         setIsLoading(true);
         try {
           const result = await generateSystemAdvice({
             userName: profile.nome_utilizador,
@@ -44,7 +40,7 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
             metas: JSON.stringify(metas),
             routine: JSON.stringify(routine),
             missions: JSON.stringify(missions.filter(m => !m.concluido)),
-            query: input,
+            query: query,
           });
           const aiMessage = { sender: 'ai', text: result.response };
           setMessages(prev => [...prev, aiMessage]);
@@ -64,7 +60,25 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
         } finally {
           setIsLoading(false);
         }
-    }, [input, isLoading, profile, metas, routine, missions, toast]);
+    }, [profile, metas, routine, missions, toast]);
+
+    useEffect(() => {
+        if (isInitialMount.current) {
+            getSystemResponse('Forneça uma análise estratégica do meu estado atual.', true);
+            isInitialMount.current = false;
+        }
+    }, [getSystemResponse]);
+
+
+    const handleSend = async () => {
+        if (!input.trim() || isLoading) return;
+
+        const userMessage = { sender: 'user', text: input };
+        setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
+        setInput('');
+        await getSystemResponse(currentInput);
+    };
 
 
     return (
