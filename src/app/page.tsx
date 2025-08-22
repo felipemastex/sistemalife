@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
 import { DashboardView } from '@/components/views/DashboardView';
 import { MetasView } from '@/components/views/MetasView';
-import { MissionsView } from '@/components/missions/MissionsView';
+import { MissionsView } from '@/components/views/MissionsView';
 import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
@@ -600,5 +600,7 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
