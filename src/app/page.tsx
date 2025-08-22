@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award, Store, Backpack } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award, Store, Backpack, Swords } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDi
 import { AchievementsView } from '@/components/views/AchievementsView';
 import { ShopView } from '@/components/views/ShopView';
 import { InventoryView } from '@/components/views/InventoryView';
+import { GuildsView } from '@/components/guilds/GuildsView';
 
 
 export default function App() {
@@ -40,6 +41,8 @@ export default function App() {
   const [routine, setRoutine] = useState({});
   const [routineTemplates, setRoutineTemplates] = useState({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [guilds, setGuilds] = useState([]);
 
   const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
   
@@ -128,6 +131,27 @@ export default function App() {
       await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
   }, [user]);
   
+
+  const persistGuilds = useCallback(async (newGuilds) => {
+    if (!user) return;
+    setGuilds(newGuilds);
+    const batch = writeBatch(db);
+    const guildsRef = collection(db, 'guilds');
+
+    // This is a simplified persistence logic. For a real app, more granular updates would be better.
+    // For now, we'll overwrite the guild documents.
+    const existingDocsSnapshot = await getDocs(guildsRef);
+    const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+    const newIds = newGuilds.map(g => String(g.id));
+    const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+    idsToDelete.forEach(id => batch.delete(doc(guildsRef, id)));
+    newGuilds.forEach(guild => {
+      const guildDocRef = doc(guildsRef, String(guild.id));
+      batch.set(guildDocRef, guild);
+    });
+    await batch.commit();
+  }, [user]);
 
   // --- NOTIFICATION HANDLERS ---
   const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
@@ -270,6 +294,8 @@ export default function App() {
           ultimo_login_em: new Date().toISOString(), // Add last login field
           inventory: [], // Initialize inventory
           active_effects: [], // Initialize active effects
+          guild_id: null,
+          guild_role: null,
       };
       batch.set(userRef, initialProfile);
 
@@ -452,6 +478,14 @@ export default function App() {
               
               const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
               setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
+              
+              // Fetch all users and guilds for the Guilds view
+              const allUsersSnapshot = await getDocs(collection(db, 'users'));
+              setAllUsers(allUsersSnapshot.docs.map(d => ({id: d.id, ...d.data()})));
+              
+              const guildsSnapshot = await getDocs(collection(db, 'guilds'));
+              setGuilds(guildsSnapshot.docs.map(d => ({id: d.id, ...d.data()})));
+
 
           } else {
               console.log("Utilizador novo. A configurar dados iniciais...");
@@ -515,6 +549,7 @@ export default function App() {
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
           <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
+          <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
           <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
           <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
           <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
@@ -544,6 +579,7 @@ export default function App() {
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
+      'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers}/>,
       'shop': <ShopView profile={profile} setProfile={persistProfile} />,
       'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,

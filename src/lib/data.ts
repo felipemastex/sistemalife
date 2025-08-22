@@ -30,6 +30,8 @@ export const perfis = [
     achievements: [], // Ex: [{ achievementId: 'missions_1', date: '2024-01-01' }]
     streak_atual: 0,
     ultimo_dia_de_missao_concluida: null, // formato ISO: 'YYYY-MM-DD'
+    guild_id: null,
+    guild_role: null,
   },
 ];
 

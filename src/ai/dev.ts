@@ -17,5 +17,6 @@ import './flows/generate-skill-from-goal.js';
 import './flows/generate-goal-suggestion.js';
 import './flows/generate-hunter-avatar.js';
 import './flows/generate-goal-roadmap.js';
+import './flows/generate-guild-quest.js';
 
     

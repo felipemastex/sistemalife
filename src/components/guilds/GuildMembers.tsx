@@ -98,9 +98,9 @@ export const GuildMembers = ({ members, guildMembersMeta, onMemberUpdate, curren
                         {sortedMembers.map(member => {
                             const role = getMemberRole(member.id);
                             const RoleIcon = roleInfo[role]?.icon || User;
-                            const canBeManaged = canManage(role) && member.id !== currentUserProfile.id;
-                            const canPromote = canBeManaged && roleHierarchy.indexOf(role) > currentUserIndex + 1;
-                            const canDemote = canBeManaged && roleHierarchy.indexOf(role) < roleHierarchy.length -1;
+                            const canBeManagedByCurrentUser = canManage(role) && member.id !== currentUserProfile.id;
+                            const canPromote = canBeManagedByCurrentUser && roleHierarchy.indexOf(role) > currentUserIndex + 1;
+                            const canDemote = canBeManagedByCurrentUser && roleHierarchy.indexOf(role) < roleHierarchy.length - 1;
 
 
                             return (
@@ -118,51 +118,51 @@ export const GuildMembers = ({ members, guildMembersMeta, onMemberUpdate, curren
                                             </div>
                                         </div>
                                     </div>
-                                    {canBeManaged && (
-                                         <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem 
-                                                    onClick={() => handleRoleChange(member.id, 'promote')} 
-                                                    disabled={!canPromote}
-                                                >
-                                                    <ArrowUp className="mr-2 h-4 w-4" />
-                                                    Promover
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => handleRoleChange(member.id, 'demote')}
-                                                    disabled={!canDemote}
-                                                >
-                                                    <ArrowDown className="mr-2 h-4 w-4" />
-                                                    Rebaixar
-                                                </DropdownMenuItem>
-                                                 <DropdownMenuSeparator />
-                                                <AlertDialog>
+                                    {canBeManagedByCurrentUser && (
+                                         <AlertDialog>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleRoleChange(member.id, 'promote')} 
+                                                        disabled={!canPromote}
+                                                    >
+                                                        <ArrowUp className="mr-2 h-4 w-4" />
+                                                        Promover
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleRoleChange(member.id, 'demote')}
+                                                        disabled={!canDemote}
+                                                    >
+                                                        <ArrowDown className="mr-2 h-4 w-4" />
+                                                        Rebaixar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" className="w-full justify-start text-red-500 hover:bg-red-500/10 hover:text-red-400 px-2 py-1.5 h-auto text-sm font-normal relative">
                                                             <X className="mr-2 h-4 w-4" />
-                                                             Expulsar Membro
+                                                            Expulsar Membro
                                                         </Button>
                                                     </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Expulsar {member.nome_utilizador}?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Tem a certeza de que quer remover este membro da guilda? Esta ação não pode ser desfeita.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleKickMember(member.id, member.nome_utilizador)}>Sim, expulsar</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Expulsar {member.nome_utilizador}?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Tem a certeza de que quer remover este membro da guilda? Esta ação não pode ser desfeita.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleKickMember(member.id, member.nome_utilizador)}>Sim, expulsar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
                                 </div>
                             )
