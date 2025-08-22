@@ -12,8 +12,17 @@ import { ArrowLeft, Wand2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
 const iconNames = ["Sword", "Swords", "Shield", "Heart", "Feather", "BookOpen", "BrainCircuit", "Code", "Star", "Target", "Mountain", "TreeDeciduous", "Users", "ShieldCheck"];
-const colors = ["bg-red-800", "bg-blue-800", "bg-green-800", "bg-purple-800", "bg-yellow-800", "bg-gray-800", "bg-pink-800", "bg-cyan-800"];
 
+const colors = [
+    { name: 'Vermelho', value: '185 28 28' },
+    { name: 'Azul', value: '30 64 175' },
+    { name: 'Verde', value: '22 101 52' },
+    { name: 'Roxo', value: '107 33 168' },
+    { name: 'Amarelo', value: '180 83 9' },
+    { name: 'Cinza', value: '55 65 81' },
+    { name: 'Rosa', value: '157 23 77' },
+    { name: 'Ciano', value: '20 138 164' }
+];
 
 export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) => {
     const isEditing = !!guildToEdit;
@@ -21,7 +30,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
     const [tag, setTag] = useState(guildToEdit?.tag || '');
     const [descricao, setDescricao] = useState(guildToEdit?.descricao || '');
     const [emblema_icon, setEmblemaIcon] = useState(guildToEdit?.emblema_icon || 'Shield');
-    const [emblema_bg, setEmblemaBg] = useState(guildToEdit?.emblema_bg || 'bg-gray-800');
+    const [emblema_bg, setEmblemaBg] = useState(guildToEdit?.emblema_bg || '55 65 81');
     const [meta_principal_id, setMetaPrincipalId] = useState(guildToEdit?.meta_principal_id || '');
 
     const { toast } = useToast();
@@ -68,7 +77,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                 {/* Emblema Preview */}
                 <div className="flex flex-col items-center">
                     <Label className="mb-2">Emblema da Guilda</Label>
-                    <div className={`w-24 h-24 rounded-lg flex items-center justify-center transition-colors ${emblema_bg}`}>
+                    <div className="w-24 h-24 rounded-lg flex items-center justify-center transition-colors" style={{ backgroundColor: `rgb(${emblema_bg})` }}>
                         {getIconComponent(emblema_icon)}
                     </div>
                 </div>
@@ -77,7 +86,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="emblema-icon">Ícone</Label>
-                         <Select onValueChange={setEmblemaIcon} defaultValue={emblema_icon}>
+                         <Select onValueChange={setEmblemaIcon} value={emblema_icon}>
                             <SelectTrigger id="emblema-icon">
                                 <SelectValue placeholder="Escolha um ícone" />
                             </SelectTrigger>
@@ -90,15 +99,17 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                     </div>
                      <div>
                         <Label htmlFor="emblema-bg">Cor de Fundo</Label>
-                         <Select onValueChange={setEmblemaBg} defaultValue={emblema_bg}>
+                         <Select onValueChange={setEmblemaBg} value={emblema_bg}>
                             <SelectTrigger id="emblema-bg">
                                 <SelectValue placeholder="Escolha uma cor" />
                             </SelectTrigger>
                             <SelectContent>
                                 <div className="grid grid-cols-4 gap-2 p-2">
                                 {colors.map(color => (
-                                    <SelectItem key={color} value={color} className="p-0 m-0 focus:bg-transparent">
-                                       <div className={`w-full h-8 rounded-md ${color} cursor-pointer hover:opacity-80`}/>
+                                    <SelectItem key={color.value} value={color.value} className="p-0 m-0 focus:bg-transparent">
+                                       <div className="w-full h-8 rounded-md cursor-pointer hover:opacity-80 flex items-center justify-center" style={{ backgroundColor: `rgb(${color.value})` }}>
+                                           <span className="text-white text-xs mix-blend-difference">{color.name}</span>
+                                       </div>
                                     </SelectItem>
                                 ))}
                                 </div>

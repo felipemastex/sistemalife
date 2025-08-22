@@ -50,7 +50,7 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
                 {filteredGuilds.map(guild => (
                     <Card key={guild.id} className="bg-card/80">
                         <CardHeader className="flex flex-row items-center gap-4">
-                            <Avatar className={`h-16 w-16 rounded-md ${guild.emblema_bg}`}>
+                            <Avatar className="h-16 w-16 rounded-md" style={{ backgroundColor: `rgb(${guild.emblema_bg || '55 65 81'})` }}>
                                 <div className="flex items-center justify-center h-full w-full">
                                     {getIconComponent(guild.emblema_icon)}
                                 </div>

@@ -16,7 +16,7 @@ export const GuildHeader = ({ guild, onEdit, onLeave, isLeader }) => {
 
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 bg-card/50 border border-border rounded-lg">
-            <Avatar className={`h-24 w-24 rounded-md flex-shrink-0 ${guild.emblema_bg || 'bg-gray-800'}`}>
+            <Avatar className="h-24 w-24 rounded-md flex-shrink-0" style={{ backgroundColor: `rgb(${guild.emblema_bg || '55 65 81'})`}}>
                 <div className="flex items-center justify-center h-full w-full">
                     {getIconComponent(guild.emblema_icon || 'Shield')}
                 </div>
