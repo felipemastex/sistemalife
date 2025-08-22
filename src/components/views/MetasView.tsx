@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -927,16 +927,31 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             </div>
                         )}
                         {roadmap && (
-                             <div className="space-y-6">
+                             <div className="relative pl-6 py-4">
+                                <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border/30 -z-10" />
                                 {roadmap.map((phase, index) => (
-                                    <div key={index}>
-                                        <h3 className="font-cinzel font-bold text-lg text-accent">{phase.phaseTitle}</h3>
-                                        <p className="text-sm text-muted-foreground mb-3">{phase.phaseDescription}</p>
-                                        <ul className="space-y-2 list-disc list-inside pl-2">
-                                            {phase.strategicMilestones.map((milestone, mIndex) => (
-                                                <li key={mIndex} className="text-foreground">{milestone}</li>
-                                            ))}
-                                        </ul>
+                                    <div key={index} className="relative mb-8">
+                                         <div className="absolute -left-1 top-1 h-8 w-8 rounded-full bg-secondary border-4 border-background flex items-center justify-center">
+                                            <span className="font-bold text-primary">{index + 1}</span>
+                                        </div>
+                                        <div className="pl-12">
+                                            <Card className="bg-card/80 backdrop-blur-sm">
+                                                <CardHeader>
+                                                    <CardTitle className="font-cinzel text-accent">{phase.phaseTitle}</CardTitle>
+                                                    <CardDescription>{phase.phaseDescription}</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <ul className="space-y-3">
+                                                        {phase.strategicMilestones.map((milestone, mIndex) => (
+                                                             <li key={mIndex} className="flex items-start gap-3">
+                                                                <Milestone className="h-5 w-5 text-accent/80 mt-1 flex-shrink-0" />
+                                                                <span className="text-foreground">{milestone}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
