@@ -11,22 +11,8 @@ import { GuildChat } from './GuildChat';
 import { JoinRequests } from './JoinRequests';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Edit } from 'lucide-react';
+import { GuildQuests } from './GuildQuests';
 
-
-const GuildQuests = ({ quests }) => (
-    <Card>
-        <CardHeader>
-            <CardTitle>Missões da Guilda</CardTitle>
-        </CardHeader>
-        <CardContent>
-            {quests && quests.length > 0 ? (
-                <p>{quests.length} missões ativas.</p>
-            ) : (
-                <p className="text-muted-foreground">Nenhuma missão de guilda ativa no momento.</p>
-            )}
-        </CardContent>
-    </Card>
-);
 
 const GuildAnnouncements = () => (
      <Card>
@@ -76,6 +62,12 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         onGuildUpdate(updatedGuild);
     }
     
+    const handleQuestsUpdate = (updatedQuests) => {
+        const updatedGuild = { ...guildData, quests: updatedQuests };
+        setGuildData(updatedGuild); // Update local state for immediate UI feedback
+        onGuildUpdate(updatedGuild);
+    };
+    
     return (
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
@@ -86,7 +78,12 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                     {/* Coluna Esquerda (Principal) */}
                     <div className="flex-grow h-full">
                         <TabsContent value="geral" className="h-full mt-0">
-                            <GuildQuests quests={guildData.quests} />
+                            <GuildQuests 
+                                quests={guildData.quests}
+                                onQuestsUpdate={handleQuestsUpdate}
+                                canManage={canManage}
+                                guildData={guildData}
+                            />
                         </TabsContent>
                         <TabsContent value="membros" className="h-full mt-0">
                              <GuildMembers 
