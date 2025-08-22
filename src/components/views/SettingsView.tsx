@@ -144,6 +144,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
     const handleReset = async () => {
         setIsResetting(true);
         await onReset();
+        setIsResetting(false);
     };
 
     const handleGenerateAvatar = async () => {
