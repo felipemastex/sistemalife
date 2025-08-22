@@ -21,12 +21,12 @@ const roleInfo = {
 export const GuildMembers = ({ members, guildMembersMeta, onMemberUpdate, currentUserProfile }) => {
     
     const getMemberRole = (memberId) => {
-        const meta = guildMembersMeta.find(m => m.user_id === memberId);
+        const meta = (guildMembersMeta || []).find(m => m.user_id === memberId);
         return meta ? meta.role : 'Recruta';
     };
     
     const handleRoleChange = (memberId, newRole) => {
-        const updatedMembersMeta = guildMembersMeta.map(m => 
+        const updatedMembersMeta = (guildMembersMeta || []).map(m => 
             m.user_id === memberId ? { ...m, role: newRole } : m
         );
         onMemberUpdate(updatedMembersMeta);
