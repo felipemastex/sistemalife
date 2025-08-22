@@ -43,13 +43,16 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
         }
 
         const finalGuildData = {
-            ...(guildToEdit || {}), // Keep existing data like id, members, quests etc.
+            ...(guildToEdit || {}), // Keep existing data like id, members etc.
             nome, 
             tag, 
             descricao, 
             emblema_icon, 
             emblema_bg, 
-            meta_principal_id 
+            meta_principal_id,
+            // Explicitly initialize arrays for new guilds to avoid 'undefined' error in Firestore
+            join_requests: guildToEdit?.join_requests || [],
+            quests: guildToEdit?.quests || [],
         };
 
         onSave(finalGuildData);
