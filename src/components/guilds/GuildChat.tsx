@@ -26,7 +26,6 @@ export const GuildChat = ({ guildId, userProfile }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
@@ -95,7 +94,7 @@ export const GuildChat = ({ guildId, userProfile }) => {
 
     return (
         <div className="h-full flex flex-col p-4 bg-transparent">
-             <ScrollArea className="flex-grow mb-4" ref={scrollAreaRef} viewportRef={viewportRef}>
+             <ScrollArea className="flex-grow mb-4" viewportRef={viewportRef}>
                 <div className="space-y-4 pr-4">
                     {messages.length > 0 ? messages.map((msg, index) => {
                         const isSender = isUserMessage(msg);
