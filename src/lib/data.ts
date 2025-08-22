@@ -361,20 +361,11 @@ export const guilds = [
             nome: 'Maratona de Algoritmos Semanal',
             descricao: 'Esta semana, vamos afiar as nossas espadas lógicas! Cada membro deve resolver problemas de algoritmos para contribuir para o progresso da guilda.',
             criador_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-            isRaid: false,
-            progresso: [
-                { id: 'sub_1', nome: 'Resolver problemas "Fácil"', target: 50, current: 23, daily_limit_per_member: 3, attribute: 'inteligencia' },
-                { id: 'sub_2', nome: 'Resolver problemas "Médio"', target: 25, current: 10, daily_limit_per_member: 2, attribute: 'sabedoria' },
-                { id: 'sub_3', nome: 'Resolver problemas "Difícil"', target: 5, current: 1, daily_limit_per_member: 1, attribute: 'inteligencia' },
+            subTasks: [
+                { name: 'Resolver problemas "Fácil"', target: 50, current: 23, daily_limit_per_member: 3, attribute: 'inteligencia' },
+                { name: 'Resolver problemas "Médio"', target: 25, current: 10, daily_limit_per_member: 2, attribute: 'sabedoria' },
+                { name: 'Resolver problemas "Difícil"', target: 5, current: 1, daily_limit_per_member: 1, attribute: 'inteligencia' },
             ],
-            recompensa: {
-                nome: 'Bónus de Foco',
-                descricao: '+10% de XP em missões de Inteligência por 3 dias.',
-                type: 'xp_boost',
-                value: 1.1,
-                duration_days: 3,
-                category: 'inteligencia'
-            },
             concluida: false
         }
     ],
@@ -467,4 +458,5 @@ export const rotinaTemplates = {
 };
 
     
+
 

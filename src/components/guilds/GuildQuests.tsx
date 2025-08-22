@@ -5,17 +5,67 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, LoaderCircle, Sparkles } from 'lucide-react';
+import { PlusCircle, LoaderCircle, Sparkles, Plus } from 'lucide-react';
 import { generateGuildQuest } from '@/ai/flows/generate-guild-quest';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
+
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(subTask, contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Contribuir para: {subTask.name}</DialogTitle>
+                    <DialogDescription>
+                        Insira a quantidade que você contribuiu hoje. O seu esforço fortalece a guilda!
+                        O alvo total é de {subTask.target}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="contribution-amount">Quantidade</Label>
+                    <Input
+                        id="contribution-amount"
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder={`Ex: 5`}
+                        min="1"
+                    />
+                     <p className="text-xs text-muted-foreground mt-2">
+                        Limite de contribuição diária por membro: {subTask.daily_limit_per_member}
+                    </p>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute}>Contribuir</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
 export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData }) => {
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [questTheme, setQuestTheme] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [contributionDialogState, setContributionDialogState] = useState({ open: false, subTask: null });
+
     const { toast } = useToast();
 
     const handleCreateQuest = async () => {
@@ -26,7 +76,6 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
         setIsCreating(true);
         try {
             const memberCount = guildData.membros?.length || 1;
-            // Placeholder for guild level logic
             const guildLevel = guildData.level || 1; 
 
             const result = await generateGuildQuest({
@@ -41,7 +90,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
                 descricao: result.questDescription,
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
                 concluida: false,
-                criador_id: guildData.leader_id, // assuming leader_id is available
+                criador_id: guildData.leader_id,
             };
             
             const updatedQuests = [...(quests || []), newQuest];
@@ -57,6 +106,22 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
         } finally {
             setIsCreating(false);
         }
+    };
+    
+     const handleContribute = (subTask, amount) => {
+        const updatedQuests = quests.map(q => ({
+            ...q,
+            subTasks: q.subTasks.map(st => {
+                if (st.name === subTask.name) {
+                    const newCurrent = Math.min(st.target, st.current + amount);
+                    return { ...st, current: newCurrent };
+                }
+                return st;
+            })
+        }));
+        
+        onQuestsUpdate(updatedQuests);
+        toast({ title: "Contribuição Registada!", description: `Você contribuiu com ${amount} para "${subTask.name}".`});
     };
 
     return (
@@ -90,11 +155,25 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
                                     <CardContent className="space-y-3">
                                         {quest.subTasks.map(task => {
                                             const progress = task.target > 0 ? (task.current / task.target) * 100 : 0;
+                                            const isCompleted = task.current >= task.target;
                                             return (
                                                 <div key={task.name}>
-                                                    <div className="flex justify-between text-sm mb-1">
-                                                        <span className="text-muted-foreground">{task.name}</span>
-                                                        <span className="font-mono text-foreground">{task.current} / {task.target}</span>
+                                                    <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                                        <div className="flex-1">
+                                                            <p className="text-muted-foreground">{task.name}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                            <p className="font-mono text-foreground">{task.current} / {task.target}</p>
+                                                            <Button 
+                                                                size="icon" 
+                                                                variant="outline" 
+                                                                className="h-7 w-7" 
+                                                                onClick={() => setContributionDialogState({ open: true, subTask: task })}
+                                                                disabled={isCompleted}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                     <Progress value={progress} />
                                                 </div>
@@ -150,6 +229,12 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <ContributionDialog 
+                open={contributionDialogState.open}
+                onOpenChange={(isOpen) => setContributionDialogState({ open: isOpen, subTask: isOpen ? contributionDialogState.subTask : null })}
+                subTask={contributionDialogState.subTask}
+                onContribute={handleContribute}
+            />
         </Card>
     );
 };
