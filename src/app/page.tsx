@@ -16,7 +16,7 @@ import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
 import { SettingsView } from '@/components/views/SettingsView';
-import { GuildsView } from '@/components/guilds/GuildsView';
+import { GuildsView } from '@/components/views/GuildsView';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -127,6 +127,32 @@ export default function App() {
       setRoutineTemplates(newTemplates);
       await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
   }, [user]);
+  
+  const persistGuilds = useCallback(async (newGuilds) => {
+    setGuilds(newGuilds);
+    const batch = writeBatch(db);
+    const guildsRef = collection(db, 'guilds');
+
+    // Get all existing guilds to compare
+    const existingDocsSnapshot = await getDocs(guildsRef);
+    const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+    const newIds = newGuilds.map(g => g.id);
+
+    // Find which to delete
+    const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+    idsToDelete.forEach(id => {
+      batch.delete(doc(guildsRef, id));
+    });
+
+    // Find which to add or update
+    newGuilds.forEach(guild => {
+      const guildDocRef = doc(guildsRef, guild.id);
+      // We are saving the whole guild object, simple set is enough
+      batch.set(guildDocRef, guild);
+    });
+
+    await batch.commit();
+  }, []);
 
 
   // --- NOTIFICATION HANDLERS ---
@@ -545,7 +571,7 @@ export default function App() {
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
-      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={setGuilds} metas={metas} allUsers={allUsers} />,
+      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} />,
     };
 
     return (
@@ -600,7 +626,5 @@ export default function App() {
     </div>
   );
 }
-
-    
 
     
