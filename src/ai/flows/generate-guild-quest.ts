@@ -48,10 +48,16 @@ Uma guilda com {{memberCount}} membros e nível médio de {{guildLevel}} quer um
 
 Sua tarefa é criar uma Missão de Guilda completa. Siga estas diretivas:
 1.  **Nome e Descrição Épicos:** Crie um nome de missão e uma descrição que sejam inspiradores e se alinhem com o tema. Use uma linguagem de RPG.
-2.  **Sub-tarefas Cooperativas:** Gere de 3 a 5 sub-tarefas. Estas são as atividades que os membros realizarão.
+2.  **Sub-tarefas Cooperativas e ACIONÁVEIS:** Gere de 3 a 5 sub-tarefas. O NOME da sub-tarefa deve ser a AÇÃO CONCRETA que o membro deve fazer.
     *   Cada sub-tarefa deve ter um objetivo numérico claro ('target'). A meta deve ser dimensionada de forma apropriada para o número de membros e o nível da guilda. Deve ser um desafio que exija a colaboração de vários membros ao longo de alguns dias.
     *   Cada sub-tarefa deve estar ligada a um dos seis atributos do sistema: forca, inteligencia, sabedoria, constituicao, destreza, carisma.
     *   **IMPORTANTE:** Para cada sub-tarefa, defina um 'daily_limit_per_member'. Este é o valor máximo que um único membro pode contribuir por dia para essa tarefa. Este limite deve ser uma fração razoável do alvo total (geralmente entre 10% e 30% do alvo, dependendo da natureza da tarefa) para garantir que a colaboração seja necessária.
+
+Exemplo de uma sub-tarefa bem definida para o tema "Foco em fitness":
+- name: "Correr um total de 20km"
+- target: 20
+- attribute: "constituicao"
+- daily_limit_per_member: 5
 
 Analise o tema e os dados da guilda para construir a missão mais eficaz e motivadora possível.
 `,
