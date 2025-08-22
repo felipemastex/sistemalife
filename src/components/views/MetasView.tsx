@@ -535,6 +535,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             nome: result.firstDailyMissionName,
                             descricao: result.firstDailyMissionDescription,
                             xp_conclusao: result.firstDailyMissionXp,
+                            fragmentos_conclusao: result.firstDailyMissionFragments,
                             concluido: false,
                             tipo: 'diaria',
                         }] : [],
@@ -668,19 +669,19 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     return (
         <div className="p-4 md:p-6 h-full overflow-y-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h1 className="text-3xl font-bold text-cyan-400 font-cinzel tracking-wider">Metas</h1>
+                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Metas</h1>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                      <Button onClick={handleGetSuggestions} variant="outline" className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 w-full sm:w-auto">
                         <Wand2 className="h-5 w-5 mr-2" />
                         Sugerir Novas Metas
                     </Button>
-                    <Button onClick={() => handleOpenWizard()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
+                    <Button onClick={() => handleOpenWizard()} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                         <PlusCircle className="h-5 w-5 mr-2" />
                         Adicionar Meta
                     </Button>
                 </div>
             </div>
-            <p className="text-gray-400 mb-8 max-w-4xl">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
+            <p className="text-muted-foreground mb-8 max-w-4xl">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedMetas.map(meta => {
@@ -707,10 +708,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-gray-400 hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                        <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400 h-8 w-8">
+                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8">
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </AlertDialogTrigger>
@@ -742,7 +743,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                     </Tooltip>
                                 </TooltipProvider>
                                 {meta.prazo && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <CalendarIcon className="h-4 w-4" />
                                         <span>Prazo: {format(new Date(meta.prazo), "dd/MM/yyyy")}</span>
                                     </div>
@@ -762,7 +763,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                         <strong className="text-sm text-muted-foreground shrink-0">Atributos:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
-                                            <div key={stat} className="flex items-center gap-1.5 text-gray-300">
+                                            <div key={stat} className="flex items-center gap-1.5 text-card-foreground">
                                                 {statIcons[stat]}
                                                 <span className="capitalize text-xs">{stat}</span>
                                             </div>
@@ -792,7 +793,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         </DialogHeader>
                         <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                             <div>
-                                <Label htmlFor="prazo" className="text-cyan-400">Prazo (Opcional)</Label>
+                                <Label htmlFor="prazo" className="text-primary">Prazo (Opcional)</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -817,23 +818,23 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 </Popover>
                             </div>
                             <div>
-                                <Label htmlFor="specific" className="text-cyan-400">Específico</Label>
+                                <Label htmlFor="specific" className="text-primary">Específico</Label>
                                 <Textarea id="specific" value={metaToEdit.detalhes_smart.specific} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
-                                <Label htmlFor="measurable" className="text-cyan-400">Mensurável</Label>
+                                <Label htmlFor="measurable" className="text-primary">Mensurável</Label>
                                 <Textarea id="measurable" value={metaToEdit.detalhes_smart.measurable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
-                                <Label htmlFor="achievable" className="text-cyan-400">Atingível</Label>
+                                <Label htmlFor="achievable" className="text-primary">Atingível</Label>
                                 <Textarea id="achievable" value={metaToEdit.detalhes_smart.achievable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
-                                <Label htmlFor="relevant" className="text-cyan-400">Relevante</Label>
+                                <Label htmlFor="relevant" className="text-primary">Relevante</Label>
                                 <Textarea id="relevant" value={metaToEdit.detalhes_smart.relevant} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
-                                <Label htmlFor="timeBound" className="text-cyan-400">Temporal</Label>
+                                <Label htmlFor="timeBound" className="text-primary">Temporal</Label>
                                 <Textarea id="timeBound" value={metaToEdit.detalhes_smart.timeBound} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                         </div>
@@ -855,11 +856,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                             <p className="break-words"><strong className="text-cyan-400">Específico:</strong> {detailedMeta.detalhes_smart.specific}</p>
-                            <p className="break-words"><strong className="text-cyan-400">Mensurável:</strong> {detailedMeta.detalhes_smart.measurable}</p>
-                            <p className="break-words"><strong className="text-cyan-400">Atingível:</strong> {detailedMeta.detalhes_smart.achievable}</p>
-                            <p className="break-words"><strong className="text-cyan-400">Relevante:</strong> {detailedMeta.detalhes_smart.relevant}</p>
-                            <p className="break-words"><strong className="text-cyan-400">Temporal:</strong> {detailedMeta.detalhes_smart.timeBound}</p>
+                             <p className="break-words"><strong className="text-primary">Específico:</strong> {detailedMeta.detalhes_smart.specific}</p>
+                            <p className="break-words"><strong className="text-primary">Mensurável:</strong> {detailedMeta.detalhes_smart.measurable}</p>
+                            <p className="break-words"><strong className="text-primary">Atingível:</strong> {detailedMeta.detalhes_smart.achievable}</p>
+                            <p className="break-words"><strong className="text-primary">Relevante:</strong> {detailedMeta.detalhes_smart.relevant}</p>
+                            <p className="break-words"><strong className="text-primary">Temporal:</strong> {detailedMeta.detalhes_smart.timeBound}</p>
                         </div>
                          <DialogFooter>
                             <Button variant="outline" onClick={() => setDetailedMeta(null)}>Fechar</Button>
@@ -871,7 +872,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             <Dialog open={showSuggestionDialog} onOpenChange={setShowSuggestionDialog}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-cyan-400 text-xl">
+                        <DialogTitle className="flex items-center gap-2 text-primary text-xl">
                             <Wand2/>
                             Sugestões do Sistema
                         </DialogTitle>
@@ -888,12 +889,12 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             </div>
                         )}
                         {suggestions.map((s, index) => (
-                            <div key={index} className="p-4 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition-colors">
+                            <div key={index} className="p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                     <div className="flex-grow">
-                                        <h3 className="font-bold text-gray-200">{s.name}</h3>
-                                        <p className="text-sm text-gray-400 mt-1">{s.description}</p>
-                                        <span className="text-xs text-purple-400 bg-purple-900/50 px-2 py-1 rounded-full mt-2 inline-block">{s.category}</span>
+                                        <h3 className="font-bold text-foreground">{s.name}</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">{s.description}</p>
+                                        <span className="text-xs text-primary bg-primary/20 px-2 py-1 rounded-full mt-2 inline-block">{s.category}</span>
                                     </div>
                                     <Button size="sm" className="ml-0 sm:ml-4 flex-shrink-0" onClick={() => handleSelectSuggestion(s.name)}>
                                         Iniciar
@@ -902,7 +903,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             </div>
                         ))}
                          {!isLoadingSuggestions && suggestions.length === 0 && (
-                            <p className="text-center text-gray-400 py-8">Não foi possível gerar sugestões neste momento.</p>
+                            <p className="text-center text-muted-foreground py-8">Não foi possível gerar sugestões neste momento.</p>
                         )}
                     </div>
                 </DialogContent>
@@ -911,29 +912,29 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
             <Dialog open={!!roadmapMeta} onOpenChange={() => setRoadmapMeta(null)}>
                 <DialogContent className="max-w-3xl">
                      <DialogHeader>
-                        <DialogTitle className="text-2xl font-cinzel text-cyan-400 flex items-center gap-3">
+                        <DialogTitle className="text-2xl font-cinzel text-primary flex items-center gap-3">
                             <MapIcon />
                             Roteiro Estratégico
                         </DialogTitle>
                         <DialogDescription>
-                            O plano de batalha do Estratega Mestre para a sua meta: <span className="font-bold text-gray-300">{roadmapMeta?.nome}</span>
+                            O plano de batalha do Estratega Mestre para a sua meta: <span className="font-bold text-foreground">{roadmapMeta?.nome}</span>
                         </DialogDescription>
                     </DialogHeader>
                      <ScrollArea className="max-h-[60vh] mt-4 pr-4">
                         {isLoadingRoadmap && (
                              <div className="flex items-center justify-center p-16">
-                                <LoaderCircle className="h-10 w-10 text-cyan-400 animate-spin" />
+                                <LoaderCircle className="h-10 w-10 text-primary animate-spin" />
                             </div>
                         )}
                         {roadmap && (
                              <div className="space-y-6">
                                 {roadmap.map((phase, index) => (
                                     <div key={index}>
-                                        <h3 className="font-cinzel font-bold text-lg text-primary">{phase.phaseTitle}</h3>
+                                        <h3 className="font-cinzel font-bold text-lg text-accent">{phase.phaseTitle}</h3>
                                         <p className="text-sm text-muted-foreground mb-3">{phase.phaseDescription}</p>
                                         <ul className="space-y-2 list-disc list-inside pl-2">
                                             {phase.strategicMilestones.map((milestone, mIndex) => (
-                                                <li key={mIndex} className="text-card-foreground">{milestone}</li>
+                                                <li key={mIndex} className="text-foreground">{milestone}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -950,5 +951,3 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
-
-    
