@@ -83,6 +83,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                                 onQuestsUpdate={handleQuestsUpdate}
                                 canManage={canManage}
                                 guildData={guildData}
+                                userProfile={profile}
                             />
                         </TabsContent>
                         <TabsContent value="membros" className="h-full mt-0">
@@ -132,5 +133,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         </div>
     );
 };
+
+    
 
     

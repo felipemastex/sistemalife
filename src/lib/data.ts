@@ -362,9 +362,33 @@ export const guilds = [
             descricao: 'Esta semana, vamos afiar as nossas espadas lógicas! Cada membro deve resolver problemas de algoritmos para contribuir para o progresso da guilda.',
             criador_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
             subTasks: [
-                { name: 'Resolver problemas "Fácil"', target: 50, current: 23, daily_limit_per_member: 3, attribute: 'inteligencia' },
-                { name: 'Resolver problemas "Médio"', target: 25, current: 10, daily_limit_per_member: 2, attribute: 'sabedoria' },
-                { name: 'Resolver problemas "Difícil"', target: 5, current: 1, daily_limit_per_member: 1, attribute: 'inteligencia' },
+                { 
+                    name: 'Resolver problemas "Fácil"', 
+                    target: 50, 
+                    current: 23, 
+                    daily_limit_per_member: 3, 
+                    attribute: 'inteligencia',
+                    contributions: [
+                        { userId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', amount: 3, date: new Date().toISOString().split('T')[0] },
+                        { userId: 'b2c3d4e5-f6g7-8901-2345-67890abcdef1', amount: 2, date: new Date().toISOString().split('T')[0] },
+                    ]
+                },
+                { 
+                    name: 'Resolver problemas "Médio"', 
+                    target: 25, 
+                    current: 10, 
+                    daily_limit_per_member: 2, 
+                    attribute: 'sabedoria',
+                    contributions: []
+                },
+                { 
+                    name: 'Resolver problemas "Difícil"', 
+                    target: 5, 
+                    current: 1, 
+                    daily_limit_per_member: 1, 
+                    attribute: 'inteligencia',
+                    contributions: [] 
+                },
             ],
             concluida: false
         }
@@ -460,3 +484,6 @@ export const rotinaTemplates = {
     
 
 
+
+
+    
