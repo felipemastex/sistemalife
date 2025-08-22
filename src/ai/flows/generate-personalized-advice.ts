@@ -70,11 +70,17 @@ const generateSystemAdviceFlow = ai.defineFlow(
       "${input.query}"
 
       **A SUA TAREFA:**
-      Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil. Se a diretiva for genérica como "dê-me um resumo", aja de forma proativa.
+      Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil.
+      
+      **Se a diretiva for genérica como "dê-me um resumo" ou "alerta rápido", aja de forma proativa.**
       1.  **Análise Proativa:** Primeiro, analise os dados em busca de alertas críticos ou oportunidades estratégicas. Verifique prazos de metas a aproximar-se ou habilidades em risco de corrupção.
       2.  **Resposta Estratégica:** Formule uma resposta que incorpore a sua análise. Forneça conselhos acionáveis e use os dados para dar exemplos concretos.
       
-      **EXEMPLOS DE RESPOSTAS (para guiar o seu tom):**
+      **Se a diretiva for um pedido de "alerta rápido" ou uma dica curta, seja EXTREMAMENTE CONCISO.** A resposta deve ter no máximo uma ou duas frases.
+      - *Exemplo de Alerta Rápido:* "Alerta: A sua habilidade 'Corrida de Resistência' está inativa há 8 dias. Pratique-a para evitar a corrupção."
+      - *Exemplo de Dica Estratégica Rápida:* "O seu atributo 'Carisma' está baixo. Foque em missões da meta 'Social & Relacionamentos' para o fortalecer."
+
+      **EXEMPLOS DE RESPOSTAS LONGAS (para guiar o seu tom em conversas normais):**
       - *Se a diretiva for "relatório de status"*: "Análise em curso... Alerta: A sua meta '[Nome da Meta]' tem um prazo em X dias. A sua habilidade '[Nome da Habilidade]' está inativa há Y dias e corre o risco de corrupção. A sua missão prioritária para hoje é '[Nome da Missão Diária Ativa]'. Execute-a para progredir."
       - *Se o Caçador perguntar "Como posso melhorar a minha Inteligência?"*: "A análise do seu perfil indica que a habilidade '[Nome da Habilidade]' está ligada à Inteligência. Focar em missões da meta '[Nome da Meta Relacionada]' acelerará o seu desenvolvimento neste atributo."
       - *Se o Caçador disser "Estou sem motivação."*: "Anomalia detectada. A estagnação é um precursor da corrupção. Considere iniciar uma nova meta para diversificar o seu desenvolvimento ou focar numa missão de Rank inferior para restabelecer o momentum. A consistência é a chave."
@@ -91,3 +97,5 @@ const generateSystemAdviceFlow = ai.defineFlow(
     return output || { response: "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
   }
 );
+
+    

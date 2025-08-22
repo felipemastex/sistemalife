@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award, Store, Backpack, Swords } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
@@ -25,6 +25,8 @@ import { AchievementsView } from '@/components/views/AchievementsView';
 import { ShopView } from '@/components/views/ShopView';
 import { InventoryView } from '@/components/views/InventoryView';
 import { GuildsView } from '@/components/guilds/GuildsView';
+import { SystemAlert } from '@/components/custom/SystemAlert';
+import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 
 
 export default function App() {
@@ -45,6 +47,9 @@ export default function App() {
   const [guilds, setGuilds] = useState([]);
 
   const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
+
+  // State for proactive AI alerts
+  const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
   
   const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -499,6 +504,40 @@ export default function App() {
       }
   }, [user, toast, checkSkillStatus, checkDailyLogin, persistSkills, setupInitialData]);
 
+  // --- Proactive AI Alert Logic ---
+  useEffect(() => {
+    if (!isDataLoaded || systemAlert) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        console.log("Fetching proactive alert...");
+        const result = await generateSystemAdvice({
+          userName: profile.nome_utilizador,
+          profile: JSON.stringify(profile),
+          metas: JSON.stringify(metas),
+          routine: JSON.stringify(routine),
+          missions: JSON.stringify(missions.filter(m => !m.concluido)),
+          query: "Dê-me um alerta rápido ou uma dica estratégica sobre o meu estado atual, em uma frase curta.",
+        });
+
+        // Generate a random position on the screen
+        const top = `${Math.floor(Math.random() * (isMobile ? 40 : 70)) + 15}%`; // Avoid top/bottom edges
+        const left = `${Math.floor(Math.random() * (isMobile ? 10 : 60)) + 5}%`; // Avoid left/right edges
+
+        setSystemAlert({
+          message: result.response,
+          position: { top, left },
+        });
+
+      } catch (error) {
+        console.warn("Could not fetch proactive system alert:", error);
+      }
+    }, 90000); // 90 seconds
+
+    return () => clearTimeout(timer);
+
+  }, [isDataLoaded, systemAlert, profile, metas, routine, missions, isMobile]);
+
   useEffect(() => {
     if (user && !isDataLoaded) {
       fetchData(user.uid);
@@ -634,7 +673,16 @@ export default function App() {
           )}
         {renderContent()}
         {questNotification && <QuestInfoDialog {...questNotification} />}
+        {systemAlert && (
+            <SystemAlert
+              message={systemAlert.message}
+              position={systemAlert.position}
+              onDismiss={() => setSystemAlert(null)}
+            />
+        )}
       </main>
     </div>
   );
 }
+
+    
