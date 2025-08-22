@@ -23,77 +23,7 @@ export const perfis = [
     genero: 'Não especificado',
     nacionalidade: 'Não especificada',
     status: 'Ativo',
-    guild_id: 'guilda_dos_devs_123',
-    guild_role: 'Líder',
   },
-   {
-    id: 'b2c3d4e5-f6g7-8901-2345-67890abcdef1',
-    nome_utilizador: 'Novato_Curioso',
-    primeiro_nome: 'Novato',
-    apelido: 'Curioso',
-    avatar_url: 'https://placehold.co/100x100.png?text=NC',
-    nivel: 3,
-    xp: 150,
-    xp_para_proximo_nivel: 300,
-     estatisticas: {
-      forca: 6,
-      inteligencia: 8,
-      destreza: 5,
-      constituicao: 7,
-      sabedoria: 9,
-      carisma: 6,
-    },
-    genero: 'Masculino',
-    nacionalidade: 'Brasileira',
-    status: 'Ativo',
-    guild_id: 'guilda_dos_devs_123',
-    guild_role: 'Membro'
-  },
-  {
-    id: 'c3d4e5f6-g7h8-9012-3456-7890abcdef2',
-    nome_utilizador: 'Aventureira_Beta',
-    primeiro_nome: 'Aventureira',
-    apelido: 'Beta',
-    avatar_url: 'https://placehold.co/100x100.png?text=AB',
-    nivel: 5,
-    xp: 400,
-    xp_para_proximo_nivel: 600,
-     estatisticas: {
-      forca: 8,
-      inteligencia: 6,
-      destreza: 9,
-      constituicao: 8,
-      sabedoria: 5,
-      carisma: 7,
-    },
-    genero: 'Feminino',
-    nacionalidade: 'Portuguesa',
-    status: 'Ativo',
-    guild_id: 'guilda_dos_devs_123',
-    guild_role: 'Oficial'
-  },
-  {
-    id: 'd4e5f6g7-h8i9-0123-4567-890abcdef3',
-    nome_utilizador: 'Mestre_Zen',
-    primeiro_nome: 'Mestre',
-    apelido: 'Zen',
-    avatar_url: 'https://placehold.co/100x100.png?text=MZ',
-    nivel: 15,
-    xp: 2500,
-    xp_para_proximo_nivel: 3000,
-     estatisticas: {
-      forca: 7,
-      inteligencia: 15,
-      destreza: 10,
-      constituicao: 12,
-      sabedoria: 18,
-      carisma: 11,
-    },
-    genero: 'Não especificado',
-    nacionalidade: 'Japonesa',
-    status: 'Ativo',
-    guild_id: null,
-  }
 ];
 
 export const metas = [
@@ -339,67 +269,6 @@ export const missoes = [
     ]
   }
 ];
-
-export const guilds = [
-  {
-    id: 'guilda_dos_devs_123',
-    nome: 'Devs Lendários',
-    tag: 'LND',
-    descricao: 'Uma guilda para aspirantes a mestres do código. Focada em projetos colaborativos e na partilha de conhecimento.',
-    emblema_icon: 'Code',
-    emblema_bg: 'bg-blue-800',
-    meta_principal_id: 1, // 'Dominar os Fundamentos de Python'
-    config: {
-      recrutamento: 'Aberto', // 'Fechado', 'Apenas por convite'
-    },
-    join_requests: [
-        { user_id: 'd4e5f6g7-h8i9-0123-4567-890abcdef3', nome_utilizador: 'Mestre_Zen', status: 'Pendente' }
-    ],
-    quests: [
-        {
-            id: 'quest_1',
-            nome: 'Maratona de Algoritmos Semanal',
-            descricao: 'Esta semana, vamos afiar as nossas espadas lógicas! Cada membro deve resolver problemas de algoritmos para contribuir para o progresso da guilda.',
-            criador_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-            subTasks: [
-                { 
-                    name: 'Resolver problemas "Fácil"', 
-                    target: 50, 
-                    current: 23, 
-                    daily_limit_per_member: 3, 
-                    attribute: 'inteligencia',
-                    contributions: [
-                        { userId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', amount: 3, date: new Date().toISOString().split('T')[0] },
-                        { userId: 'b2c3d4e5-f6g7-8901-2345-67890abcdef1', amount: 2, date: new Date().toISOString().split('T')[0] },
-                    ]
-                },
-                { 
-                    name: 'Resolver problemas "Médio"', 
-                    target: 25, 
-                    current: 10, 
-                    daily_limit_per_member: 2, 
-                    attribute: 'sabedoria',
-                    contributions: []
-                },
-                { 
-                    name: 'Resolver problemas "Difícil"', 
-                    target: 5, 
-                    current: 1, 
-                    daily_limit_per_member: 1, 
-                    attribute: 'inteligencia',
-                    contributions: [] 
-                },
-            ],
-            concluida: false
-        }
-    ],
-    chat: [
-        { id: 'chat_1', user_id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef', nome_utilizador: 'Cazador_01', message: 'Bem-vindos à guilda, pessoal! Vamos começar a nossa primeira missão.', timestamp: new Date(Date.now() - 3600000) },
-        { id: 'chat_2', user_id: 'c3d4e5f6-g7h8-9012-3456-7890abcdef2', nome_utilizador: 'Aventureira_Beta', message: 'Entendido, líder! Já comecei a resolver os problemas fáceis.', timestamp: new Date(Date.now() - 3500000) },
-    ]
-  }
-];
-
 
 export const categoriasMetas = [
     'Desenvolvimento de Carreira',
