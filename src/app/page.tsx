@@ -18,7 +18,7 @@ import { AIChatView } from '@/components/views/AIChatView';
 import { SettingsView } from '@/components/views/SettingsView';
 import { GuildsView } from '@/components/views/GuildsView';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
@@ -600,3 +600,5 @@ export default function App() {
     </div>
   );
 }
+
+    
