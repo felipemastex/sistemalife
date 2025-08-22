@@ -537,7 +537,7 @@ export default function App() {
       'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={setMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} onAchievementUnlockedNotification={handleShowAchievementUnlockedNotification} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
-      'achievements': <AchievementsView />,
+      'achievements': <AchievementsView profile={profile} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
     };
@@ -598,5 +598,6 @@ export default function App() {
     
 
     
+
 
 
