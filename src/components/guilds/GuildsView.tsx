@@ -11,7 +11,7 @@ import { NoGuildView } from './NoGuildView';
 import { GuildDashboard } from '@/components/guilds/GuildDashboard';
 
 
-export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers }) => {
+export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers }) => {
     const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create'
     const [isLoading, setIsLoading] = useState(true);
     const [currentGuild, setCurrentGuild] = useState(null);
@@ -56,6 +56,16 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
     
     const handleLeaveGuild = () => {
         const updatedProfile = {...profile, guild_id: null, guild_role: null};
+        
+        // Remove member from guild object
+        const guildToLeave = guilds.find(g => g.id === profile.guild_id);
+        if (guildToLeave) {
+            const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
+            const updatedGuild = { ...guildToLeave, membros: updatedMembers };
+            const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
+            setGuilds(updatedGuilds);
+        }
+
         setProfile(updatedProfile);
         setCurrentGuild(null);
         setView('no-guild');
@@ -82,7 +92,7 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
                         onLeaveGuild={handleLeaveGuild}
                         onEdit={() => setView('edit')}
                         allUsers={allUsers}
-                        setAllUsers={setProfile} // This is a bit of a hack, it should be setAllUsers
+                        setAllUsers={setAllUsers}
                     />;
         }
         if (view === 'create') {

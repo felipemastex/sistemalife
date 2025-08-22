@@ -27,9 +27,9 @@ export const JoinRequests = ({ requests, allUsers, onAccept, onDecline }) => {
             <CardHeader>
                 <CardTitle>Pedidos de Entrada ({requests.length})</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow overflow-hidden">
+            <CardContent className="flex-grow overflow-hidden p-0">
                 <ScrollArea className="h-48">
-                    <div className="space-y-3 pr-4">
+                    <div className="space-y-3 p-6 pt-0">
                         {requests.map(req => {
                             const userProfile = allUsers.find(u => u.id === req.user_id);
                             if (!userProfile) return null;

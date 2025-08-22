@@ -57,9 +57,10 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         onGuildUpdate(updatedGuild);
     };
 
-    const handleMemberUpdate = (updatedMembers) => {
-        const updatedGuild = {...guildData, membros: updatedMembers };
+    const handleMemberUpdate = (updatedMembersMeta, updatedUsers) => {
+        const updatedGuild = {...guildData, membros: updatedMembersMeta };
         onGuildUpdate(updatedGuild);
+        setAllUsers(updatedUsers);
     }
     
     const handleQuestsUpdate = (updatedQuests) => {
@@ -72,63 +73,46 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
-            <div className="flex-grow mt-6 overflow-hidden">
-                <Tabs defaultValue="geral" className="h-full flex flex-col md:flex-row gap-6">
-                    
-                    {/* Coluna Esquerda (Principal) */}
-                    <div className="flex-grow h-full flex flex-col">
-                        <TabsContent value="geral" className="h-full mt-0 flex-grow">
-                            <GuildQuests 
-                                quests={guildData.quests}
-                                onQuestsUpdate={handleQuestsUpdate}
-                                canManage={canManage}
-                                guildData={guildData}
-                                userProfile={profile}
-                            />
-                        </TabsContent>
-                        <TabsContent value="membros" className="h-full mt-0">
-                             <GuildMembers 
-                                members={members}
-                                guildMembersMeta={guildData.membros}
-                                onMemberUpdate={handleMemberUpdate} 
-                                currentUserProfile={profile} 
-                            />
-                        </TabsContent>
-                        <TabsContent value="config" className="h-full mt-0">
-                            <p>Configurações da Guilda (Em breve)</p>
-                        </TabsContent>
+            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
+                
+                {/* Coluna Esquerda */}
+                <div className="lg:col-span-3 flex flex-col gap-6">
+                    {canManage && (
+                        <JoinRequests
+                            requests={guildData.join_requests || []}
+                            allUsers={allUsers}
+                            onAccept={handleAcceptRequest}
+                            onDecline={handleDeclineRequest}
+                        />
+                    )}
+                    <GuildMembers 
+                        members={members}
+                        guildMembersMeta={guildData.membros}
+                        onMemberUpdate={handleMemberUpdate} 
+                        currentUserProfile={profile}
+                        allUsers={allUsers}
+                    />
+                </div>
+
+                {/* Coluna Central */}
+                <div className="lg:col-span-6 flex flex-col min-h-0">
+                    <GuildQuests 
+                        quests={guildData.quests}
+                        onQuestsUpdate={handleQuestsUpdate}
+                        canManage={canManage}
+                        guildData={guildData}
+                        userProfile={profile}
+                    />
+                </div>
+
+                {/* Coluna Direita */}
+                <div className="lg:col-span-3 flex flex-col gap-6 min-h-0">
+                    <GuildAnnouncements />
+                    <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-0">
+                       <GuildChat guildId={guildData.id} userProfile={profile} />
                     </div>
+                </div>
 
-                    {/* Coluna Direita (Lateral) */}
-                    <div className="w-full md:w-96 md:flex-shrink-0 flex flex-col gap-6">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="geral">Geral</TabsTrigger>
-                            <TabsTrigger value="membros">Membros</TabsTrigger>
-                            <TabsTrigger value="config" disabled={!isLeader}>
-                                <div className="flex items-center gap-1">
-                                    <Edit className="h-3 w-3" /> Gestão
-                                </div>
-                            </TabsTrigger>
-                        </TabsList>
-                        
-                         <div className="flex-grow flex flex-col gap-6 min-h-0">
-                            {canManage && (
-                                <JoinRequests
-                                    requests={guildData.join_requests || []}
-                                    allUsers={allUsers}
-                                    onAccept={handleAcceptRequest}
-                                    onDecline={handleDeclineRequest}
-                                />
-                            )}
-                            <GuildAnnouncements />
-
-                            <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-0">
-                                <GuildChat guildId={guildData.id} userProfile={profile} />
-                            </div>
-                        </div>
-
-                    </div>
-                </Tabs>
             </div>
         </div>
     );

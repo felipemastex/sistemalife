@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '../ui/scroll-area';
 
 const ContributionDialog = ({ open, onOpenChange, subTask, onContribute, userDailyContribution }) => {
     const [amount, setAmount] = useState('');
@@ -143,7 +144,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
             ...q,
             subTasks: q.subTasks.map(st => {
                 if (st.name === subTask.name) {
-                    const newCurrent = Math.min(st.target, st.current + amount);
+                    const newCurrent = Math.min(st.target, (st.current || 0) + amount);
                     const newContributions = [...(st.contributions || []), newContribution];
                     return { ...st, current: newCurrent, contributions: newContributions };
                 }
@@ -169,12 +170,13 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                     </Button>
                 )}
             </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto pr-2">
-                <div className="space-y-4">
+            <CardContent className="flex-grow overflow-hidden p-0">
+                <ScrollArea className="h-full">
+                <div className="space-y-4 p-6 pt-0">
                     {quests && quests.length > 0 ? (
                         quests.map(quest => {
                             const totalTarget = quest.subTasks.reduce((sum, task) => sum + task.target, 0);
-                            const totalCurrent = quest.subTasks.reduce((sum, task) => sum + task.current, 0);
+                            const totalCurrent = quest.subTasks.reduce((sum, task) => sum + (task.current || 0), 0);
                             const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
                             return (
@@ -191,7 +193,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                                                 .reduce((sum, c) => sum + c.amount, 0);
                                             
                                             const isDailyGoalMet = userDailyContribution >= task.daily_limit_per_member;
-                                            const isTaskCompleted = task.current >= task.target;
+                                            const isTaskCompleted = (task.current || 0) >= task.target;
 
                                             return (
                                                 <div key={task.name} className="space-y-2">
@@ -221,9 +223,9 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                                                         {/* Guild Goal */}
                                                         <div className="flex justify-between items-center text-xs text-muted-foreground bg-background/30 p-1.5 rounded">
                                                              <span>Progresso da Guilda</span>
-                                                             <span className="font-mono">{task.current} / {task.target}</span>
+                                                             <span className="font-mono">{task.current || 0} / {task.target}</span>
                                                         </div>
-                                                        <Progress value={(task.current / task.target) * 100} className="h-1.5"/>
+                                                        <Progress value={((task.current || 0) / task.target) * 100} className="h-1.5"/>
                                                     </div>
                                                 </div>
                                             )
@@ -248,6 +250,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                         </div>
                     )}
                 </div>
+                </ScrollArea>
             </CardContent>
              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogContent>
@@ -288,5 +291,3 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
         </Card>
     );
 };
-
-    
