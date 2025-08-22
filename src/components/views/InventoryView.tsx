@@ -27,7 +27,7 @@ export const InventoryView = ({ profile, setProfile }) => {
         // Lógica de uso a ser implementada no futuro
         toast({
             title: "Função em Desenvolvimento",
-            description: "A capacidade de usar itens será implementada em breve.",
+            description: "A lógica para ativar o efeito deste item será implementada em breve.",
         });
     }
 
@@ -72,7 +72,7 @@ export const InventoryView = ({ profile, setProfile }) => {
                                     <Button 
                                         className="w-full" 
                                         onClick={() => handleUseItem(item.instanceId)}
-                                        disabled // Habilitar quando a lógica de uso for implementada
+                                        disabled={true} // Habilitar quando a lógica de uso for implementada
                                     >
                                         Usar Item
                                     </Button>
