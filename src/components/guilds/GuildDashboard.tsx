@@ -69,8 +69,22 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
             
             <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
                 
-                {/* Coluna Esquerda */}
-                <div className="lg:col-span-3 flex flex-col gap-6">
+                {/* Coluna Esquerda - Conteúdo Principal */}
+                <div className="lg:col-span-8 flex flex-col gap-6 min-h-0">
+                    <GuildQuests 
+                        quests={guildData.quests}
+                        onQuestsUpdate={handleQuestsUpdate}
+                        canManage={canManage}
+                        guildData={guildData}
+                        userProfile={profile}
+                    />
+                    <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-[300px] lg:min-h-0">
+                       <GuildChat guildId={guildData.id} userProfile={profile} />
+                    </div>
+                </div>
+
+                {/* Coluna Direita - Painéis Laterais */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
                     {canManage && (
                         <JoinRequests
                             requests={guildData.join_requests || []}
@@ -86,27 +100,8 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                         currentUserProfile={profile}
                         allUsers={allUsers}
                     />
+                     <GuildAnnouncements />
                 </div>
-
-                {/* Coluna Central */}
-                <div className="lg:col-span-6 flex flex-col min-h-0">
-                    <GuildQuests 
-                        quests={guildData.quests}
-                        onQuestsUpdate={handleQuestsUpdate}
-                        canManage={canManage}
-                        guildData={guildData}
-                        userProfile={profile}
-                    />
-                </div>
-
-                {/* Coluna Direita */}
-                <div className="lg:col-span-3 flex flex-col gap-6 min-h-0">
-                    <GuildAnnouncements />
-                    <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-0">
-                       <GuildChat guildId={guildData.id} userProfile={profile} />
-                    </div>
-                </div>
-
             </div>
         </div>
     );
