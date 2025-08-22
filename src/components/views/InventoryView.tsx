@@ -23,13 +23,54 @@ export const InventoryView = ({ profile, setProfile }) => {
         return { ...invItem, ...details };
     });
 
-    const handleUseItem = (itemInstanceId) => {
-        // Lógica de uso a ser implementada no futuro
-        toast({
-            title: "Função em Desenvolvimento",
-            description: "A lógica para ativar o efeito deste item será implementada em breve.",
-        });
-    }
+    const handleUseItem = (item) => {
+        if (!item || !item.effect) return;
+
+        let updatedProfile = { ...profile };
+        const now = new Date();
+
+        // Filter out expired effects before applying new ones
+        updatedProfile.active_effects = (updatedProfile.active_effects || []).filter(eff => 
+            new Date(eff.expires_at).getTime() > now.getTime()
+        );
+
+        switch (item.effect.type) {
+            case 'xp_boost':
+                const expires_at = new Date(now.getTime() + item.effect.duration_hours * 60 * 60 * 1000).toISOString();
+                updatedProfile.active_effects.push({
+                    itemId: item.id,
+                    type: 'xp_boost',
+                    multiplier: item.effect.multiplier,
+                    expires_at,
+                });
+                toast({
+                    title: `${item.name} Ativado!`,
+                    description: `Você ganhará ${item.effect.multiplier}x mais XP durante a próxima hora.`,
+                });
+                break;
+            case 'streak_recovery':
+                 updatedProfile.active_effects.push({
+                    itemId: item.id,
+                    type: 'streak_recovery',
+                    // This effect doesn't expire with time, but is consumed on use
+                    expires_at: new Date(now.setFullYear(now.getFullYear() + 1)).toISOString(), // Expires in 1 year
+                });
+                 toast({
+                    title: `${item.name} Ativado!`,
+                    description: `A sua próxima quebra de sequência será evitada.`,
+                });
+                break;
+            default:
+                toast({ title: 'Item sem efeito', description: 'Este item ainda não tem um efeito implementado.' });
+                return;
+        }
+
+        // Consume item by removing it from inventory
+        updatedProfile.inventory = (updatedProfile.inventory || []).filter(invItem => invItem.instanceId !== item.instanceId);
+        
+        setProfile(updatedProfile);
+    };
+
 
     return (
         <div className="p-4 md:p-6 h-full overflow-y-auto">
@@ -46,11 +87,12 @@ export const InventoryView = ({ profile, setProfile }) => {
                         const Icon = item.icon;
                         const purchaseDate = new Date(item.purchaseDate);
                         const timeAgo = formatDistanceToNowStrict(purchaseDate, { addSuffix: true, locale: ptBR });
+                        const isEffectActive = profile.active_effects?.some(eff => eff.itemId === item.id);
 
                         return (
                             <Card 
                                 key={item.instanceId}
-                                className="bg-card/60 border-border/80 flex flex-col"
+                                className={cn("bg-card/60 border-border/80 flex flex-col", isEffectActive && "border-primary/50")}
                             >
                                 <CardHeader className="flex flex-row items-center gap-4">
                                      <div className="w-14 h-14 rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0">
@@ -71,10 +113,10 @@ export const InventoryView = ({ profile, setProfile }) => {
                                 <CardFooter>
                                     <Button 
                                         className="w-full" 
-                                        onClick={() => handleUseItem(item.instanceId)}
-                                        disabled={true} // Habilitar quando a lógica de uso for implementada
+                                        onClick={() => handleUseItem(item)}
+                                        disabled={isEffectActive}
                                     >
-                                        Usar Item
+                                        {isEffectActive ? "Efeito Ativo" : "Usar Item"}
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -91,5 +133,3 @@ export const InventoryView = ({ profile, setProfile }) => {
         </div>
     );
 };
-
-    

@@ -13,7 +13,8 @@ export const perfis = [
     xp: 0,
     xp_para_proximo_nivel: 100, // XP necessário para ir do nível 1 para o 2
     fragmentos: 0, // Moeda do jogo
-    inventory: [], // Inventário de itens
+    inventory: [], // Inventário de itens. Ex: [{ itemId: 'potion_double_xp_1h', purchaseDate: '...', instanceId: '...' }]
+    active_effects: [], // Efeitos ativos. Ex: [{ itemId: 'potion_double_xp_1h', type: 'xp_boost', expires_at: '...' }]
     estatisticas: {
       forca: 5,
       inteligencia: 5,

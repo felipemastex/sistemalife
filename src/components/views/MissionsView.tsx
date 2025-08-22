@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Zap } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -269,32 +269,43 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const today = new Date();
         const lastCompletionDateStr = currentProfile.ultimo_dia_de_missao_concluida;
         let newStreak = currentProfile.streak_atual || 0;
+        let streakProtected = false;
 
         if (lastCompletionDateStr) {
             const lastCompletionDate = new Date(lastCompletionDateStr);
             const diffDays = differenceInCalendarDays(today, lastCompletionDate);
 
             if (diffDays === 1) {
-                // Completed yesterday, increment streak
                 newStreak++;
                 toast({ title: `Sequência Mantida: Dia ${newStreak}!`, description: `Bom trabalho! Continue assim.` });
             } else if (diffDays > 1) {
-                // Missed a day, reset streak
-                newStreak = 1;
-                toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+                const streakRecoveryAmulet = (currentProfile.active_effects || []).find(eff => eff.type === 'streak_recovery');
+                if (streakRecoveryAmulet) {
+                    newStreak++; // Keep streak and increment
+                    streakProtected = true;
+                    toast({ title: 'Amuleto Ativado!', description: 'A sua sequência foi salva da quebra!' });
+                } else {
+                    newStreak = 1;
+                    toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+                }
             }
-            // if diffDays is 0, do nothing to the streak
         } else {
-            // First mission ever or first since a long break
             newStreak = 1;
-             toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+            toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
         }
         
-        return {
+        const updatedProfile = {
             ...currentProfile,
             streak_atual: newStreak,
-            ultimo_dia_de_missao_concluida: today.toISOString().split('T')[0], // Store as YYYY-MM-DD
+            ultimo_dia_de_missao_concluida: today.toISOString().split('T')[0],
         };
+
+        if (streakProtected) {
+            // Remove the used amulet effect
+            updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
+        }
+
+        return updatedProfile;
     };
 
 
@@ -319,6 +330,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         let completedDailyMission = null;
 
         let isRankedMissionComplete = false;
+
+        // Apply XP Boost if active
+        let xpMultiplier = 1;
+        const xpBoostEffect = (profile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
+        if (xpBoostEffect) {
+            xpMultiplier = xpBoostEffect.multiplier;
+        }
         
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
@@ -346,11 +364,21 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         });
 
         setMissions(updatedMissions);
+        
+        const finalXPGained = Math.round(xpGained * xpMultiplier);
+        if (xpMultiplier > 1) {
+            toast({ 
+                title: 'Bónus de XP Ativo!',
+                description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!`,
+                className: 'bg-yellow-500/20 border-yellow-500 text-white'
+             });
+        }
+
 
         // Profile XP, Level Up, and Streak
         let newProfile = { 
             ...profile, 
-            xp: profile.xp + xpGained,
+            xp: profile.xp + finalXPGained,
             fragmentos: (profile.fragmentos || 0) + fragmentsGained,
             missoes_concluidas_total: (profile.missoes_concluidas_total || 0) + 1,
         };
@@ -641,6 +669,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
     const completedMissions = missions.filter(m => m.concluido);
     const visibleMissions = getVisibleMissions();
+    
+    const xpBoostActive = (profile.active_effects || []).some(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
 
     return (
         <div className="p-4 md:p-6">
@@ -651,6 +681,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 </Button>
             </div>
             <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
+            
+            {xpBoostActive && (
+                <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3">
+                    <Zap className="h-5 w-5 text-yellow-400" />
+                    <p className="text-yellow-300 font-semibold text-sm">Bónus de XP Ativo! Você está a ganhar o dobro de XP em todas as missões.</p>
+                </div>
+            )}
 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {visibleMissions.map(mission => {

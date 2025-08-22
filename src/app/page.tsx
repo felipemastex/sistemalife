@@ -269,6 +269,7 @@ export default function App() {
           avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0,2).toUpperCase()}`,
           ultimo_login_em: new Date().toISOString(), // Add last login field
           inventory: [], // Initialize inventory
+          active_effects: [], // Initialize active effects
       };
       batch.set(userRef, initialProfile);
 
@@ -601,5 +602,3 @@ export default function App() {
     </div>
   );
 }
-
-    
