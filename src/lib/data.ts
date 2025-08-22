@@ -23,6 +23,8 @@ export const perfis = [
     genero: 'Não especificado',
     nacionalidade: 'Não especificada',
     status: 'Ativo',
+    missoes_concluidas_total: 0,
+    achievements: [], // Ex: [{ achievementId: 'missions_1', date: '2024-01-01' }]
   },
 ];
 
@@ -356,3 +358,4 @@ export const rotinaTemplates = {
 
 
     
+

@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertCircle, Clock, X } from 'lucide-react';
+import { AlertCircle, Award, X } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export interface QuestInfoProps {
@@ -49,6 +49,9 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
     };
   }, [onClose]);
 
+  const isAchievement = title.includes("CONQUISTA");
+  const Icon = isAchievement ? Award : AlertCircle;
+
   return (
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <CustomDialogContent 
@@ -63,9 +66,9 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
 
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-cyan-400/20 pb-3 mb-4">
-            <AlertCircle className="h-6 w-6 text-cyan-400" />
+            <Icon className={cn("h-6 w-6", isAchievement ? "text-yellow-400" : "text-cyan-400")} />
             <DialogTitle asChild>
-                <h2 className="text-xl font-bold tracking-widest uppercase text-cyan-400 font-cinzel">{title}</h2>
+                <h2 className={cn("text-xl font-bold tracking-widest uppercase font-cinzel", isAchievement ? "text-yellow-400" : "text-cyan-400")}>{title}</h2>
             </DialogTitle>
           </div>
             <DialogDescription className="sr-only">{description}</DialogDescription>
@@ -75,7 +78,9 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
             <p className="text-lg font-semibold text-gray-200">{description}</p>
             
             <div className="space-y-2 text-left w-full max-w-sm mx-auto">
-                <h3 className="text-center font-bold text-green-400 text-md tracking-wider mb-2">GOALS</h3>
+                <h3 className={cn("text-center font-bold text-md tracking-wider mb-2", isAchievement ? "text-yellow-400" : "text-green-400")}>
+                    {isAchievement ? "RECOMPENSA" : "OBJETIVOS"}
+                </h3>
                 {goals.map((goal, index) => (
                     <div key={index} className="flex justify-between items-start gap-4 font-mono text-gray-300 text-sm">
                         <span className="break-words whitespace-pre-wrap">{goal.name}</span>
@@ -84,11 +89,10 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
                 ))}
             </div>
 
-            <p className="text-sm text-red-500 font-semibold tracking-wider uppercase bg-red-900/30 border border-red-500/50 rounded-md p-2">
-                <span className="font-bold">CAUTION</span> - {caution}
+            <p className="text-sm text-yellow-500 font-semibold tracking-wider uppercase bg-yellow-900/30 border border-yellow-500/50 rounded-md p-2">
+                <span className="font-bold">SISTEMA</span> - {caution}
             </p>
 
-            <Clock className="h-10 w-10 text-gray-500 mx-auto" />
           </div>
         </div>
       </CustomDialogContent>

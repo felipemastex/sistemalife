@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
+import { AchievementsView } from '@/components/views/AchievementsView';
 
 
 export default function App() {
@@ -228,6 +229,18 @@ export default function App() {
         { name: '- CONQUISTA', progress: `[${goalName}]` },
       ],
       caution: 'Um novo horizonte de desafios aguarda. Use esta vitória como combustível para a sua próxima jornada.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+
+  const handleShowAchievementUnlockedNotification = (achievementName: string) => {
+    setQuestNotification({
+      title: 'CONQUISTA DESBLOQUEADA!',
+      description: 'O seu esforço e dedicação foram reconhecidos pelo Sistema.',
+      goals: [
+        { name: '- CONQUISTA', progress: `[${achievementName}]` },
+      ],
+      caution: 'Continue a sua jornada para desbloquear todos os segredos do Sistema.',
       onClose: () => setQuestNotification(null),
     });
   };
@@ -497,6 +510,7 @@ export default function App() {
           <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
+          <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
           <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
       </nav>
       <div className="mt-auto">
@@ -520,9 +534,10 @@ export default function App() {
     const views = {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={setMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={setMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} onAchievementUnlockedNotification={handleShowAchievementUnlockedNotification} />,
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
+      'achievements': <AchievementsView />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
     };
@@ -583,4 +598,5 @@ export default function App() {
     
 
     
+
 

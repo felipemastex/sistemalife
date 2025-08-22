@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { statCategoryMapping } from '@/lib/mappings';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { achievements } from '@/lib/achievements';
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -82,7 +83,7 @@ const getProfileRank = (level) => {
     return { rank: 'SSS', title: 'Lendário' };
 };
 
-export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, setMetas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification }) => {
+export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, setMetas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification, onAchievementUnlockedNotification }) => {
     const [generating, setGenerating] = useState(null);
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -232,6 +233,35 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             });
         }
     };
+    
+    const checkAndUnlockAchievements = (currentProfile) => {
+        const newlyUnlocked = [];
+        achievements.forEach(achievement => {
+            const isAlreadyUnlocked = currentProfile.achievements?.some(a => a.achievementId === achievement.id);
+            if (isAlreadyUnlocked) return;
+
+            let conditionMet = false;
+            switch (achievement.criteria.type) {
+                case 'missions_completed':
+                    conditionMet = currentProfile.missoes_concluidas_total >= achievement.criteria.value;
+                    break;
+                case 'level_reached':
+                    conditionMet = currentProfile.nivel >= achievement.criteria.value;
+                    break;
+                // Adicionar outras verificações (goals, skills) aqui no futuro.
+            }
+            
+            if (conditionMet) {
+                newlyUnlocked.push({ achievementId: achievement.id, date: new Date().toISOString() });
+                onAchievementUnlockedNotification(achievement.name);
+            }
+        });
+
+        if (newlyUnlocked.length > 0) {
+            return { ...currentProfile, achievements: [...(currentProfile.achievements || []), ...newlyUnlocked] };
+        }
+        return currentProfile;
+    };
 
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
@@ -282,10 +312,18 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         setMissions(updatedMissions);
 
         // Profile XP and Level Up
-        let newProfile = { ...profile, xp: profile.xp + xpGained };
+        let newProfile = { 
+            ...profile, 
+            xp: profile.xp + xpGained,
+            missoes_concluidas_total: (profile.missoes_concluidas_total || 0) + 1,
+        };
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
         }
+
+        // Check for achievements
+        newProfile = checkAndUnlockAchievements(newProfile);
+
         setProfile(newProfile);
 
         // Skill XP and Level Up
@@ -813,3 +851,4 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 };
 
     
+
