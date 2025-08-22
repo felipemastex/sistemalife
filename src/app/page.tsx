@@ -266,7 +266,8 @@ export default function App() {
           apelido: "Caçador",
           nome_utilizador: emailUsername,
           avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0,2).toUpperCase()}`,
-          ultimo_login_em: new Date().toISOString() // Add last login field
+          ultimo_login_em: new Date().toISOString(), // Add last login field
+          inventory: [], // Initialize inventory
       };
       batch.set(userRef, initialProfile);
 
@@ -540,7 +541,7 @@ export default function App() {
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
-      'shop': <ShopView profile={profile} />,
+      'shop': <ShopView profile={profile} setProfile={persistProfile} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
     };

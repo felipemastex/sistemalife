@@ -9,15 +9,47 @@ import { shopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export const ShopView = ({ profile }) => {
+export const ShopView = ({ profile, setProfile }) => {
     const { toast } = useToast();
+    const [isBuying, setIsBuying] = useState(null);
 
     const handleBuyItem = (item) => {
-        // Lógica de compra será implementada aqui no futuro
-        toast({
-            title: "Funcionalidade em Breve",
-            description: `A compra de "${item.name}" ainda não está disponível.`,
-        });
+        if (!profile || isBuying) return;
+
+        if ((profile.fragmentos || 0) < item.price) {
+            toast({
+                variant: 'destructive',
+                title: 'Fundos Insuficientes',
+                description: `Você precisa de mais ${item.price - (profile.fragmentos || 0)} fragmentos para comprar este item.`,
+            });
+            return;
+        }
+
+        setIsBuying(item.id);
+        
+        // Simulate a small delay for better UX
+        setTimeout(() => {
+            const newInventoryItem = {
+                itemId: item.id,
+                purchaseDate: new Date().toISOString(),
+                instanceId: `${item.id}_${Date.now()}` // Unique ID for each instance of an item
+            };
+            
+            const updatedProfile = {
+                ...profile,
+                fragmentos: (profile.fragmentos || 0) - item.price,
+                inventory: [...(profile.inventory || []), newInventoryItem]
+            };
+
+            setProfile(updatedProfile);
+
+            toast({
+                title: 'Compra Efetuada!',
+                description: `Você adquiriu "${item.name}".`,
+            });
+            setIsBuying(null);
+        }, 500);
+
     };
 
     if (!profile) {
@@ -45,10 +77,14 @@ export const ShopView = ({ profile }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {shopItems.map(item => {
                     const Icon = item.icon;
+                    const canAfford = (profile.fragmentos || 0) >= item.price;
                     return (
                         <Card 
                             key={item.id}
-                            className="bg-card/60 border-border/80 flex flex-col transition-all duration-300 hover:border-primary/50"
+                            className={cn(
+                                "bg-card/60 border-border/80 flex flex-col transition-all duration-300",
+                                canAfford ? 'hover:border-primary/50' : 'opacity-70'
+                            )}
                         >
                             <CardHeader className="flex flex-row items-center gap-4">
                                  <div className="w-14 h-14 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
@@ -69,10 +105,10 @@ export const ShopView = ({ profile }) => {
                                 <Button 
                                     className="w-full" 
                                     onClick={() => handleBuyItem(item)}
-                                    disabled // Desativado por enquanto
+                                    disabled={!canAfford || isBuying === item.id}
                                 >
                                     <Gem className="mr-2 h-4 w-4" />
-                                    Comprar por {item.price}
+                                    {isBuying === item.id ? 'A comprar...' : `Comprar por ${item.price}`}
                                 </Button>
                             </CardFooter>
                         </Card>
