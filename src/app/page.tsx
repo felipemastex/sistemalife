@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Shield } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -16,8 +16,9 @@ import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
 import { SettingsView } from '@/components/views/SettingsView';
+import { GuildsView } from '@/components/views/GuildsView';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
@@ -36,6 +37,8 @@ export default function App() {
   const [skills, setSkills] = useState([]);
   const [routine, setRoutine] = useState({});
   const [routineTemplates, setRoutineTemplates] = useState({});
+  const [guilds, setGuilds] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
@@ -285,6 +288,13 @@ export default function App() {
       // 6. Routine Templates
       const routineTemplatesRef = doc(db, 'users', userId, 'routine', 'templates');
       batch.set(routineTemplatesRef, mockData.rotinaTemplates);
+      
+      // 7. Guilds (Mock)
+      const guildsRef = collection(db, 'guilds');
+      mockData.guilds.forEach(guild => {
+          batch.set(doc(guildsRef, guild.id), guild);
+      });
+
 
       await batch.commit();
 
@@ -295,6 +305,9 @@ export default function App() {
       setSkills(mockData.habilidades);
       setRoutine(mockData.rotina);
       setRoutineTemplates(mockData.rotinaTemplates);
+      setGuilds(mockData.guilds);
+      setAllUsers(mockData.perfis);
+
 
       toast({ title: "Bem-vindo ao Sistema!", description: "O seu perfil inicial foi configurado." });
   };
@@ -434,6 +447,14 @@ export default function App() {
               const routineTemplatesDoc = await getDoc(doc(userDocRef, 'routine', 'templates'));
               setRoutineTemplates(routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {});
 
+               // Fetch all guilds
+                const guildsSnapshot = await getDocs(collection(db, 'guilds'));
+                setGuilds(guildsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+
+                // Fetch all users
+                const usersSnapshot = await getDocs(collection(db, 'users'));
+                setAllUsers(usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+
           } else {
               console.log("Utilizador novo. A configurar dados iniciais...");
               await setupInitialData(user.uid, user.email);
@@ -495,6 +516,7 @@ export default function App() {
           <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
           <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
+          <NavItem icon={Shield} label="Guilda" page="guild" inSheet={inSheet} />
           <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
       </nav>
       <div className="mt-auto">
@@ -523,6 +545,7 @@ export default function App() {
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
+      'guild': <GuildsView profile={profile} setProfile={setProfile} guilds={guilds} setGuilds={setGuilds} metas={metas} allUsers={allUsers} />,
     };
 
     return (
