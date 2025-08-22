@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
-import { LoaderCircle, Wand2 } from 'lucide-react';
+import { LoaderCircle, Wand2, Bell, BellOff } from 'lucide-react';
+import { Switch } from '../ui/switch';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -56,6 +57,8 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
     const [isResetting, setIsResetting] = useState(false);
     const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const { toast } = useToast();
+    const [notificationPermission, setNotificationPermission] = useState('default');
+
 
     useEffect(() => {
         if (profile) {
@@ -67,8 +70,43 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                 avatar_url: profile.avatar_url || '',
             });
         }
+         if (typeof window !== 'undefined' && 'Notification' in window) {
+            setNotificationPermission(Notification.permission);
+        }
     }, [profile]);
     
+    const handleNotificationToggle = async (enabled) => {
+        if (typeof window === 'undefined' || !('Notification' in window)) {
+            toast({ variant: 'destructive', title: 'Navegador não suportado', description: 'O seu navegador não suporta notificações push.' });
+            return;
+        }
+
+        if (enabled) {
+            if (Notification.permission === 'granted') {
+                setNotificationPermission('granted');
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                toast({ variant: 'destructive', title: 'Permissão Bloqueada', description: 'Você precisa de permitir as notificações nas configurações do seu navegador.' });
+                return;
+            }
+            const permission = await Notification.requestPermission();
+            setNotificationPermission(permission);
+            if (permission === 'granted') {
+                toast({ title: 'Notificações Ativadas!', description: 'Você receberá alertas do Sistema.' });
+                // Aqui seria o local para registar o token de push no backend
+            } else {
+                 toast({ title: 'Permissão Recusada', description: 'Você não receberá notificações.' });
+            }
+        } else {
+            // A desativação é gerida no backend, removendo o token de subscrição.
+            // Por agora, apenas atualizamos a UI.
+            setNotificationPermission('default');
+            toast({ title: 'Notificações Desativadas', description: 'Você não receberá mais alertas.' });
+        }
+    };
+
+
     const hasChanges = () => {
         if (!profile) return false;
         return (
@@ -151,7 +189,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
             <h1 className="text-3xl font-bold text-primary mb-6 font-cinzel tracking-wider">Ficha de Caçador</h1>
             
             <form onSubmit={handleSave}>
-                <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm">
+                <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm mb-6">
                     <CardContent className="p-0">
                        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-6">
                             {/* Profile Picture */}
@@ -227,6 +265,32 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                     </CardContent>
                 </Card>
             </form>
+            
+             <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm mb-6">
+                <CardContent className="p-0">
+                     <h2 className="text-xl font-bold text-cyan-400">Notificações</h2>
+                        <p className="text-cyan-400/70 text-sm mb-4">Receba alertas proativos do Sistema.</p>
+                        <div className="flex items-center justify-between bg-black/20 p-4 rounded-lg">
+                           <div className="flex items-center gap-3">
+                                {notificationPermission === 'granted' ? <Bell className="h-5 w-5 text-green-400"/> : <BellOff className="h-5 w-5 text-red-400"/>}
+                                 <div>
+                                    <p className="font-semibold text-white">Notificações Push</p>
+                                    <p className="text-xs text-gray-400">
+                                        Estado atual: <span className="font-bold">{notificationPermission === 'granted' ? 'Ativo' : 'Inativo'}</span>
+                                    </p>
+                                 </div>
+                           </div>
+                           <Switch
+                                checked={notificationPermission === 'granted'}
+                                onCheckedChange={handleNotificationToggle}
+                                disabled={notificationPermission === 'denied'}
+                           />
+                        </div>
+                        {notificationPermission === 'denied' && (
+                            <p className="text-xs text-yellow-500 mt-2">As notificações foram bloqueadas no seu navegador. Você precisa de as ativar manualmente nas configurações do site.</p>
+                        )}
+                </CardContent>
+            </Card>
 
             <div className="mt-8">
                  <Card className="bg-red-900/30 border border-red-500/30">
