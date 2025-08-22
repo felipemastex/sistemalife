@@ -128,7 +128,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         } finally {
             setIsLoading(false);
         }
-    },[onClose, handleToastError]);
+    },[onClose]);
 
 
     const handleNextStep = async () => {
@@ -199,7 +199,6 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                  habilidade_associada_id: metaToEdit?.habilidade_associada_id
             };
             onSave(newMeta);
-            toast({ title: "Meta SMART Salva!", description: "A sua nova meta foi definida com sucesso." });
             onClose(); 
         } catch (error) {
              handleToastError(error, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
@@ -514,8 +513,6 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         title: 'Sistema Sobrecarregado',
                         description: 'Uma missão inicial simples foi criada. Tente editar a meta mais tarde para gerar uma árvore de progressão completa.',
                     });
-                } else {
-                    toast({ title: "Nova Árvore de Progressão Gerada!", description: `A sua jornada para "${newMetaWithId.nome}" começou.` });
                 }
 
                 const newMissions = (result.progression || []).map((epicMission, index) => {
@@ -545,6 +542,9 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 setSkills(currentSkills => [...currentSkills, newSkill]);
                 setMetas([...metas, newMetaWithId]);
                 setMissions([...missions, ...newMissions]);
+                
+                // Show roadmap after creation
+                handleGetRoadmap(newMetaWithId);
             }
         } catch (error) {
             handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
