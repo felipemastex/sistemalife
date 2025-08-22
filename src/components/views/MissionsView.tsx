@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Zap } from 'lucide-react';
-import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem } from 'lucide-react';
+import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,6 @@ import { statCategoryMapping } from '@/lib/mappings';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { achievements } from '@/lib/achievements';
 import { differenceInCalendarDays } from 'date-fns';
-import { generateMissionRewards } from '@/ai/flows/generate-mission-rewards';
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -343,7 +342,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
                     if (daily.id === dailyMissionId) {
                         xpGained = daily.xp_conclusao;
-                        fragmentsGained = daily.fragmentos_conclusao;
+                        fragmentsGained = daily.fragmentos_conclusao || 0;
                         completedDailyMission = { ...daily, concluido: true };
                         return completedDailyMission;
                     }
@@ -446,7 +445,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             nome: result.nextMissionName,
                             descricao: result.nextMissionDescription,
                             xp_conclusao: result.xp,
-                            fragmentos_conclusao: result.fragments,
                             concluido: false,
                             tipo: 'diaria',
                             learningResources: result.learningResources,
@@ -500,7 +498,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
-                fragmentos_conclusao: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -534,7 +531,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 if (completedMissions.length > 0) {
                     const lastCompleted = completedMissions[completedMissions.length - 1];
                     xpToSubtract = lastCompleted.xp_conclusao;
-                    fragmentsToSubtract = lastCompleted.fragmentos_conclusao;
+                    fragmentsToSubtract = lastCompleted.fragmentos_conclusao || 0;
 
                     const newDailyMissions = rm.missoes_diarias
                         .map(dm => {
@@ -591,7 +588,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
-                fragmentos_conclusao: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -669,8 +665,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
     const completedMissions = missions.filter(m => m.concluido);
     const visibleMissions = getVisibleMissions();
-    
-    const xpBoostActive = (profile.active_effects || []).some(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
 
     return (
         <div className="p-4 md:p-6">
@@ -682,13 +676,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             </div>
             <p className="text-muted-foreground mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
             
-            {xpBoostActive && (
-                <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3">
-                    <Zap className="h-5 w-5 text-yellow-400" />
-                    <p className="text-yellow-300 font-semibold text-sm">Bónus de XP Ativo! Você está a ganhar o dobro de XP em todas as missões.</p>
-                </div>
-            )}
-
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {visibleMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
@@ -743,7 +730,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                     <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
                                                     <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
                                                         <Gem className="h-3 w-3"/>
-                                                        +{activeDailyMission.fragmentos_conclusao}
+                                                        +{activeDailyMission.fragmentos_conclusao || 0}
                                                     </p>
                                                 </div>
                                                 <DropdownMenu>
@@ -852,7 +839,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                         <p className="text-xs font-semibold text-primary/80">+{completed.xp_conclusao} XP</p>
                                                         <p className="text-xs font-semibold text-yellow-400/80 flex items-center gap-1">
                                                           <Gem className="h-3 w-3"/>
-                                                          +{completed.fragmentos_conclusao}
+                                                          +{completed.fragmentos_conclusao || 0}
                                                         </p>
                                                     </div>
                                                 </div>

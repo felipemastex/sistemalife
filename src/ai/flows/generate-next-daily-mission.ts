@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {generateXpValue} from './generate-xp-value';
+import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
 
 const GenerateNextDailyMissionInputSchema = z.object({
@@ -26,6 +26,7 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico."),
     nextMissionDescription: z.string().describe("Uma breve descrição da próxima missão diária. Deve ser detalhada e acionável."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
+    fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
     learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
@@ -91,7 +92,7 @@ Gere uma única missão que seja o próximo passo lógico, específico e pequeno
     });
 
     const missionText = `${output!.nextMissionName}: ${output!.nextMissionDescription}`;
-    const xp = await generateXpValue({
+    const rewards = await generateMissionRewards({
       missionText,
       userLevel: input.userLevel,
     });
@@ -99,7 +100,8 @@ Gere uma única missão que seja o próximo passo lógico, específico e pequeno
     return {
       nextMissionName: output!.nextMissionName,
       nextMissionDescription: output!.nextMissionDescription,
-      xp: xp.xp,
+      xp: rewards.xp,
+      fragments: rewards.fragments,
       learningResources: output!.learningResources,
     };
   }

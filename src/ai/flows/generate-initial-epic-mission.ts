@@ -94,14 +94,14 @@ A sua resposta deve ser um objeto JSON completo.
         });
         
         const missionText = `${output!.firstDailyMissionName}: ${output!.firstDailyMissionDescription}`;
-        const rewards = await generateMissionRewards({ missionText, userLevel: input.userLevel });
+        const {xp, fragments} = await generateMissionRewards({ missionText, userLevel: input.userLevel });
 
         return {
             progression: output!.progression,
             firstDailyMissionName: output!.firstDailyMissionName,
             firstDailyMissionDescription: output!.firstDailyMissionDescription,
-            firstDailyMissionXp: rewards.xp,
-            firstDailyMissionFragments: rewards.fragments,
+            firstDailyMissionXp: xp,
+            firstDailyMissionFragments: fragments,
             fallback: false,
         };
     } catch (error) {
@@ -117,14 +117,14 @@ A sua resposta deve ser um objeto JSON completo.
         const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
         const fallbackDailyMissionDescription = "O primeiro passo é o mais importante. Complete esta tarefa para começar a sua nova aventura.";
         const missionText = `${fallbackDailyMissionName}: ${fallbackDailyMissionDescription}`;
-        const rewards = await generateMissionRewards({ missionText, userLevel: input.userLevel });
+        const {xp, fragments} = await generateMissionRewards({ missionText, userLevel: input.userLevel });
 
         return {
             progression: fallbackProgression,
             firstDailyMissionName: fallbackDailyMissionName,
             firstDailyMissionDescription: fallbackDailyMissionDescription,
-            firstDailyMissionXp: rewards.xp,
-            firstDailyMissionFragments: rewards.fragments,
+            firstDailyMissionXp: xp,
+            firstDailyMissionFragments: fragments,
             fallback: true,
         };
     }
