@@ -76,8 +76,8 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                 <Tabs defaultValue="geral" className="h-full flex flex-col md:flex-row gap-6">
                     
                     {/* Coluna Esquerda (Principal) */}
-                    <div className="flex-grow h-full">
-                        <TabsContent value="geral" className="h-full mt-0">
+                    <div className="flex-grow h-full flex flex-col">
+                        <TabsContent value="geral" className="h-full mt-0 flex-grow">
                             <GuildQuests 
                                 quests={guildData.quests}
                                 onQuestsUpdate={handleQuestsUpdate}
@@ -111,7 +111,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                             </TabsTrigger>
                         </TabsList>
                         
-                         <div className="flex-grow flex flex-col gap-6 min-h-[500px]">
+                         <div className="flex-grow flex flex-col gap-6 min-h-0">
                             {canManage && (
                                 <JoinRequests
                                     requests={guildData.join_requests || []}
@@ -122,7 +122,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                             )}
                             <GuildAnnouncements />
 
-                            <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-[300px]">
+                            <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-0">
                                 <GuildChat guildId={guildData.id} userProfile={profile} />
                             </div>
                         </div>
