@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Users, ArrowLeft, Send, Clock } from 'lucide-react';
+import { Users, ArrowLeft, Send, Clock, Ban } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
 export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
@@ -60,7 +60,7 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
                                 <CardTitle className="text-xl">{guild.nome} [{guild.tag}]</CardTitle>
                                 <CardDescription className="flex items-center gap-2 mt-1">
                                     <Users className="h-4 w-4" /> 
-                                    {/* Placeholder for member count, as allUsers is not available here */}
+                                    {guild.membros?.length || 0} Membros
                                 </CardDescription>
                             </div>
                         </CardHeader>
@@ -68,7 +68,12 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
                             <p className="text-muted-foreground">{guild.descricao}</p>
                         </CardContent>
                         <CardFooter>
-                            {hasPendingRequest(guild) ? (
+                           {profile.guild_id === guild.id ? (
+                                <Button variant="outline" disabled className="w-full">
+                                    <Ban className="h-4 w-4 mr-2"/>
+                                    Você já está nesta Guilda
+                                </Button>
+                           ) : hasPendingRequest(guild) ? (
                                 <Button variant="outline" disabled className="w-full">
                                     <Clock className="h-4 w-4 mr-2"/>
                                     Pedido Pendente
