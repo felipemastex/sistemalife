@@ -95,16 +95,24 @@ export const GuildChat = ({ guildId, userProfile }) => {
     return (
         <div className="h-full flex flex-col p-4 bg-transparent">
              <ScrollArea className="flex-grow mb-4" viewportRef={viewportRef}>
-                <div className="space-y-4 pr-4">
+                <div className="space-y-1 pr-4">
                     {messages.length > 0 ? messages.map((msg, index) => {
                         const isSender = isUserMessage(msg);
-                        const showAvatar = index === 0 || messages[index - 1].user_id !== msg.user_id;
+                        const prevMessage = messages[index - 1];
+                        const nextMessage = messages[index + 1];
 
+                        const isFirstInGroup = !prevMessage || prevMessage.user_id !== msg.user_id;
+                        const isLastInGroup = !nextMessage || nextMessage.user_id !== msg.user_id;
+                        
                         return (
-                             <div key={msg.id} className={cn("flex items-end gap-2", isSender && "justify-end")}>
+                             <div key={msg.id} className={cn(
+                                "flex items-end gap-2", 
+                                isSender && "justify-end",
+                                isFirstInGroup ? "mt-4" : "mt-1"
+                            )}>
                                 {!isSender && (
-                                     <div className="w-8 flex-shrink-0">
-                                        {showAvatar && (
+                                     <div className="w-8 flex-shrink-0 self-end">
+                                        {isLastInGroup && (
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage src={msg.avatar_url} />
                                                 <AvatarFallback>{msg.nome_utilizador?.substring(0, 2)}</AvatarFallback>
@@ -112,18 +120,20 @@ export const GuildChat = ({ guildId, userProfile }) => {
                                         )}
                                      </div>
                                 )}
-                                <div className={cn(
-                                    "max-w-xs md:max-w-md rounded-xl px-4 py-2", 
-                                    isSender 
-                                    ? "bg-primary text-primary-foreground rounded-br-none" 
-                                    : "bg-secondary text-secondary-foreground rounded-bl-none"
-                                )}>
-                                    {!isSender && showAvatar && (
-                                        <p className="text-xs font-bold text-cyan-400 mb-1">{msg.nome_utilizador}</p>
+                                <div className={cn("max-w-xs md:max-w-md")}>
+                                     {!isSender && isFirstInGroup && (
+                                        <p className="text-xs font-bold text-cyan-400 mb-1 ml-2">{msg.nome_utilizador}</p>
                                     )}
-                                    <p className="text-sm break-words whitespace-pre-wrap">{msg.message}</p>
-                                    {msg.timestamp && (
-                                         <p className={cn("text-xs mt-1", isSender ? "text-blue-200/70" : "text-muted-foreground/70")}>
+                                    <div className={cn(
+                                        "px-4 py-2 text-sm break-words whitespace-pre-wrap", 
+                                        isSender 
+                                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md" 
+                                        : "bg-secondary text-secondary-foreground rounded-2xl rounded-bl-md"
+                                    )}>
+                                        {msg.message}
+                                    </div>
+                                     {isLastInGroup && msg.timestamp && (
+                                         <p className={cn("text-xs mt-1 px-2", isSender ? "text-right text-muted-foreground/70" : "text-left text-muted-foreground/70")}>
                                            {formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true, locale: ptBR })}
                                          </p>
                                     )}
