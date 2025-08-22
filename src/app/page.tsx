@@ -600,8 +600,12 @@ export default function App() {
 
     
 
+<<<<<<< HEAD
     
 
 
 
 
+=======
+    
+>>>>>>> 9e3fe18 (Error: ./src/app/page.tsx:14:1)
