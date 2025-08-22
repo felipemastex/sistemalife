@@ -148,7 +148,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
 
     return (
         <div className="p-4 md:p-8 h-full overflow-y-auto">
-            <h1 className="text-3xl font-bold text-primary mb-6">Ficha de Caçador</h1>
+            <h1 className="text-3xl font-bold text-primary mb-6 font-cinzel tracking-wider">Ficha de Caçador</h1>
             
             <form onSubmit={handleSave}>
                 <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm">
