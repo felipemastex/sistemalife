@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, ListChecks, KeySquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+<<<<<<< HEAD
 import { DashboardView } from '@/components/views/core/DashboardView';
 import { MetasView } from '@/components/views/core/MetasView';
 import { MissionsView } from '@/components/views/core/MissionsView';
@@ -14,6 +15,19 @@ import { SkillsView } from '@/components/views/core/SkillsView';
 import { RoutineView } from '@/components/views/core/RoutineView';
 import { AIChatView } from '@/components/views/ai/AIChatView';
 import { SettingsView } from '@/components/views/player/settings/SettingsView';
+=======
+import { db } from '@/lib/firebase';
+import { DashboardView } from '@/components/views/DashboardView';
+import { MetasView } from '@/components/views/MetasView';
+import { MissionsView } from '@/components/views/MissionsView';
+import { SkillsView } from '@/components/views/SkillsView';
+import { RoutineView } from '@/components/views/RoutineView';
+import { AIChatView } from '@/components/views/AIChatView';
+import { SettingsView } from '@/components/views/SettingsView';
+import { GuildsView } from '@/components/guilds/GuildsView';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+>>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
@@ -167,6 +181,7 @@ export default function App() {
     if (!isDataLoaded) {
       return null
     }
+<<<<<<< HEAD
 
     const views: Record<string, React.ReactNode> = {
       'dashboard': <DashboardView />,
@@ -184,6 +199,18 @@ export default function App() {
       'tower': <TowerView />,
       'tasks': <TasksView />,
       'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
+=======
+    
+    const views = {
+      'dashboard': <DashboardView profile={profile} />,
+      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={setMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
+      'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
+      'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
+      'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
+      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={setGuilds} metas={metas} allUsers={allUsers} />,
+>>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
     };
 
     return (
@@ -297,4 +324,10 @@ export default function App() {
   );
 }
 
+<<<<<<< HEAD
     
+=======
+    
+
+    
+>>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
