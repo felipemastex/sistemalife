@@ -173,7 +173,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
             <CardContent className="flex-grow overflow-hidden p-0">
                 <ScrollArea className="h-full">
                 <div className="space-y-4 p-6 pt-0">
-                    {quests && quests.length > 0 ? (
+                    {(quests || []).length > 0 ? (
                         quests.map(quest => {
                             const totalTarget = quest.subTasks.reduce((sum, task) => sum + task.target, 0);
                             const totalCurrent = quest.subTasks.reduce((sum, task) => sum + (task.current || 0), 0);

@@ -93,8 +93,8 @@ export const GuildChat = ({ guildId, userProfile }) => {
 
     return (
         <div className="h-full flex flex-col p-4 bg-transparent">
-             <ScrollArea className="flex-grow mb-4" viewportRef={viewportRef}>
-                <div className="space-y-1 pr-4">
+             <ScrollArea className="flex-1 -mx-4 -mt-4 mb-4">
+                <div className="px-4 pt-4 space-y-1">
                     {messages.length > 0 ? messages.map((msg, index) => {
                         const isSender = isUserMessage(msg);
                         const prevMessage = messages[index - 1];
