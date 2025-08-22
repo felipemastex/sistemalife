@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -16,6 +16,7 @@ import { statCategoryMapping } from '@/lib/mappings';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { achievements } from '@/lib/achievements';
 import { differenceInCalendarDays } from 'date-fns';
+import { generateMissionRewards } from '@/ai/flows/generate-mission-rewards';
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -314,6 +315,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
         setGenerating(dailyMissionId);
         let xpGained = 0;
+        let fragmentsGained = 0;
         let completedDailyMission = null;
 
         let isRankedMissionComplete = false;
@@ -323,6 +325,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 const updatedDailyMissions = rm.missoes_diarias.map(daily => {
                     if (daily.id === dailyMissionId) {
                         xpGained = daily.xp_conclusao;
+                        fragmentsGained = daily.fragmentos_conclusao;
                         completedDailyMission = { ...daily, concluido: true };
                         return completedDailyMission;
                     }
@@ -348,6 +351,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         let newProfile = { 
             ...profile, 
             xp: profile.xp + xpGained,
+            fragmentos: (profile.fragmentos || 0) + fragmentsGained,
             missoes_concluidas_total: (profile.missoes_concluidas_total || 0) + 1,
         };
         newProfile = handleStreak(newProfile); // Handle streak logic
@@ -414,6 +418,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             nome: result.nextMissionName,
                             descricao: result.nextMissionDescription,
                             xp_conclusao: result.xp,
+                            fragmentos_conclusao: result.fragments,
                             concluido: false,
                             tipo: 'diaria',
                             learningResources: result.learningResources,
@@ -467,6 +472,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
+                fragmentos_conclusao: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -489,6 +495,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     
     const revertLastDailyMission = (rankedMissionId) => {
         let xpToSubtract = 0;
+        let fragmentsToSubtract = 0;
         let missionReverted = false;
 
         const updatedMissions = missions.map(rm => {
@@ -499,6 +506,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 if (completedMissions.length > 0) {
                     const lastCompleted = completedMissions[completedMissions.length - 1];
                     xpToSubtract = lastCompleted.xp_conclusao;
+                    fragmentsToSubtract = lastCompleted.fragmentos_conclusao;
 
                     const newDailyMissions = rm.missoes_diarias
                         .map(dm => {
@@ -522,10 +530,14 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
         if (missionReverted) {
             setMissions(updatedMissions);
-            setProfile(prev => ({...prev, xp: Math.max(0, prev.xp - xpToSubtract)}));
+            setProfile(prev => ({
+                ...prev,
+                xp: Math.max(0, prev.xp - xpToSubtract),
+                fragmentos: Math.max(0, (prev.fragmentos || 0) - fragmentsToSubtract)
+            }));
             toast({
                 title: "Missão Revertida",
-                description: "A missão anterior está ativa novamente. O XP foi ajustado.",
+                description: "A missão anterior está ativa novamente. As recompensas foram ajustadas.",
             });
         }
     };
@@ -551,6 +563,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
+                fragmentos_conclusao: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -689,7 +702,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                 <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
                                             </div>
                                             <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
-                                                <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                                <div className="flex flex-col items-end">
+                                                    <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                                    <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
+                                                        <Gem className="h-3 w-3"/>
+                                                        +{activeDailyMission.fragmentos_conclusao}
+                                                    </p>
+                                                </div>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400">
@@ -782,7 +801,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>Reverter Missão?</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        Isto irá reativar a missão "{completed.nome}" e remover o XP ganho. A missão ativa atual será apagada. Tem a certeza?
+                                                                        Isto irá reativar a missão "{completed.nome}" e remover o XP e os fragmentos ganhos. A missão ativa atual será apagada. Tem a certeza?
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
@@ -792,7 +811,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                             </AlertDialogContent>
                                                         </AlertDialog>
                                                     )}
-                                                    <p className="text-xs font-semibold text-green-400/80">+{completed.xp_conclusao} XP</p>
+                                                    <div className="flex flex-col items-end">
+                                                        <p className="text-xs font-semibold text-cyan-400/80">+{completed.xp_conclusao} XP</p>
+                                                        <p className="text-xs font-semibold text-yellow-400/80 flex items-center gap-1">
+                                                          <Gem className="h-3 w-3"/>
+                                                          +{completed.fragmentos_conclusao}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                          ))}
@@ -883,6 +908,3 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
-
-    
-

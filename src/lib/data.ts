@@ -12,6 +12,7 @@ export const perfis = [
     nivel: 1,
     xp: 0,
     xp_para_proximo_nivel: 100, // XP necessário para ir do nível 1 para o 2
+    fragmentos: 0, // Moeda do jogo
     estatisticas: {
       forca: 5,
       inteligencia: 5,
@@ -136,9 +137,9 @@ export const missoes = [
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 101, nome: 'Instalar o Compilador Python', descricao: 'Aceda a python.org, descarregue e instale a versão mais recente do Python no seu sistema operativo.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
-        { id: 102, nome: 'Configurar o Editor de Código', descricao: 'Abra o VS Code, aceda à loja de extensões e instale a extensão oficial "Python" da Microsoft.', concluido: true, xp_conclusao: 15, tipo: 'diaria' },
-        { id: 103, nome: 'Invocar o Terminal', descricao: 'Crie um novo ficheiro chamado hello.py e escreva a linha: print("Hello, World!"). Execute o ficheiro no terminal com o comando `python hello.py`.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+        { id: 101, nome: 'Instalar o Compilador Python', descricao: 'Aceda a python.org, descarregue e instale a versão mais recente do Python no seu sistema operativo.', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria' },
+        { id: 102, nome: 'Configurar o Editor de Código', descricao: 'Abra o VS Code, aceda à loja de extensões e instale a extensão oficial "Python" da Microsoft.', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria' },
+        { id: 103, nome: 'Invocar o Terminal', descricao: 'Crie um novo ficheiro chamado hello.py e escreva a linha: print("Hello, World!"). Execute o ficheiro no terminal com o comando `python hello.py`.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria' },
     ]
   },
    {
@@ -152,7 +153,7 @@ export const missoes = [
     total_missoes_diarias: 15,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria' },
     ]
   },
   {
@@ -166,7 +167,7 @@ export const missoes = [
     total_missoes_diarias: 20,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 109, nome: 'Importar o Arsenal', descricao: 'Crie um novo Jupyter Notebook e importe a biblioteca Pandas com o alias `pd`.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
+        { id: 109, nome: 'Importar o Arsenal', descricao: 'Crie um novo Jupyter Notebook e importe a biblioteca Pandas com o alias `pd`.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
     ]
   },
   {
@@ -180,7 +181,7 @@ export const missoes = [
     total_missoes_diarias: 25,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, tipo: 'diaria' },
+        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, fragmentos_conclusao: 7, tipo: 'diaria' },
     ]
   },
   {
@@ -194,7 +195,7 @@ export const missoes = [
     total_missoes_diarias: 30,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 110, nome: 'Desenhar a Arquitetura', descricao: 'Num quadro branco ou ferramenta de diagramação, desenhe o fluxo do seu pipeline de dados: de onde os dados virão, como serão transformados e onde serão armazenados.', concluido: false, xp_conclusao: 40, tipo: 'diaria' },
+        { id: 110, nome: 'Desenhar a Arquitetura', descricao: 'Num quadro branco ou ferramenta de diagramação, desenhe o fluxo do seu pipeline de dados: de onde os dados virão, como serão transformados e onde serão armazenados.', concluido: false, xp_conclusao: 40, fragmentos_conclusao: 8, tipo: 'diaria' },
     ]
   },
   
@@ -210,8 +211,8 @@ export const missoes = [
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 104, nome: 'Preparar o Equipamento de Batalha', descricao: 'Separe os seus sapatos de corrida, meias confortáveis e roupas adequadas para o clima de hoje.', concluido: true, xp_conclusao: 10, tipo: 'diaria' },
-       { id: 105, nome: 'Ritual de Aquecimento', descricao: 'Faça uma caminhada rápida de 5 minutos seguida de 5 minutos de alongamentos dinâmicos focados nas pernas e ancas.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+       { id: 104, nome: 'Preparar o Equipamento de Batalha', descricao: 'Separe os seus sapatos de corrida, meias confortáveis e roupas adequadas para o clima de hoje.', concluido: true, xp_conclusao: 10, fragmentos_conclusao: 1, tipo: 'diaria' },
+       { id: 105, nome: 'Ritual de Aquecimento', descricao: 'Faça uma caminhada rápida de 5 minutos seguida de 5 minutos de alongamentos dinâmicos focados nas pernas e ancas.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria' },
     ]
   },
   {
@@ -225,7 +226,7 @@ export const missoes = [
     total_missoes_diarias: 15,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 111, nome: 'Análise Pós-Batalha', descricao: 'Reflita sobre o seu treino de 5km. O que funcionou? O que pode ser melhorado? Anote 3 lições aprendidas.', concluido: false, xp_conclusao: 25, tipo: 'diaria' },
+       { id: 111, nome: 'Análise Pós-Batalha', descricao: 'Reflita sobre o seu treino de 5km. O que funcionou? O que pode ser melhorado? Anote 3 lições aprendidas.', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria' },
     ]
   },
   {
@@ -239,7 +240,7 @@ export const missoes = [
     total_missoes_diarias: 20,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 112, nome: 'Estudar o Terreno', descricao: 'Pesquise e inscreva-se num plano de treino de 12 semanas para uma meia maratona.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
+       { id: 112, nome: 'Estudar o Terreno', descricao: 'Pesquise e inscreva-se num plano de treino de 12 semanas para uma meia maratona.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
     ]
   },
 
@@ -255,7 +256,7 @@ export const missoes = [
     total_missoes_diarias: 12,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 106, nome: 'A Escolha do Tomo', descricao: 'Pesquise e selecione o primeiro livro de não-ficção que você lerá este ano. Adicione-o à sua lista de leitura no Goodreads ou numa aplicação similar.', concluido: false, xp_conclusao: 20, tipo: 'diaria' },
+        { id: 106, nome: 'A Escolha do Tomo', descricao: 'Pesquise e selecione o primeiro livro de não-ficção que você lerá este ano. Adicione-o à sua lista de leitura no Goodreads ou numa aplicação similar.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 4, tipo: 'diaria' },
     ]
   },
   {
@@ -269,7 +270,7 @@ export const missoes = [
     total_missoes_diarias: 24,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 113, nome: 'Otimizar a Fila de Leitura', descricao: 'Selecione os próximos 3 livros que você lerá. Tenha-os prontos para começar assim que terminar o atual.', concluido: false, xp_conclusao: 30, tipo: 'diaria' },
+        { id: 113, nome: 'Otimizar a Fila de Leitura', descricao: 'Selecione os próximos 3 livros que você lerá. Tenha-os prontos para começar assim que terminar o atual.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
     ]
   }
 ];
@@ -353,12 +354,3 @@ export const rotinaTemplates = {
         { id: 13, start_time: '15:00', end_time: '18:00', activity: 'Tempo livre / Social' },
     ]
 };
-
-    
-
-
-
-
-    
-
-

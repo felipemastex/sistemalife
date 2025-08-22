@@ -4,7 +4,7 @@
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Flame } from 'lucide-react';
+import { Flame, Gem } from 'lucide-react';
 
 export const DashboardView = ({ profile }) => {
   const getProfileRank = (level) => {
@@ -66,6 +66,7 @@ export const DashboardView = ({ profile }) => {
                       <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
                       <StatItem label="Título" value={profileRank.title}/>
                       <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
+                      <StatItem label="Fragmentos" value={profile.fragmentos || 0} icon={Gem} />
                     </div>
                     <div className="bg-secondary/50 p-4 rounded-lg border border-border/50">
                       <div className="flex justify-between text-sm text-muted-foreground mb-1">

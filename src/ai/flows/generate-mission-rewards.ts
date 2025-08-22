@@ -1,43 +1,50 @@
+
 'use server';
 /**
- * @fileOverview Um agente de IA que calcula o valor de XP para uma missão.
+ * @fileOverview Um agente de IA que calcula o valor de XP e recompensas para uma missão.
  *
- * - generateXpValue - Calcula um valor de XP justo com base na dificuldade da missão e no nível do utilizador.
- * - GenerateXpValueInput - O tipo de entrada para a função.
- * - GenerateXpValueOutput - O tipo de retorno para a função.
+ * - generateMissionRewards - Calcula um valor de XP e fragmentos justo com base na dificuldade da missão e no nível do utilizador.
+ * - GenerateMissionRewardsInput - O tipo de entrada para a função.
+ * - GenerateMissionRewardsOutput - O tipo de retorno para a função.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateXpValueInputSchema = z.object({
+const GenerateMissionRewardsInputSchema = z.object({
   missionText: z.string().describe("O texto completo da missão (nome e descrição)."),
   userLevel: z.number().describe("O nível atual do utilizador."),
 });
-export type GenerateXpValueInput = z.infer<typeof GenerateXpValueInputSchema>;
+export type GenerateMissionRewardsInput = z.infer<typeof GenerateMissionRewardsInputSchema>;
 
-const GenerateXpValueOutputSchema = z.object({
+const GenerateMissionRewardsOutputSchema = z.object({
   xp: z.number().describe('A quantidade de XP calculada para a missão.'),
+  fragments: z.number().describe('A quantidade de fragmentos (moeda do jogo) calculada para a missão.'),
 });
-export type GenerateXpValueOutput = z.infer<typeof GenerateXpValueOutputSchema>;
+export type GenerateMissionRewardsOutput = z.infer<typeof GenerateMissionRewardsOutputSchema>;
 
-export async function generateXpValue(
-  input: GenerateXpValueInput
-): Promise<GenerateXpValueOutput> {
-  return generateXpValueFlow(input);
+export async function generateMissionRewards(
+  input: GenerateMissionRewardsInput
+): Promise<GenerateMissionRewardsOutput> {
+  return generateMissionRewardsFlow(input);
 }
 
-const generateXpValueFlow = ai.defineFlow(
+const generateMissionRewardsFlow = ai.defineFlow(
   {
-    name: 'generateXpValueFlow',
-    inputSchema: GenerateXpValueInputSchema,
-    outputSchema: GenerateXpValueOutputSchema,
+    name: 'generateMissionRewardsFlow',
+    inputSchema: GenerateMissionRewardsInputSchema,
+    outputSchema: GenerateMissionRewardsOutputSchema,
   },
   async ({missionText, userLevel}) => {
     // Fatores de cálculo para atingir ~10950 XP por ano (30XP/dia)
     const baseXP = 15; // XP mínimo para uma tarefa muito simples
     const difficultyMultiplier = 1.2; // Aumenta o XP com base na dificuldade percebida
     const levelMultiplier = 0.2; // Aumenta ligeiramente o XP para jogadores de nível mais alto
+    
+    // Fatores de cálculo para fragmentos
+    const baseFragments = 2;
+    const fragmentDifficultyMultiplier = 0.5;
+    const fragmentLevelMultiplier = 0.1;
 
     const prompt = `
         Analise a seguinte missão e avalie a sua complexidade, esforço e tempo necessários numa escala de 1 a 10.
@@ -61,10 +68,16 @@ const generateXpValueFlow = ai.defineFlow(
 
     // Fórmula para calcular o XP
     const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
-    
-    // Arredondar para o número inteiro mais próximo e garantir que está entre 10 e 100
     const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
+    
+    // Fórmula para calcular os fragmentos
+    const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
+    const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
 
-    return {xp: finalXP};
+
+    return {
+      xp: finalXP,
+      fragments: finalFragments
+    };
   }
 );

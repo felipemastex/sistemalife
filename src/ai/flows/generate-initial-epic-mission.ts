@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {generateXpValue} from './generate-xp-value';
+import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
 
 const EpicMissionSchema = z.object({
@@ -32,6 +32,7 @@ const GenerateInitialEpicMissionOutputSchema = z.object({
     firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
     firstDailyMissionDescription: z.string().describe("A descrição detalhada da primeira missão diária."),
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
+    firstDailyMissionFragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a primeira missão."),
     fallback: z.boolean().optional().describe("Indica se a resposta foi gerada usando um plano de fallback devido a um erro de IA."),
 });
 export type GenerateInitialEpicMissionOutput = z.infer<typeof GenerateInitialEpicMissionOutputSchema>;
@@ -93,13 +94,14 @@ A sua resposta deve ser um objeto JSON completo.
         });
         
         const missionText = `${output!.firstDailyMissionName}: ${output!.firstDailyMissionDescription}`;
-        const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
+        const rewards = await generateMissionRewards({ missionText, userLevel: input.userLevel });
 
         return {
             progression: output!.progression,
             firstDailyMissionName: output!.firstDailyMissionName,
             firstDailyMissionDescription: output!.firstDailyMissionDescription,
-            firstDailyMissionXp: xp.xp,
+            firstDailyMissionXp: rewards.xp,
+            firstDailyMissionFragments: rewards.fragments,
             fallback: false,
         };
     } catch (error) {
@@ -115,13 +117,14 @@ A sua resposta deve ser um objeto JSON completo.
         const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
         const fallbackDailyMissionDescription = "O primeiro passo é o mais importante. Complete esta tarefa para começar a sua nova aventura.";
         const missionText = `${fallbackDailyMissionName}: ${fallbackDailyMissionDescription}`;
-        const xp = await generateXpValue({ missionText, userLevel: input.userLevel });
+        const rewards = await generateMissionRewards({ missionText, userLevel: input.userLevel });
 
         return {
             progression: fallbackProgression,
             firstDailyMissionName: fallbackDailyMissionName,
             firstDailyMissionDescription: fallbackDailyMissionDescription,
-            firstDailyMissionXp: xp.xp,
+            firstDailyMissionXp: rewards.xp,
+            firstDailyMissionFragments: rewards.fragments,
             fallback: true,
         };
     }

@@ -9,7 +9,7 @@ import './flows/generate-goal-category.js';
 import './flows/generate-smart-goal-questions.js';
 import './flows/generate-simple-smart-goal.js';
 import './flows/generate-initial-epic-mission.js';
-import './flows/generate-xp-value.js';
+import './flows/generate-mission-rewards.js';
 import './flows/generate-mission-suggestion.js';
 import './flows/generate-routine-suggestion.js';
 import './flows/generate-skill-experience.js';
