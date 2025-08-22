@@ -130,5 +130,3 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         </div>
     );
 };
-
-    

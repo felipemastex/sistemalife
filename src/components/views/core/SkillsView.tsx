@@ -173,7 +173,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
                                     </div>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8 -mt-1 -mr-1">
+                                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8 -mt-1 -mr-1" aria-label={`Excluir habilidade ${skill.nome}`}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </AlertDialogTrigger>
@@ -278,5 +278,3 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         </div>
     );
 };
-
-    

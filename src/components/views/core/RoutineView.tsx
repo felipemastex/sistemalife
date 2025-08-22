@@ -384,6 +384,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                                             e.stopPropagation();
                                                             setTemplateToDelete(templateName);
                                                         }}
+                                                        aria-label={`Excluir template ${templateName}`}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -509,8 +510,8 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
                                                         <p className="text-base text-card-foreground break-all">{item.activity}</p>
                                                     </div>
                                                     <div className="flex space-x-1 self-end sm:self-center">
-                                                        <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                                                        <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                                                        <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
+                                                        <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
                                                     </div>
                                                 </div>
                                             </div>

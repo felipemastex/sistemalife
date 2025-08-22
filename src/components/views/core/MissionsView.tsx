@@ -706,7 +706,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             {timers[mission.id]}
                                         </div>
                                      )}
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
                                         <GitMerge className="h-5 w-5" />
                                     </Button>
                                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
@@ -718,7 +718,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                      <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                             <div className="flex-shrink-0">
-                                                <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
+                                                <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id} aria-label={`Completar missão ${activeDailyMission.nome}`}>
                                                     {generating === activeDailyMission.id ? 
                                                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
                                                       : <Circle className="h-8 w-8 text-muted-foreground hover:text-green-500 transition-colors" />}
@@ -738,7 +738,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                 </div>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
                                                             <LifeBuoy className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -820,7 +820,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                     {index === 0 && !timers[mission.id] && (
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-yellow-400">
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-yellow-400" aria-label="Reverter última missão">
                                                                     <Undo2 className="h-4 w-4" />
                                                                 </Button>
                                                             </AlertDialogTrigger>
@@ -881,6 +881,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             onClick={() => reactivateEpicMission(mission.id)}
                                             disabled={generating === mission.id}
                                             className="w-full sm:w-auto flex-shrink-0"
+                                            aria-label={`Reativar missão ${mission.nome}`}
                                         >
                                              {generating === mission.id ? (
                                                 <><Timer className="h-4 w-4 mr-2 animate-spin"/> A reativar...</>
@@ -935,5 +936,3 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         </div>
     );
 };
-
-    

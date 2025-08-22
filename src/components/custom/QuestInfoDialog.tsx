@@ -60,7 +60,7 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
       >
         <div className="p-6 relative font-sans">
           {/* Custom Close Button */}
-          <button onClick={onClose} className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white transition-colors z-10">
+          <button onClick={onClose} aria-label="Fechar diálogo" className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white transition-colors z-10">
             <X className="h-5 w-5" />
           </button>
 

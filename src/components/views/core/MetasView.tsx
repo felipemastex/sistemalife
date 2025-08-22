@@ -308,7 +308,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                     <DialogTitle>Assistente de Metas</DialogTitle>
                 </DialogHeader>
                 <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-4">
-                    <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white">
+                    <Button onClick={onClose} variant="ghost" size="icon" className="absolute top-4 right-4 text-gray-400 hover:text-white" aria-label="Fechar assistente de metas">
                         <X className="h-6 w-6" />
                     </Button>
                     {renderContent()}
@@ -708,10 +708,10 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                                        <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar meta ${meta.nome}`}><Edit className="h-4 w-4" /></Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8">
+                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir meta ${meta.nome}`}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </AlertDialogTrigger>
