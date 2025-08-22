@@ -2,17 +2,12 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GuildHeader } from './GuildHeader';
 import { GuildMembers } from './GuildMembers';
 import { GuildChat } from './GuildChat';
 import { JoinRequests } from './JoinRequests';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Edit } from 'lucide-react';
 import { GuildQuests } from './GuildQuests';
-
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 
 const GuildAnnouncements = () => (
      <Card>
@@ -24,7 +19,6 @@ const GuildAnnouncements = () => (
         </CardContent>
     </Card>
 )
-
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
     

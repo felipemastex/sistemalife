@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle } from 'lucide-react';
 import { GuildForm } from '@/components/guilds/GuildForm';
-import { SearchGuildView } from '@/components/guilds/SearchGuildView';
-import { NoGuildView } from '@/components/guilds/NoGuildView';
+import { SearchGuildView } from './SearchGuildView';
+import { NoGuildView } from './NoGuildView';
 import { GuildDashboard } from '@/components/guilds/GuildDashboard';
 
 
 export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers }) => {
-    const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create'
+    const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create', 'edit'
     const [isLoading, setIsLoading] = useState(true);
     const [currentGuild, setCurrentGuild] = useState(null);
     const { toast } = useToast();
@@ -56,6 +56,17 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
     
     const handleLeaveGuild = () => {
         const updatedProfile = {...profile, guild_id: null, guild_role: null};
+        
+        // Remove member from guild object
+        const guildToLeave = guilds.find(g => g.id === profile.guild_id);
+        if (guildToLeave) {
+            const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
+            const updatedGuild = { ...guildToLeave, membros: updatedMembers };
+            // If the leader leaves, the guild should be handled (e.g., disbanded or leadership transferred). For now, we'll just update members.
+            const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
+            setGuilds(updatedGuilds);
+        }
+
         setProfile(updatedProfile);
         setCurrentGuild(null);
         setView('no-guild');
@@ -119,5 +130,3 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         </div>
     );
 };
-
-    

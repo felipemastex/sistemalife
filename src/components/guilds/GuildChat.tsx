@@ -20,7 +20,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 export const GuildChat = ({ guildId, userProfile }) => {
     const [messages, setMessages] = useState([]);
