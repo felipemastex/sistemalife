@@ -125,18 +125,21 @@ export const GuildChat = ({ guildId, userProfile }) => {
                                         <p className="text-xs font-bold text-cyan-400 mb-1 ml-2">{msg.nome_utilizador}</p>
                                     )}
                                     <div className={cn(
-                                        "px-4 py-2 text-sm break-words whitespace-pre-wrap", 
+                                        "px-4 py-2 text-sm break-words whitespace-pre-wrap flex items-end gap-2", 
                                         isSender 
                                         ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md" 
                                         : "bg-secondary text-secondary-foreground rounded-2xl rounded-bl-md"
                                     )}>
-                                        {msg.message}
+                                        <p className="flex-grow">{msg.message}</p>
+                                        {msg.timestamp && (
+                                            <span className={cn(
+                                                "text-xs self-end flex-shrink-0",
+                                                isSender ? "text-primary-foreground/70" : "text-secondary-foreground/70"
+                                            )}>
+                                                {format(msg.timestamp.toDate(), 'HH:mm')}
+                                            </span>
+                                        )}
                                     </div>
-                                     {isLastInGroup && msg.timestamp && (
-                                         <p className={cn("text-xs mt-1 px-2", isSender ? "text-right text-muted-foreground/70" : "text-left text-muted-foreground/70")}>
-                                           {format(msg.timestamp.toDate(), 'HH:mm')}
-                                         </p>
-                                    )}
                                 </div>
                              </div>
                         );
