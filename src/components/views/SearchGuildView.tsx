@@ -13,8 +13,9 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredGuilds = guilds.filter(g => 
-        g.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        g.tag.toLowerCase().includes(searchTerm.toLowerCase())
+        g &&
+        (g.nome && g.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
+        (g.tag && g.tag.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const getIconComponent = (iconName) => {
