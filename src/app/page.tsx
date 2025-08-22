@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award, Store } from 'lucide-react';
+import { Bot, User, BookOpen, Target, TreeDeciduous, Settings, LogOut, Clock, LoaderCircle, BarChart3, LayoutDashboard, Menu, AlertCircle, Award, Store, Backpack } from 'lucide-react';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, updateDoc } from "firebase/firestore";
 import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle,
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
 import { AchievementsView } from '@/components/views/AchievementsView';
 import { ShopView } from '@/components/views/ShopView';
+import { InventoryView } from '@/components/views/InventoryView';
 
 
 export default function App() {
@@ -514,6 +515,7 @@ export default function App() {
           <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
           <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
           <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
+          <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
           <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
       </nav>
       <div className="mt-auto">
@@ -542,6 +544,7 @@ export default function App() {
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
       'shop': <ShopView profile={profile} setProfile={persistProfile} />,
+      'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
     };
@@ -598,3 +601,5 @@ export default function App() {
     </div>
   );
 }
+
+    
