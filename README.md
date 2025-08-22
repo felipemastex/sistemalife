@@ -105,3 +105,33 @@ O coração da aplicação é a sua capacidade de usar IA generativa para person
 
 -   **Design Responsivo:** A aplicação é totalmente funcional em dispositivos móveis, com um menu lateral que se transforma num painel deslizante ("sheet").
 -   **Animações e Estilo:** A interface foi refinada com animações de fade-in, fontes estilizadas (`Inter` e `Cinzel Decorative`) e um tema visual coeso para criar uma experiência imersiva e profissional.
+
+## Funcionalidades Futuras e Melhorias (Roadmap)
+
+### 1. Gamificação e Engajamento
+O núcleo do seu aplicativo é a gamificação. As funcionalidades a seguir podem adicionar mais camadas de motivação e recompensa para os usuários.
+
+#### 1.1. Sistema de Conquistas (Achievements) e Medalhas
+- **Descrição:** Crie um sistema de conquistas que recompense os usuários com medalhas ou troféus por atingirem marcos específicos.
+- **Exemplos:** "Novato Determinado" (10 missões), "Mestre de Habilidades" (habilidade no nível máximo), "Explorador Social" (entrar na primeira guilda), "Maratonista" (completar uma Missão Épica).
+- **Benefícios:** Adiciona colecionismo, incentiva a exploração do app e oferece metas de longo prazo.
+
+#### 1.2. Sistema de "Streaks" (Sequências)
+- **Descrição:** Recompense os usuários por manterem a consistência (ex: completar uma missão diária por 3, 7, 15, 30 dias).
+- **Implementação:** A recompensa pode ser bônus de XP, moedas virtuais ou um item temporário.
+- **Benefícios:** Cria um forte incentivo para o engajamento diário, ajudando a formar hábitos.
+
+#### 1.3. Itens, Loja e Inventário
+- **Descrição:** Introduza uma economia virtual com itens que podem ser ganhos ou comprados (com moeda do jogo).
+- **Tipos de Itens:**
+    - **Consumíveis:** Poções de "XP em Dobro", itens para recuperar uma "streak" perdida.
+    - **Cosméticos:** Molduras para o avatar, temas de cores, ícones de guildas.
+- **Benefícios:** Aumenta o engajamento ao dar aos usuários algo para almejar.
+
+#### 1.4. Mapa do Mundo e Progressão Visual
+- **Descrição:** Transforme a jornada do usuário em uma experiência visual, onde cada missão de uma meta é um ponto em um mapa a ser explorado.
+- **Benefícios:** Torna a progressão mais tangível e emocionante.
+
+#### 1.5. Eventos Sazonais e Temáticos
+- **Descrição:** Crie eventos de curta duração com temas específicos (ex: "Semana da Organização", "Mês da Saúde e Fitness"). Durante o evento, missões relacionadas ao tema dariam recompensas extras.
+- **Benefícios:** Mantém a experiência renovada e interessante, incentivando os usuários a focarem em diferentes áreas de suas vidas.
