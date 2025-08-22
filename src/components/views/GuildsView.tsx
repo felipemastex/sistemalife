@@ -11,7 +11,7 @@ import { NoGuildView } from '@/components/guilds/NoGuildView';
 import { GuildDashboard } from '@/components/guilds/GuildDashboard';
 
 
-export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers }) => {
+export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers }) => {
     const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create'
     const [isLoading, setIsLoading] = useState(true);
     const [currentGuild, setCurrentGuild] = useState(null);
@@ -82,7 +82,7 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
                         onLeaveGuild={handleLeaveGuild}
                         onEdit={() => setView('edit')}
                         allUsers={allUsers}
-                        setAllUsers={setProfile} // This is a bit of a hack, it should be setAllUsers
+                        setAllUsers={setAllUsers}
                     />;
         }
         if (view === 'create') {
@@ -119,3 +119,5 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         </div>
     );
 };
+
+    

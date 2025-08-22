@@ -154,6 +154,19 @@ export default function App() {
     await batch.commit();
   }, []);
 
+  const persistAllUsers = useCallback(async (newUsers) => {
+    setAllUsers(newUsers);
+    const batch = writeBatch(db);
+    const usersRef = collection(db, 'users');
+
+    newUsers.forEach(userProfile => {
+        const userDocRef = doc(usersRef, userProfile.id);
+        batch.set(userDocRef, userProfile);
+    });
+
+    await batch.commit();
+  }, []);
+
 
   // --- NOTIFICATION HANDLERS ---
   const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
@@ -571,7 +584,7 @@ export default function App() {
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
-      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} />,
+      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={persistAllUsers} />,
     };
 
     return (
@@ -626,5 +639,7 @@ export default function App() {
     </div>
   );
 }
+
+    
 
     
