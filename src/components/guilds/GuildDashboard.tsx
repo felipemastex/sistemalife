@@ -67,10 +67,10 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
-            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
+            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-auto">
                 
                 {/* Coluna Esquerda - Conteúdo Principal */}
-                <div className="lg:col-span-8 flex flex-col gap-6 min-h-0">
+                <div className="lg:col-span-8 flex flex-col gap-6">
                     <GuildQuests 
                         quests={guildData.quests}
                         onQuestsUpdate={handleQuestsUpdate}
@@ -78,9 +78,9 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                         guildData={guildData}
                         userProfile={profile}
                     />
-                    <div className="flex-grow flex flex-col bg-card border border-border rounded-lg min-h-[300px] lg:min-h-0">
+                    <Card className="flex-grow flex flex-col min-h-[400px]">
                        <GuildChat guildId={guildData.id} userProfile={profile} />
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Coluna Direita - Painéis Laterais */}
