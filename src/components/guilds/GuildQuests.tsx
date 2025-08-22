@@ -84,13 +84,15 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData 
                 memberCount,
             });
 
+            const leader = (guildData.membros || []).find(m => m.role === 'Líder');
+
             const newQuest = {
                 id: `quest_${Date.now()}`,
                 nome: result.questName,
                 descricao: result.questDescription,
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
                 concluida: false,
-                criador_id: guildData.leader_id,
+                criador_id: leader ? leader.user_id : null,
             };
             
             const updatedQuests = [...(quests || []), newQuest];
