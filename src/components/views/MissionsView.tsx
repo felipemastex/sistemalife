@@ -675,12 +675,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     return (
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
-                <h1 className="text-3xl font-bold text-cyan-400">Diário de Missões</h1>
+                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
                  <Button onClick={handleHackerMode} variant="outline" size="sm">
                     Modo Hacker
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
+            <p className="text-muted-foreground mb-6">Complete a missão diária para progredir na sua missão épica. Uma nova missão é liberada à meia-noite.</p>
             
             {xpBoostActive && (
                 <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-3">
@@ -698,25 +698,25 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     const lastCompletedMission = onCooldown ? completedDailyMissions[0] : null;
 
                     return (
-                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-gray-800/50 border border-gray-700 rounded-lg">
+                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg">
                            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
                                 <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">
                                     <div className="flex-1 text-left min-w-0">
-                                        <p className="text-lg font-bold text-gray-200 break-words">{mission.nome}</p>
-                                        <p className="text-sm text-gray-400 mt-1 break-words">{mission.descricao}</p>
-                                        <div className="w-full bg-gray-700 rounded-full h-2.5 mt-3">
-                                             <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
+                                        <p className="text-lg font-bold text-foreground break-words">{mission.nome}</p>
+                                        <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                        <div className="w-full bg-secondary rounded-full h-2.5 mt-3">
+                                             <div className="bg-gradient-to-r from-primary to-accent h-2.5 rounded-full" style={{width: `${missionProgress}%`}}></div>
                                         </div>
                                     </div>
                                 </AccordionTrigger>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
                                      {onCooldown && (
-                                        <div className="flex items-center text-cyan-400 text-xs font-mono bg-gray-900/50 px-2 py-1 rounded-md">
+                                        <div className="flex items-center text-cyan-400 text-xs font-mono bg-secondary px-2 py-1 rounded-md">
                                             <Timer className="h-4 w-4 mr-1.5"/>
                                             {timers[mission.id]}
                                         </div>
                                      )}
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}}>
                                         <GitMerge className="h-5 w-5" />
                                     </Button>
                                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(mission.rank)}`}>Rank {mission.rank}</span>
@@ -725,22 +725,22 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
                                 {activeDailyMission && !onCooldown && (
-                                     <div className={`bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4`}>
+                                     <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                             <div className="flex-shrink-0">
                                                 <button onClick={() => completeDailyMission(mission.id, activeDailyMission.id)} disabled={generating === activeDailyMission.id}>
                                                     {generating === activeDailyMission.id ? 
-                                                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-500 border-t-cyan-400" />
-                                                      : <Circle className="h-8 w-8 text-gray-500 hover:text-green-500 transition-colors" />}
+                                                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+                                                      : <Circle className="h-8 w-8 text-muted-foreground hover:text-green-500 transition-colors" />}
                                                 </button>
                                             </div>
                                             <div className="flex-grow">
-                                                <p className="text-lg font-bold text-gray-200">{activeDailyMission.nome}</p>
-                                                <p className="text-sm text-gray-400">{activeDailyMission.descricao}</p>
+                                                <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
+                                                <p className="text-sm text-muted-foreground">{activeDailyMission.descricao}</p>
                                             </div>
                                             <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                                                 <div className="flex flex-col items-end">
-                                                    <p className="text-sm font-semibold text-cyan-400">+{activeDailyMission.xp_conclusao} XP</p>
+                                                    <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
                                                     <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
                                                         <Gem className="h-3 w-3"/>
                                                         +{activeDailyMission.fragmentos_conclusao}
@@ -748,7 +748,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                 </div>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-cyan-400">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
                                                             <LifeBuoy className="h-5 w-5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -767,11 +767,11 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             </div>
                                         </div>
                                          {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
-                                            <div className="mt-4 pt-3 border-t border-gray-700/50">
-                                                <h5 className="text-sm font-bold text-gray-400 mb-2">Recursos de Aprendizagem Sugeridos</h5>
+                                            <div className="mt-4 pt-3 border-t border-border/50">
+                                                <h5 className="text-sm font-bold text-muted-foreground mb-2">Recursos de Aprendizagem Sugeridos</h5>
                                                 <div className="space-y-2">
                                                     {activeDailyMission.learningResources.map((link, index) => (
-                                                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm bg-gray-800/60 p-2 rounded-md">
+                                                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
                                                             <Link className="h-4 w-4"/>
                                                             <span className="truncate">{link}</span>
                                                         </a>
@@ -783,13 +783,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
                                 
                                 {onCooldown && lastCompletedMission && (
-                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 opacity-80">
+                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 opacity-80">
                                         <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
                                         <div className="flex-grow">
-                                            <p className="text-lg font-bold text-gray-300 line-through">{lastCompletedMission.nome}</p>
-                                            <p className="text-sm text-gray-400">Concluída! Próxima missão disponível à meia-noite.</p>
+                                            <p className="text-lg font-bold text-muted-foreground line-through">{lastCompletedMission.nome}</p>
+                                            <p className="text-sm text-muted-foreground">Concluída! Próxima missão disponível à meia-noite.</p>
                                         </div>
-                                        <div className="flex items-center text-cyan-400 ml-0 sm:ml-4 flex-shrink-0">
+                                        <div className="flex items-center text-primary ml-0 sm:ml-4 flex-shrink-0">
                                             <Timer className="h-5 w-5 mr-2"/>
                                             <p className="text-lg font-mono">{timers[mission.id]}</p>
                                         </div>
@@ -797,34 +797,34 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
 
                                 {!activeDailyMission && !onCooldown && !mission.concluido && (
-                                    <div className="bg-gray-900/50 border-l-4 border-yellow-500 rounded-r-lg p-4 flex items-center">
-                                        <Sparkles className="h-8 w-8 text-yellow-400 mr-4"/>
+                                    <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 flex items-center">
+                                        <Sparkles className="h-8 w-8 text-primary mr-4"/>
                                         <div>
-                                            <p className="text-lg font-bold text-gray-200">A gerar nova missão...</p>
-                                            <p className="text-sm text-gray-400">O Sistema está a preparar o seu próximo desafio.</p>
+                                            <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                            <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {mission.concluido && (
-                                     <div className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                        <Sparkles className="h-8 w-8 text-yellow-400 mr-4"/>
+                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                        <Sparkles className="h-8 w-8 text-primary mr-4"/>
                                         <div>
-                                            <p className="text-lg font-bold text-gray-200">Missão Épica Concluída!</p>
-                                            <p className="text-sm text-gray-400">Você completou todos os passos. Bom trabalho! A próxima missão será revelada em breve.</p>
+                                            <p className="text-lg font-bold text-foreground">Missão Épica Concluída!</p>
+                                            <p className="text-sm text-muted-foreground">Você completou todos os passos. Bom trabalho! A próxima missão será revelada em breve.</p>
                                         </div>
                                     </div>
                                 )}
                                 
                                 {completedDailyMissions.length > 0 && (
-                                     <div className="pt-4 mt-4 border-t border-gray-700/50">
-                                         <h4 className="text-md font-bold text-gray-400 mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
+                                     <div className="pt-4 mt-4 border-t border-border/50">
+                                         <h4 className="text-md font-bold text-muted-foreground mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
                                          <div className="space-y-2">
                                          {completedDailyMissions.map((completed, index) => (
-                                              <div key={completed.id} className="bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 opacity-60">
+                                              <div key={completed.id} className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 opacity-60">
                                                 <CheckCircle className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
                                                 <div className="flex-grow">
-                                                    <p className="text-md font-medium text-gray-400 line-through">{completed.nome}</p>
+                                                    <p className="text-md font-medium text-muted-foreground line-through">{completed.nome}</p>
                                                 </div>
                                                 <div className="text-right ml-auto flex-shrink-0 flex items-center gap-2">
                                                     {index === 0 && !timers[mission.id] && (
@@ -849,7 +849,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                         </AlertDialog>
                                                     )}
                                                     <div className="flex flex-col items-end">
-                                                        <p className="text-xs font-semibold text-cyan-400/80">+{completed.xp_conclusao} XP</p>
+                                                        <p className="text-xs font-semibold text-primary/80">+{completed.xp_conclusao} XP</p>
                                                         <p className="text-xs font-semibold text-yellow-400/80 flex items-center gap-1">
                                                           <Gem className="h-3 w-3"/>
                                                           +{completed.fragmentos_conclusao}
@@ -871,8 +871,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             {completedMissions.length > 0 && (
                  <div className="mt-8">
                      <Accordion type="single" collapsible value={completedAccordionOpen ? "completed" : ""} onValueChange={(value) => setCompletedAccordionOpen(value === "completed")}>
-                         <AccordionItem value="completed" className="bg-gray-800/30 border border-gray-700/50 rounded-lg">
-                             <AccordionTrigger className="hover:no-underline px-4 py-3 text-gray-400">
+                         <AccordionItem value="completed" className="bg-card/60 border border-border/70 rounded-lg">
+                             <AccordionTrigger className="hover:no-underline px-4 py-3 text-muted-foreground">
                                  <div className="flex items-center gap-2">
                                     {completedAccordionOpen ? <ChevronsUp className="h-5 w-5"/> : <ChevronsDown className="h-5 w-5"/>}
                                     Missões Concluídas ({completedMissions.length})
@@ -880,10 +880,10 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                              </AccordionTrigger>
                              <AccordionContent className="px-4 pb-4 space-y-4">
                                 {completedMissions.map(mission => (
-                                     <div key={mission.id} className={`bg-gray-900/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70`}>
+                                     <div key={mission.id} className={`bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70`}>
                                          <div className="flex-grow">
-                                             <p className="font-bold text-gray-300 line-through">{mission.nome}</p>
-                                             <p className="text-sm text-gray-500 mt-1">{mission.descricao}</p>
+                                             <p className="font-bold text-muted-foreground line-through">{mission.nome}</p>
+                                             <p className="text-sm text-muted-foreground/80 mt-1">{mission.descricao}</p>
                                          </div>
                                         <Button 
                                             variant="outline" 
@@ -917,19 +917,19 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-cyan-400 text-2xl">Árvore de Progressão da Missão</DialogTitle>
+                        <DialogTitle className="text-primary text-2xl">Árvore de Progressão da Missão</DialogTitle>
                         <DialogDescription>
                             Esta é a sequência de missões épicas para a meta "{selectedGoalMissions[0]?.meta_associada}".
                         </DialogDescription>
                     </DialogHeader>
                     <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                         {selectedGoalMissions.map((m, index) => (
-                             <div key={m.id} className={`p-4 rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-gray-800/50 opacity-70' : 'border-yellow-500 bg-gray-800'}`}>
+                             <div key={m.id} className={`p-4 rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'}`}>
                                 <div className="flex justify-between items-center">
-                                    <p className={`font-bold ${m.concluido ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{m.nome}</p>
+                                    <p className={`font-bold ${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{m.nome}</p>
                                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(m.rank)}`}>Rank {m.rank}</span>
                                 </div>
-                                <p className="text-sm text-gray-400 mt-1">{m.descricao}</p>
+                                <p className="text-sm text-muted-foreground mt-1">{m.descricao}</p>
                                 {m.concluido && (
                                      <div className="flex items-center text-green-400 text-sm mt-2">
                                         <CheckCircle className="h-4 w-4 mr-2" />
