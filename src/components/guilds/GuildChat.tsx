@@ -19,7 +19,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const GuildChat = ({ guildId, userProfile }) => {
@@ -134,7 +134,7 @@ export const GuildChat = ({ guildId, userProfile }) => {
                                     </div>
                                      {isLastInGroup && msg.timestamp && (
                                          <p className={cn("text-xs mt-1 px-2", isSender ? "text-right text-muted-foreground/70" : "text-left text-muted-foreground/70")}>
-                                           {formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true, locale: ptBR })}
+                                           {format(msg.timestamp.toDate(), 'HH:mm')}
                                          </p>
                                     )}
                                 </div>
