@@ -21,6 +21,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
+import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/AchievementsView';
 import { ShopView } from '@/components/views/ShopView';
 import { InventoryView } from '@/components/views/InventoryView';
@@ -50,6 +51,8 @@ export default function App() {
 
   // State for proactive AI alerts
   const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
+
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -157,6 +160,17 @@ export default function App() {
     });
     await batch.commit();
   }, [user]);
+
+  const handleCompleteOnboarding = async () => {
+    if (!profile) return;
+    const updatedProfile = { ...profile, onboarding_completed: true };
+    await persistProfile(updatedProfile);
+    setShowOnboarding(false);
+    toast({
+        title: "Tutorial Concluído!",
+        description: "A sua jornada começa agora. Boa sorte, Caçador.",
+    });
+  };
 
   // --- NOTIFICATION HANDLERS ---
   const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
@@ -301,6 +315,7 @@ export default function App() {
           active_effects: [], // Initialize active effects
           guild_id: null,
           guild_role: null,
+          onboarding_completed: false, // Add onboarding field
       };
       batch.set(userRef, initialProfile);
 
@@ -466,6 +481,10 @@ export default function App() {
                   setProfile(profileData);
               }
 
+              if (profileData.onboarding_completed === false) {
+                  setShowOnboarding(true);
+              }
+
               const metasSnapshot = await getDocs(collection(userDocRef, 'metas'));
               setMetas(metasSnapshot.docs.map(doc => ({ ...doc.data() })));
 
@@ -495,6 +514,7 @@ export default function App() {
           } else {
               console.log("Utilizador novo. A configurar dados iniciais...");
               await setupInitialData(user.uid, user.email);
+              setShowOnboarding(true); // Show onboarding for new users
           }
       } catch (error) {
           console.error("Erro a carregar dados do Firestore:", error);
@@ -551,6 +571,7 @@ export default function App() {
 
     try {
         await setupInitialData(user.uid, user.email);
+        setShowOnboarding(true); // Make sure onboarding appears after reset
         
     } catch (error) {
         console.error("Erro ao resetar os dados:", error);
@@ -673,6 +694,7 @@ export default function App() {
           )}
         {renderContent()}
         {questNotification && <QuestInfoDialog {...questNotification} />}
+        {showOnboarding && <OnboardingGuide onFinish={handleCompleteOnboarding} />}
         {systemAlert && (
             <SystemAlert
               message={systemAlert.message}
@@ -684,5 +706,3 @@ export default function App() {
     </div>
   );
 }
-
-    
