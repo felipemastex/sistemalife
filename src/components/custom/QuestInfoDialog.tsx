@@ -3,60 +3,84 @@
 
 import * as React from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertCircle, Award, X } from 'lucide-react';
+import { AlertCircle, Award, X, Timer, Gem, Plus, Link } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { Progress } from "../ui/progress";
+import { ScrollArea } from "../ui/scroll-area";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
-export interface QuestInfoProps {
-  title: string;
-  description: string;
-  goals: { name: string; progress: string }[];
-  caution: string;
-  onClose: () => void;
-}
+export const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
 
-const CustomDialogContent = React.forwardRef<
-  React.ElementRef<typeof OriginalDialogContent>,
-  React.ComponentPropsWithoutRef<typeof OriginalDialogContent> & { showCloseButton?: boolean }
->(({ children, className, showCloseButton = true, ...props }, ref) => {
-    const customProps = {...props};
-    if(showCloseButton === false) {
-        delete customProps.showCloseButton;
-    }
-  return (
-    <OriginalDialogContent ref={ref} className={className} {...customProps}>
-      {children}
-      {!showCloseButton && (
-        <button onClick={() => {
-            const event = new CustomEvent('close-dialog');
-            document.dispatchEvent(event)
-        }} className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-          <span className="sr-only">Close</span>
-        </button>
-      )}
-    </OriginalDialogContent>
-  );
-});
-CustomDialogContent.displayName = "DialogContent";
+    const remaining = subTask.target - (subTask.current || 0);
 
-
-export const QuestInfoDialog = ({ title, description, goals, caution, onClose }: QuestInfoProps) => {
-  
-  React.useEffect(() => {
-    const handleClose = () => onClose();
-    document.addEventListener('close-dialog', handleClose);
-    return () => {
-      document.removeEventListener('close-dialog', handleClose);
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(subTask, contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
     };
-  }, [onClose]);
 
-  const isAchievement = title.includes("CONQUISTA");
-  const Icon = isAchievement ? Award : AlertCircle;
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
+                <DialogDescription>
+                    Insira a quantidade que você progrediu. O seu esforço fortalece-o!
+                </DialogDescription>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
+                    </p>
+                    <div>
+                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
+                        <Input
+                            id="contribution-amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={`Ex: 5 (Faltam ${remaining})`}
+                            min="1"
+                            max={remaining}
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                        Registar
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+export const QuestInfoDialog = ({ mission, onContribute, onClose, onCooldown, timer }) => {
+  
+  const [contributionState, setContributionState] = React.useState({ open: false, subTask: null });
+
+  if (!mission) return null;
+
+  const handleOpenContributeDialog = (subTask) => {
+    setContributionState({ open: true, subTask });
+  };
+  
+  const handleContribute = (subTask, amount) => {
+    onContribute(subTask, amount);
+  }
 
   return (
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <CustomDialogContent 
+      <OriginalDialogContent 
         className="bg-gray-900/80 backdrop-blur-md border-2 border-cyan-400/30 text-white max-w-md w-full shadow-2xl shadow-cyan-500/10 rounded-lg p-0"
-        showCloseButton={false}
+        showCloseButton={false} // Use our custom close button
       >
         <div className="p-6 relative font-sans">
           {/* Custom Close Button */}
@@ -65,37 +89,94 @@ export const QuestInfoDialog = ({ title, description, goals, caution, onClose }:
           </button>
 
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-cyan-400/20 pb-3 mb-4">
-            <Icon className={cn("h-6 w-6", isAchievement ? "text-yellow-400" : "text-cyan-400")} />
+          <div className="text-center border-b border-cyan-400/20 pb-4 mb-4">
             <DialogTitle asChild>
-                <h2 className={cn("text-xl font-bold tracking-widest uppercase font-cinzel", isAchievement ? "text-yellow-400" : "text-cyan-400")}>{title}</h2>
+                <h2 className="text-xl font-bold tracking-widest uppercase font-cinzel text-cyan-400">QUEST INFO</h2>
             </DialogTitle>
+            <DialogDescription className="text-gray-400 mt-1">
+                [{mission.nome}]
+            </DialogDescription>
           </div>
-            <DialogDescription className="sr-only">{description}</DialogDescription>
 
           {/* Body */}
-          <div className="space-y-6 text-center">
-            <p className="text-lg font-semibold text-gray-200">{description}</p>
-            
-            <div className="space-y-2 text-left w-full max-w-sm mx-auto">
-                <h3 className={cn("text-center font-bold text-md tracking-wider mb-2", isAchievement ? "text-yellow-400" : "text-green-400")}>
-                    {isAchievement ? "RECOMPENSA" : "OBJETIVOS"}
-                </h3>
-                {goals.map((goal, index) => (
-                    <div key={index} className="flex justify-between items-start gap-4 font-mono text-gray-300 text-sm">
-                        <span className="break-words whitespace-pre-wrap">{goal.name}</span>
-                        <span className="text-right break-words whitespace-pre-wrap">{goal.progress}</span>
-                    </div>
-                ))}
+          <div className="space-y-4 text-center">
+            <div className="w-fit mx-auto px-4 py-1 border-y-2 border-cyan-400/50">
+                <h3 className="text-lg font-bold tracking-wider font-cinzel text-cyan-400">GOAL</h3>
             </div>
+            
+            <ScrollArea className="max-h-[300px] pr-3 -mr-3">
+                <div className="space-y-3 text-left w-full mx-auto">
+                    {mission.subTasks?.map((task, index) => {
+                        const isTaskCompleted = (task.current || 0) >= task.target;
+                        return (
+                            <div key={index} className="flex justify-between items-center gap-4 font-mono text-gray-300 text-sm p-2 bg-black/20 rounded-md">
+                                <span className={cn("break-words whitespace-pre-wrap flex-1", isTaskCompleted && "line-through text-gray-500")}>{task.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={cn("text-right break-words whitespace-pre-wrap", isTaskCompleted && "text-green-400")}>[{task.current || 0}/{task.target}]</span>
+                                    <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-6 w-6 text-gray-400 hover:text-white hover:bg-cyan-400/20" 
+                                        onClick={() => handleOpenContributeDialog(task)}
+                                        disabled={isTaskCompleted || onCooldown}
+                                        aria-label={`Adicionar progresso para ${task.name}`}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </ScrollArea>
+             {mission.learningResources && mission.learningResources.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-border/50">
+                    <h5 className="text-sm font-bold text-muted-foreground mb-2 text-left">Recursos Sugeridos</h5>
+                    <div className="space-y-2">
+                        {mission.learningResources.map((link, index) => (
+                            <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
+                                <Link className="h-4 w-4"/>
+                                <span className="truncate">{link}</span>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
 
-            <p className="text-sm text-yellow-500 font-semibold tracking-wider uppercase bg-yellow-900/30 border border-yellow-500/50 rounded-md p-2">
-                <span className="font-bold">SISTEMA</span> - {caution}
-            </p>
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-cyan-400/20">
+                 <div className="flex items-center gap-2 text-sm text-yellow-400">
+                    <Gem className="h-4 w-4"/>
+                    <span>{mission.xp_conclusao} XP, {mission.fragmentos_conclusao} Fragmentos</span>
+                </div>
+                <Button variant="outline" disabled>
+                    {onCooldown ? "CONCLUÍDA" : "EM ANDAMENTO"}
+                </Button>
+            </div>
+            
+            <div className="text-center mt-4">
+                {onCooldown && timer ? (
+                    <>
+                        <p className="text-sm text-cyan-400/80">PRÓXIMA MISSÃO EM:</p>
+                        <p className="text-2xl font-mono text-cyan-400 font-bold">{timer}</p>
+                    </>
+                ): (
+                    <>
+                        <p className="text-xs text-yellow-500/80 font-semibold tracking-wider uppercase">
+                            <span className="font-bold">AVISO:</span> Falhar em completar a missão diária resultará numa penalidade apropriada.
+                        </p>
+                    </>
+                )}
+            </div>
 
           </div>
         </div>
-      </CustomDialogContent>
+         <ContributionDialog
+            open={contributionState.open}
+            onOpenChange={(isOpen) => setContributionState(prev => ({...prev, open: isOpen}))}
+            subTask={contributionState.subTask}
+            onContribute={handleContribute}
+        />
+      </OriginalDialogContent>
     </Dialog>
   );
 };

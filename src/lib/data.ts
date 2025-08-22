@@ -32,6 +32,7 @@ export const perfis = [
     ultimo_dia_de_missao_concluida: null, // formato ISO: 'YYYY-MM-DD'
     guild_id: null,
     guild_role: null,
+    mission_view_style: 'inline', // 'inline' or 'popup'
   },
 ];
 

@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
-import { LoaderCircle, Wand2, Bell, BellOff } from 'lucide-react';
+import { LoaderCircle, Wand2, Bell, BellOff, List, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
 const getProfileRank = (level) => {
@@ -52,6 +52,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         genero: '',
         nacionalidade: '',
         avatar_url: '',
+        mission_view_style: 'inline',
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
@@ -68,6 +69,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                 genero: profile.genero || 'Não especificado',
                 nacionalidade: profile.nacionalidade || 'Não especificada',
                 avatar_url: profile.avatar_url || '',
+                mission_view_style: profile.mission_view_style || 'inline',
             });
         }
          if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -114,7 +116,8 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
             profileData.apelido !== profile.apelido ||
             profileData.genero !== profile.genero ||
             profileData.nacionalidade !== profile.nacionalidade ||
-            profileData.avatar_url !== profile.avatar_url
+            profileData.avatar_url !== profile.avatar_url ||
+            profileData.mission_view_style !== profile.mission_view_style
         );
     };
 
@@ -268,8 +271,28 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
             </form>
             
              <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm mb-6">
-                <CardContent className="p-0">
-                     <h2 className="text-xl font-bold text-cyan-400">Notificações</h2>
+                <CardContent className="p-0 space-y-4">
+                     <div>
+                        <h2 className="text-xl font-bold text-cyan-400">Preferências</h2>
+                        <p className="text-cyan-400/70 text-sm mb-4">Personalize a sua experiência no Sistema.</p>
+                        <div className="flex items-center justify-between bg-black/20 p-4 rounded-lg">
+                           <div className="flex items-center gap-3">
+                                {profileData.mission_view_style === 'popup' ? <Square className="h-5 w-5 text-green-400"/> : <List className="h-5 w-5 text-green-400"/>}
+                                 <div>
+                                    <p className="font-semibold text-white">Visualização de Missão Diária</p>
+                                    <p className="text-xs text-gray-400">
+                                        Estilo atual: <span className="font-bold">{profileData.mission_view_style === 'popup' ? 'Pop-up' : 'Inline'}</span>
+                                    </p>
+                                 </div>
+                           </div>
+                           <Switch
+                                checked={profileData.mission_view_style === 'popup'}
+                                onCheckedChange={(checked) => setProfileData(prev => ({...prev, mission_view_style: checked ? 'popup' : 'inline'}))}
+                           />
+                        </div>
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-bold text-cyan-400">Notificações</h2>
                         <p className="text-cyan-400/70 text-sm mb-4">Receba alertas proativos do Sistema.</p>
                         <div className="flex items-center justify-between bg-black/20 p-4 rounded-lg">
                            <div className="flex items-center gap-3">
@@ -290,6 +313,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
                         {notificationPermission === 'denied' && (
                             <p className="text-xs text-yellow-500 mt-2">As notificações foram bloqueadas no seu navegador. Você precisa de as ativar manualmente nas configurações do site.</p>
                         )}
+                     </div>
                 </CardContent>
             </Card>
 
@@ -331,5 +355,3 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
-
-    

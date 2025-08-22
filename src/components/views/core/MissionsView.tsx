@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
@@ -19,60 +19,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
-    const [amount, setAmount] = useState('');
-    
-    if (!subTask) return null;
-
-    const remaining = subTask.target - (subTask.current || 0);
-
-    const handleContribute = () => {
-        const contribution = parseInt(amount, 10);
-        if (!isNaN(contribution) && contribution > 0) {
-            onContribute(subTask, contribution);
-            onOpenChange(false);
-            setAmount('');
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
-                    <DialogDescription>
-                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
-                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
-                    </p>
-                    <div>
-                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
-                        <Input
-                            id="contribution-amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder={`Ex: 5 (Faltam ${remaining})`}
-                            min="1"
-                            max={remaining}
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
-                        Registar
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
+import { QuestInfoDialog, ContributionDialog } from '@/components/custom/QuestInfoDialog';
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
@@ -149,6 +96,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
+    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds the active daily mission for the popup
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -617,6 +565,37 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }));
     };
 
+    const handleAddProgressPopup = (mission, subTask, amount) => {
+        const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
+        if (!rankedMission) return;
+        
+        setMissions(prevMissions => prevMissions.map(rm => {
+            if (rm.id === rankedMission.id) {
+                return {
+                    ...rm,
+                    missoes_diarias: rm.missoes_diarias.map(dm => {
+                        if (dm.id === mission.id) {
+                            const updatedSubTasks = dm.subTasks.map(st => {
+                                if (st.name === subTask.name) {
+                                    const newCurrent = Math.min(st.target, (st.current || 0) + amount);
+                                    return { ...st, current: newCurrent };
+                                }
+                                return st;
+                            });
+
+                            // Update the popup state with the new mission object
+                            setShowQuestInfo({...dm, subTasks: updatedSubTasks});
+
+                            return { ...dm, subTasks: updatedSubTasks };
+                        }
+                        return dm;
+                    })
+                };
+            }
+            return rm;
+        }));
+    };
+
     const revertLastDailyMission = (rankedMissionId) => {
         let xpToSubtract = 0;
         let fragmentsToSubtract = 0;
@@ -766,12 +745,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
     const completedMissions = missions.filter(m => m.concluido);
     const visibleMissions = getVisibleMissions();
+    const missionViewStyle = profile?.mission_view_style || 'inline';
 
     return (
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
-                 <Button onClick={handleHackerMode} variant="outline" size="sm">
+                 <Button onClick={handleHackerMode} variant="outline" size="sm" aria-label="Ativar Modo Hacker">
                     Modo Hacker
                 </Button>
             </div>
@@ -804,6 +784,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             {timers[mission.id]}
                                         </div>
                                      )}
+                                     {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && (
+                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo(activeDailyMission)}>
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            Ver Missão
+                                        </Button>
+                                     )}
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
                                         <GitMerge className="h-5 w-5" />
                                     </Button>
@@ -812,7 +798,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
-                                {activeDailyMission && !onCooldown && (
+                                {missionViewStyle === 'inline' && activeDailyMission && !onCooldown && (
                                      <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                              <div className="flex-grow">
@@ -861,6 +847,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                                 className="h-7 w-7" 
                                                                 onClick={() => setContributionState({ open: true, subTask: st, dailyMissionId: activeDailyMission.id, rankedMissionId: mission.id })}
                                                                 disabled={(st.current || 0) >= st.target}
+                                                                aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
                                                                 <Plus className="h-4 w-4" />
                                                             </Button>
@@ -1053,6 +1040,16 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 subTask={contributionState.subTask}
                 onContribute={handleAddProgress}
             />
+
+            {showQuestInfo && (
+                <QuestInfoDialog
+                    mission={showQuestInfo}
+                    onClose={() => setShowQuestInfo(null)}
+                    onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo, subTask, amount)}
+                    onCooldown={!!timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.id))?.id]}
+                    timer={timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.id))?.id]}
+                />
+            )}
         </div>
     );
 };
