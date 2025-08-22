@@ -9,23 +9,23 @@ import * as mockData from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { DashboardView } from '@/components/views/DashboardView';
-import { MetasView } from '@/components/views/MetasView';
-import { MissionsView } from '@/components/views/MissionsView';
-import { SkillsView } from '@/components/views/SkillsView';
-import { RoutineView } from '@/components/views/RoutineView';
-import { AIChatView } from '@/components/views/AIChatView';
-import { SettingsView } from '@/components/views/SettingsView';
+import { DashboardView } from '@/components/views/core/DashboardView';
+import { MetasView } from '@/components/views/core/MetasView';
+import { MissionsView } from '@/components/views/core/MissionsView';
+import { SkillsView } from '@/components/views/core/SkillsView';
+import { RoutineView } from '@/components/views/core/RoutineView';
+import { AIChatView } from '@/components/views/ai/AIChatView';
+import { SettingsView } from '@/components/views/player/SettingsView';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
-import { AchievementsView } from '@/components/views/AchievementsView';
-import { ShopView } from '@/components/views/ShopView';
-import { InventoryView } from '@/components/views/InventoryView';
-import { GuildsView } from '@/components/guilds/GuildsView';
+import { AchievementsView } from '@/components/views/player/AchievementsView';
+import { ShopView } from '@/components/views/player/ShopView';
+import { InventoryView } from '@/components/views/player/InventoryView';
+import { GuildsView } from '@/components/views/social/GuildsView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 
@@ -706,3 +706,5 @@ export default function App() {
     </div>
   );
 }
+
+    
