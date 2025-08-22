@@ -109,48 +109,25 @@ O coração da aplicação é a sua capacidade de usar IA generativa para person
 ## Funcionalidades Futuras e Melhorias (Roadmap)
 
 ### 1. Gamificação e Engajamento
-O núcleo do seu aplicativo é a gamificação. As funcionalidades a seguir podem adicionar mais camadas de motivação e recompensa para os usuários.
+- **Descrição:** Adicionar mais camadas de motivação e recompensa para os usuários.
+- **1.1. Sistema de "Streaks" (Sequências):** Recompensar usuários por manterem a consistência.
+- **1.2. Mapa do Mundo e Progressão Visual:** Transformar a jornada do usuário em uma experiência visual.
+- **1.3. Eventos Sazonais e Temáticos:** Criar eventos de curta duração com temas e recompensas extras.
 
-#### 1.1. Sistema de Conquistas (Achievements) e Medalhas
-- **Descrição:** Crie um sistema de conquistas que recompense os usuários com medalhas ou troféus por atingirem marcos específicos.
-- **Exemplos:** "Novato Determinado" (10 missões), "Mestre de Habilidades" (habilidade no nível máximo), "Explorador Social" (entrar na primeira guilda), "Maratonista" (completar uma Missão Épica).
-- **Benefícios:** Adiciona colecionismo, incentiva a exploração do app e oferece metas de longo prazo.
+### 2. Personalização e Inteligência Artificial
+- **Descrição:** Evoluir o uso da IA para uma experiência ainda mais personalizada.
+- **2.1. Mentor de IA Proativo:** Fazer com que a IA envie dicas, celebre marcos e alerte sobre prazos de forma proativa.
+- **2.2. Ajuste Dinâmico de Dificuldade:** A IA analisa a taxa de sucesso e sugere missões com dificuldade ajustada.
+- **2.3. Análise de Dependências de Metas:** A IA sugere um "roadmap" de habilidades e a ordem recomendada para metas complexas.
+- **2.4. Avatar de IA Evolutivo:** O avatar gerado evolui visualmente com o progresso do usuário.
 
-#### 1.2. Sistema de "Streaks" (Sequências)
-- **Descrição:** Recompense os usuários por manterem a consistência (ex: completar uma missão diária por 3, 7, 15, 30 dias).
-- **Implementação:** A recompensa pode ser bônus de XP, moedas virtuais ou um item temporário.
-- **Benefícios:** Cria um forte incentivo para o engajamento diário, ajudando a formar hábitos.
+### 3. Monetização Ética e Recompensas
+- **Descrição:** Introduzir formas de monetização que recompensam a atividade sem prejudicar a experiência gratuita.
+- **3.1. Passe de Batalha (Battle Pass) Sazonal:** Um sistema de progressão sazonal com duas trilhas (gratuita e premium). Conforme os usuários ganham XP, eles desbloqueiam recompensas. A trilha premium ofereceria recompensas cosméticas exclusivas e bônus.
+- **Benefícios:** Cria um modelo de receita recorrente e incentiva o engajamento contínuo sem usar mecânicas "pay-to-win".
 
-#### 1.3. Itens, Loja e Inventário
-- **Descrição:** Introduza uma economia virtual com itens que podem ser ganhos ou comprados (com moeda do jogo).
-- **Tipos de Itens:**
-    - **Consumíveis:** Poções de "XP em Dobro", itens para recuperar uma "streak" perdida.
-    - **Cosméticos:** Molduras para o avatar, temas de cores, ícones de guildas.
-- **Benefícios:** Aumenta o engajamento ao dar aos usuários algo para almejar.
-
-#### 1.4. Mapa do Mundo e Progressão Visual
-- **Descrição:** Transforme a jornada do usuário em uma experiência visual, onde cada missão de uma meta é um ponto em um mapa a ser explorado.
-- **Benefícios:** Torna a progressão mais tangível e emocionante.
-
-#### 1.5. Eventos Sazonais e Temáticos
-- **Descrição:** Crie eventos de curta duração com temas específicos (ex: "Semana da Organização", "Mês da Saúde e Fitness"). Durante o evento, missões relacionadas ao tema dariam recompensas extras.
-- **Benefícios:** Mantém a experiência renovada e interessante, incentivando os usuários a focarem em diferentes áreas de suas vidas.
-
-### 3. Personalização e Inteligência Artificial
-O uso do Genkit abre portas para uma experiência profundamente personalizada.
-
-#### 3.1. Mentor/Coach de IA Proativo
-- **Descrição:** Evolua a AIChatView para um "Mentor de IA" que envia dicas, celebra marcos e alerta sobre prazos.
-- **Benefícios:** Torna a IA um parceiro na jornada do usuário.
-
-#### 3.2. Ajuste Dinâmico de Dificuldade
-- **Descrição:** A IA analisa a taxa de sucesso do usuário e sugere missões mais desafiadoras (com mais XP) ou mais simples para evitar frustração.
-- **Benefícios:** Mantém o usuário no estado de "flow", maximizando a motivação.
-
-#### 3.3. Análise de Dependências de Metas
-- **Descrição:** Ao criar uma meta grande, a IA usa o generate-goal-roadmap para sugerir um "roadmap" com as habilidades necessárias e a ordem recomendada.
-- **Benefícios:** Ajuda a quebrar objetivos complexos em planos de ação realistas.
-
-#### 3.4. (NOVO) Avatar de IA Evolutivo
-- **Descrição:** O avatar do usuário, gerado pelo generate-hunter-avatar, poderia evoluir visualmente. Ao atingir níveis mais altos ou desbloquear conquistas significativas, o avatar ganha novos equipamentos, auras ou acessórios, refletindo o progresso do "caçador".
-- **Benefícios:** Cria uma representação visual poderosa do progresso e do esforço do usuário, servindo como uma recompensa cosmética contínua.
+### 4. Melhorias Técnicas e de Arquitetura
+- **Descrição:** Aprimorar a base técnica da aplicação para garantir estabilidade e escalabilidade.
+- **4.1. Modo Offline Básico:** Usar o Service Worker do PWA para permitir que os usuários visualizem e completem tarefas offline, sincronizando com o Firebase quando a conexão for restabelecida.
+- **4.2. Estratégia de Testes:** Implementar testes unitários (Jest/Vitest), de integração (React Testing Library) e end-to-end (Cypress/Playwright).
+- **Benefícios:** Previne bugs, facilita a refatoração e garante a estabilidade do sistema a longo prazo.
