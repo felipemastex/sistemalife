@@ -4,6 +4,7 @@
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Flame } from 'lucide-react';
 
 export const DashboardView = ({ profile }) => {
   const getProfileRank = (level) => {
@@ -38,9 +39,12 @@ export const DashboardView = ({ profile }) => {
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 100 },
   ];
   
-  const StatItem = ({ label, value }) => (
+  const StatItem = ({ label, value, icon: Icon = null }) => (
     <div className="bg-secondary/50 p-4 rounded-lg border border-border/50 transition-all hover:bg-secondary/80 hover:border-primary/50">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground flex items-center gap-2">
+            {Icon && <Icon className="h-4 w-4" />}
+            {label}
+        </span>
         <p className="text-lg font-bold text-foreground">{value}</p>
     </div>
   );
@@ -58,9 +62,10 @@ export const DashboardView = ({ profile }) => {
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <div className="md:col-span-2 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                       <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
                       <StatItem label="Título" value={profileRank.title}/>
+                      <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
                     </div>
                     <div className="bg-secondary/50 p-4 rounded-lg border border-border/50">
                       <div className="flex justify-between text-sm text-muted-foreground mb-1">

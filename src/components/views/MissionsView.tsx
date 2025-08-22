@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { statCategoryMapping } from '@/lib/mappings';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { achievements } from '@/lib/achievements';
+import { differenceInCalendarDays } from 'date-fns';
 
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -262,6 +263,38 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
         return currentProfile;
     };
+    
+    const handleStreak = (currentProfile) => {
+        const today = new Date();
+        const lastCompletionDateStr = currentProfile.ultimo_dia_de_missao_concluida;
+        let newStreak = currentProfile.streak_atual || 0;
+
+        if (lastCompletionDateStr) {
+            const lastCompletionDate = new Date(lastCompletionDateStr);
+            const diffDays = differenceInCalendarDays(today, lastCompletionDate);
+
+            if (diffDays === 1) {
+                // Completed yesterday, increment streak
+                newStreak++;
+                toast({ title: `Sequência Mantida: Dia ${newStreak}!`, description: `Bom trabalho! Continue assim.` });
+            } else if (diffDays > 1) {
+                // Missed a day, reset streak
+                newStreak = 1;
+                toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+            }
+            // if diffDays is 0, do nothing to the streak
+        } else {
+            // First mission ever or first since a long break
+            newStreak = 1;
+             toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+        }
+        
+        return {
+            ...currentProfile,
+            streak_atual: newStreak,
+            ultimo_dia_de_missao_concluida: today.toISOString().split('T')[0], // Store as YYYY-MM-DD
+        };
+    };
 
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
@@ -311,12 +344,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
         setMissions(updatedMissions);
 
-        // Profile XP and Level Up
+        // Profile XP, Level Up, and Streak
         let newProfile = { 
             ...profile, 
             xp: profile.xp + xpGained,
             missoes_concluidas_total: (profile.missoes_concluidas_total || 0) + 1,
         };
+        newProfile = handleStreak(newProfile); // Handle streak logic
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
         }

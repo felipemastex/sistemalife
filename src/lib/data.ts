@@ -25,6 +25,8 @@ export const perfis = [
     status: 'Ativo',
     missoes_concluidas_total: 0,
     achievements: [], // Ex: [{ achievementId: 'missions_1', date: '2024-01-01' }]
+    streak_atual: 0,
+    ultimo_dia_de_missao_concluida: null, // formato ISO: 'YYYY-MM-DD'
   },
 ];
 
@@ -358,4 +360,5 @@ export const rotinaTemplates = {
 
 
     
+
 
