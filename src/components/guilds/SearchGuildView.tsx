@@ -25,7 +25,7 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
     };
     
     const hasPendingRequest = (guild) => {
-        return guild.join_requests?.some(req => req.user_id === profile.id && req.status === 'Pendente');
+        return guild.join_requests?.some(req => req.user_id === profile.id);
     };
 
     return (
@@ -54,7 +54,7 @@ export const SearchGuildView = ({ guilds, profile, onJoinRequest, onBack }) => {
                     {filteredGuilds.map(guild => (
                         <Card key={guild.id} className="bg-card/80 flex flex-col">
                             <CardHeader className="flex flex-row items-center gap-4">
-                                <Avatar className="h-16 w-16 rounded-md flex-shrink-0" style={{ backgroundColor: `rgb(${guild.emblema_bg || '55 65 81'})` }}>
+                                <Avatar className="h-16 w-16 rounded-md flex-shrink-0" style={{ backgroundColor: `hsl(${guild.emblema_bg || '215 28% 48%'})` }}>
                                     <div className="flex items-center justify-center h-full w-full">
                                         {getIconComponent(guild.emblema_icon)}
                                     </div>

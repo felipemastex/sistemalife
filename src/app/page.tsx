@@ -27,15 +27,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 
 export default function App() {
-  const { user, loading, logout } = useAuth();
+  const { logout } = useAuth();
   const { 
-      isDataLoaded, profile, metas, missions, skills, routine, routineTemplates, guilds, allUsers,
-      dispatch, persistData,
+      isDataLoaded, profile,
       questNotification, systemAlert, showOnboarding,
-      setQuestNotification, setSystemAlert, setShowOnboarding
+      setQuestNotification, setSystemAlert, setShowOnboarding, persistData
    } = usePlayerDataContext();
 
-  const router = useRouter();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const isMobile = useIsMobile();
     
@@ -130,13 +128,6 @@ export default function App() {
     );
   };
 
-  const currentGuild = useMemo(() => {
-    if (profile?.guild_id) {
-        return guilds.find(g => g.id === profile.guild_id) || null;
-    }
-    return null;
-  }, [profile?.guild_id, guilds]);
-
   const renderContent = () => {
     if (!profile) {
       return null
@@ -157,13 +148,13 @@ export default function App() {
     };
 
     return (
-      <div key={currentPage} className="animate-in fade-in-50 duration-500">
+      <div key={currentPage} className="animate-in fade-in-50 duration-500 h-full">
         {views[currentPage] || <DashboardView />}
       </div>
     )
   };
   
-  if (loading || !isDataLoaded) {
+  if (!isDataLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <div className="animate-spin h-10 w-10 mr-4" />

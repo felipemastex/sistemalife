@@ -18,14 +18,14 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 const iconNames = ["Sword", "Swords", "Shield", "Heart", "Feather", "BookOpen", "BrainCircuit", "Code", "Star", "Target", "Mountain", "TreeDeciduous", "Users", "ShieldCheck"];
 
 const colors = [
-    { name: 'Vermelho', value: '185 28 28' },
-    { name: 'Azul', value: '30 64 175' },
-    { name: 'Verde', value: '22 101 52' },
-    { name: 'Roxo', value: '107 33 168' },
-    { name: 'Amarelo', value: '180 83 9' },
-    { name: 'Cinza', value: '55 65 81' },
-    { name: 'Rosa', value: '157 23 77' },
-    { name: 'Ciano', value: '20 138 164' }
+    { name: 'Vermelho', value: '220 59% 50%' },
+    { name: 'Azul', value: '221 83% 53%' },
+    { name: 'Verde', value: '142 76% 36%' },
+    { name: 'Roxo', value: '262 84% 59%' },
+    { name: 'Laranja', value: '25 95% 53%' },
+    { name: 'Cinza', value: '215 28% 48%' },
+    { name: 'Rosa', value: '330 81% 60%' },
+    { name: 'Ciano', value: '180 83% 44%' }
 ];
 
 const guildFormSchema = z.object({
@@ -48,7 +48,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
             tag: guildToEdit?.tag || '',
             descricao: guildToEdit?.descricao || '',
             emblema_icon: guildToEdit?.emblema_icon || 'Shield',
-            emblema_bg: guildToEdit?.emblema_bg || '55 65 81',
+            emblema_bg: guildToEdit?.emblema_bg || '215 28% 48%',
             meta_principal_id: guildToEdit?.meta_principal_id ? String(guildToEdit.meta_principal_id) : undefined,
         },
     });
@@ -90,7 +90,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                             <div className="flex flex-col sm:flex-row items-center gap-8">
                                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
                                     <Label>Emblema</Label>
-                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center transition-colors shadow-lg" style={{ backgroundColor: `rgb(${watchEmblemaBg})` }}>
+                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center transition-colors shadow-lg" style={{ backgroundColor: `hsl(${watchEmblemaBg})` }}>
                                         {getIconComponent(watchEmblemaIcon)}
                                     </div>
                                 </div>
@@ -126,7 +126,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                                                         <div className="grid grid-cols-4 gap-2 p-2">
                                                             {colors.map(color => (
                                                                 <SelectItem key={color.value} value={color.value} className="p-0 m-0 focus:bg-transparent">
-                                                                    <div className="w-full h-8 rounded-md cursor-pointer hover:opacity-80 flex items-center justify-center" style={{ backgroundColor: `rgb(${color.value})` }}>
+                                                                    <div className="w-full h-8 rounded-md cursor-pointer hover:opacity-80 flex items-center justify-center" style={{ backgroundColor: `hsl(${color.value})` }}>
                                                                         <span className="text-white text-xs mix-blend-difference">{color.name}</span>
                                                                     </div>
                                                                 </SelectItem>

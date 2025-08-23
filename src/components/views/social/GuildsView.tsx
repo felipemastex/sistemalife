@@ -64,10 +64,35 @@ const GuildsViewComponent = () => {
         const guildToLeave = guilds.find(g => g.id === profile.guild_id);
         if (guildToLeave) {
             const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
-            const updatedGuild = { ...guildToLeave, membros: updatedMembers };
-            // If the leader leaves, the guild should be handled (e.g., disbanded or leadership transferred). For now, we'll just update members.
-            const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
-            persistData('guilds', updatedGuilds);
+            
+            if (updatedMembers.length === 0) {
+                // Disband guild if last member leaves
+                 const updatedGuilds = guilds.filter(g => g.id !== profile.guild_id);
+                 persistData('guilds', updatedGuilds);
+                 toast({ title: "Guilda Desfeita", description: "Você era o último membro e a guilda foi desfeita." });
+            } else {
+                let updatedGuild = { ...guildToLeave, membros: updatedMembers };
+                 // If the leader leaves, assign leadership to the highest-ranking member
+                if (profile.guild_role === 'Líder') {
+                    const roleHierarchy = ['Oficial', 'Veterano', 'Membro', 'Recruta'];
+                    let newLeaderAssigned = false;
+                    for (const role of roleHierarchy) {
+                        const newLeader = updatedMembers.find(m => m.role === role);
+                        if (newLeader) {
+                            updatedGuild.membros = updatedMembers.map(m => m.user_id === newLeader.user_id ? {...m, role: 'Líder'} : m);
+                            const newLeaderProfile = allUsers.find(u => u.id === newLeader.user_id);
+                            if (newLeaderProfile) {
+                                persistData('allUsers', allUsers.map(u => u.id === newLeader.user_id ? {...u, guild_role: 'Líder'} : u));
+                                toast({ title: "Liderança Transferida!", description: `${newLeaderProfile.nome_utilizador} é o novo líder da guilda.` });
+                            }
+                            newLeaderAssigned = true;
+                            break;
+                        }
+                    }
+                }
+                const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
+                persistData('guilds', updatedGuilds);
+            }
         }
 
         persistData('profile', updatedProfile);
@@ -81,11 +106,6 @@ const GuildsViewComponent = () => {
         toast({ title: "Guilda Atualizada!", description: `Os dados da guilda "${updatedGuildData.nome}" foram salvos.` });
         setView('dashboard');
     };
-
-     const handleUsersUpdate = (updatedUsers) => {
-        persistData('allUsers', updatedUsers);
-     }
-
 
     if (isLoading || !profile) {
         return <div className="p-6 flex justify-center items-center h-full"><LoaderCircle className="animate-spin h-8 w-8" /></div>;
@@ -133,7 +153,7 @@ const GuildsViewComponent = () => {
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
-            <div className="animate-in fade-in-50 duration-500 h-full">
+            <div className="animate-in fade-in-50 duration-500 h-full flex flex-col">
               {renderContent()}
             </div>
         </div>

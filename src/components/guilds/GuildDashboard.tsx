@@ -67,10 +67,10 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
-            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-auto">
+            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
                 
                 {/* Coluna Esquerda - Conteúdo Principal */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
+                <div className="lg:col-span-8 flex flex-col gap-6 overflow-hidden">
                     <GuildQuests 
                         quests={guildData.quests}
                         onQuestsUpdate={handleQuestsUpdate}
@@ -84,7 +84,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                 </div>
 
                 {/* Coluna Direita - Painéis Laterais */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
+                <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
                     {canManage && (
                         <JoinRequests
                             requests={guildData.join_requests || []}
