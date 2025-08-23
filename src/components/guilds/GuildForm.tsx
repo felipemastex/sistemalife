@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -7,9 +6,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
@@ -18,14 +15,14 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 const iconNames = ["Sword", "Swords", "Shield", "Heart", "Feather", "BookOpen", "BrainCircuit", "Code", "Star", "Target", "Mountain", "TreeDeciduous", "Users", "ShieldCheck"];
 
 const colors = [
-    { name: 'Vermelho', value: '220 59% 50%' },
-    { name: 'Azul', value: '221 83% 53%' },
-    { name: 'Verde', value: '142 76% 36%' },
-    { name: 'Roxo', value: '262 84% 59%' },
-    { name: 'Laranja', value: '25 95% 53%' },
-    { name: 'Cinza', value: '215 28% 48%' },
-    { name: 'Rosa', value: '330 81% 60%' },
-    { name: 'Ciano', value: '180 83% 44%' }
+    { name: 'Vermelho', value: 'hsl(0, 72%, 51%)' },
+    { name: 'Azul', value: 'hsl(221, 83%, 53%)' },
+    { name: 'Verde', value: 'hsl(142, 71%, 45%)' },
+    { name: 'Roxo', value: 'hsl(262, 84%, 59%)' },
+    { name: 'Laranja', value: 'hsl(25, 95%, 53%)' },
+    { name: 'Cinza', value: 'hsl(215, 28%, 48%)' },
+    { name: 'Rosa', value: 'hsl(330, 81%, 60%)' },
+    { name: 'Ciano', value: 'hsl(180, 83%, 44%)' }
 ];
 
 const guildFormSchema = z.object({
@@ -39,7 +36,6 @@ const guildFormSchema = z.object({
 
 export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) => {
     const isEditing = !!guildToEdit;
-    const { toast } = useToast();
 
     const form = useForm<z.infer<typeof guildFormSchema>>({
         resolver: zodResolver(guildFormSchema),
@@ -48,7 +44,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
             tag: guildToEdit?.tag || '',
             descricao: guildToEdit?.descricao || '',
             emblema_icon: guildToEdit?.emblema_icon || 'Shield',
-            emblema_bg: guildToEdit?.emblema_bg || '215 28% 48%',
+            emblema_bg: guildToEdit?.emblema_bg || 'hsl(215, 28%, 48%)',
             meta_principal_id: guildToEdit?.meta_principal_id ? String(guildToEdit.meta_principal_id) : undefined,
         },
     });
@@ -60,7 +56,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
     
     function onSubmit(data: z.infer<typeof guildFormSchema>) {
         const finalGuildData = {
-            ...(guildToEdit || {}), // Keep existing data like id, members, quests etc.
+            ...(guildToEdit || {}), 
             ...data,
             meta_principal_id: Number(data.meta_principal_id),
             join_requests: guildToEdit?.join_requests || [],
@@ -89,8 +85,8 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                         <CardContent className="space-y-8">
                             <div className="flex flex-col sm:flex-row items-center gap-8">
                                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <Label>Emblema</Label>
-                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center transition-colors shadow-lg" style={{ backgroundColor: `hsl(${watchEmblemaBg})` }}>
+                                    <FormLabel>Emblema</FormLabel>
+                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center transition-colors shadow-lg" style={{ backgroundColor: watchEmblemaBg }}>
                                         {getIconComponent(watchEmblemaIcon)}
                                     </div>
                                 </div>
@@ -126,7 +122,7 @@ export const GuildForm = ({ onSave, userMetas, onCancel, guildToEdit = null }) =
                                                         <div className="grid grid-cols-4 gap-2 p-2">
                                                             {colors.map(color => (
                                                                 <SelectItem key={color.value} value={color.value} className="p-0 m-0 focus:bg-transparent">
-                                                                    <div className="w-full h-8 rounded-md cursor-pointer hover:opacity-80 flex items-center justify-center" style={{ backgroundColor: `hsl(${color.value})` }}>
+                                                                    <div className="w-full h-8 rounded-md cursor-pointer hover:opacity-80 flex items-center justify-center" style={{ backgroundColor: color.value }}>
                                                                         <span className="text-white text-xs mix-blend-difference">{color.name}</span>
                                                                     </div>
                                                                 </SelectItem>

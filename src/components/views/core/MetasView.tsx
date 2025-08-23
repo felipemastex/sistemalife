@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
@@ -129,7 +128,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         } finally {
             setIsLoading(false);
         }
-    },[onClose]);
+    },[onClose, toast]);
 
 
     const handleNextStep = async () => {
@@ -185,7 +184,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 categories: mockData.categoriasMetas,
             });
             const newMeta = {
-                id: metaToEdit ? metaToEdit.id : null, // Let the parent handle ID generation for new goals
+                id: metaToEdit ? metaToEdit.id : null, 
                 nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 prazo: goalState.prazo,
@@ -461,7 +460,6 @@ const MetasViewComponent = () => {
         
         try {
             if (isEditingGoal) {
-                // --- UPDATE LOGIC ---
                 const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
                 const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 
@@ -488,7 +486,6 @@ const MetasViewComponent = () => {
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
-                // --- CREATE LOGIC ---
                 let newSkillId = Date.now();
                 let newSkill;
                 const goalDescription = Object.values(newOrUpdatedMeta.detalhes_smart).join(' ');
@@ -554,9 +551,9 @@ const MetasViewComponent = () => {
                         descricao: epicMission.epicMissionDescription,
                         concluido: false,
                         rank: epicMission.rank,
-                        level_requirement: 1, // Can be adjusted later
+                        level_requirement: 1, 
                         meta_associada: newMetaWithId.nome,
-                        total_missoes_diarias: 10, // Default value
+                        total_missoes_diarias: 10, 
                         ultima_missao_concluida_em: null,
                         missoes_diarias: isFirstMission ? [{
                             id: Date.now() + (result.progression?.length || 0) + 2,
@@ -576,7 +573,6 @@ const MetasViewComponent = () => {
                 persistData('metas', [...metas, newMetaWithId]);
                 persistData('missions', [...missions, ...newMissions]);
                 
-                // Show roadmap after creation
                 handleGetRoadmap(newMetaWithId);
             }
         } catch (error) {
@@ -604,7 +600,7 @@ const MetasViewComponent = () => {
             await handleSave({
                 id: null,
                 nome: refinedGoal.name,
-                categoria: 'Desenvolvimento Pessoal', // Default category
+                categoria: 'Desenvolvimento Pessoal', 
                 prazo: quickGoalData.prazo,
                 concluida: false,
                 detalhes_smart: refinedGoal,

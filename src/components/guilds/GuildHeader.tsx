@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,7 @@ export const GuildHeader = ({ guild, onEdit, onLeave, isLeader }) => {
 
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 bg-card/50 border border-border rounded-lg">
-            <Avatar className="h-24 w-24 rounded-md flex-shrink-0" style={{ backgroundColor: `hsl(${guild.emblema_bg || '215 28% 48%'})`}}>
+            <Avatar className="h-24 w-24 rounded-md flex-shrink-0" style={{ backgroundColor: guild.emblema_bg || 'hsl(215, 28%, 48%)'}}>
                 <div className="flex items-center justify-center h-full w-full">
                     {getIconComponent(guild.emblema_icon || 'Shield')}
                 </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, memo } from 'react';
@@ -29,12 +28,11 @@ const ShopViewComponent = () => {
 
         setIsBuying(item.id);
         
-        // Simulate a small delay for better UX
         setTimeout(() => {
             const newInventoryItem = {
                 itemId: item.id,
                 purchaseDate: new Date().toISOString(),
-                instanceId: `${item.id}_${Date.now()}` // Unique ID for each instance of an item
+                instanceId: `${item.id}_${Date.now()}`
             };
             
             const updatedProfile = {

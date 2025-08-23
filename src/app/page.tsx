@@ -1,9 +1,7 @@
-
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Bot, User, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -14,7 +12,7 @@ import { RoutineView } from '@/components/views/core/RoutineView';
 import { AIChatView } from '@/components/views/ai/AIChatView';
 import { SettingsView } from '@/components/views/player/SettingsView';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
@@ -193,12 +191,6 @@ export default function App() {
                         onTouchMove={onTouchMove}
                         onTouchEnd={() => onTouchEnd(true)}
                     >
-                        <SheetHeader className="sr-only">
-                           <SheetTitle>Menu de Navegação</SheetTitle>
-                           <SheetDescription>
-                               Use esta barra lateral para navegar entre as diferentes secções da aplicação.
-                           </SheetDescription>
-                        </SheetHeader>
                         <NavContent inSheet={true}/>
                     </SheetContent>
                 </Sheet>

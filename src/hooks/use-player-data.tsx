@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -40,8 +39,8 @@ const initialState = {
     allUsers: [],
     guilds: [],
     isDataLoaded: false,
-    missionFeedback: {}, // { [rankedMissionId]: 'feedback text' }
-    generatingMission: null, // rankedMissionId of mission being generated
+    missionFeedback: {}, 
+    generatingMission: null,
 };
 
 function playerDataReducer(state, action) {
@@ -74,10 +73,11 @@ function playerDataReducer(state, action) {
             return { ...state, generatingMission: action.payload };
         case 'SET_MISSION_FEEDBACK':
             return { ...state, missionFeedback: { ...state.missionFeedback, [action.payload.missionId]: action.payload.feedback }};
-        case 'CLEAR_MISSION_FEEDBACK':
+        case 'CLEAR_MISSION_FEEDBACK': {
             const newFeedback = { ...state.missionFeedback };
             delete newFeedback[action.payload.missionId];
             return { ...state, missionFeedback: newFeedback };
+        }
         case 'UPDATE_SUB_TASK_PROGRESS': {
             const { rankedMissionId, dailyMissionId, subTaskName, amount } = action.payload;
             const newMissions = state.missions.map(rm => 
@@ -303,7 +303,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        const streakMilestones = { 3: 20, 7: 50, 14: 120, 30: 300 }; // streak day: bonus XP
+        const streakMilestones = { 3: 20, 7: 50, 14: 120, 30: 300 }; 
         if (streakMilestones[newStreak]) {
             const xpBonus = streakMilestones[newStreak];
             const fragmentBonus = Math.round(xpBonus / 10);
@@ -332,24 +332,19 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
-        const tempRankedMission = state.missions.find(rm => rm.id === rankedMissionId);
+        const tempState = playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
+        const tempRankedMission = tempState.missions.find(rm => rm.id === rankedMissionId);
         const tempDailyMission = tempRankedMission?.missoes_diarias.find(dm => dm.id === dailyMissionId);
+
         if (!tempDailyMission) return;
         
-        const updatedTempSubTask = tempDailyMission.subTasks.find(st => st.name === subTask.name);
-        const newCurrent = (updatedTempSubTask?.current || 0) + amount;
-        
-        const allSubTasksCompleted = tempDailyMission.subTasks.every(st =>
-            st.name === subTask.name ? newCurrent >= st.target : (st.current || 0) >= st.target
-        );
+        const allSubTasksCompleted = tempDailyMission.subTasks.every(st => (st.current || 0) >= st.target);
         
         if (!allSubTasksCompleted) {
-             const tempMissions = state.missions.map(rm => rm.id !== rankedMissionId ? rm : { ...rm, missoes_diarias: rm.missoes_diarias.map(dm => dm.id !== dailyMissionId ? dm : { ...dm, subTasks: dm.subTasks.map(st => st.name === subTask.name ? { ...st, current: newCurrent } : st) }) });
-             persistData('missions', tempMissions);
+             persistData('missions', tempState.missions);
              return;
         }
 
-        // --- Daily Mission is Complete ---
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
         
         let updatedProfile = { ...state.profile };
@@ -378,9 +373,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         const meta = state.metas.find(m => m.nome === tempRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
-            const skillIndex = state.skills.findIndex(s => s.id === meta.habilidade_associada_id);
-            if (skillIndex !== -1 && state.skills[skillIndex].nivel_atual < state.skills[skillIndex].nivel_maximo) {
-                const skillToUpdate = { ...state.skills[skillIndex] };
+            const skillToUpdate = { ...state.skills.find(s => s.id === meta.habilidade_associada_id) };
+            if (skillToUpdate && skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
                 skillToUpdate.xp_atual += missionSkillXp;
                 skillToUpdate.ultima_atividade_em = new Date().toISOString();
                  if (skillToUpdate.xp_atual >= skillToUpdate.xp_para_proximo_nivel) {
@@ -395,10 +389,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        const rankedMissionAfterDaily = { ...tempRankedMission, missoes_diarias: tempRankedMission.missoes_diarias.map(dm => dm.id === dailyMissionId ? {...dm, concluido: true} : dm), ultima_missao_concluida_em: new Date().toISOString() };
-        
         let newDailyMission = null;
         try {
+            const rankedMissionAfterDaily = { ...tempRankedMission, missoes_diarias: tempRankedMission.missoes_diarias.map(dm => dm.id === dailyMissionId ? {...dm, concluido: true} : dm) };
             const isRankedMissionComplete = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).length >= (rankedMissionAfterDaily.total_missoes_diarias || 10);
             if (!isRankedMissionComplete) {
                 const history = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
@@ -413,11 +406,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
 
-        const isRankedMissionComplete = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).length >= (rankedMissionAfterDaily.total_missoes_diarias || 10);
+        const finalRankedMission = tempState.missions.find(m => m.id === rankedMissionId);
+        const isRankedMissionComplete = finalRankedMission.missoes_diarias.filter(d => d.concluido).length >= (finalRankedMission.total_missoes_diarias || 10);
+        
         if(isRankedMissionComplete) {
             dispatch({ type: 'COMPLETE_EPIC_MISSION', payload: { rankedMissionId } });
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${tempRankedMission.nome}"!` });
-            const goalMissions = state.missions.filter(m => m.meta_associada === tempRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            const goalMissions = tempState.missions.filter(m => m.meta_associada === tempRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
             const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
             const nextMission = goalMissions[currentIndex + 1];
             if (nextMission) { handleShowNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
@@ -431,9 +426,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         }
 
         dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
-        persistData('profile', updatedProfile);
-        persistData('skills', state.skills);
-        persistData('missions', state.missions);
+        await persistData('profile', updatedProfile);
+        await persistData('missions', tempState.missions.map(rm => rm.id === rankedMissionId ? {...rm, missoes_diarias: [...rm.missoes_diarias.filter(dm => dm.id !== dailyMissionId), {...tempDailyMission, concluido: true}, ...(newDailyMission ? [newDailyMission] : [])]} : rm));
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
 
@@ -512,12 +506,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     setShowOnboarding(true);
                 }
             } else {
-                handleFullReset();
+                await handleFullReset();
             }
         } catch (error) {
              toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
         }
-    }, [toast]);
+    }, [toast, handleFullReset, setShowOnboarding]);
     
     useEffect(() => {
         if (user && !state.isDataLoaded) {
@@ -527,16 +521,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const providerValue = {
         ...state,
-        dispatch,
         persistData,
         completeMission,
         handleFullReset,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
-        missionFeedback: state.missionFeedback,
-        setMissionFeedback,
-        generatingMission: state.generatingMission
+        setMissionFeedback
     };
 
     return (
@@ -553,5 +544,3 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
-
-    

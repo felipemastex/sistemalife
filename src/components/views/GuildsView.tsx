@@ -1,131 +1,68 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { LoaderCircle } from 'lucide-react';
-import { GuildForm } from '@/components/guilds/GuildForm';
-import { SearchGuildView } from './SearchGuildView';
-import { NoGuildView } from './NoGuildView';
-import { GuildDashboard } from '@/components/guilds/GuildDashboard';
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Edit, LogOut } from "lucide-react";
+import * as LucideIcons from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
+export const GuildHeader = ({ guild, onEdit, onLeave, isLeader }) => {
+    if (!guild) return null;
 
-export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers }) => {
-    const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create', 'edit'
-    const [isLoading, setIsLoading] = useState(true);
-    const [currentGuild, setCurrentGuild] = useState(null);
-    const { toast } = useToast();
-
-    useEffect(() => {
-        if (profile && guilds) {
-            if (profile.guild_id) {
-                const foundGuild = guilds.find(g => g.id === profile.guild_id);
-                setCurrentGuild(foundGuild);
-                setView('dashboard');
-            } else {
-                setView('no-guild');
-            }
-        }
-        setIsLoading(false);
-    }, [profile, guilds]);
-
-    const handleGuildCreated = (newGuild) => {
-        const newGuildWithId = { ...newGuild, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
-        const updatedGuilds = [...guilds, newGuildWithId];
-        setGuilds(updatedGuilds);
-        
-        const updatedProfile = { ...profile, guild_id: newGuildWithId.id, guild_role: 'Líder' };
-        setProfile(updatedProfile);
-
-        toast({ title: "Guilda Forjada!", description: `A guilda "${newGuild.nome}" foi criada com sucesso.` });
-        setView('dashboard');
-    };
-    
-    const handleJoinRequestSent = (guildId) => {
-        const updatedGuilds = guilds.map(g => {
-            if (g.id === guildId) {
-                const newRequest = { user_id: profile.id, nome_utilizador: profile.nome_utilizador, status: 'Pendente'};
-                return { ...g, join_requests: [...(g.join_requests || []), newRequest] };
-            }
-            return g;
-        });
-        setGuilds(updatedGuilds);
-        toast({ title: "Pedido Enviado!", description: "O seu pedido para se juntar à guilda foi enviado para o líder." });
-    };
-    
-    const handleLeaveGuild = () => {
-        const updatedProfile = {...profile, guild_id: null, guild_role: null};
-        
-        // Remove member from guild object
-        const guildToLeave = guilds.find(g => g.id === profile.guild_id);
-        if (guildToLeave) {
-            const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
-            const updatedGuild = { ...guildToLeave, membros: updatedMembers };
-            // If the leader leaves, the guild should be handled (e.g., disbanded or leadership transferred). For now, we'll just update members.
-            const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
-            setGuilds(updatedGuilds);
-        }
-
-        setProfile(updatedProfile);
-        setCurrentGuild(null);
-        setView('no-guild');
-        toast({ title: "Você saiu da guilda."});
-    };
-
-     const handleGuildUpdate = (updatedGuild) => {
-        const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
-        setGuilds(updatedGuilds);
-        setCurrentGuild(updatedGuild);
-    };
-
-    if (isLoading || !profile) {
-        return <div className="p-6 flex justify-center items-center h-full"><LoaderCircle className="animate-spin h-8 w-8" /></div>;
-    }
-
-    const renderContent = () => {
-        if (view === 'dashboard' && currentGuild) {
-            return <GuildDashboard 
-                        guild={currentGuild}
-                        profile={profile}
-                        members={allUsers.filter(u => u.guild_id === currentGuild.id)} 
-                        onGuildUpdate={handleGuildUpdate}
-                        onLeaveGuild={handleLeaveGuild}
-                        onEdit={() => setView('edit')}
-                        allUsers={allUsers}
-                        setAllUsers={setAllUsers}
-                    />;
-        }
-        if (view === 'create') {
-            return <GuildForm 
-                        onSave={handleGuildCreated} 
-                        userMetas={metas} 
-                        onCancel={() => setView('no-guild')} 
-                    />;
-        }
-        if (view === 'edit' && currentGuild) {
-             return <GuildForm 
-                        guildToEdit={currentGuild}
-                        onSave={handleGuildUpdate} 
-                        userMetas={metas} 
-                        onCancel={() => setView('dashboard')} 
-                    />;
-        }
-        if (view === 'search') {
-            return <SearchGuildView 
-                        guilds={guilds.filter(g => g.id !== profile.guild_id)}
-                        profile={profile}
-                        onJoinRequest={handleJoinRequestSent}
-                        onBack={() => setView('no-guild')}
-                    />;
-        }
-        return <NoGuildView onCreate={() => setView('create')} onSearch={() => setView('search')} />;
+    const getIconComponent = (iconName) => {
+        const Icon = LucideIcons[iconName];
+        return Icon ? <Icon className="h-10 w-10 text-white" /> : null;
     };
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col">
-            <div className="animate-in fade-in-50 duration-500 h-full">
-              {renderContent()}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 bg-card/50 border border-border rounded-lg">
+            <Avatar className="h-24 w-24 rounded-md flex-shrink-0" style={{ backgroundColor: guild.emblema_bg || 'hsl(215, 28%, 48%)'}}>
+                <div className="flex items-center justify-center h-full w-full">
+                    {getIconComponent(guild.emblema_icon || 'Shield')}
+                </div>
+                <AvatarFallback>{guild.tag}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+                <h1 className="text-3xl font-bold text-cyan-400 font-cinzel tracking-wider">{guild.nome} [{guild.tag}]</h1>
+                <p className="text-muted-foreground mt-1">{guild.descricao}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-center">
+                {isLeader && (
+                    <Button onClick={onEdit} variant="outline">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Guilda
+                    </Button>
+                )}
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                         <Button variant="destructive">
+                             <LogOut className="h-4 w-4 mr-2" />
+                            Sair da Guilda
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Tem a certeza que quer sair da guilda?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {isLeader ? "Como líder, se houver outros membros, a liderança será transferida para o membro de mais alto escalão. Se for o último membro, a guilda será desfeita." : "Você pode pedir para entrar novamente mais tarde, mas terá de ser aceite."}
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={onLeave}>Sim, Sair</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

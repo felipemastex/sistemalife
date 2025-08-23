@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, memo } from 'react';
@@ -26,7 +25,6 @@ const getProfileRank = (level) => {
     return 'Lendário (SSS)';
 };
 
-// Componente para um campo de informação/edição estilizado
 const InfoField = ({ label, value, editable = false, onChange, placeholder, className = "" }) => (
     <div className={`flex flex-col gap-1 ${className}`}>
         <Label className="text-sm text-cyan-300/70 tracking-wider uppercase">{label}</Label>
@@ -44,8 +42,6 @@ const InfoField = ({ label, value, editable = false, onChange, placeholder, clas
     </div>
 );
 
-
-// O componente principal da vista de Configurações
 const SettingsViewComponent = () => {
     const { profile, persistData, handleFullReset } = usePlayerDataContext();
     const [profileData, setProfileData] = useState({
@@ -98,13 +94,10 @@ const SettingsViewComponent = () => {
             setNotificationPermission(permission);
             if (permission === 'granted') {
                 toast({ title: 'Notificações Ativadas!', description: 'Você receberá alertas do Sistema.' });
-                // Aqui seria o local para registar o token de push no backend
             } else {
                  toast({ title: 'Permissão Recusada', description: 'Você não receberá notificações.' });
             }
         } else {
-            // A desativação é gerida no backend, removendo o token de subscrição.
-            // Por agora, apenas atualizamos a UI.
             setNotificationPermission('default');
             toast({ title: 'Notificações Desativadas', description: 'Você não receberá mais alertas.' });
         }
@@ -198,7 +191,6 @@ const SettingsViewComponent = () => {
                 <Card className="bg-gray-900/50 border border-cyan-400/30 p-6 backdrop-blur-sm mb-6">
                     <CardContent className="p-0">
                        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-6">
-                            {/* Profile Picture */}
                             <div className="md:col-span-4 flex flex-col items-center justify-start">
                                 <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-cyan-400/50 p-1 bg-black/20 relative">
                                     <Avatar className="w-full h-full rounded-none">
@@ -227,7 +219,6 @@ const SettingsViewComponent = () => {
                                 />
                             </div>
 
-                            {/* Profile Data */}
                             <div className="md:col-span-8 flex flex-col justify-between">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                                     <InfoField 

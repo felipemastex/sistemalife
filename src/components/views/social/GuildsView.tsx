@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, memo } from 'react';
@@ -13,7 +12,7 @@ import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 const GuildsViewComponent = () => {
     const { profile, guilds, metas, allUsers, persistData } = usePlayerDataContext();
-    const [view, setView] = useState('no-guild'); // 'dashboard', 'search', 'create', 'edit', 'no-guild'
+    const [view, setView] = useState('no-guild'); 
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     
@@ -66,23 +65,21 @@ const GuildsViewComponent = () => {
             const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
             
             if (updatedMembers.length === 0) {
-                // Disband guild if last member leaves
                  const updatedGuilds = guilds.filter(g => g.id !== profile.guild_id);
                  persistData('guilds', updatedGuilds);
                  toast({ title: "Guilda Desfeita", description: "Você era o último membro e a guilda foi desfeita." });
             } else {
                 let updatedGuild = { ...guildToLeave, membros: updatedMembers };
-                 // If the leader leaves, assign leadership to the highest-ranking member
                 if (profile.guild_role === 'Líder') {
                     const roleHierarchy = ['Oficial', 'Veterano', 'Membro', 'Recruta'];
                     let newLeaderAssigned = false;
                     for (const role of roleHierarchy) {
-                        const newLeader = updatedMembers.find(m => m.role === role);
-                        if (newLeader) {
-                            updatedGuild.membros = updatedMembers.map(m => m.user_id === newLeader.user_id ? {...m, role: 'Líder'} : m);
-                            const newLeaderProfile = allUsers.find(u => u.id === newLeader.user_id);
+                        const newLeaderMember = updatedMembers.find(m => m.role === role);
+                        if (newLeaderMember) {
+                            updatedGuild.membros = updatedMembers.map(m => m.user_id === newLeaderMember.user_id ? {...m, role: 'Líder'} : m);
+                            const newLeaderProfile = allUsers.find(u => u.id === newLeaderMember.user_id);
                             if (newLeaderProfile) {
-                                persistData('allUsers', allUsers.map(u => u.id === newLeader.user_id ? {...u, guild_role: 'Líder'} : u));
+                                persistData('allUsers', allUsers.map(u => u.id === newLeaderMember.user_id ? {...u, guild_role: 'Líder'} : u));
                                 toast({ title: "Liderança Transferida!", description: `${newLeaderProfile.nome_utilizador} é o novo líder da guilda.` });
                             }
                             newLeaderAssigned = true;

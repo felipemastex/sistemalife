@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Backpack } from 'lucide-react';
+import { Backpack, Gem } from 'lucide-react';
 import { shopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -31,7 +30,6 @@ const InventoryViewComponent = () => {
         let updatedProfile = { ...profile };
         const now = new Date();
 
-        // Filter out expired effects before applying new ones
         updatedProfile.active_effects = (updatedProfile.active_effects || []).filter(eff => 
             new Date(eff.expires_at).getTime() > now.getTime()
         );
@@ -54,8 +52,7 @@ const InventoryViewComponent = () => {
                  updatedProfile.active_effects.push({
                     itemId: item.id,
                     type: 'streak_recovery',
-                    // This effect doesn't expire with time, but is consumed on use
-                    expires_at: new Date(now.setFullYear(now.getFullYear() + 1)).toISOString(), // Expires in 1 year
+                    expires_at: new Date(now.setFullYear(now.getFullYear() + 1)).toISOString(), 
                 });
                  toast({
                     title: `${item.name} Ativado!`,
@@ -67,7 +64,6 @@ const InventoryViewComponent = () => {
                 return;
         }
 
-        // Consume item by removing it from inventory
         updatedProfile.inventory = (updatedProfile.inventory || []).filter(invItem => invItem.instanceId !== item.instanceId);
         
         persistData('profile', updatedProfile);
