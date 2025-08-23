@@ -365,37 +365,17 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     };
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
-        setGenerating(rankedMissionId); // Set loading state for the epic mission
+        setGenerating(rankedMissionId);
     
         const now = new Date();
         const originalRankedMission = missions.find(m => m.id === rankedMissionId);
-        if (!originalRankedMission) {
+        const dailyMissionToComplete = originalRankedMission?.missoes_diarias.find(d => d.id === dailyMissionId);
+    
+        if (!originalRankedMission || !dailyMissionToComplete) {
             setGenerating(null);
             return;
         }
     
-        const dailyMissionToComplete = originalRankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
-        if (!dailyMissionToComplete) {
-            setGenerating(null);
-            return;
-        }
-    
-        // STEP 1: Immediately update UI to show completion
-        const missionsWithCompletedDaily = missions.map(rm => {
-            if (rm.id === rankedMissionId) {
-                return {
-                    ...rm,
-                    missoes_diarias: rm.missoes_diarias.map(dm => 
-                        dm.id === dailyMissionId ? { ...dm, concluido: true } : dm
-                    ),
-                    ultima_missao_concluida_em: now.toISOString(),
-                };
-            }
-            return rm;
-        });
-        setMissions(missionsWithCompletedDaily);
-    
-        // STEP 2: Handle profile, skills, and meta updates
         let updatedProfile = { ...profile };
         const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
@@ -413,7 +393,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             updatedProfile = handleLevelUp(updatedProfile);
         }
         updatedProfile = checkAndUnlockAchievements(updatedProfile);
-        setProfile(updatedProfile);
     
         const meta = metas.find(m => m.nome === originalRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
@@ -425,46 +404,53 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         skillLevel: skillToUpdate.nivel_atual,
                     });
                     const updatedSkill = { ...skillToUpdate, xp_atual: skillToUpdate.xp_atual + xp, ultima_atividade_em: now.toISOString() };
-                    setSkills(skills.map(s => s.id === updatedSkill.id ? updatedSkill : s));
-                    
                     if (updatedSkill.xp_atual >= updatedSkill.xp_para_proximo_nivel) {
                         const statsToUpgrade = statCategoryMapping[updatedSkill.categoria] || [];
                         handleSkillUp(updatedSkill, statsToUpgrade);
+                    } else {
+                        setSkills(skills.map(s => s.id === updatedSkill.id ? updatedSkill : s));
                     }
                 } catch (error) { handleToastError(error, "Não foi possível calcular o XP da habilidade."); }
             }
         }
     
-        // STEP 3: Generate next mission and check for epic/goal completion
-        const tempUpdatedMissions = missionsWithCompletedDaily;
-        const tempRankedMission = tempUpdatedMissions.find(rm => rm.id === rankedMissionId);
+        setProfile(updatedProfile);
+    
+        // Mark daily mission as complete and set cooldown
+        const missionsAfterCompletion = missions.map(rm => 
+            rm.id === rankedMissionId 
+            ? { 
+                ...rm, 
+                missoes_diarias: rm.missoes_diarias.map(dm => dm.id === dailyMissionId ? { ...dm, concluido: true } : dm),
+                ultima_missao_concluida_em: now.toISOString(),
+              } 
+            : rm
+        );
         
-        const allDailyComplete = tempRankedMission.missoes_diarias.every(d => d.concluido);
-        const isRankedMissionComplete = allDailyComplete && tempRankedMission.missoes_diarias.length >= tempRankedMission.total_missoes_diarias;
-    
-        let finalMissionsUpdate = [...tempUpdatedMissions];
-    
+        let finalMissions = missionsAfterCompletion;
+        const tempRankedMission = finalMissions.find(rm => rm.id === rankedMissionId);
+        
+        const isRankedMissionComplete = tempRankedMission.missoes_diarias.filter(d => d.concluido).length >= (tempRankedMission.total_missoes_diarias || 10);
+        
         if (isRankedMissionComplete) {
-            finalMissionsUpdate = finalMissionsUpdate.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
+            finalMissions = finalMissions.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${originalRankedMission.nome}"!` });
     
-            const goalMissions = finalMissionsUpdate.filter(m => m.meta_associada === originalRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            const goalMissions = finalMissions.filter(m => m.meta_associada === originalRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
             const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
             const nextMission = goalMissions[currentIndex + 1];
     
-            if (nextMission) {
-                onNewEpicMissionNotification(nextMission.nome, nextMission.descricao);
-            } else {
+            if (nextMission) { onNewEpicMissionNotification(nextMission.nome, nextMission.descricao); } 
+            else {
                 const completedGoal = metas.find(m => m.nome === originalRankedMission.meta_associada);
                 if (completedGoal) {
                     setMetas(metas.map(m => m.id === completedGoal.id ? { ...m, concluida: true } : m));
                     onGoalCompletedNotification(completedGoal.nome);
                 }
             }
-            setGenerating(null); // Stop loading if epic mission is done
+            setGenerating(null);
         } else {
-            // Generate next mission
-            try {
+             try {
                 const history = tempRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
                 const feedbackForNextMission = missionFeedback[rankedMissionId];
     
@@ -477,9 +463,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     feedback: feedbackForNextMission,
                 });
     
-                if (feedbackForNextMission) {
-                    setMissionFeedback(prev => { const newState = { ...prev }; delete newState[rankedMissionId]; return newState; });
-                }
+                if (feedbackForNextMission) { setMissionFeedback(prev => { const newState = { ...prev }; delete newState[rankedMissionId]; return newState; }); }
     
                 const newDailyMission = {
                     id: Date.now(),
@@ -492,7 +476,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     subTasks: result.subTasks,
                 };
     
-                finalMissionsUpdate = finalMissionsUpdate.map(rm => 
+                finalMissions = finalMissions.map(rm => 
                     rm.id === rankedMissionId 
                     ? { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] }
                     : rm
@@ -500,15 +484,15 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             } catch (error) {
                 handleToastError(error, "Não foi possível gerar a próxima missão diária.");
             } finally {
-                setGenerating(null); // Stop loading
+                setGenerating(null);
             }
         }
         
-        setMissions(finalMissionsUpdate);
+        setMissions(finalMissions);
     };
     
     const handleAddProgress = (rankedMissionId, dailyMissionId, subTask, amount) => {
-        let missionCompleted = false;
+        let allSubTasksCompleted = false;
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 return {
@@ -522,10 +506,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 return st;
                             });
                             
-                            const allSubTasksCompleted = updatedSubTasks.every(st => (st.current || 0) >= st.target);
-                            if (allSubTasksCompleted) {
-                                missionCompleted = true;
-                            }
+                            allSubTasksCompleted = updatedSubTasks.every(st => (st.current || 0) >= st.target);
                             return { ...dm, subTasks: updatedSubTasks };
                         }
                         return dm;
@@ -537,7 +518,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         
         setMissions(updatedMissions);
 
-        if (missionCompleted) {
+        if (allSubTasksCompleted) {
             completeDailyMission(rankedMissionId, dailyMissionId);
         }
     };
@@ -734,7 +715,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                             {timers[mission.id]}
                                         </div>
                                      )}
-                                     {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && (
+                                     {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && !generating && (
                                         <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMissionId: activeDailyMission.id, rankedMissionId: mission.id })}>
                                             <Eye className="h-4 w-4 mr-2" />
                                             Ver Missão
@@ -838,11 +819,24 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
 
                                 {generating === mission.id && (
-                                    <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 flex items-center">
-                                        <Sparkles className="h-8 w-8 text-primary mr-4 animate-pulse"/>
-                                        <div>
-                                            <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
-                                            <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
+                                     <div className="relative">
+                                         {lastCompletedMission && (
+                                             <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 blur-sm grayscale">
+                                                <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
+                                                <div className="flex-grow">
+                                                    <p className="text-lg font-bold text-muted-foreground line-through">{lastCompletedMission.nome}</p>
+                                                    <p className="text-sm text-muted-foreground">Concluída!</p>
+                                                </div>
+                                             </div>
+                                         )}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                                            <div className="flex items-center text-white p-4 bg-black/50 rounded-lg backdrop-blur-sm">
+                                                <Sparkles className="h-8 w-8 text-primary mr-4 animate-pulse"/>
+                                                <div>
+                                                    <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                                    <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
