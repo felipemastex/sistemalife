@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'react-hot-toast';
 import { LoaderCircle, Terminal } from 'lucide-react';
 
 export default function LoginPage() {
@@ -20,7 +20,6 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
-    const { toast } = useToast();
     const [typedTitle, setTypedTitle] = useState('');
     const titleText = "SISTEMA";
 
@@ -51,10 +50,7 @@ export default function LoginPage() {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            toast({
-                title: "Login bem-sucedido!",
-                description: "A redirecionar para o seu dashboard...",
-            });
+            toast.success("Login bem-sucedido! A redirecionar...");
             router.push('/');
         } catch (err) {
             let friendlyMessage = "Ocorreu um erro ao fazer login. Verifique as suas credenciais.";
@@ -64,11 +60,7 @@ export default function LoginPage() {
                 friendlyMessage = "O formato do email é inválido.";
             }
             setError(friendlyMessage);
-            toast({
-                variant: "destructive",
-                title: "Falha no Login",
-                description: friendlyMessage,
-            });
+            toast.error(friendlyMessage);
             setLoading(false);
         }
     };

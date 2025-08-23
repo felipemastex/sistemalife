@@ -118,7 +118,7 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
             firstDailyMissionDescription: firstDailyMissionResult.nextMissionDescription,
             firstDailyMissionXp: firstDailyMissionResult.xp,
             firstDailyMissionFragments: firstDailyMissionResult.fragments,
-            firstDailyMissionSubTasks: firstDailyMissionResult.subTasks.map(st => ({...st, current: 0 })),
+            firstDailyMissionSubTasks: firstDailyMissionResult.subTasks,
             firstDailyMissionLearningResources: firstDailyMissionResult.learningResources || [],
             fallback: false,
         };
@@ -144,7 +144,7 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
             firstDailyMissionDescription: fallbackDailyMissionDescription,
             firstDailyMissionXp: xp,
             firstDailyMissionFragments: fragments,
-            firstDailyMissionSubTasks,
+            firstDailyMissionSubTasks: fallbackDailyMissionSubTasks,
             firstDailyMissionLearningResources: [],
             fallback: true,
         };

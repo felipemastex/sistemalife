@@ -2,7 +2,7 @@
 import type {Metadata} from 'next';
 import { Inter, Cinzel_Decorative } from 'next/font/google'
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster as ToasterContainer } from 'react-hot-toast';
 import { AuthProvider } from '@/hooks/use-auth';
 import { PlayerDataProvider } from '@/hooks/use-player-data';
 
@@ -51,7 +51,17 @@ export default function RootLayout({
               {children}
             </PlayerDataProvider>
         </AuthProvider>
-        <Toaster />
+        <ToasterContainer 
+          position="bottom-right"
+          toastOptions={{
+            className: '',
+            style: {
+              background: 'hsl(var(--card))',
+              color: 'hsl(var(--card-foreground))',
+              border: '1px solid hsl(var(--border))',
+            },
+          }}
+        />
       </body>
     </html>
   );
