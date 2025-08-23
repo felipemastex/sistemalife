@@ -12,7 +12,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 export const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
-    const [amount, setAmount] = useState('');
+    const [amount, setAmount] = React.useState('');
     
     if (!subTask) return null;
 
@@ -29,7 +29,7 @@ export const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
-            <DialogContent>
+            <OriginalDialogContent>
                 <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
                 <DialogDescription>
                     Insira a quantidade que você progrediu. O seu esforço fortalece-o!
@@ -57,7 +57,7 @@ export const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }
                         Registar
                     </Button>
                 </div>
-            </DialogContent>
+            </OriginalDialogContent>
         </Dialog>
     );
 };
@@ -80,7 +80,6 @@ export const QuestInfoDialog = ({ mission, onContribute, onClose, onCooldown, ti
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <OriginalDialogContent 
         className="bg-gray-900/80 backdrop-blur-md border-2 border-cyan-400/30 text-white max-w-md w-full shadow-2xl shadow-cyan-500/10 rounded-lg p-0"
-        showCloseButton={false} // Use our custom close button
       >
         <div className="p-6 relative font-sans">
           {/* Custom Close Button */}
