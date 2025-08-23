@@ -73,7 +73,61 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
             </DialogContent>
         </Dialog>
     );
-}
+};
+
+const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
+
+    const remaining = subTask.target - (subTask.current || 0);
+
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(subTask, contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
+                    <DialogDescription>
+                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
+                    </p>
+                    <div>
+                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
+                        <Input
+                            id="contribution-amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={`Ex: 5 (Faltam ${remaining})`}
+                            min="1"
+                            max={remaining}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                        Registar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -88,14 +142,14 @@ const getProfileRank = (level) => {
 };
 
 export const MissionsView = ({ missions, setMissions, profile, setProfile, metas, setMetas, skills, setSkills, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification, onAchievementUnlockedNotification }) => {
-    const [generating, setGenerating] = useState(null);
+    const [generating, setGenerating] = useState(null); // Stores rankedMissionId
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
-    
+    const [contributionDialogState, setContributionDialogState] = useState({ open: false, rankedMissionId: null, dailyMissionId: null, subTask: null });
     const [showQuestInfo, setShowQuestInfo] = useState<{dailyMissionId: string; rankedMissionId: string} | null>(null);
 
     const { toast } = useToast();
@@ -311,119 +365,123 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     };
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
-        setGenerating(dailyMissionId);
+        setGenerating(rankedMissionId); // Set loading state for the epic mission
     
         const now = new Date();
-        let rankedMission = missions.find(m => m.id === rankedMissionId);
-        if (!rankedMission) {
+        const originalRankedMission = missions.find(m => m.id === rankedMissionId);
+        if (!originalRankedMission) {
             setGenerating(null);
             return;
         }
     
-        const dailyMission = rankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
-        if (!dailyMission) {
+        const dailyMissionToComplete = originalRankedMission.missoes_diarias.find(d => d.id === dailyMissionId);
+        if (!dailyMissionToComplete) {
             setGenerating(null);
             return;
         }
     
-        // ATOMIC STATE UPDATES - PREPARE ALL CHANGES FIRST
-        let updatedProfile = { ...profile };
-        let updatedSkills = [...skills];
-        let updatedMetas = [...metas];
-        let updatedMissions = JSON.parse(JSON.stringify(missions));
-        let updatedRankedMission = updatedMissions.find(rm => rm.id === rankedMissionId);
-    
-        // 1. Update Mission State
-        let completedDailyMission = null;
-        updatedRankedMission.missoes_diarias = updatedRankedMission.missoes_diarias.map(dm => {
-            if (dm.id === dailyMissionId) {
-                completedDailyMission = { ...dm, concluido: true };
-                return completedDailyMission;
+        // STEP 1: Immediately update UI to show completion
+        const missionsWithCompletedDaily = missions.map(rm => {
+            if (rm.id === rankedMissionId) {
+                return {
+                    ...rm,
+                    missoes_diarias: rm.missoes_diarias.map(dm => 
+                        dm.id === dailyMissionId ? { ...dm, concluido: true } : dm
+                    ),
+                    ultima_missao_concluida_em: now.toISOString(),
+                };
             }
-            return dm;
+            return rm;
         });
-        updatedRankedMission.ultima_missao_concluida_em = now.toISOString();
+        setMissions(missionsWithCompletedDaily);
     
-        // 2. Update Profile State
+        // STEP 2: Handle profile, skills, and meta updates
+        let updatedProfile = { ...profile };
         const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
-        const finalXPGained = Math.round(dailyMission.xp_conclusao * xpMultiplier);
+        const finalXPGained = Math.round(dailyMissionToComplete.xp_conclusao * xpMultiplier);
     
         if (xpMultiplier > 1) {
             toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!`, className: 'bg-yellow-500/20 border-yellow-500 text-white' });
         }
     
         updatedProfile.xp += finalXPGained;
-        updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMission.fragmentos_conclusao || 0);
+        updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMissionToComplete.fragmentos_conclusao || 0);
         updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
         updatedProfile = handleStreak(updatedProfile);
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
         }
         updatedProfile = checkAndUnlockAchievements(updatedProfile);
+        setProfile(updatedProfile);
     
-        // 3. Update Skills State
-        const meta = metas.find(m => m.nome === rankedMission.meta_associada);
+        const meta = metas.find(m => m.nome === originalRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
-            const skillToUpdate = updatedSkills.find(s => s.id === meta.habilidade_associada_id);
+            const skillToUpdate = skills.find(s => s.id === meta.habilidade_associada_id);
             if (skillToUpdate && skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
                 try {
                     const { xp } = await generateSkillExperience({
-                        missionText: `${dailyMission.nome}: ${dailyMission.subTasks.map(st => st.name).join(', ')}`,
+                        missionText: `${dailyMissionToComplete.nome}: ${dailyMissionToComplete.subTasks.map(st => st.name).join(', ')}`,
                         skillLevel: skillToUpdate.nivel_atual,
                     });
-                    skillToUpdate.xp_atual += xp;
-                    skillToUpdate.ultima_atividade_em = now.toISOString();
-                    if (skillToUpdate.xp_atual >= skillToUpdate.xp_para_proximo_nivel) {
-                        const statsToUpgrade = statCategoryMapping[skillToUpdate.categoria] || [];
-                        handleSkillUp(skillToUpdate, statsToUpgrade); // Note: This calls setSkills and setProfile internally, which is not ideal but works for now.
+                    const updatedSkill = { ...skillToUpdate, xp_atual: skillToUpdate.xp_atual + xp, ultima_atividade_em: now.toISOString() };
+                    setSkills(skills.map(s => s.id === updatedSkill.id ? updatedSkill : s));
+                    
+                    if (updatedSkill.xp_atual >= updatedSkill.xp_para_proximo_nivel) {
+                        const statsToUpgrade = statCategoryMapping[updatedSkill.categoria] || [];
+                        handleSkillUp(updatedSkill, statsToUpgrade);
                     }
                 } catch (error) { handleToastError(error, "Não foi possível calcular o XP da habilidade."); }
             }
         }
     
-        // 4. Check for Epic Mission Completion
-        const allDailyComplete = updatedRankedMission.missoes_diarias.every(d => d.concluido);
-        const isRankedMissionComplete = allDailyComplete && updatedRankedMission.missoes_diarias.length >= updatedRankedMission.total_missoes_diarias;
-        if (isRankedMissionComplete) {
-            updatedRankedMission.concluido = true;
-            toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
+        // STEP 3: Generate next mission and check for epic/goal completion
+        const tempUpdatedMissions = missionsWithCompletedDaily;
+        const tempRankedMission = tempUpdatedMissions.find(rm => rm.id === rankedMissionId);
+        
+        const allDailyComplete = tempRankedMission.missoes_diarias.every(d => d.concluido);
+        const isRankedMissionComplete = allDailyComplete && tempRankedMission.missoes_diarias.length >= tempRankedMission.total_missoes_diarias;
     
-            const goalMissions = updatedMissions.filter(m => m.meta_associada === rankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+        let finalMissionsUpdate = [...tempUpdatedMissions];
+    
+        if (isRankedMissionComplete) {
+            finalMissionsUpdate = finalMissionsUpdate.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
+            toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${originalRankedMission.nome}"!` });
+    
+            const goalMissions = finalMissionsUpdate.filter(m => m.meta_associada === originalRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
             const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
             const nextMission = goalMissions[currentIndex + 1];
     
             if (nextMission) {
                 onNewEpicMissionNotification(nextMission.nome, nextMission.descricao);
             } else {
-                const completedGoal = updatedMetas.find(m => m.nome === rankedMission.meta_associada);
+                const completedGoal = metas.find(m => m.nome === originalRankedMission.meta_associada);
                 if (completedGoal) {
-                    completedGoal.concluida = true;
+                    setMetas(metas.map(m => m.id === completedGoal.id ? { ...m, concluida: true } : m));
                     onGoalCompletedNotification(completedGoal.nome);
                 }
             }
-        }
-    
-        // 5. Generate Next Mission (if needed)
-        if (!isRankedMissionComplete) {
+            setGenerating(null); // Stop loading if epic mission is done
+        } else {
+            // Generate next mission
             try {
-                const history = updatedRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
-                const feedbackForNextMission = missionFeedback[rankedMission.id];
+                const history = tempRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
+                const feedbackForNextMission = missionFeedback[rankedMissionId];
     
                 const result = await generateNextDailyMission({
-                    rankedMissionName: rankedMission.nome,
+                    rankedMissionName: originalRankedMission.nome,
                     metaName: meta?.nome || "Objetivo geral",
                     goalDeadline: meta?.prazo || null,
-                    history: history || `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
+                    history: history || `O utilizador acabou de completar: "${dailyMissionToComplete.nome}".`,
                     userLevel: updatedProfile.nivel,
                     feedback: feedbackForNextMission,
                 });
     
                 if (feedbackForNextMission) {
-                    setMissionFeedback(prev => { const newState = { ...prev }; delete newState[rankedMission.id]; return newState; });
+                    setMissionFeedback(prev => { const newState = { ...prev }; delete newState[rankedMissionId]; return newState; });
                 }
     
-                updatedRankedMission.missoes_diarias.push({
+                const newDailyMission = {
                     id: Date.now(),
                     nome: result.nextMissionName,
                     xp_conclusao: result.xp,
@@ -432,18 +490,21 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     tipo: 'diaria',
                     learningResources: result.learningResources,
                     subTasks: result.subTasks,
-                });
+                };
+    
+                finalMissionsUpdate = finalMissionsUpdate.map(rm => 
+                    rm.id === rankedMissionId 
+                    ? { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] }
+                    : rm
+                );
             } catch (error) {
                 handleToastError(error, "Não foi possível gerar a próxima missão diária.");
+            } finally {
+                setGenerating(null); // Stop loading
             }
         }
-    
-        // FINALLY, COMMIT ALL STATE CHANGES
-        setProfile(updatedProfile);
-        setMissions(updatedMissions);
-        setMetas(updatedMetas);
-        setSkills(updatedSkills);
-        setGenerating(null);
+        
+        setMissions(finalMissionsUpdate);
     };
     
     const handleAddProgress = (rankedMissionId, dailyMissionId, subTask, amount) => {
@@ -484,6 +545,15 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const handleAddProgressPopup = (subTask, amount) => {
         const { rankedMissionId, dailyMissionId } = showQuestInfo || {};
         if (!rankedMissionId || !dailyMissionId) return;
+        handleAddProgress(rankedMissionId, dailyMissionId, subTask, amount);
+    };
+    
+    const openContributionDialog = (rankedMissionId, dailyMissionId, subTask) => {
+        setContributionDialogState({ open: true, rankedMissionId, dailyMissionId, subTask });
+    };
+
+    const submitContribution = (subTask, amount) => {
+        const { rankedMissionId, dailyMissionId } = contributionDialogState;
         handleAddProgress(rankedMissionId, dailyMissionId, subTask, amount);
     };
 
@@ -678,7 +748,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
-                                {missionViewStyle === 'inline' && activeDailyMission && !onCooldown && (
+                                {missionViewStyle === 'inline' && activeDailyMission && !onCooldown && !generating && (
                                      <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                              <div className="flex-grow">
@@ -724,7 +794,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                                 size="icon" 
                                                                 variant="outline" 
                                                                 className="h-7 w-7" 
-                                                                onClick={() => handleAddProgress(mission.id, activeDailyMission.id, st, 1)}
+                                                                onClick={() => openContributionDialog(mission.id, activeDailyMission.id, st)}
                                                                 disabled={(st.current || 0) >= st.target}
                                                                 aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
@@ -767,9 +837,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                     </div>
                                 )}
 
-                                {!activeDailyMission && !onCooldown && !mission.concluido && (
+                                {generating === mission.id && (
                                     <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 flex items-center">
-                                        <Sparkles className="h-8 w-8 text-primary mr-4"/>
+                                        <Sparkles className="h-8 w-8 text-primary mr-4 animate-pulse"/>
                                         <div>
                                             <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
                                             <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
@@ -779,7 +849,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
                                 {mission.concluido && (
                                      <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
-                                        <Sparkles className="h-8 w-8 text-primary mr-4"/>
+                                        <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
                                         <div>
                                             <p className="text-lg font-bold text-foreground">Missão Épica Concluída!</p>
                                             <p className="text-sm text-muted-foreground">Você completou todos os passos. Bom trabalho! A próxima missão será revelada em breve.</p>
@@ -913,6 +983,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     </div>
                 </DialogContent>
             </Dialog>
+            
+            <ContributionDialog
+                open={contributionDialogState.open}
+                onOpenChange={(isOpen) => setContributionDialogState(prev => ({ ...prev, open: isOpen }))}
+                subTask={contributionDialogState.subTask}
+                onContribute={submitContribution}
+            />
 
             {showQuestInfo && (() => {
                 const rankedMission = missions.find(m => m.id === showQuestInfo.rankedMissionId);
