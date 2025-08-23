@@ -113,9 +113,9 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
                         const isTaskCompleted = (task.current || 0) >= task.target;
                         return (
                              <div key={index} className="space-y-2">
-                                <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                    <p className={cn("font-semibold text-foreground flex-1", isTaskCompleted && "line-through text-gray-500")}>{task.name}</p>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="flex flex-wrap justify-between items-center text-sm mb-1 gap-x-2 gap-y-1">
+                                    <p className={cn("font-semibold text-foreground flex-1 break-words", isTaskCompleted && "line-through text-gray-500")}>{task.name}</p>
+                                    <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                                         <span className={cn("font-mono text-muted-foreground", isTaskCompleted && "text-primary")}>[{task.current || 0}/{task.target}] {task.unit}</span>
                                         <Button 
                                             size="icon" 
