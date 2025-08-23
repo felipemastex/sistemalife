@@ -187,7 +187,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 id: metaToEdit ? metaToEdit.id : null, // Let the parent handle ID generation for new goals
                 nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
-                prazo: null,
+                prazo: goalState.prazo,
                 concluida: false,
                 detalhes_smart: {
                     specific: finalGoalDetails.specific,
@@ -207,7 +207,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 id: metaToEdit ? metaToEdit.id : null,
                 nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
-                prazo: null,
+                prazo: goalState.prazo,
                 concluida: false,
                 detalhes_smart: finalGoalDetails,
                 habilidade_associada_id: metaToEdit?.habilidade_associada_id,
@@ -252,6 +252,35 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 ) : (
                     <>
                         <h2 className="text-2xl text-cyan-400 mb-6 min-h-[6rem] flex items-center justify-center">{currentQuestion}</h2>
+                        
+                        {!isEditing && (
+                             <div className="mb-4">
+                                <Label htmlFor="prazo" className="text-primary">Prazo (Opcional)</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal bg-card/80 mt-1",
+                                            !goalState.prazo && "text-muted-foreground"
+                                        )}
+                                        >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {goalState.prazo ? format(new Date(goalState.prazo), "PPP") : <span>Escolha uma data</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                        mode="single"
+                                        selected={goalState.prazo ? new Date(goalState.prazo) : null}
+                                        onSelect={(date) => setGoalState(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                        initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        )}
+
                         <Textarea
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
@@ -968,4 +997,3 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
-
