@@ -13,6 +13,7 @@ import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
 import { achievements } from '@/lib/achievements';
 import { differenceInCalendarDays, isToday } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
+import { usePlayerNotifications } from './use-player-notifications';
 
 
 const getProfileRank = (level) => {
@@ -117,10 +118,21 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [state, dispatch] = useReducer(playerDataReducer, initialState);
     const { toast } = useToast();
-
-    const [questNotification, setQuestNotification] = useState(null);
-    const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
-    const [showOnboarding, setShowOnboarding] = useState(false);
+    
+    const { 
+        questNotification, setQuestNotification,
+        systemAlert, setSystemAlert,
+        showOnboarding, setShowOnboarding,
+        handleShowLevelUpNotification,
+        handleShowNewEpicMissionNotification,
+        handleShowSkillUpNotification,
+        handleShowSkillDecayNotification,
+        handleShowSkillAtRiskNotification,
+        handleShowDailyBriefingNotification,
+        handleShowGoalCompletedNotification,
+        handleShowAchievementUnlockedNotification,
+        handleShowStreakBonusNotification,
+    } = usePlayerNotifications();
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -174,15 +186,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel * 1.5);
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         const { rank, title } = getProfileRank(newLevel);
-        setQuestNotification({ title: 'NÍVEL AUMENTADO!', description: 'Você alcançou um novo patamar de poder.', goals: [{ name: '- NOVO NÍVEL', progress: `[${newLevel}]` }, { name: '- NOVO TÍTULO', progress: `[${newTitle}]` }, { name: '- NOVO RANK', progress: `[${rank}]` }], caution: 'Continue a sua jornada para desbloquear todo o seu potencial.' });
+        handleShowLevelUpNotification(newLevel, title, rank);
         const newProfile = { ...currentProfile, nivel: newLevel, xp: newXp, xp_para_proximo_nivel: newXpToNextLevel };
         dispatch({ type: 'SET_PROFILE', payload: newProfile });
         return newProfile;
     };
     
-    const handleShowAchievementUnlockedNotification = (achievementName) => setQuestNotification({ title: 'CONQUISTA DESBLOQUEADA!', description: 'O seu esforço foi reconhecido pelo Sistema.', goals: [{ name: '- CONQUISTA', progress: `[${achievementName}]` }], caution: 'Continue a sua jornada para desbloquear todos os segredos.' });
-
-
     const checkAndUnlockAchievements = useCallback((currentProfile, currentMetas, currentSkills) => {
         if (!currentProfile) return;
 
@@ -224,7 +233,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
             persistData('profile', updatedProfile);
         }
-    }, [persistData]);
+    }, [persistData, handleShowAchievementUnlockedNotification]);
 
     useEffect(() => {
         if (state.isDataLoaded) {
@@ -232,20 +241,24 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         }
     }, [state.profile, state.metas, state.skills, state.isDataLoaded, checkAndUnlockAchievements]);
     
-    const handleStreak = (currentProfile) => {
+     const handleStreak = (currentProfile) => {
         const today = new Date();
         const lastCompletionDateStr = currentProfile.ultimo_dia_de_missao_concluida;
-        if (lastCompletionDateStr && isToday(new Date(lastCompletionDateStr))) return { ...currentProfile, streakUpdated: false };
+        let bonus = { xp: 0, fragments: 0 };
+
+        if (lastCompletionDateStr && isToday(new Date(lastCompletionDateStr))) {
+            return { ...currentProfile, streakUpdated: false, bonus };
+        }
+        
         let newStreak = currentProfile.streak_atual || 0;
         let streakProtected = false;
+
         if (!lastCompletionDateStr) {
             newStreak = 1;
-            toast({ title: 'Nova Sequência Iniciada!' });
         } else {
             const diffDays = differenceInCalendarDays(today, new Date(lastCompletionDateStr));
             if (diffDays === 1) {
                 newStreak++;
-                toast({ title: `Sequência Mantida: Dia ${newStreak}!` });
             } else if (diffDays > 1) {
                 const streakRecoveryAmulet = (currentProfile.active_effects || []).find(eff => eff.type === 'streak_recovery');
                 if (streakRecoveryAmulet) {
@@ -254,13 +267,32 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     toast({ title: 'Amuleto Ativado!', description: 'A sua sequência foi salva!' });
                 } else {
                     newStreak = 1;
-                    toast({ title: 'Nova Sequência Iniciada!' });
                 }
             }
         }
-        const updatedProfile = { ...currentProfile, streak_atual: newStreak, ultimo_dia_de_missao_concluida: today.toISOString(), streakUpdated: true };
-        if (streakProtected) updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
-        return updatedProfile;
+        
+        const streakMilestones = { 3: 20, 7: 50, 14: 120, 30: 300 }; // streak day: bonus XP
+        if (streakMilestones[newStreak]) {
+            const xpBonus = streakMilestones[newStreak];
+            const fragmentBonus = Math.round(xpBonus / 10);
+            bonus = { xp: xpBonus, fragments: fragmentBonus };
+            handleShowStreakBonusNotification(newStreak, xpBonus, fragmentBonus);
+        }
+
+        const updatedProfile = { 
+            ...currentProfile, 
+            streak_atual: newStreak, 
+            ultimo_dia_de_missao_concluida: today.toISOString(), 
+            streakUpdated: true,
+            xp: currentProfile.xp + bonus.xp,
+            fragmentos: (currentProfile.fragmentos || 0) + bonus.fragments,
+        };
+
+        if (streakProtected) {
+            updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
+        }
+
+        return { updatedProfile, streakUpdated: true, bonus };
     };
 
 
@@ -299,7 +331,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMission.fragmentos_conclusao || 0);
         updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
 
-        updatedProfile = handleStreak(updatedProfile);
+        const { updatedProfile: profileAfterStreak, streakUpdated } = handleStreak(updatedProfile);
+        updatedProfile = profileAfterStreak;
 
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
@@ -341,7 +374,49 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('profile', updatedProfile);
         await persistData('skills', state.skills); // This needs to be improved as state updates are async
         await persistData('missions', state.missions); // Same here
-    }, [state, persistData, toast]);
+    }, [state, persistData, toast, handleShowStreakBonusNotification]);
+
+    const handleFullReset = async () => {
+        if (!user) return;
+        dispatch({ type: 'SET_DATA_LOADED', payload: false });
+        try {
+            // Re-implement setupInitialData logic or call it if it's accessible
+             const userRef = doc(db, 'users', user.uid);
+            const batch = writeBatch(db);
+            const emailUsername = user.email.split('@')[0];
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false };
+            batch.set(userRef, initialProfile);
+            const metasRef = collection(db, 'users', user.uid, 'metas');
+            mockData.metas.forEach(meta => batch.set(doc(metasRef, String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
+            const missionsRef = collection(db, 'users', user.uid, 'missions');
+            mockData.missoes.forEach(mission => batch.set(doc(missionsRef, String(mission.id)), mission));
+            const skillsRef = collection(db, 'users', user.uid, 'skills');
+            mockData.habilidades.forEach(skill => batch.set(doc(skillsRef, String(skill.id)), skill));
+            batch.set(doc(db, 'users', user.uid, 'routine', 'main'), mockData.rotina);
+            batch.set(doc(db, 'users', user.uid, 'routine', 'templates'), mockData.rotinaTemplates);
+            await batch.commit();
+
+            dispatch({
+                type: 'SET_INITIAL_DATA',
+                payload: {
+                    profile: initialProfile,
+                    metas: mockData.metas.map(m => ({ ...m, prazo: m.prazo || null, concluida: m.concluida || false })),
+                    missions: mockData.missoes,
+                    skills: mockData.habilidades,
+                    routine: mockData.rotina,
+                    routineTemplates: mockData.rotinaTemplates,
+                    allUsers: [], // This should be re-fetched or handled appropriately
+                    guilds: state.guilds, // Guilds are global, so we might not want to reset them
+                }
+            });
+            setShowOnboarding(true);
+
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
+        } finally {
+            dispatch({ type: 'SET_DATA_LOADED', payload: true });
+        }
+    };
 
 
     const fetchData = useCallback(async (userId) => {
@@ -395,6 +470,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch,
         persistData,
         completeMission,
+        handleFullReset,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding

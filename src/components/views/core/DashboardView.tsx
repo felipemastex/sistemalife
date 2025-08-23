@@ -83,8 +83,8 @@ const DashboardViewComponent = () => {
                    </div>
                  </div>
                  <div className="flex flex-col items-center justify-center bg-secondary/50 p-4 rounded-lg border border-border/50">
-                    <div className="w-40 h-40 border-2 border-primary/50 flex items-center justify-center bg-secondary/30 p-1">
-                        <Avatar className="w-full h-full rounded-sm">
+                    <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-primary/50 flex items-center justify-center bg-secondary/30 p-1">
+                        <Avatar className="w-full h-full rounded-none">
                             <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
                             <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
                         </Avatar>
