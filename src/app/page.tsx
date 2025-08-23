@@ -29,9 +29,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function App() {
   const { logout } = useAuth();
   const { 
-      isDataLoaded, profile,
+      isDataLoaded,
       questNotification, systemAlert, showOnboarding,
-      setQuestNotification, setSystemAlert, setShowOnboarding, persistData
+      setQuestNotification, setSystemAlert, setShowOnboarding, persistData, profile
    } = usePlayerDataContext();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -129,7 +129,7 @@ export default function App() {
   };
 
   const renderContent = () => {
-    if (!profile) {
+    if (!isDataLoaded) {
       return null
     }
     

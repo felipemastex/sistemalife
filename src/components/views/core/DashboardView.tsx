@@ -3,15 +3,11 @@
 
 import { memo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
-import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, Gem } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-const DashboardViewComponent = () => {
-  const { profile } = usePlayerDataContext();
-  
-  const getProfileRank = (level) => {
+const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
     if (level <= 20) return { rank: 'D', title: 'Adepto' };
@@ -21,7 +17,20 @@ const DashboardViewComponent = () => {
     if (level <= 70) return { rank: 'S', title: 'Grão-Mestre' };
     if (level <= 90) return { rank: 'SS', title: 'Herói' };
     return { rank: 'SSS', title: 'Lendário' };
-  };
+};
+  
+const StatItem = ({ label, value, icon: Icon = null }) => (
+    <div className="bg-secondary/50 p-4 rounded-lg border border-border/50 transition-all hover:bg-secondary/80 hover:border-primary/50">
+        <span className="text-sm text-muted-foreground flex items-center gap-2">
+            {Icon && <Icon className="h-4 w-4" />}
+            {label}
+        </span>
+        <p className="text-lg font-bold text-foreground">{value}</p>
+    </div>
+);
+
+const DashboardViewComponent = () => {
+  const { profile } = usePlayerDataContext();
   
   if (!profile || !profile.estatisticas) {
     return (
@@ -42,16 +51,6 @@ const DashboardViewComponent = () => {
     { subject: 'Destreza', value: profile.estatisticas.destreza, fullMark: 100 },
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 100 },
   ];
-  
-  const StatItem = ({ label, value, icon: Icon = null }) => (
-    <div className="bg-secondary/50 p-4 rounded-lg border border-border/50 transition-all hover:bg-secondary/80 hover:border-primary/50">
-        <span className="text-sm text-muted-foreground flex items-center gap-2">
-            {Icon && <Icon className="h-4 w-4" />}
-            {label}
-        </span>
-        <p className="text-lg font-bold text-foreground">{value}</p>
-    </div>
-  );
 
   return (
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
