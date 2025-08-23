@@ -61,7 +61,6 @@ export default function App() {
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50;
-  const sheetContentRef = useRef<HTMLDivElement>(null);
 
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -73,22 +72,22 @@ export default function App() {
     touchEndRef.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
   };
 
-  const onTouchEnd = () => {
+  const onTouchEnd = (fromSheet: boolean = false) => {
     if (!touchStartRef.current || !touchEndRef.current) return;
 
     const distanceX = touchStartRef.current.x - touchEndRef.current.x;
     const distanceY = touchStartRef.current.y - touchEndRef.current.y;
     
-    // Check if it's a horizontal swipe
-    if (Math.abs(distanceX) > Math.abs(distanceY)) {
-        const isLeftSwipe = distanceX > minSwipeDistance;
-        const isRightSwipe = distanceX < -minSwipeDistance;
+    // Check if it's a horizontal swipe and not a vertical scroll
+    if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > minSwipeDistance) {
+        const isLeftSwipe = distanceX > 0;
+        const isRightSwipe = distanceX < 0;
 
-        if (isRightSwipe && touchStartRef.current.x < 50 && isMobile) { // Swipe right from left edge
+        if (isRightSwipe && !fromSheet && touchStartRef.current.x < 50 && isMobile) { // Swipe right from left edge of main content
             setIsSheetOpen(true);
         }
 
-        if (isLeftSwipe && isSheetOpen && isMobile) { // Swipe left inside the sheet
+        if (isLeftSwipe && fromSheet && isMobile) { // Swipe left inside the sheet
             setIsSheetOpen(false);
         }
     }
@@ -97,26 +96,6 @@ export default function App() {
     touchEndRef.current = null;
   };
   
-  // Attach swipe listeners to the sheet content
-   useEffect(() => {
-    const sheetElement = sheetContentRef.current;
-    if (sheetElement) {
-        const touchStart = (e) => onTouchStart(e as unknown as React.TouchEvent);
-        const touchMove = (e) => onTouchMove(e as unknown as React.TouchEvent);
-        const touchEnd = () => onTouchEnd();
-
-        sheetElement.addEventListener('touchstart', touchStart);
-        sheetElement.addEventListener('touchmove', touchMove);
-        sheetElement.addEventListener('touchend', touchEnd);
-
-        return () => {
-            sheetElement.removeEventListener('touchstart', touchStart);
-            sheetElement.removeEventListener('touchmove', touchMove);
-            sheetElement.removeEventListener('touchend', touchEnd);
-        };
-    }
-  }, [isSheetOpen]); // Re-attach if sheet opens/closes
-
   const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
   // --- PERSISTENCE FUNCTIONS ---
@@ -745,7 +724,7 @@ export default function App() {
         style={{height: '100vh'}}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        onTouchEnd={() => onTouchEnd(false)}
       >
          {isMobile && (
             <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-background/80 backdrop-blur-md border-b border-border/50 flex items-center">
@@ -756,9 +735,11 @@ export default function App() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent
-                        ref={sheetContentRef}
                         side="left" 
                         className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col"
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={() => onTouchEnd(true)}
                     >
                         <SheetHeader className="sr-only">
                            <SheetTitle>Menu de Navegação</SheetTitle>
