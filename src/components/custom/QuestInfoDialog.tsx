@@ -3,10 +3,9 @@
 
 import * as React from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertCircle, Award, X, Timer, Gem, Plus, Link } from 'lucide-react';
+import { Award, X, Timer, Gem, Plus, Link } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Progress } from "../ui/progress";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -62,7 +61,7 @@ export const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }
     );
 };
 
-export const QuestInfoDialog = ({ mission, onContribute, onClose, onCooldown, timer }) => {
+export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClose, onCooldown, timer }) => {
   
   const [contributionState, setContributionState] = React.useState({ open: false, subTask: null });
 
@@ -93,14 +92,14 @@ export const QuestInfoDialog = ({ mission, onContribute, onClose, onCooldown, ti
                 <h2 className="text-xl font-bold tracking-widest uppercase font-cinzel text-cyan-400">QUEST INFO</h2>
             </DialogTitle>
             <DialogDescription className="text-gray-400 mt-1">
-                [{mission.nome}]
+                [{epicMissionName || 'Missão Diária'}]
             </DialogDescription>
           </div>
 
           {/* Body */}
           <div className="space-y-4 text-center">
             <div className="w-fit mx-auto px-4 py-1 border-y-2 border-cyan-400/50">
-                <h3 className="text-lg font-bold tracking-wider font-cinzel text-cyan-400">GOAL</h3>
+                <h3 className="text-lg font-bold tracking-wider font-cinzel text-cyan-400">{mission.nome}</h3>
             </div>
             
             <ScrollArea className="max-h-[300px] pr-3 -mr-3">

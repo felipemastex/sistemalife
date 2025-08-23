@@ -96,7 +96,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
-    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds the active daily mission for the popup
+    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds { dailyMission, epicMissionName } for the popup
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -584,7 +584,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             });
 
                             // Update the popup state with the new mission object
-                            setShowQuestInfo({...dm, subTasks: updatedSubTasks});
+                            setShowQuestInfo(prev => ({...prev, dailyMission: {...prev.dailyMission, subTasks: updatedSubTasks}}));
 
                             return { ...dm, subTasks: updatedSubTasks };
                         }
@@ -785,7 +785,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         </div>
                                      )}
                                      {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && (
-                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo(activeDailyMission)}>
+                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMission: activeDailyMission, epicMissionName: mission.nome })}>
                                             <Eye className="h-4 w-4 mr-2" />
                                             Ver Missão
                                         </Button>
@@ -1043,11 +1043,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
             {showQuestInfo && (
                 <QuestInfoDialog
-                    mission={showQuestInfo}
+                    mission={showQuestInfo.dailyMission}
+                    epicMissionName={showQuestInfo.epicMissionName}
                     onClose={() => setShowQuestInfo(null)}
-                    onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo, subTask, amount)}
-                    onCooldown={!!timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.id))?.id]}
-                    timer={timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.id))?.id]}
+                    onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo.dailyMission, subTask, amount)}
+                    onCooldown={!!timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
+                    timer={timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
                 />
             )}
         </div>
