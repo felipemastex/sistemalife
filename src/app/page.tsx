@@ -30,8 +30,7 @@ export default function App() {
   const { user, loading, logout } = useAuth();
   const { 
       isDataLoaded, profile, metas, missions, skills, routine, routineTemplates, guilds, allUsers,
-      completeMission, persistMetas, persistMissions, persistSkills, persistRoutine, 
-      persistRoutineTemplates, persistGuilds, setProfile, setAllUsers, handleFullReset,
+      dispatch, persistData, completeMission,
       questNotification, systemAlert, showOnboarding,
       setQuestNotification, setSystemAlert, setShowOnboarding
    } = usePlayerDataContext();
@@ -40,14 +39,51 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const isMobile = useIsMobile();
     
-  // State for mobile sheet menu
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   
-  // --- Swipe Gesture Logic ---
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50;
 
+    // --- Persistence Wrappers ---
+    const persistProfile = (newProfile) => {
+        dispatch({ type: 'SET_PROFILE', payload: newProfile });
+        persistData('profile', newProfile);
+    };
+
+    const persistMetas = (newMetas) => {
+        dispatch({ type: 'SET_METAS', payload: newMetas });
+        persistData('metas', newMetas);
+    };
+
+    const persistMissions = (newMissions) => {
+        dispatch({ type: 'SET_MISSIONS', payload: newMissions });
+        persistData('missions', newMissions);
+    };
+    
+    const persistSkills = (newSkills) => {
+        dispatch({ type: 'SET_SKILLS', payload: newSkills });
+        persistData('skills', newSkills);
+    };
+    
+    const persistRoutine = (newRoutine) => {
+        dispatch({ type: 'SET_ROUTINE', payload: newRoutine });
+        persistData('routine', newRoutine);
+    };
+
+    const persistRoutineTemplates = (newTemplates) => {
+        dispatch({ type: 'SET_ROUTINE_TEMPLATES', payload: newTemplates });
+        persistData('routineTemplates', newTemplates);
+    };
+
+    const persistGuilds = (newGuilds) => {
+        dispatch({ type: 'SET_GUILDS', payload: newGuilds });
+        persistData('guilds', newGuilds);
+    };
+    
+    const setAllUsers = (newUsers) => {
+        dispatch({ type: 'SET_ALL_USERS', payload: newUsers });
+    }
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndRef.current = null;
@@ -64,16 +100,15 @@ export default function App() {
     const distanceX = touchStartRef.current.x - touchEndRef.current.x;
     const distanceY = touchStartRef.current.y - touchEndRef.current.y;
     
-    // Check if it's a horizontal swipe and not a vertical scroll
     if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > minSwipeDistance) {
         const isLeftSwipe = distanceX > 0;
         const isRightSwipe = distanceX < 0;
 
-        if (isRightSwipe && !fromSheet && touchStartRef.current.x < 50 && isMobile) { // Swipe right from left edge of main content
+        if (isRightSwipe && !fromSheet && touchStartRef.current.x < 50 && isMobile) { 
             setIsSheetOpen(true);
         }
 
-        if (isLeftSwipe && fromSheet && isMobile) { // Swipe left inside the sheet
+        if (isLeftSwipe && fromSheet && isMobile) {
             setIsSheetOpen(false);
         }
     }
@@ -87,7 +122,7 @@ export default function App() {
     const handleNav = () => {
         setCurrentPage(page);
         if (inSheet) {
-            setIsSheetOpen(false); // Close sheet on navigation
+            setIsSheetOpen(false);
         }
     };
     
@@ -154,11 +189,11 @@ export default function App() {
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
-      'guilds': <GuildsView profile={profile} setProfile={setProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers} currentGuild={currentGuild} />,
-      'shop': <ShopView profile={profile} setProfile={setProfile} />,
-      'inventory': <InventoryView profile={profile} setProfile={setProfile} />,
+      'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers} currentGuild={currentGuild} />,
+      'shop': <ShopView profile={profile} setProfile={persistProfile} />,
+      'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
       'ai-chat': <AIChatView />,
-      'settings': <SettingsView profile={profile} setProfile={setProfile} onReset={handleFullReset} />,
+      'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={() => {}} />,
     };
 
     return (
@@ -224,7 +259,7 @@ export default function App() {
         {showOnboarding && <OnboardingGuide onFinish={() => {
             setShowOnboarding(false);
             if (profile) {
-              setProfile({...profile, onboarding_completed: true});
+              persistProfile({...profile, onboarding_completed: true});
             }
         }} />}
         {systemAlert && (
@@ -238,3 +273,5 @@ export default function App() {
     </div>
   );
 }
+
+    
