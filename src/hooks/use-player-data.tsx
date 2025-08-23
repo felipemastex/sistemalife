@@ -474,8 +474,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
 
     const fetchData = useCallback(async (userId) => {
+        console.log('📋 Iniciando fetchData para userId:', userId);
         try {
             const userDocRef = doc(db, 'users', userId);
+            console.log('📋 Fazendo queries ao Firestore...');
             const [userDoc, metasSnapshot, missionsSnapshot, skillsSnapshot, routineDoc, routineTemplatesDoc, allUsersSnapshot, guildsSnapshot] = await Promise.all([
                 getDoc(userDocRef),
                 getDocs(collection(userDocRef, 'metas')),
@@ -487,8 +489,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 getDocs(collection(db, 'guilds'))
             ]);
 
+            console.log('📋 Queries completadas. UserDoc exists:', userDoc.exists());
             if (userDoc.exists()) {
                 const profileData = userDoc.data();
+                console.log('📋 Dados do perfil carregados:', profileData?.nome_utilizador || 'sem nome');
                 dispatch({
                     type: 'SET_INITIAL_DATA',
                     payload: {
@@ -502,20 +506,73 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         guilds: guildsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
                     }
                 });
+                console.log('📋 Dados carregados com sucesso!');
                  if (profileData.onboarding_completed === false) {
                     setShowOnboarding(true);
                 }
             } else {
+                console.log('📋 Usuário não existe, iniciando reset...');
                 await handleFullReset();
             }
         } catch (error) {
-             toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
+            console.error('🚨 Erro no fetchData:', error);
+            console.log('📝 Carregando dados de fallback (mock)...');
+            
+            // Fallback com dados mock em caso de erro de conexão
+            const fallbackProfile = { 
+                ...mockData.perfis[0], 
+                id: userId, 
+                email: user.email || 'usuario@exemplo.com',
+                primeiro_nome: user.email?.split('@')[0] || 'Usuario',
+                apelido: "Caçador",
+                nome_utilizador: user.email?.split('@')[0] || 'Usuario',
+                avatar_url: `https://placehold.co/100x100.png?text=${(user.email?.split('@')[0] || 'U').substring(0, 2).toUpperCase()}`,
+                ultimo_login_em: new Date().toISOString(),
+                inventory: [],
+                active_effects: [],
+                guild_id: null,
+                guild_role: null,
+                onboarding_completed: false,
+                _isOfflineMode: true
+            };
+            
+            dispatch({
+                type: 'SET_INITIAL_DATA',
+                payload: {
+                    profile: fallbackProfile,
+                    metas: mockData.metas.map(m => ({ ...m, prazo: m.prazo || null, concluida: m.concluida || false })),
+                    missions: mockData.missoes,
+                    skills: mockData.habilidades,
+                    routine: mockData.rotina,
+                    routineTemplates: mockData.rotinaTemplates,
+                    allUsers: [],
+                    guilds: [],
+                }
+            });
+            
+            setShowOnboarding(true);
+            toast({ 
+                variant: 'destructive', 
+                title: "Modo Offline Ativo", 
+                description: "Usando dados locais. Algumas funcionalidades podem estar limitadas." 
+            });
         }
     }, [toast, handleFullReset, setShowOnboarding]);
     
     useEffect(() => {
+        console.log('🔄 useEffect - user:', user ? 'presente' : 'null', 'isDataLoaded:', state.isDataLoaded);
+        
         if (user && !state.isDataLoaded) {
+            console.log('🔄 Chamando fetchData...');
             fetchData(user.uid);
+            
+            // Timeout de segurança para evitar travamento no carregamento de dados
+            const dataTimeout = setTimeout(() => {
+                console.warn('🚨 Timeout no carregamento de dados, forçando isDataLoaded = true');
+                dispatch({ type: 'SET_DATA_LOADED', payload: true });
+            }, 15000); // 15 segundos
+            
+            return () => clearTimeout(dataTimeout);
         }
     }, [user, state.isDataLoaded, fetchData]);
 

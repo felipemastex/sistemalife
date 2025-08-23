@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -25,7 +25,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 
 export default function App() {
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const { 
       isDataLoaded,
       questNotification, systemAlert, showOnboarding,
@@ -36,6 +36,14 @@ export default function App() {
   const isMobile = useIsMobile();
     
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  
+  // Redirecionamento para login se não autenticado
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.log('🔄 Usuário não autenticado, redirecionando para login...');
+      window.location.href = '/login';
+    }
+  }, [user, authLoading]);
   
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
@@ -152,11 +160,38 @@ export default function App() {
     )
   };
   
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin h-10 w-10" />
+          <span className="text-xl font-cinzel tracking-wider">A VALIDAR SESSÃO...</span>
+          <span className="text-sm text-gray-400">Conectando ao Firebase...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-pulse h-10 w-10" />
+          <span className="text-xl font-cinzel tracking-wider">REDIRECIONANDO...</span>
+          <span className="text-sm text-gray-400">Acesso negado. Redirecionando para login...</span>
+        </div>
+      </div>
+    );
+  }
+  
   if (!isDataLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
-        <div className="animate-spin h-10 w-10 mr-4" />
-        <span className="text-xl font-cinzel tracking-wider">A VALIDAR SESSÃO...</span>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin h-10 w-10" />
+          <span className="text-xl font-cinzel tracking-wider">A CARREGAR DADOS...</span>
+          <span className="text-sm text-gray-400">Sincronizando com o Firestore...</span>
+        </div>
       </div>
     );
   }

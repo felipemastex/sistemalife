@@ -18,12 +18,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔐 Iniciando listener de autenticação...');
+    
+    // Timeout de segurança para evitar travamento indefinido
+    const authTimeout = setTimeout(() => {
+      console.log('⚠️ Timeout de autenticação atingido, forçando parada do loading...');
+      setLoading(false);
+    }, 10000); // 10 segundos
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('🔐 Estado de auth mudou:', user ? 'Usuário logado' : 'Usuário não logado');
+      clearTimeout(authTimeout);
       setUser(user);
+      setLoading(false);
+    }, (error) => {
+      console.error('🚨 Erro na autenticação:', error);
+      clearTimeout(authTimeout);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, []);
 
   const logout = () => {

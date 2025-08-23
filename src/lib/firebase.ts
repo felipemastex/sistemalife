@@ -17,7 +17,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+console.log('🔥 Inicializando Firebase...');
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+console.log('🔥 Firebase inicializado com sucesso!');
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
