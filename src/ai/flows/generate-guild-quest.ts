@@ -15,7 +15,10 @@ const SubTaskSchema = z.object({
   name: z.string().describe("O nome da sub-tarefa específica e acionável (ex: 'Resolver 10 problemas de algoritmo', 'Correr um total de 20km', 'Ler 50 páginas de um livro técnico')."),
   target: z.number().describe("A meta numérica para esta sub-tarefa (ex: 10, 20, 50)."),
   attribute: z.enum(['forca', 'inteligencia', 'sabedoria', 'constituicao', 'destreza', 'carisma']).describe("O atributo principal do perfil do utilizador que influencia esta tarefa."),
+<<<<<<< HEAD
   daily_limit_per_member: z.number().describe("O limite máximo que um único membro pode contribuir para esta subtarefa por dia. Deve ser um valor razoável para incentivar a colaboração."),
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 });
 
 const GenerateGuildQuestInputSchema = z.object({
@@ -48,6 +51,7 @@ Uma guilda com {{memberCount}} membros e nível médio de {{guildLevel}} quer um
 
 Sua tarefa é criar uma Missão de Guilda completa. Siga estas diretivas:
 1.  **Nome e Descrição Épicos:** Crie um nome de missão e uma descrição que sejam inspiradores e se alinhem com o tema. Use uma linguagem de RPG.
+<<<<<<< HEAD
 2.  **Sub-tarefas Cooperativas e ACIONÁVEIS:** Gere de 3 a 5 sub-tarefas. O NOME da sub-tarefa deve ser a AÇÃO CONCRETA que o membro deve fazer.
     *   Cada sub-tarefa deve ter um objetivo numérico claro ('target'). A meta deve ser dimensionada de forma apropriada para o número de membros e o nível da guilda. Deve ser um desafio que exija a colaboração de vários membros ao longo de alguns dias.
     *   Cada sub-tarefa deve estar ligada a um dos seis atributos do sistema: forca, inteligencia, sabedoria, constituicao, destreza, carisma.
@@ -58,6 +62,12 @@ Exemplo de uma sub-tarefa bem definida para o tema "Foco em fitness":
 - target: 20
 - attribute: "constituicao"
 - daily_limit_per_member: 5
+=======
+2.  **Sub-tarefas Cooperativas:** Gere de 3 a 5 sub-tarefas. Estas são as atividades que os membros realizarão.
+    *   Cada sub-tarefa deve ter um objetivo numérico claro ('target'). A meta deve ser dimensionada de forma apropriada para o número de membros e o nível da guilda. Deve ser um desafio que exija a colaboração de vários membros ao longo de alguns dias.
+    *   Cada sub-tarefa deve estar ligada a um dos seis atributos do sistema: forca, inteligencia, sabedoria, constituicao, destreza, carisma.
+3.  **Variedade e Equilíbrio:** As sub-tarefas devem ser variadas e, se possível, cobrir diferentes atributos para que membros com diferentes pontos fortes possam contribuir significativamente.
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 
 Analise o tema e os dados da guilda para construir a missão mais eficaz e motivadora possível.
 `,
@@ -74,5 +84,8 @@ const generateGuildQuestFlow = ai.defineFlow(
     return output!;
   }
 );
+<<<<<<< HEAD
 
     
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)

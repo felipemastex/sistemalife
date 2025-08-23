@@ -6,9 +6,27 @@ import { GuildHeader } from './GuildHeader';
 import { GuildMembers } from './GuildMembers';
 import { GuildChat } from './GuildChat';
 import { JoinRequests } from './JoinRequests';
+<<<<<<< HEAD
 import { GuildQuests } from './GuildQuests';
 import { GuildAnnouncements } from './GuildAnnouncements';
 import { Card } from '../ui/card';
+=======
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Edit } from 'lucide-react';
+import { GuildQuests } from './GuildQuests';
+
+
+const GuildAnnouncements = () => (
+     <Card>
+        <CardHeader>
+            <CardTitle>Anúncios</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <p className="text-muted-foreground">Nenhum anúncio recente.</p>
+        </CardContent>
+    </Card>
+)
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
@@ -53,17 +71,21 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         setGuildData(updatedGuild); // Update local state for immediate UI feedback
         onGuildUpdate(updatedGuild);
     };
+<<<<<<< HEAD
 
      const handleAnnouncementsUpdate = (updatedAnnouncements) => {
         const updatedGuild = { ...guildData, announcements: updatedAnnouncements };
         setGuildData(updatedGuild);
         onGuildUpdate(updatedGuild);
     };
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
     
     return (
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
+<<<<<<< HEAD
             <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
                 
                 {/* Coluna Esquerda - Conteúdo Principal */}
@@ -79,6 +101,33 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                        <GuildChat guildId={guildData.id} userProfile={profile} />
                     </Card>
                 </div>
+=======
+            <div className="flex-grow mt-6 overflow-hidden">
+                <Tabs defaultValue="geral" className="h-full flex flex-col md:flex-row gap-6">
+                    
+                    {/* Coluna Esquerda (Principal) */}
+                    <div className="flex-grow h-full">
+                        <TabsContent value="geral" className="h-full mt-0">
+                            <GuildQuests 
+                                quests={guildData.quests}
+                                onQuestsUpdate={handleQuestsUpdate}
+                                canManage={canManage}
+                                guildData={guildData}
+                            />
+                        </TabsContent>
+                        <TabsContent value="membros" className="h-full mt-0">
+                             <GuildMembers 
+                                members={members}
+                                guildMembersMeta={guildData.membros}
+                                onMemberUpdate={handleMemberUpdate} 
+                                currentUserProfile={profile} 
+                            />
+                        </TabsContent>
+                        <TabsContent value="config" className="h-full mt-0">
+                            <p>Configurações da Guilda (Em breve)</p>
+                        </TabsContent>
+                    </div>
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 
                 {/* Coluna Direita - Painéis Laterais */}
                 <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">

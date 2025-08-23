@@ -5,12 +5,17 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+<<<<<<< HEAD
 import { PlusCircle, LoaderCircle, Sparkles, Plus, UserCheck } from 'lucide-react';
+=======
+import { PlusCircle, LoaderCircle, Sparkles } from 'lucide-react';
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 import { generateGuildQuest } from '@/ai/flows/generate-guild-quest';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+<<<<<<< HEAD
 import { ScrollArea } from '../ui/scroll-area';
 
 const ContributionDialog = ({ open, onOpenChange, subTask, onContribute, userDailyContribution }) => {
@@ -76,6 +81,14 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
     const { toast } = useToast();
     
     const getTodayDateString = () => new Date().toISOString().split('T')[0];
+=======
+
+export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData }) => {
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [questTheme, setQuestTheme] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+    const { toast } = useToast();
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 
     const handleCreateQuest = async () => {
         if (!questTheme.trim()) {
@@ -85,6 +98,10 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
         setIsCreating(true);
         try {
             const memberCount = guildData.membros?.length || 1;
+<<<<<<< HEAD
+=======
+            // Placeholder for guild level logic
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
             const guildLevel = guildData.level || 1; 
 
             const result = await generateGuildQuest({
@@ -93,15 +110,24 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                 memberCount,
             });
 
+<<<<<<< HEAD
             const leader = (guildData.membros || []).find(m => m.role === 'Líder');
 
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
             const newQuest = {
                 id: `quest_${Date.now()}`,
                 nome: result.questName,
                 descricao: result.questDescription,
+<<<<<<< HEAD
                 subTasks: result.subTasks.map(st => ({...st, current: 0, contributions: [] })),
                 concluida: false,
                 criador_id: leader ? leader.user_id : null,
+=======
+                subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                concluida: false,
+                criador_id: guildData.leader_id, // assuming leader_id is available
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
             };
             
             const updatedQuests = [...(quests || []), newQuest];
@@ -118,6 +144,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
             setIsCreating(false);
         }
     };
+<<<<<<< HEAD
     
      const handleContribute = (subTask, amount) => {
         const today = getTodayDateString();
@@ -155,6 +182,8 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
         onQuestsUpdate(updatedQuests);
         toast({ title: "Contribuição Registada!", description: `Você contribuiu com ${amount} para "${subTask.name}".`});
     };
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
 
     return (
         <Card className="h-full flex flex-col">
@@ -170,6 +199,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                     </Button>
                 )}
             </CardHeader>
+<<<<<<< HEAD
             <CardContent className="flex-grow overflow-hidden p-0">
                 <ScrollArea className="h-full">
                 <div className="space-y-4 p-6 pt-0">
@@ -177,6 +207,14 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                         quests.map(quest => {
                             const totalTarget = quest.subTasks.reduce((sum, task) => sum + task.target, 0);
                             const totalCurrent = quest.subTasks.reduce((sum, task) => sum + (task.current || 0), 0);
+=======
+            <CardContent className="flex-grow overflow-y-auto pr-2">
+                <div className="space-y-4">
+                    {quests && quests.length > 0 ? (
+                        quests.map(quest => {
+                            const totalTarget = quest.subTasks.reduce((sum, task) => sum + task.target, 0);
+                            const totalCurrent = quest.subTasks.reduce((sum, task) => sum + task.current, 0);
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
                             const overallProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
                             return (
@@ -185,6 +223,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                                         <CardTitle>{quest.nome}</CardTitle>
                                         <CardDescription>{quest.descricao}</CardDescription>
                                     </CardHeader>
+<<<<<<< HEAD
                                     <CardContent className="space-y-4">
                                         {quest.subTasks.map(task => {
                                             const today = getTodayDateString();
@@ -227,6 +266,18 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                                                         </div>
                                                         <Progress value={((task.current || 0) / task.target) * 100} className="h-1.5"/>
                                                     </div>
+=======
+                                    <CardContent className="space-y-3">
+                                        {quest.subTasks.map(task => {
+                                            const progress = task.target > 0 ? (task.current / task.target) * 100 : 0;
+                                            return (
+                                                <div key={task.name}>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="text-muted-foreground">{task.name}</span>
+                                                        <span className="font-mono text-foreground">{task.current} / {task.target}</span>
+                                                    </div>
+                                                    <Progress value={progress} />
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
                                                 </div>
                                             )
                                         })}
@@ -234,7 +285,11 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                                     <CardFooter>
                                         <div className="w-full">
                                             <div className="flex justify-between text-sm mb-1 font-bold">
+<<<<<<< HEAD
                                                 <span>Progresso Geral da Missão</span>
+=======
+                                                <span>Progresso Geral</span>
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
                                                 <span>{Math.round(overallProgress)}%</span>
                                             </div>
                                              <Progress value={overallProgress} className="h-3 bg-primary/20" />
@@ -250,7 +305,10 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                         </div>
                     )}
                 </div>
+<<<<<<< HEAD
                 </ScrollArea>
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
             </CardContent>
              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogContent>
@@ -281,6 +339,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+<<<<<<< HEAD
             <ContributionDialog 
                 open={contributionDialogState.open}
                 onOpenChange={(isOpen) => setContributionDialogState({ ...contributionDialogState, open: isOpen })}
@@ -288,6 +347,8 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                 onContribute={handleContribute}
                 userDailyContribution={contributionDialogState.userDailyContribution}
             />
+=======
+>>>>>>> 92c1f4c (Missões de Guilda (Quests) - A Maior Peça em Falta: implemente esse)
         </Card>
     );
 };
