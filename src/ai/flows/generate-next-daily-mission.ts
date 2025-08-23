@@ -76,11 +76,11 @@ const generateNextDailyMissionFlow = ai.defineFlow(
     const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos. O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", ligada à meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
 A sua diretiva é criar a PRÓXIMA missão diária. Siga estas regras:
 
-1.  **Nome e Descrição Gerais:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código") e uma breve descrição.
+1.  **Nome e Descrição Gerais:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código") e uma breve descrição motivacional.
 2.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas que compõem a missão diária. ESTAS são as ações que o utilizador irá de facto realizar e acompanhar.
-    *   Cada sub-tarefa deve ser EXTREMAMENTE ESPECÍFICA e MENSURÁVEL.
+    *   Cada sub-tarefa deve ser EXTREMAMENTE ESPECÍFICA e MENSURÁVEL. O nome da sub-tarefa deve ser a própria ação (ex: "Caminhada leve", "Escrever código de teste", "Ler artigo técnico").
     *   Defina um 'target' numérico claro para cada sub-tarefa.
-    *   Defina uma 'unit' (unidade) quando apropriado (ex: "repetições", "minutos", "páginas", "km").
+    *   Defina uma 'unit' (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
     *   **Exemplo de Sub-tarefas Boas:**
         *   { name: "Fazer flexões", target: 20, unit: "repetições" }
         *   { name: "Meditar em silêncio", target: 10, unit: "minutos" }
