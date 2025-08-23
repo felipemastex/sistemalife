@@ -6,7 +6,6 @@ import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDesc
 import { Award, X, Timer, Gem, Plus, Link, Eye } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
@@ -110,7 +109,7 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
               <div>
                 <h4 className="font-bold text-muted-foreground text-sm tracking-wider uppercase mb-3 text-center">Objetivos</h4>
                 <div className="space-y-3 w-full mx-auto bg-black/20 p-4 rounded-md border border-border/50">
-                    {mission.subTasks?.map((task, index) => {
+                    {(mission.subTasks || []).map((task, index) => {
                         const isTaskCompleted = (task.current || 0) >= task.target;
                         return (
                              <div key={index} className="space-y-2">

@@ -36,6 +36,7 @@ export type GenerateInitialEpicMissionInput = z.infer<typeof GenerateInitialEpic
 const GenerateInitialEpicMissionOutputSchema = z.object({
     progression: z.array(EpicMissionSchema).describe("Uma lista de 3 a 5 missões épicas que representam uma clara progressão de dificuldade."),
     firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
+    firstDailyMissionDescription: z.string().describe("A descrição (agora obsoleta, mas necessária para retrocompatibilidade) da primeira missão diária. Deve ser uma string vazia."),
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
     firstDailyMissionFragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a primeira missão."),
     firstDailyMissionSubTasks: z.array(SubTaskSchema).describe("A lista de sub-tarefas para a primeira missão diária."),
@@ -72,7 +73,6 @@ Contexto Histórico: ${historyPrompt}
 A sua tarefa é:
 1.  **Criar uma Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência. Cada missão deve ser um passo lógico e mais desafiador que a anterior. A progressão de ranks deve ser coerente e realista. Não salte de Rank E para A. Mantenha os objetivos dentro de padrões humanos normais (ex: para corrida, progrida de 5km para 10km, depois 21km; não sugira 100km).
 2.  **Atribuir Ranks:** Analise a dificuldade de cada passo e atribua um Rank (de F a SSS) para cada missão na árvore.
-3.  **Primeira Missão Diária:** Para a PRIMEIRA missão épica da sua lista, crie a PRIMEIRA missão diária. NÃO a gere você mesmo. Em vez disso, forneça o input necessário para chamar a função 'generateNextDailyMission' para a gerar por si.
 
 Use a seguinte escala de Ranks para guiar a sua progressão:
 - F: Trivial
@@ -115,6 +115,7 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
         return {
             progression: output.progression,
             firstDailyMissionName: firstDailyMissionResult.nextMissionName,
+            firstDailyMissionDescription: "", // Campo obsoleto, mas necessário para evitar 'undefined'
             firstDailyMissionXp: firstDailyMissionResult.xp,
             firstDailyMissionFragments: firstDailyMissionResult.fragments,
             firstDailyMissionSubTasks: firstDailyMissionResult.subTasks.map(st => ({...st, current: 0 })),
@@ -139,6 +140,7 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
         return {
             progression: fallbackProgression,
             firstDailyMissionName: fallbackDailyMissionName,
+            firstDailyMissionDescription: "",
             firstDailyMissionXp: xp,
             firstDailyMissionFragments: fragments,
             firstDailyMissionSubTasks,
