@@ -129,7 +129,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         const hours = Math.floor(timeLeft / (1000 * 60 * 60));
                         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                        newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                        newTimers[mission.id] = `${'' + String(hours).padStart(2, '0')}:${'' + String(minutes).padStart(2, '0')}:${'' + String(seconds).padStart(2, '0')}`;
                     } else {
                         if(timers[mission.id]){
                             missionsToUpdate.push(mission.id);
@@ -152,7 +152,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
     
-    const handleResetCooldowns = () => {
+    const handleHackerMode = () => {
         const updatedMissions = missions.map(m => ({ ...m, ultima_missao_concluida_em: null }));
         setMissions(updatedMissions);
         toast({
@@ -476,8 +476,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     };
     
     const handleAddProgress = (rankedMissionId, dailyMissionId, subTask, amount) => {
-        let missionJustCompleted = false;
-
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(dm => {
@@ -493,7 +491,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         const updatedDailyMission = { ...dm, subTasks: updatedSubTasks };
                         
                         if (updatedDailyMission.subTasks.every(st => (st.current || 0) >= st.target)) {
-                           missionJustCompleted = true;
+                           completeDailyMission(rankedMissionId, dailyMissionId);
                         }
 
                         return updatedDailyMission;
@@ -506,43 +504,47 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         });
         
         setMissions(updatedMissions);
-
-        if (missionJustCompleted) {
-            completeDailyMission(rankedMissionId, dailyMissionId);
-        }
     };
 
     const handleAddProgressPopup = (subTask, amount) => {
         const { rankedMissionId, dailyMissionId } = showQuestInfo || {};
         if (!rankedMissionId || !dailyMissionId) return;
+
+        const rankedMission = missions.find(m => m.id === rankedMissionId);
+        const dailyMission = rankedMission?.missoes_diarias.find(dm => dm.id === dailyMissionId);
+        if (!dailyMission) return;
+
         handleAddProgress(rankedMissionId, dailyMissionId, subTask, amount);
     };
 
     const revertLastDailyMission = (rankedMissionId) => {
         let xpToSubtract = 0;
         let fragmentsToSubtract = 0;
-        let missionReverted = false;
-
+    
         const updatedMissions = missions.map(rm => {
-            if (rm.id === rankedMissionId && !missionReverted) {
+            if (rm.id === rankedMissionId) {
                 const completedMissions = rm.missoes_diarias.filter(dm => dm.concluido);
                 const activeMission = rm.missoes_diarias.find(dm => !dm.concluido);
-
+    
                 if (completedMissions.length > 0) {
                     const lastCompleted = completedMissions[completedMissions.length - 1];
                     xpToSubtract = lastCompleted.xp_conclusao;
                     fragmentsToSubtract = lastCompleted.fragmentos_conclusao || 0;
-
+    
                     const newDailyMissions = rm.missoes_diarias
                         .map(dm => {
                             if (dm.id === lastCompleted.id) {
-                                return { ...dm, concluido: false, subTasks: dm.subTasks.map(st => ({...st, current: 0})) }; // Reset progress
+                                // Reativar a última missão concluída e zerar o progresso das sub-tarefas
+                                return { 
+                                    ...dm, 
+                                    concluido: false, 
+                                    subTasks: dm.subTasks.map(st => ({...st, current: 0})) 
+                                };
                             }
                             return dm;
                         })
-                        .filter(dm => dm.id !== activeMission?.id);
-
-                    missionReverted = true;
+                        .filter(dm => dm.id !== activeMission?.id); // Remover a missão ativa que foi gerada
+    
                     return {
                         ...rm,
                         missoes_diarias: newDailyMissions,
@@ -552,19 +554,18 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             }
             return rm;
         });
-
-        if (missionReverted) {
-            setMissions(updatedMissions);
-            setProfile(prev => ({
-                ...prev,
-                xp: Math.max(0, prev.xp - xpToSubtract),
-                fragmentos: Math.max(0, (prev.fragmentos || 0) - fragmentsToSubtract)
-            }));
-            toast({
-                title: "Missão Revertida",
-                description: "A missão anterior está ativa novamente. As recompensas foram ajustadas.",
-            });
-        }
+    
+        setMissions(updatedMissions);
+        setProfile(prev => ({
+            ...prev,
+            xp: Math.max(0, prev.xp - xpToSubtract),
+            fragmentos: Math.max(0, (prev.fragmentos || 0) - fragmentsToSubtract),
+            missoes_concluidas_total: Math.max(0, (prev.missoes_concluidas_total || 0) - 1),
+        }));
+        toast({
+            title: "Missão Revertida",
+            description: "A missão anterior está ativa novamente. As recompensas foram ajustadas.",
+        });
     };
     
     const reactivateEpicMission = async (missionId) => {
@@ -672,9 +673,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
-                 <Button onClick={handleResetCooldowns} variant="outline" size="sm" aria-label="Reiniciar Missões">
+                 <Button onClick={handleHackerMode} variant="outline" size="sm" aria-label="Reiniciar Missões">
                     <RefreshCw className="mr-2 h-4 w-4"/>
-                    Reiniciar Cooldowns
+                    Modo Hacker
                 </Button>
             </div>
             <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
