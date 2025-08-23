@@ -150,7 +150,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
-    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds { dailyMission, epicMissionName } for the popup
+    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds { dailyMission, epicMissionName, rankedMissionId } for the popup
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -618,11 +618,11 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     };
 
     const handleAddProgressPopup = (mission, subTask, amount) => {
-        const rankedMission = missions.find(rm => rm.id === showQuestInfo.rankedMissionId);
-        if (!rankedMission) return;
+        const rankedMissionId = showQuestInfo?.rankedMissionId;
+        if (!rankedMissionId) return;
         
         setMissions(prevMissions => prevMissions.map(rm => {
-            if (rm.id === rankedMission.id) {
+            if (rm.id === rankedMissionId) {
                 const updatedDailyMissions = rm.missoes_diarias.map(dm => {
                     if (dm.id === mission.id) {
                         const updatedSubTasks = dm.subTasks.map(st => {
