@@ -207,16 +207,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
     
-    useEffect(() => {
-        // Check for auto-completion whenever missions state changes
-        missions.forEach(rm => {
-            const activeDaily = rm.missoes_diarias.find(dm => !dm.concluido);
-            if (activeDaily && activeDaily.subTasks?.every(st => (st.current || 0) >= st.target)) {
-                completeDailyMission(rm.id, activeDaily.id);
-            }
-        });
-    }, [missions]);
-
     const handleHackerMode = () => {
         const updatedMissions = missions.map(m => ({ ...m, ultima_missao_concluida_em: null }));
         setMissions(updatedMissions);
@@ -592,38 +582,57 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const handleAddProgress = (subTask, amount) => {
         const { rankedMissionId, dailyMissionId } = contributionState;
         
-        setMissions(prevMissions => prevMissions.map(rm => {
+        let updatedMissions = [...missions];
+        let missionCompleted = false;
+
+        updatedMissions = updatedMissions.map(rm => {
             if (rm.id === rankedMissionId) {
-                return {
-                    ...rm,
-                    missoes_diarias: rm.missoes_diarias.map(dm => {
-                        if (dm.id === dailyMissionId) {
-                            return {
-                                ...dm,
-                                subTasks: dm.subTasks.map(st => {
-                                    if (st.name === subTask.name) {
-                                        const newCurrent = Math.min(st.target, (st.current || 0) + amount);
-                                        return { ...st, current: newCurrent };
-                                    }
-                                    return st;
-                                })
-                            };
+                let dailyMissionToComplete = null;
+                const updatedDailyMissions = rm.missoes_diarias.map(dm => {
+                    if (dm.id === dailyMissionId) {
+                        const updatedSubTasks = dm.subTasks.map(st => {
+                            if (st.name === subTask.name) {
+                                const newCurrent = Math.min(st.target, (st.current || 0) + amount);
+                                return { ...st, current: newCurrent };
+                            }
+                            return st;
+                        });
+                        
+                        const updatedDailyMission = { ...dm, subTasks: updatedSubTasks };
+                        
+                        if (updatedDailyMission.subTasks.every(st => (st.current || 0) >= st.target)) {
+                           dailyMissionToComplete = updatedDailyMission;
                         }
-                        return dm;
-                    })
-                };
+
+                        return updatedDailyMission;
+                    }
+                    return dm;
+                });
+
+                if (dailyMissionToComplete) {
+                    missionCompleted = true;
+                }
+                return { ...rm, missoes_diarias: updatedDailyMissions };
             }
             return rm;
-        }));
+        });
+        
+        setMissions(updatedMissions);
+
+        if (missionCompleted) {
+            completeDailyMission(rankedMissionId, dailyMissionId);
+        }
     };
 
     const handleAddProgressPopup = (mission, subTask, amount) => {
         const rankedMissionId = showQuestInfo?.rankedMissionId;
         if (!rankedMissionId) return;
+
+        let missionCompleted = false;
         
-        setMissions(prevMissions => prevMissions.map(rm => {
+        const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
-                const updatedDailyMissions = rm.missoes_diarias.map(dm => {
+                 const updatedDailyMissions = rm.missoes_diarias.map(dm => {
                     if (dm.id === mission.id) {
                         const updatedSubTasks = dm.subTasks.map(st => {
                             if (st.name === subTask.name) {
@@ -632,16 +641,29 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             }
                             return st;
                         });
-                        // Update the popup state with the new mission object
-                        setShowQuestInfo(prev => ({...prev, dailyMission: {...prev.dailyMission, subTasks: updatedSubTasks}}));
-                        return { ...dm, subTasks: updatedSubTasks };
+
+                        const updatedDailyMission = { ...dm, subTasks: updatedSubTasks };
+                        setShowQuestInfo(prev => ({...prev, dailyMission: updatedDailyMission}));
+                        
+                        if (updatedDailyMission.subTasks.every(st => (st.current || 0) >= st.target)) {
+                            missionCompleted = true;
+                        }
+
+                        return updatedDailyMission;
                     }
                     return dm;
                 });
                 return { ...rm, missoes_diarias: updatedDailyMissions };
             }
             return rm;
-        }));
+        });
+
+        setMissions(updatedMissions);
+
+         if (missionCompleted) {
+            setShowQuestInfo(null); // Close popup before showing notifications
+            completeDailyMission(rankedMissionId, mission.id);
+        }
     };
 
     const revertLastDailyMission = (rankedMissionId) => {
@@ -1093,8 +1115,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     epicMissionName={showQuestInfo.epicMissionName}
                     onClose={() => setShowQuestInfo(null)}
                     onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo.dailyMission, subTask, amount)}
-                    onCooldown={!!timers[missions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
-                    timer={timers[missions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
+                    onCooldown={!!timers[showQuestInfo.rankedMissionId]}
+                    timer={timers[showQuestInfo.rankedMissionId]}
                 />
             )}
         </div>
