@@ -36,6 +36,7 @@ export type GenerateInitialEpicMissionInput = z.infer<typeof GenerateInitialEpic
 const GenerateInitialEpicMissionOutputSchema = z.object({
     progression: z.array(EpicMissionSchema).describe("Uma lista de 3 a 5 missões épicas que representam uma clara progressão de dificuldade."),
     firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
+    firstDailyMissionDescription: z.string().describe("A descrição da primeira missão diária."),
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
     firstDailyMissionFragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a primeira missão."),
     firstDailyMissionSubTasks: z.array(SubTaskSchema).describe("A lista de sub-tarefas para a primeira missão diária."),
@@ -111,13 +112,16 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
             history: 'Esta é a primeira missão para este objetivo.',
             userLevel: input.userLevel,
         });
+        
+        const subTasksWithProgress = firstDailyMissionResult.subTasks.map(st => ({...st, current: 0}));
 
         return {
             progression: output.progression,
             firstDailyMissionName: firstDailyMissionResult.nextMissionName,
+            firstDailyMissionDescription: firstDailyMissionResult.subTasks.map(st => `${st.name}: ${st.target} ${st.unit || ''}`.trim()).join('\n'), // Ensure description is a string
             firstDailyMissionXp: firstDailyMissionResult.xp,
             firstDailyMissionFragments: firstDailyMissionResult.fragments,
-            firstDailyMissionSubTasks: firstDailyMissionResult.subTasks,
+            firstDailyMissionSubTasks: subTasksWithProgress,
             firstDailyMissionLearningResources: firstDailyMissionResult.learningResources,
             fallback: false,
         };
@@ -139,6 +143,7 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
         return {
             progression: fallbackProgression,
             firstDailyMissionName: fallbackDailyMissionName,
+            firstDailyMissionDescription: "Complete o primeiro passo para esta meta.", // Ensure description is a string
             firstDailyMissionXp: xp,
             firstDailyMissionFragments: fragments,
             firstDailyMissionSubTasks,
@@ -148,3 +153,4 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
     }
   }
 );
+

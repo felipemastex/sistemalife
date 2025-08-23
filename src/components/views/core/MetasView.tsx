@@ -514,7 +514,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         description: 'Uma missão inicial simples foi criada. Tente editar a meta mais tarde para gerar uma árvore de progressão completa.',
                     });
                 }
-
+                
                 const newMissions = (result.progression || []).map((epicMission, index) => {
                     const isFirstMission = index === 0;
                     return {
@@ -535,6 +535,8 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                             fragmentos_conclusao: result.firstDailyMissionFragments,
                             concluido: false,
                             tipo: 'diaria',
+                            learningResources: result.firstDailyMissionLearningResources,
+                            subTasks: result.firstDailyMissionSubTasks,
                         }] : [],
                     };
                 });
@@ -966,3 +968,4 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
