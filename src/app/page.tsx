@@ -28,7 +28,24 @@ import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
+import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
+import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
+import { achievements } from '@/lib/achievements';
+import { differenceInCalendarDays, isToday } from 'date-fns';
+import { statCategoryMapping } from '@/lib/mappings';
 
+
+const getProfileRank = (level) => {
+    if (level <= 5) return { rank: 'F', title: 'Novato' };
+    if (level <= 10) return { rank: 'E', title: 'Iniciante' };
+    if (level <= 20) return { rank: 'D', title: 'Adepto' };
+    if (level <= 30) return { rank: 'C', title: 'Experiente' };
+    if (level <= 40) return { rank: 'B', 'title': 'Perito' };
+    if (level <= 50) return { rank: 'A', title: 'Mestre' };
+    if (level <= 70) return { rank: 'S', title: 'Grão-Mestre' };
+    if (level <= 90) return { rank: 'SS', title: 'Herói' };
+    return { rank: 'SSS', title: 'Lendário' };
+};
 
 export default function App() {
   const { user, loading, logout } = useAuth();
@@ -623,6 +640,242 @@ export default function App() {
     }
   };
 
+    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+        console.error("Erro de IA:", error);
+        if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
+             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
+        } else {
+             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+        }
+    };
+    
+    // --- Logic moved from MissionsView ---
+    const handleLevelUp = (currentProfile) => {
+        const newLevel = currentProfile.nivel + 1;
+        const newXpToNextLevel = Math.floor(currentProfile.xp_para_proximo_nivel + 25);
+        const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
+        
+        const { rank, title } = getProfileRank(newLevel);
+        onLevelUpNotification(newLevel, title, rank);
+        
+        return {
+            ...currentProfile,
+            nivel: newLevel,
+            xp: newXp,
+            xp_para_proximo_nivel: newXpToNextLevel,
+        };
+    };
+
+    const checkAndUnlockAchievements = (currentProfile) => {
+        const newlyUnlocked = [];
+        achievements.forEach(achievement => {
+            const isAlreadyUnlocked = currentProfile.achievements?.some(a => a.achievementId === achievement.id);
+            if (isAlreadyUnlocked) return;
+
+            let conditionMet = false;
+            switch (achievement.criteria.type) {
+                case 'missions_completed':
+                    conditionMet = currentProfile.missoes_concluidas_total >= achievement.criteria.value;
+                    break;
+                case 'level_reached':
+                    conditionMet = currentProfile.nivel >= achievement.criteria.value;
+                    break;
+                // Adicionar outras verificações (goals, skills) aqui no futuro.
+            }
+            
+            if (conditionMet) {
+                newlyUnlocked.push({ achievementId: achievement.id, date: new Date().toISOString() });
+                onAchievementUnlockedNotification(achievement.name);
+            }
+        });
+
+        if (newlyUnlocked.length > 0) {
+            return { ...currentProfile, achievements: [...(currentProfile.achievements || []), ...newlyUnlocked] };
+        }
+        return currentProfile;
+    };
+
+    const handleStreak = (currentProfile) => {
+        const today = new Date();
+        const lastCompletionDateStr = currentProfile.ultimo_dia_de_missao_concluida;
+        
+        if (lastCompletionDateStr && isToday(new Date(lastCompletionDateStr))) {
+            return { ...currentProfile, streakUpdated: false };
+        }
+
+        let newStreak = currentProfile.streak_atual || 0;
+        let streakProtected = false;
+    
+        if (!lastCompletionDateStr) {
+            newStreak = 1;
+            toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+        } else {
+            const lastCompletionDate = new Date(lastCompletionDateStr);
+            const diffDays = differenceInCalendarDays(today, lastCompletionDate);
+            
+            if (diffDays === 1) {
+                newStreak++;
+                toast({ title: `Sequência Mantida: Dia ${newStreak}!`, description: `Bom trabalho! Continue assim.` });
+            } else if (diffDays > 1) {
+                const streakRecoveryAmulet = (currentProfile.active_effects || []).find(eff => eff.type === 'streak_recovery');
+                if (streakRecoveryAmulet) {
+                    newStreak++; 
+                    streakProtected = true;
+                    toast({ title: 'Amuleto Ativado!', description: 'A sua sequência foi salva da quebra!' });
+                } else {
+                    newStreak = 1;
+                    toast({ title: 'Nova Sequência Iniciada!', description: 'A consistência é a chave. Vamos lá!' });
+                }
+            }
+        }
+        
+        const updatedProfile = {
+            ...currentProfile,
+            streak_atual: newStreak,
+            ultimo_dia_de_missao_concluida: today.toISOString(),
+            streakUpdated: true
+        };
+
+        if (streakProtected) {
+            updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
+        }
+
+        return updatedProfile;
+    };
+
+
+    const handleCompleteMission = async ({ rankedMissionId, dailyMission, feedback }) => {
+        const now = new Date();
+        
+        // --- 1. Prepare all state changes first ---
+        let updatedProfile = JSON.parse(JSON.stringify(profile));
+        let updatedSkills = JSON.parse(JSON.stringify(skills));
+        
+        // --- Profile updates ---
+        const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
+        const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
+        const finalXPGained = Math.round(dailyMission.xp_conclusao * xpMultiplier);
+    
+        if (xpMultiplier > 1) {
+            toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!`, className: 'bg-yellow-500/20 border-yellow-500 text-white' });
+        }
+    
+        updatedProfile.xp += finalXPGained;
+        updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMission.fragmentos_conclusao || 0);
+        updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
+        
+        updatedProfile = handleStreak(updatedProfile);
+
+        if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
+            updatedProfile = handleLevelUp(updatedProfile);
+        }
+        updatedProfile = checkAndUnlockAchievements(updatedProfile);
+    
+        // --- Skill updates ---
+        const rankedMission = missions.find(m => m.id === rankedMissionId);
+        const meta = metas.find(m => m.nome === rankedMission?.meta_associada);
+        if (meta?.habilidade_associada_id) {
+            const skillIndex = updatedSkills.findIndex(s => s.id === meta.habilidade_associada_id);
+            if (skillIndex !== -1 && updatedSkills[skillIndex].nivel_atual < updatedSkills[skillIndex].nivel_maximo) {
+                try {
+                    const { xp } = await generateSkillExperience({
+                        missionText: `${dailyMission.nome}: ${dailyMission.subTasks.map(st => st.name).join(', ')}`,
+                        skillLevel: updatedSkills[skillIndex].nivel_atual,
+                    });
+                    updatedSkills[skillIndex].xp_atual += xp;
+                    updatedSkills[skillIndex].ultima_atividade_em = now.toISOString();
+                    
+                    if (updatedSkills[skillIndex].xp_atual >= updatedSkills[skillIndex].xp_para_proximo_nivel) {
+                        const skillToLevelUp = updatedSkills[skillIndex];
+                        const statsToUpgrade = statCategoryMapping[skillToLevelUp.categoria] || [];
+                        handleShowSkillUpNotification(skillToLevelUp.nome, skillToLevelUp.nivel_atual + 1, statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1)));
+                        if (statsToUpgrade.length > 0) {
+                            statsToUpgrade.forEach(stat => { updatedProfile.estatisticas[stat] = (updatedProfile.estatisticas[stat] || 0) + 1; });
+                        }
+                        updatedSkills[skillIndex] = {
+                            ...skillToLevelUp,
+                            nivel_atual: skillToLevelUp.nivel_atual + 1,
+                            xp_atual: skillToLevelUp.xp_atual - skillToLevelUp.xp_para_proximo_nivel,
+                            xp_para_proximo_nivel: Math.floor(skillToLevelUp.xp_para_proximo_nivel * 1.5)
+                        };
+                    }
+                } catch (error) { handleToastError(error, "Não foi possível calcular o XP da habilidade."); }
+            }
+        }
+    
+        // --- Mission updates ---
+        let missionsWithCompletedDaily = missions.map(rm =>
+            rm.id === rankedMissionId
+                ? {
+                    ...rm,
+                    missoes_diarias: rm.missoes_diarias.map(dm => dm.id === dailyMission.id ? { ...dm, concluido: true } : dm),
+                    ultima_missao_concluida_em: now.toISOString(),
+                }
+                : rm
+        );
+    
+        // --- Commit state changes for immediate feedback ---
+        persistProfile(updatedProfile);
+        persistSkills(updatedSkills);
+        persistMissions(missionsWithCompletedDaily);
+    
+        // --- Generate next mission ---
+        try {
+            const currentRankedMission = missionsWithCompletedDaily.find(rm => rm.id === rankedMissionId);
+            const isRankedMissionComplete = currentRankedMission.missoes_diarias.filter(d => d.concluido).length >= (currentRankedMission.total_missoes_diarias || 10);
+            
+            if (isRankedMissionComplete) {
+                const finalMissionsState = missionsWithCompletedDaily.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
+                persistMissions(finalMissionsState);
+                toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${rankedMission.nome}"!` });
+    
+                const goalMissions = finalMissionsState.filter(m => m.meta_associada === rankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+                const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
+                const nextMission = goalMissions[currentIndex + 1];
+    
+                if (nextMission) { onNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
+                else {
+                    const completedGoal = metas.find(m => m.nome === rankedMission.meta_associada);
+                    if (completedGoal) {
+                        persistMetas(metas.map(m => m.id === completedGoal.id ? { ...m, concluida: true } : m));
+                        onShowGoalCompletedNotification(completedGoal.nome);
+                    }
+                }
+            } else {
+                const history = currentRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
+    
+                const result = await generateNextDailyMission({
+                    rankedMissionName: rankedMission.nome,
+                    metaName: meta?.nome || "Objetivo geral",
+                    goalDeadline: meta?.prazo,
+                    history: history || `O utilizador acabou de completar: "${dailyMission.nome}".`,
+                    userLevel: updatedProfile.nivel,
+                    feedback,
+                });
+    
+                const newDailyMission = {
+                    id: Date.now(),
+                    nome: result.nextMissionName,
+                    xp_conclusao: result.xp,
+                    fragmentos_conclusao: result.fragments,
+                    concluido: false,
+                    tipo: 'diaria',
+                    learningResources: result.learningResources || [],
+                    subTasks: result.subTasks,
+                };
+    
+                const finalMissionsState = missionsWithCompletedDaily.map(rm =>
+                    rm.id === rankedMissionId
+                        ? { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] }
+                        : rm
+                );
+                persistMissions(finalMissionsState);
+            }
+        } catch (error) {
+            handleToastError(error, "Não foi possível gerar a próxima missão diária.");
+        }
+    };
+
 
   const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }) => {
     const handleNav = () => {
@@ -684,8 +937,8 @@ export default function App() {
     const views = {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} setMetas={setMetas} skills={skills} setSkills={persistSkills} onLevelUpNotification={handleShowLevelUpNotification} onNewEpicMissionNotification={handleShowNewEpicMissionNotification} onSkillUpNotification={handleShowSkillUpNotification} onGoalCompletedNotification={handleShowGoalCompletedNotification} onAchievementUnlockedNotification={handleShowAchievementUnlockedNotification} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
+      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} onCompleteMission={handleCompleteMission} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
       'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers}/>,
