@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -370,17 +369,22 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         setGenerating(rankedMissionId);
         const now = new Date();
     
-        const originalRankedMission = missions.find(m => m.id === rankedMissionId);
+        // Make a deep copy to avoid state mutation issues
+        const missionsCopy = JSON.parse(JSON.stringify(missions));
+        
+        const originalRankedMission = missionsCopy.find(m => m.id === rankedMissionId);
         const dailyMissionToComplete = originalRankedMission?.missoes_diarias.find(d => d.id === dailyMissionId);
     
         if (!originalRankedMission || !dailyMissionToComplete) {
             setGenerating(null);
             return;
         }
-
+    
+        // 1. Prepare all state changes first
         let updatedProfile = { ...profile };
         let updatedSkills = [...skills];
         
+        // --- Profile updates ---
         const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
         const finalXPGained = Math.round(dailyMissionToComplete.xp_conclusao * xpMultiplier);
@@ -398,41 +402,43 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
         updatedProfile = checkAndUnlockAchievements(updatedProfile);
     
+        // --- Skill updates ---
         const meta = metas.find(m => m.nome === originalRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
-            const skillToUpdate = skills.find(s => s.id === meta.habilidade_associada_id);
-            if (skillToUpdate && skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
+            const skillIndex = updatedSkills.findIndex(s => s.id === meta.habilidade_associada_id);
+            if (skillIndex !== -1 && updatedSkills[skillIndex].nivel_atual < updatedSkills[skillIndex].nivel_maximo) {
                 try {
                     const { xp } = await generateSkillExperience({
                         missionText: `${dailyMissionToComplete.nome}: ${dailyMissionToComplete.subTasks.map(st => st.name).join(', ')}`,
-                        skillLevel: skillToUpdate.nivel_atual,
+                        skillLevel: updatedSkills[skillIndex].nivel_atual,
                     });
-                    const skillWithNewXp = { ...skillToUpdate, xp_atual: skillToUpdate.xp_atual + xp, ultima_atividade_em: now.toISOString() };
+                    updatedSkills[skillIndex].xp_atual += xp;
+                    updatedSkills[skillIndex].ultima_atividade_em = now.toISOString();
                     
-                    if (skillWithNewXp.xp_atual >= skillWithNewXp.xp_para_proximo_nivel) {
-                        const leveledUpSkill = {
-                            ...skillWithNewXp,
-                            nivel_atual: skillWithNewXp.nivel_atual + 1,
-                            xp_atual: skillWithNewXp.xp_atual - skillWithNewXp.xp_para_proximo_nivel,
-                            xp_para_proximo_nivel: Math.floor(skillWithNewXp.xp_para_proximo_nivel * 1.5)
-                        };
-                        const statsToUpgrade = statCategoryMapping[leveledUpSkill.categoria] || [];
+                    if (updatedSkills[skillIndex].xp_atual >= updatedSkills[skillIndex].xp_para_proximo_nivel) {
+                        const skillToLevelUp = updatedSkills[skillIndex];
+                        const statsToUpgrade = statCategoryMapping[skillToLevelUp.categoria] || [];
                         const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1));
-                        onSkillUpNotification(leveledUpSkill.nome, leveledUpSkill.nivel_atual, statNames);
+                        
+                        onSkillUpNotification(skillToLevelUp.nome, skillToLevelUp.nivel_atual + 1, statNames);
+                        
                         if (statsToUpgrade.length > 0) {
-                            const newStats = { ...updatedProfile.estatisticas };
-                            statsToUpgrade.forEach(stat => { newStats[stat] = (newStats[stat] || 0) + 1; });
-                            updatedProfile.estatisticas = newStats;
+                            statsToUpgrade.forEach(stat => { updatedProfile.estatisticas[stat] = (updatedProfile.estatisticas[stat] || 0) + 1; });
                         }
-                        updatedSkills = skills.map(s => s.id === leveledUpSkill.id ? leveledUpSkill : s);
-                    } else {
-                        updatedSkills = skills.map(s => s.id === skillWithNewXp.id ? skillWithNewXp : s);
+                        
+                        updatedSkills[skillIndex] = {
+                            ...skillToLevelUp,
+                            nivel_atual: skillToLevelUp.nivel_atual + 1,
+                            xp_atual: skillToLevelUp.xp_atual - skillToLevelUp.xp_para_proximo_nivel,
+                            xp_para_proximo_nivel: Math.floor(skillToLevelUp.xp_para_proximo_nivel * 1.5)
+                        };
                     }
                 } catch (error) { handleToastError(error, "Não foi possível calcular o XP da habilidade."); }
             }
         }
     
-        let updatedMissions = missions.map(rm =>
+        // --- Mission updates ---
+        let missionsWithCompletedDaily = missionsCopy.map(rm =>
             rm.id === rankedMissionId
                 ? {
                     ...rm,
@@ -442,16 +448,19 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 : rm
         );
     
+        // 2. Commit state changes
         setProfile(updatedProfile);
         setSkills(updatedSkills);
-        setMissions(updatedMissions);
+        setMissions(missionsWithCompletedDaily);
     
+        // 3. Generate next mission
         try {
-            const tempRankedMission = updatedMissions.find(rm => rm.id === rankedMissionId);
-            const isRankedMissionComplete = tempRankedMission.missoes_diarias.filter(d => d.concluido).length >= (tempRankedMission.total_missoes_diarias || 10);
+            const currentRankedMission = missionsWithCompletedDaily.find(rm => rm.id === rankedMissionId);
+            const isRankedMissionComplete = currentRankedMission.missoes_diarias.filter(d => d.concluido).length >= (currentRankedMission.total_missoes_diarias || 10);
             
             if (isRankedMissionComplete) {
-                const finalMissionsState = updatedMissions.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
+                // All daily missions for this epic mission are done. Mark epic as complete.
+                const finalMissionsState = missionsWithCompletedDaily.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
                 setMissions(finalMissionsState);
                 toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${originalRankedMission.nome}"!` });
     
@@ -468,13 +477,14 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     }
                 }
             } else {
-                const history = tempRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
+                // Generate the next daily mission
+                const history = currentRankedMission.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
                 const feedbackForNextMission = missionFeedback[rankedMissionId];
     
                 const result = await generateNextDailyMission({
                     rankedMissionName: originalRankedMission.nome,
                     metaName: meta?.nome || "Objetivo geral",
-                    goalDeadline: meta?.prazo || null,
+                    goalDeadline: meta?.prazo,
                     history: history || `O utilizador acabou de completar: "${dailyMissionToComplete.nome}".`,
                     userLevel: updatedProfile.nivel,
                     feedback: feedbackForNextMission,
@@ -493,18 +503,20 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     subTasks: result.subTasks,
                 };
     
-                setMissions(currentMissions => currentMissions.map(rm =>
+                const finalMissionsState = missionsWithCompletedDaily.map(rm =>
                     rm.id === rankedMissionId
                         ? { ...rm, missoes_diarias: [...rm.missoes_diarias, newDailyMission] }
                         : rm
-                ));
+                );
+                setMissions(finalMissionsState);
             }
         } catch (error) {
             handleToastError(error, "Não foi possível gerar a próxima missão diária.");
         } finally {
             setGenerating(null);
         }
-    }, [missions, profile, metas, skills, missionFeedback, setProfile, setMissions, setSkills, setMetas, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification, onAchievementUnlockedNotification]);
+    }, [missions, profile, metas, skills, missionFeedback, setProfile, setMissions, setSkills, setMetas, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification, onAchievementUnlockedNotification, toast, rankOrder]);
+    
     
     const handleAddProgress = useCallback((rankedMissionId, dailyMissionId, subTask, amount) => {
         let missionCompleted = false;
@@ -607,7 +619,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const result = await generateNextDailyMission({
                 rankedMissionName: missionToReactivate.nome,
                 metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo || null,
+                goalDeadline: meta?.prazo,
                 history: "Esta é a primeira missão para este objetivo (reativado).",
                 userLevel: profile.nivel,
             });
@@ -1002,5 +1014,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             })()}
         </div>
     );
+
+    
 
     
