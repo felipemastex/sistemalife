@@ -131,3 +131,18 @@ O coração da aplicação é a sua capacidade de usar IA generativa para person
 - **4.1. Modo Offline Básico:** Usar o Service Worker do PWA para permitir que os usuários visualizem e completem tarefas offline, sincronizando com o Firebase quando a conexão for restabelecida.
 - **4.2. Estratégia de Testes:** Implementar testes unitários (Jest/Vitest), de integração (React Testing Library) e end-to-end (Cypress/Playwright).
 - **Benefícios:** Previne bugs, facilita a refatoração e garante a estabilidade do sistema a longo prazo.
+
+### 5. Melhorias na Aba Missões (`MissionsView.tsx`)
+- **Descrição:** Refatoração técnica do componente de Missões para melhorar performance, manutenibilidade e clareza do código.
+- **5.1. Gerenciamento de Estado e Fluxo de Dados:**
+  - **Objetivo:** Reduzir a complexidade do estado e o acoplamento entre componentes.
+  - **Ação:** Centralizar a lógica de atualização de dados (ganhar XP, completar missão, etc.) no componente pai (`page.tsx`) usando `useReducer` ou um Contexto global. O componente `MissionsView` passaria a apenas disparar ações em vez de manipular o estado diretamente, tornando-o mais declarativo.
+- **5.2. Estrutura do Componente e Lógica:**
+  - **Objetivo:** Melhorar a legibilidade e facilitar testes.
+  - **Ação:** Dividir a função monolítica `completeDailyMission` em funções menores e com responsabilidades únicas (ex: `calculateProfileUpdate`, `handleSkillProgression`). Utilizar `React.memo` e `useCallback` para otimizar renderizações.
+- **5.3. Interação com a IA e Tratamento de Erros:**
+  - **Objetivo:** Evitar duplicação de código e centralizar o tratamento de erros.
+  - **Ação:** Criar um hook personalizado (`useAIFlow`) que abstrai a lógica de chamada à IA, gerenciamento de estado de carregamento e exibição de `toasts` de erro.
+- **5.4. Melhorias na Interface (UI/UX):**
+  - **Objetivo:** Tornar a experiência do usuário mais fluida e informativa.
+  - **Ação:** Implementar feedback visual imediato ao completar missões (ex: animações de "check"). Adicionar paginação ou um botão "Carregar Mais" para a secção de missões concluídas. Mover o "Modo Hacker" para um menu de configurações de desenvolvedor.
