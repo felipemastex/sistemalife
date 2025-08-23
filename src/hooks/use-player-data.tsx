@@ -40,6 +40,8 @@ const initialState = {
     allUsers: [],
     guilds: [],
     isDataLoaded: false,
+    missionFeedback: {}, // { [rankedMissionId]: 'feedback text' }
+    generatingMission: null, // rankedMissionId of mission being generated
 };
 
 function playerDataReducer(state, action) {
@@ -68,6 +70,14 @@ function playerDataReducer(state, action) {
             return { ...state, allUsers: action.payload };
         case 'SET_GUILDS':
             return { ...state, guilds: action.payload };
+        case 'SET_GENERATING_MISSION':
+            return { ...state, generatingMission: action.payload };
+        case 'SET_MISSION_FEEDBACK':
+            return { ...state, missionFeedback: { ...state.missionFeedback, [action.payload.missionId]: action.payload.feedback }};
+        case 'CLEAR_MISSION_FEEDBACK':
+            const newFeedback = { ...state.missionFeedback };
+            delete newFeedback[action.payload.missionId];
+            return { ...state, missionFeedback: newFeedback };
         case 'UPDATE_SUB_TASK_PROGRESS': {
             const { rankedMissionId, dailyMissionId, subTaskName, amount } = action.payload;
             const newMissions = state.missions.map(rm => 
@@ -108,6 +118,13 @@ function playerDataReducer(state, action) {
             );
             return { ...state, missions: updatedMissions };
         }
+        case 'UPDATE_SKILL': {
+            const { skillId, updates } = action.payload;
+            return {
+                ...state,
+                skills: state.skills.map(s => s.id === skillId ? { ...s, ...updates } : s)
+            };
+        }
         default:
             return state;
     }
@@ -145,9 +162,25 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             routineTemplates: () => doc(db, 'users', user.uid, 'routine', 'templates'),
         };
 
+        const typeMap = {
+            profile: 'SET_PROFILE',
+            metas: 'SET_METAS',
+            missions: 'SET_MISSIONS',
+            skills: 'SET_SKILLS',
+            routine: 'SET_ROUTINE',
+            routineTemplates: 'SET_ROUTINE_TEMPLATES',
+            guilds: 'SET_GUILDS',
+            allUsers: 'SET_ALL_USERS',
+        };
+
+        const actionType = typeMap[key];
+        if (actionType) {
+            dispatch({ type: actionType, payload: data });
+        }
+
+
         if (singleDocCollections[key]) {
             await setDoc(singleDocCollections[key](), data, { merge: true });
-            dispatch({ type: `SET_${key.toUpperCase()}`, payload: data });
             return;
         }
 
@@ -168,6 +201,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
              const snapshot = await getDocs(ref);
              const existingIds = snapshot.docs.map(d => d.id);
              const newIds = data.map(item => String(item.id));
+             
              const idsToDelete = existingIds.filter(id => !newIds.includes(id));
 
              idsToDelete.forEach(id => batch.delete(doc(ref, id)));
@@ -176,7 +210,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 batch.set(docRef, item);
              });
              await batch.commit();
-             dispatch({ type: `SET_${key.toUpperCase()}`, payload: data });
         }
 
     }, [user]);
@@ -230,7 +263,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
         if (newlyUnlocked.length > 0) {
             const updatedProfile = { ...currentProfile, achievements: [...(currentProfile.achievements || []), ...newlyUnlocked] };
-            dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
             persistData('profile', updatedProfile);
         }
     }, [persistData, handleShowAchievementUnlockedNotification]);
@@ -247,7 +279,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         let bonus = { xp: 0, fragments: 0 };
 
         if (lastCompletionDateStr && isToday(new Date(lastCompletionDateStr))) {
-            return { ...currentProfile, streakUpdated: false, bonus };
+            return { updatedProfile: {...currentProfile}, streakUpdated: false, bonus };
         }
         
         let newStreak = currentProfile.streak_atual || 0;
@@ -282,10 +314,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const updatedProfile = { 
             ...currentProfile, 
             streak_atual: newStreak, 
-            ultimo_dia_de_missao_concluida: today.toISOString(), 
-            streakUpdated: true,
-            xp: currentProfile.xp + bonus.xp,
-            fragmentos: (currentProfile.fragmentos || 0) + bonus.fragments,
+            ultimo_dia_de_missao_concluida: today.toISOString(),
         };
 
         if (streakProtected) {
@@ -295,93 +324,124 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         return { updatedProfile, streakUpdated: true, bonus };
     };
 
+    const setMissionFeedback = (missionId, feedback) => {
+        dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
+    };
 
-    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback }) => {
+    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount }) => {
+        
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
-        const rankedMission = state.missions.find(rm => rm.id === rankedMissionId);
-        const dailyMission = rankedMission?.missoes_diarias.find(dm => dm.id === dailyMissionId);
+        const tempRankedMission = state.missions.find(rm => rm.id === rankedMissionId);
+        const tempDailyMission = tempRankedMission?.missoes_diarias.find(dm => dm.id === dailyMissionId);
+        if (!tempDailyMission) return;
         
-        if (!dailyMission) return;
+        const updatedTempSubTask = tempDailyMission.subTasks.find(st => st.name === subTask.name);
+        const newCurrent = (updatedTempSubTask?.current || 0) + amount;
         
-        const updatedSubTask = dailyMission.subTasks.find(st => st.name === subTask.name);
-        const newCurrent = (updatedSubTask.current || 0) + amount;
-        
-        const allSubTasksCompleted = dailyMission.subTasks.every(st =>
+        const allSubTasksCompleted = tempDailyMission.subTasks.every(st =>
             st.name === subTask.name ? newCurrent >= st.target : (st.current || 0) >= st.target
         );
         
-        const tempMissions = state.missions.map(rm => rm.id !== rankedMissionId ? rm : { ...rm, missoes_diarias: rm.missoes_diarias.map(dm => dm.id !== dailyMissionId ? dm : { ...dm, subTasks: dm.subTasks.map(st => st.name === subTask.name ? { ...st, current: newCurrent } : st) }) });
-        persistData('missions', tempMissions);
-
-
         if (!allSubTasksCompleted) {
+             const tempMissions = state.missions.map(rm => rm.id !== rankedMissionId ? rm : { ...rm, missoes_diarias: rm.missoes_diarias.map(dm => dm.id !== dailyMissionId ? dm : { ...dm, subTasks: dm.subTasks.map(st => st.name === subTask.name ? { ...st, current: newCurrent } : st) }) });
+             persistData('missions', tempMissions);
              return;
         }
 
         // --- Daily Mission is Complete ---
+        dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
+        
         let updatedProfile = { ...state.profile };
-        
-        const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
-        const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
-        const finalXPGained = Math.round(dailyMission.xp_conclusao * xpMultiplier);
-        if (xpMultiplier > 1) toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!` });
-        
-        updatedProfile.xp += finalXPGained;
-        updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMission.fragmentos_conclusao || 0);
-        updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
-
-        const { updatedProfile: profileAfterStreak, streakUpdated } = handleStreak(updatedProfile);
+        const { updatedProfile: profileAfterStreak, bonus: streakBonus } = handleStreak(updatedProfile);
         updatedProfile = profileAfterStreak;
 
+        const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
+        const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
+        const finalXPGained = Math.round(tempDailyMission.xp_conclusao * xpMultiplier);
+        
+        if (xpMultiplier > 1) toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!` });
+        
+        updatedProfile.xp += finalXPGained + streakBonus.xp;
+        updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (tempDailyMission.fragmentos_conclusao || 0) + streakBonus.fragments;
+        updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
+        
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
         }
         
-        dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
+        let missionSkillXp = 0;
+        try {
+            const { xp } = await generateSkillExperience({ missionText: `${tempDailyMission.nome}: ${tempDailyMission.subTasks.map(st => st.name).join(', ')}`, skillLevel: 1 });
+            missionSkillXp = xp;
+        } catch(e) { console.error("Could not get skill xp", e); }
         
-        // IA calls can happen in parallel
-        const skillPromise = generateSkillExperience({ missionText: `${dailyMission.nome}: ${dailyMission.subTasks.map(st => st.name).join(', ')}`, skillLevel: 1 });
-        const nextMissionPromise = generateNextDailyMission({ rankedMissionName: rankedMission.nome, metaName: rankedMission.meta_associada, history: `Completou: ${dailyMission.nome}`, userLevel: updatedProfile.nivel, feedback });
-        
-        const [skillResult, nextMissionResult] = await Promise.all([skillPromise, nextMissionPromise]);
-
-        // Update Skill
-        if(skillResult) {
-            const meta = state.metas.find(m => m.nome === rankedMission.meta_associada);
-            if (meta?.habilidade_associada_id) {
-                const updatedSkills = state.skills.map(s => {
-                    if (s.id === meta.habilidade_associada_id) {
-                         const newSkill = {...s, xp_atual: s.xp_atual + skillResult.xp };
-                         // check for skill level up
-                         return newSkill;
-                    }
-                    return s;
-                });
-                dispatch({ type: 'SET_SKILLS', payload: updatedSkills });
+        const meta = state.metas.find(m => m.nome === tempRankedMission.meta_associada);
+        if (meta?.habilidade_associada_id) {
+            const skillIndex = state.skills.findIndex(s => s.id === meta.habilidade_associada_id);
+            if (skillIndex !== -1 && state.skills[skillIndex].nivel_atual < state.skills[skillIndex].nivel_maximo) {
+                const skillToUpdate = { ...state.skills[skillIndex] };
+                skillToUpdate.xp_atual += missionSkillXp;
+                skillToUpdate.ultima_atividade_em = new Date().toISOString();
+                 if (skillToUpdate.xp_atual >= skillToUpdate.xp_para_proximo_nivel) {
+                    const statsToUpgrade = statCategoryMapping[skillToUpdate.categoria] || [];
+                    handleShowSkillUpNotification(skillToUpdate.nome, skillToUpdate.nivel_atual + 1, statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1)));
+                    if (statsToUpgrade.length > 0) statsToUpgrade.forEach(stat => { updatedProfile.estatisticas[stat] = (updatedProfile.estatisticas[stat] || 0) + 1; });
+                    skillToUpdate.nivel_atual += 1;
+                    skillToUpdate.xp_atual -= skillToUpdate.xp_para_proximo_nivel;
+                    skillToUpdate.xp_para_proximo_nivel = Math.floor(skillToUpdate.xp_para_proximo_nivel * 1.5);
+                }
+                dispatch({ type: 'UPDATE_SKILL', payload: { skillId: meta.habilidade_associada_id, updates: skillToUpdate } });
             }
         }
         
-        // Update missions with completed daily and new daily
-        if (nextMissionResult) {
-             const newDailyMission = { id: Date.now(), nome: nextMissionResult.nextMissionName, xp_conclusao: nextMissionResult.xp, fragmentos_conclusao: nextMissionResult.fragments, concluido: false, tipo: 'diaria', learningResources: nextMissionResult.learningResources || [], subTasks: nextMissionResult.subTasks };
-             dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
-        } else {
-             dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
+        const rankedMissionAfterDaily = { ...tempRankedMission, missoes_diarias: tempRankedMission.missoes_diarias.map(dm => dm.id === dailyMissionId ? {...dm, concluido: true} : dm), ultima_missao_concluida_em: new Date().toISOString() };
+        
+        let newDailyMission = null;
+        try {
+            const isRankedMissionComplete = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).length >= (rankedMissionAfterDaily.total_missoes_diarias || 10);
+            if (!isRankedMissionComplete) {
+                const history = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
+                const feedback = state.missionFeedback[rankedMissionId];
+                const result = await generateNextDailyMission({ rankedMissionName: tempRankedMission.nome, metaName: meta?.nome || "Objetivo geral", goalDeadline: meta?.prazo, history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`, userLevel: updatedProfile.nivel, feedback });
+                newDailyMission = { id: Date.now(), nome: result.nextMissionName, descricao: result.nextMissionDescription, xp_conclusao: result.xp, fragmentos_conclusao: result.fragments, concluido: false, tipo: 'diaria', learningResources: result.learningResources || [], subTasks: result.subTasks.map(st => ({...st, current: 0})) };
+                if (feedback) {
+                    dispatch({ type: 'CLEAR_MISSION_FEEDBACK', payload: { missionId: rankedMissionId }});
+                }
+            }
+        } catch(e) { console.error("Could not generate next mission", e) }
+
+        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+
+        const isRankedMissionComplete = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).length >= (rankedMissionAfterDaily.total_missoes_diarias || 10);
+        if(isRankedMissionComplete) {
+            dispatch({ type: 'COMPLETE_EPIC_MISSION', payload: { rankedMissionId } });
+            toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${tempRankedMission.nome}"!` });
+            const goalMissions = state.missions.filter(m => m.meta_associada === tempRankedMission.meta_associada).sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
+            const nextMission = goalMissions[currentIndex + 1];
+            if (nextMission) { handleShowNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
+            else {
+                const completedGoal = state.metas.find(m => m.nome === tempRankedMission.meta_associada);
+                if (completedGoal) {
+                    persistData('metas', state.metas.map(m => m.id === completedGoal.id ? { ...m, concluida: true } : m));
+                    handleShowGoalCompletedNotification(completedGoal.nome);
+                }
+            }
         }
 
-        // Persist all changes
-        await persistData('profile', updatedProfile);
-        await persistData('skills', state.skills); // This needs to be improved as state updates are async
-        await persistData('missions', state.missions); // Same here
-    }, [state, persistData, toast, handleShowStreakBonusNotification]);
+        dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+        persistData('profile', updatedProfile);
+        persistData('skills', state.skills);
+        persistData('missions', state.missions);
+
+    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
 
     const handleFullReset = async () => {
         if (!user) return;
         dispatch({ type: 'SET_DATA_LOADED', payload: false });
         try {
-            // Re-implement setupInitialData logic or call it if it's accessible
-             const userRef = doc(db, 'users', user.uid);
+            const userRef = doc(db, 'users', user.uid);
             const batch = writeBatch(db);
             const emailUsername = user.email.split('@')[0];
             const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false };
@@ -405,8 +465,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     skills: mockData.habilidades,
                     routine: mockData.rotina,
                     routineTemplates: mockData.rotinaTemplates,
-                    allUsers: [], // This should be re-fetched or handled appropriately
-                    guilds: state.guilds, // Guilds are global, so we might not want to reset them
+                    allUsers: [],
+                    guilds: state.guilds,
                 }
             });
             setShowOnboarding(true);
@@ -452,7 +512,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     setShowOnboarding(true);
                 }
             } else {
-                // Handle initial setup
+                handleFullReset();
             }
         } catch (error) {
              toast({ variant: 'destructive', title: "Erro de Sincronização", description: "Não foi possível carregar os seus dados." });
@@ -473,7 +533,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         handleFullReset,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
-        showOnboarding, setShowOnboarding
+        showOnboarding, setShowOnboarding,
+        missionFeedback: state.missionFeedback,
+        setMissionFeedback,
+        generatingMission: state.generatingMission
     };
 
     return (

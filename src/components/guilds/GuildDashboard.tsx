@@ -7,18 +7,9 @@ import { GuildMembers } from './GuildMembers';
 import { GuildChat } from './GuildChat';
 import { JoinRequests } from './JoinRequests';
 import { GuildQuests } from './GuildQuests';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { GuildAnnouncements } from './GuildAnnouncements';
+import { Card } from '../ui/card';
 
-const GuildAnnouncements = () => (
-     <Card>
-        <CardHeader>
-            <CardTitle>Anúncios</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <p className="text-muted-foreground">Nenhum anúncio recente.</p>
-        </CardContent>
-    </Card>
-)
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
     
@@ -62,6 +53,12 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         setGuildData(updatedGuild); // Update local state for immediate UI feedback
         onGuildUpdate(updatedGuild);
     };
+
+     const handleAnnouncementsUpdate = (updatedAnnouncements) => {
+        const updatedGuild = { ...guildData, announcements: updatedAnnouncements };
+        setGuildData(updatedGuild);
+        onGuildUpdate(updatedGuild);
+    };
     
     return (
         <div className="h-full flex flex-col">
@@ -100,7 +97,12 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                         currentUserProfile={profile}
                         allUsers={allUsers}
                     />
-                     <GuildAnnouncements />
+                     <GuildAnnouncements 
+                        announcements={guildData.announcements || []}
+                        onUpdate={handleAnnouncementsUpdate}
+                        canManage={canManage}
+                        userProfile={profile}
+                     />
                 </div>
             </div>
         </div>
