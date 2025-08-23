@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { QuestInfoDialog, QuestInfoProps } from '@/components/custom/QuestInfoDialog';
+import { QuestInfoProps } from '@/components/custom/QuestInfoDialog';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
 import { ShopView } from '@/components/views/player/ShopView';
@@ -28,6 +28,8 @@ import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
+import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
+import { useSwipe } from '@/hooks/useSwipe';
 
 
 export default function App() {
@@ -54,6 +56,17 @@ export default function App() {
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   
+  // State for mobile sheet menu
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Swipe gesture for mobile menu
+  const { emblaRef } = useSwipe({
+    onSwipeRight: () => {
+        // Only open if swiping from the very left edge of the screen
+        if (isMobile) setIsSheetOpen(true);
+    },
+  });
+
   const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
   // --- PERSISTENCE FUNCTIONS ---
@@ -583,11 +596,16 @@ export default function App() {
 
 
   const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }) => {
-    const Component = inSheet ? SheetClose : 'button';
+    const handleNav = () => {
+        setCurrentPage(page);
+        if (inSheet) {
+            setIsSheetOpen(false); // Close sheet on navigation
+        }
+    };
     
     return (
-        <Component
-          onClick={() => setCurrentPage(page)}
+        <button
+          onClick={handleNav}
           className={cn(
             'w-full flex items-center space-x-3 px-4 py-3 rounded-md transition-colors duration-200',
             currentPage === page ? 'bg-primary/20 text-primary font-bold' : 'text-gray-400 hover:bg-secondary hover:text-white'
@@ -595,37 +613,45 @@ export default function App() {
         >
           <Icon className="h-5 w-5" />
           <span className={cn("font-medium", className)}>{label}</span>
-        </Component>
+        </button>
     );
   };
   
-  const NavContent = ({inSheet = false}) => (
-    <>
-      <div className="font-cinzel text-3xl font-bold text-primary text-center mb-8 tracking-widest">SISTEMA</div>
-      <nav className="flex-grow space-y-2">
-          <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
-          <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
-          <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
-          <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
-          <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
-          <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
-          <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
-          <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
-          <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
-          <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
-      </nav>
-      <div className="mt-auto">
-          <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
-          <button 
-            onClick={logout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-md text-gray-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">Terminar Sessão</span>
-          </button>
-      </div>
-    </>
-  );
+  const NavContent = ({inSheet = false}) => {
+    const { emblaRef: sheetSwipeRef } = useSwipe({
+        onSwipeLeft: () => {
+            if (inSheet) setIsSheetOpen(false);
+        },
+    });
+
+    return (
+        <div ref={sheetSwipeRef} className="h-full flex flex-col">
+          <div className="font-cinzel text-3xl font-bold text-primary text-center mb-8 tracking-widest">SISTEMA</div>
+          <nav className="flex-grow space-y-2">
+              <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
+              <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
+              <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
+              <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
+              <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
+              <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
+              <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
+              <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
+              <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
+              <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
+          </nav>
+          <div className="mt-auto">
+              <NavItem icon={Settings} label="Configurações" page="settings" inSheet={inSheet}/>
+              <button 
+                onClick={logout}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-md text-gray-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="font-medium">Terminar Sessão</span>
+              </button>
+          </div>
+        </div>
+    );
+  };
 
   const renderContent = () => {
     if (!profile) {
@@ -670,22 +696,16 @@ export default function App() {
           </aside>
         )}
         
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{height: '100vh'}}>
+      <main ref={emblaRef} className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{height: '100vh'}}>
          {isMobile && (
             <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-background/80 backdrop-blur-md border-b border-border/50 flex items-center">
-                 <Sheet>
+                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                     <SheetTrigger asChild>
                         <Button variant="ghost" size="icon">
                             <Menu />
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col">
-                        <SheetHeader>
-                            <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
-                            <SheetDescription className="sr-only">
-                                Navegue pelas diferentes secções da aplicação.
-                            </SheetDescription>
-                        </SheetHeader>
                         <NavContent inSheet={true}/>
                     </SheetContent>
                 </Sheet>
@@ -706,5 +726,3 @@ export default function App() {
     </div>
   );
 }
-
-    
