@@ -542,11 +542,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
 
-    const handleAddProgressPopup = (mission, subTask, amount) => {
+    const handleAddProgressPopup = (subTask, amount) => {
         const rankedMissionId = showQuestInfo?.rankedMissionId;
-        if (!rankedMissionId) return;
+        const dailyMissionId = showQuestInfo?.dailyMissionId;
+        if (!rankedMissionId || !dailyMissionId) return;
 
-        handleAddProgress(rankedMissionId, mission.id, subTask, amount);
+        handleAddProgress(rankedMissionId, dailyMissionId, subTask, amount);
     };
 
     const revertLastDailyMission = (rankedMissionId) => {
@@ -705,7 +706,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
                  <Button onClick={handleResetCooldowns} variant="outline" size="sm" aria-label="Reiniciar Missões">
                     <RefreshCw className="mr-2 h-4 w-4"/>
-                    Reiniciar Missões (Temp)
+                    Reiniciar Cooldowns
                 </Button>
             </div>
             <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
@@ -997,7 +998,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         mission={dailyMission}
                         epicMissionName={rankedMission?.nome}
                         onClose={() => setShowQuestInfo(null)}
-                        onContribute={(subTask, amount) => handleAddProgressPopup(dailyMission, subTask, amount)}
+                        onContribute={(subTask, amount) => handleAddProgressPopup(subTask, amount)}
                         onCooldown={!!timers[rankedMission.id]}
                         timer={timers[rankedMission.id]}
                     />
