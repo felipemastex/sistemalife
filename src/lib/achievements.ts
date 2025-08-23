@@ -75,6 +75,13 @@ export const achievements = [
     icon: Book,
     criteria: { type: 'goals_completed', value: 1 },
   },
+   {
+    id: 'goals_3',
+    name: 'Visionário',
+    description: 'Crie 5 metas diferentes.',
+    icon: Book,
+    criteria: { type: 'goals_created', value: 5 },
+  },
   // Habilidades
   {
     id: 'skills_1',
@@ -89,5 +96,12 @@ export const achievements = [
     description: 'Leve uma habilidade ao nível máximo.',
     icon: BarChart,
     criteria: { type: 'skill_max_level', value: 1 },
+  },
+   {
+    id: 'skills_3',
+    name: 'Polímata',
+    description: 'Adquira 5 habilidades diferentes.',
+    icon: BarChart,
+    criteria: { type: 'skills_acquired', value: 5 },
   },
 ];

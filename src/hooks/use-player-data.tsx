@@ -169,6 +169,59 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_PROFILE', payload: newProfile });
         return newProfile;
     };
+    
+    const handleShowAchievementUnlockedNotification = (achievementName) => setQuestNotification({ title: 'CONQUISTA DESBLOQUEADA!', description: 'O seu esforço foi reconhecido pelo Sistema.', goals: [{ name: '- CONQUISTA', progress: `[${achievementName}]` }], caution: 'Continue a sua jornada para desbloquear todos os segredos.' });
+
+
+    const checkAndUnlockAchievements = useCallback((currentProfile, currentMetas, currentSkills) => {
+        if (!currentProfile) return;
+
+        const newlyUnlocked = [];
+        achievements.forEach(achievement => {
+            const isAlreadyUnlocked = currentProfile.achievements?.some(a => a.achievementId === achievement.id);
+            if (isAlreadyUnlocked) return;
+
+            let conditionMet = false;
+            switch (achievement.criteria.type) {
+                case 'missions_completed':
+                    conditionMet = (currentProfile.missoes_concluidas_total || 0) >= achievement.criteria.value;
+                    break;
+                case 'level_reached':
+                    conditionMet = (currentProfile.nivel || 1) >= achievement.criteria.value;
+                    break;
+                case 'goals_created':
+                    conditionMet = currentMetas.length >= achievement.criteria.value;
+                    break;
+                case 'goals_completed':
+                     conditionMet = currentMetas.filter(m => m.concluida).length >= achievement.criteria.value;
+                     break;
+                case 'skills_acquired':
+                     conditionMet = currentSkills.length >= achievement.criteria.value;
+                     break;
+                 case 'skill_max_level':
+                     conditionMet = currentSkills.some(s => s.nivel_atual >= s.nivel_maximo);
+                     break;
+            }
+
+            if (conditionMet) {
+                newlyUnlocked.push({ achievementId: achievement.id, date: new Date().toISOString() });
+                handleShowAchievementUnlockedNotification(achievement.name);
+            }
+        });
+
+        if (newlyUnlocked.length > 0) {
+            const updatedProfile = { ...currentProfile, achievements: [...(currentProfile.achievements || []), ...newlyUnlocked] };
+            dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
+            persistData('profile', updatedProfile);
+        }
+    }, [persistData]);
+
+    useEffect(() => {
+        if (state.isDataLoaded) {
+            checkAndUnlockAchievements(state.profile, state.metas, state.skills);
+        }
+    }, [state.profile, state.metas, state.skills, state.isDataLoaded, checkAndUnlockAchievements]);
+
 
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback }) => {
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
@@ -244,8 +297,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 getDocs(collection(userDocRef, 'metas')),
                 getDocs(collection(userDocRef, 'missions')),
                 getDocs(collection(userDocRef, 'skills')),
-                getDoc(doc(userDocRef, 'routine', 'main')),
-                getDoc(doc(userDocRef, 'routine', 'templates')),
+                getDoc(doc(db, 'users', userId, 'routine', 'main')),
+                getDoc(doc(db, 'users', userId, 'routine', 'templates')),
                 getDocs(collection(db, 'users')),
                 getDocs(collection(db, 'guilds'))
             ]);
