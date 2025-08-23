@@ -1,4 +1,3 @@
-
 "use client";
 
 import { memo } from 'react';
@@ -6,6 +5,7 @@ import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadius
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, Gem } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { Progress } from '@/components/ui/progress';
 
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -76,9 +76,7 @@ const DashboardViewComponent = () => {
                           <span>XP para o próximo Nível</span>
                           <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
                       </div>
-                      <div className="w-full bg-secondary rounded-full h-4 overflow-hidden border border-border/50">
-                          <div className="bg-primary h-full transition-all duration-500" style={{ width: `${xpPercentage}%` }}></div>
-                      </div>
+                      <Progress value={xpPercentage} className="h-4" />
                    </div>
                  </div>
                  <div className="flex flex-col items-center justify-center bg-secondary/50 p-4 rounded-lg border border-border/50">
