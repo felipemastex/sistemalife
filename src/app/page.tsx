@@ -64,7 +64,7 @@ export default function App() {
   const [allUsers, setAllUsers] = useState([]);
   const [guilds, setGuilds] = useState([]);
 
-  const [questNotification, setQuestNotification] = useState<QuestInfoDialog | null>(null);
+  const [questNotification, setQuestNotification] = useState(null);
 
   // State for proactive AI alerts
   const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
@@ -656,7 +656,7 @@ export default function App() {
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         
         const { rank, title } = getProfileRank(newLevel);
-        onLevelUpNotification(newLevel, title, rank);
+        handleShowLevelUpNotification(newLevel, title, rank);
         
         return {
             ...currentProfile,
@@ -685,7 +685,7 @@ export default function App() {
             
             if (conditionMet) {
                 newlyUnlocked.push({ achievementId: achievement.id, date: new Date().toISOString() });
-                onAchievementUnlockedNotification(achievement.name);
+                handleShowAchievementUnlockedNotification(achievement.name);
             }
         });
 
@@ -744,14 +744,45 @@ export default function App() {
     };
 
 
-    const handleCompleteMission = async ({ rankedMissionId, dailyMission, feedback }) => {
+    const handleCompleteMission = async ({ rankedMissionId, dailyMissionId, subTask: subTaskToUpdate, amount, feedback }) => {
         const now = new Date();
         
-        // --- 1. Prepare all state changes first ---
+        // --- 1. Update sub-task progress and mission state ---
+        let updatedMissions = missions.map(rm => {
+            if (rm.id !== rankedMissionId) return rm;
+            
+            return {
+                ...rm,
+                missoes_diarias: rm.missoes_diarias.map(dm => {
+                    if (dm.id !== dailyMissionId) return dm;
+                    
+                    return {
+                        ...dm,
+                        subTasks: dm.subTasks.map(st => 
+                            st.name === subTaskToUpdate.name 
+                            ? { ...st, current: Math.min(st.target, (st.current || 0) + amount) }
+                            : st
+                        )
+                    };
+                })
+            };
+        });
+
+        // --- 2. Check if the daily mission is fully completed ---
+        const rankedMission = updatedMissions.find(rm => rm.id === rankedMissionId);
+        const dailyMission = rankedMission.missoes_diarias.find(dm => dm.id === dailyMissionId);
+        const allSubTasksCompleted = dailyMission.subTasks.every(st => (st.current || 0) >= st.target);
+        
+        persistMissions(updatedMissions); // Save sub-task progress immediately
+        
+        if (!allSubTasksCompleted) {
+            return; // Mission not fully complete, so we stop here
+        }
+
+        // --- 3. If mission is complete, proceed with profile updates and new mission generation ---
         let updatedProfile = JSON.parse(JSON.stringify(profile));
         let updatedSkills = JSON.parse(JSON.stringify(skills));
         
-        // --- Profile updates ---
         const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
         const finalXPGained = Math.round(dailyMission.xp_conclusao * xpMultiplier);
@@ -771,8 +802,6 @@ export default function App() {
         }
         updatedProfile = checkAndUnlockAchievements(updatedProfile);
     
-        // --- Skill updates ---
-        const rankedMission = missions.find(m => m.id === rankedMissionId);
         const meta = metas.find(m => m.nome === rankedMission?.meta_associada);
         if (meta?.habilidade_associada_id) {
             const skillIndex = updatedSkills.findIndex(s => s.id === meta.habilidade_associada_id);
@@ -803,8 +832,7 @@ export default function App() {
             }
         }
     
-        // --- Mission updates ---
-        let missionsWithCompletedDaily = missions.map(rm =>
+        let missionsWithCompletedDaily = updatedMissions.map(rm =>
             rm.id === rankedMissionId
                 ? {
                     ...rm,
@@ -814,12 +842,10 @@ export default function App() {
                 : rm
         );
     
-        // --- Commit state changes for immediate feedback ---
         persistProfile(updatedProfile);
         persistSkills(updatedSkills);
         persistMissions(missionsWithCompletedDaily);
     
-        // --- Generate next mission ---
         try {
             const currentRankedMission = missionsWithCompletedDaily.find(rm => rm.id === rankedMissionId);
             const isRankedMissionComplete = currentRankedMission.missoes_diarias.filter(d => d.concluido).length >= (currentRankedMission.total_missoes_diarias || 10);
@@ -833,12 +859,12 @@ export default function App() {
                 const currentIndex = goalMissions.findIndex(m => m.id === rankedMissionId);
                 const nextMission = goalMissions[currentIndex + 1];
     
-                if (nextMission) { onNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
+                if (nextMission) { handleShowNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
                 else {
                     const completedGoal = metas.find(m => m.nome === rankedMission.meta_associada);
                     if (completedGoal) {
                         persistMetas(metas.map(m => m.id === completedGoal.id ? { ...m, concluida: true } : m));
-                        onShowGoalCompletedNotification(completedGoal.nome);
+                        handleShowGoalCompletedNotification(completedGoal.nome);
                     }
                 }
             } else {
@@ -937,8 +963,8 @@ export default function App() {
     const views = {
       'dashboard': <DashboardView profile={profile} />,
       'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
-      'missions': <MissionsView missions={missions} setMissions={persistMissions} profile={profile} setProfile={persistProfile} metas={metas} onCompleteMission={handleCompleteMission} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
+      'missions': <MissionsView missions={missions} onCompleteMission={handleCompleteMission} />,
+      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
       'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers}/>,
@@ -1020,3 +1046,5 @@ export default function App() {
     </div>
   );
 }
+
+    

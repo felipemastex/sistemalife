@@ -76,61 +76,6 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 };
 
 
-// Helper Dialog for adding progress to sub-tasks
-const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
-    const [amount, setAmount] = useState('');
-    
-    if (!subTask) return null;
-
-    const remaining = subTask.target - (subTask.current || 0);
-
-    const handleContribute = () => {
-        const contribution = parseInt(amount, 10);
-        if (!isNaN(contribution) && contribution > 0) {
-            onContribute(subTask, contribution);
-            onOpenChange(false);
-            setAmount('');
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
-                    <DialogDescription>
-                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
-                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
-                    </p>
-                    <div>
-                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
-                        <Input
-                            id="contribution-amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder={`Ex: 5 (Faltam ${remaining})`}
-                            min="1"
-                            max={remaining}
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
-                        Registar
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-
 export const MissionsView = ({ missions, onCompleteMission }) => {
     const [generating, setGenerating] = useState(null); // Stores rankedMissionId
     const [timers, setTimers] = useState({});
@@ -139,9 +84,7 @@ export const MissionsView = ({ missions, onCompleteMission }) => {
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
-    const [contributionDialogState, setContributionDialogState] = useState({ open: false, rankedMissionId: null, dailyMissionId: null, subTask: null });
-    const [showQuestInfo, setShowQuestInfo] = useState<{dailyMissionId: string; rankedMissionId: string} | null>(null);
-
+    
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
@@ -190,10 +133,6 @@ export const MissionsView = ({ missions, onCompleteMission }) => {
         }
     };
     
-    const openContributionDialog = (rankedMissionId, dailyMissionId, subTask) => {
-        setContributionDialogState({ open: true, rankedMissionId, dailyMissionId, subTask });
-    };
-
     const handleShowProgression = (clickedMission) => {
         const goalMissions = missions
             .filter(m => m.meta_associada === clickedMission.meta_associada)
@@ -335,7 +274,7 @@ export const MissionsView = ({ missions, onCompleteMission }) => {
                                                                 size="icon" 
                                                                 variant="outline" 
                                                                 className="h-7 w-7" 
-                                                                onClick={() => openContributionDialog(mission.id, activeDailyMission.id, st)}
+                                                                onClick={() => onCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1 })}
                                                                 disabled={(st.current || 0) >= st.target}
                                                                 aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
@@ -430,32 +369,6 @@ export const MissionsView = ({ missions, onCompleteMission }) => {
                     </div>
                 </DialogContent>
             </Dialog>
-            
-            <ContributionDialog
-                open={contributionDialogState.open}
-                onOpenChange={(isOpen) => setContributionDialogState(prev => ({ ...prev, open: isOpen }))}
-                subTask={contributionDialogState.subTask}
-                onContribute={(subTask, amount) => onCompleteMission({ ...contributionDialogState, subTask, amount })}
-            />
-
-            {showQuestInfo && (() => {
-                const rankedMission = missions.find(m => m.id === showQuestInfo.rankedMissionId);
-                const dailyMission = rankedMission?.missoes_diarias.find(dm => dm.id === showQuestInfo.dailyMissionId);
-                if (!dailyMission || !rankedMission) return null;
-
-                const onCooldown = !!timers[rankedMission.id];
-
-                return (
-                     <QuestInfoDialog
-                        mission={dailyMission}
-                        epicMissionName={rankedMission.nome}
-                        onClose={() => setShowQuestInfo(null)}
-                        onContribute={(subTask, amount) => onCompleteMission({ rankedMissionId: showQuestInfo.rankedMissionId, dailyMissionId: dailyMission.id, subTask, amount })}
-                        onCooldown={onCooldown}
-                        timer={timers[rankedMission.id]}
-                    />
-                )
-            })()}
         </div>
     );
 
