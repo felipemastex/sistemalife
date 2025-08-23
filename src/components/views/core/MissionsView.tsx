@@ -618,31 +618,27 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     };
 
     const handleAddProgressPopup = (mission, subTask, amount) => {
-        const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
+        const rankedMission = missions.find(rm => rm.id === showQuestInfo.rankedMissionId);
         if (!rankedMission) return;
         
         setMissions(prevMissions => prevMissions.map(rm => {
             if (rm.id === rankedMission.id) {
-                return {
-                    ...rm,
-                    missoes_diarias: rm.missoes_diarias.map(dm => {
-                        if (dm.id === mission.id) {
-                            const updatedSubTasks = dm.subTasks.map(st => {
-                                if (st.name === subTask.name) {
-                                    const newCurrent = Math.min(st.target, (st.current || 0) + amount);
-                                    return { ...st, current: newCurrent };
-                                }
-                                return st;
-                            });
-
-                            // Update the popup state with the new mission object
-                            setShowQuestInfo(prev => ({...prev, dailyMission: {...prev.dailyMission, subTasks: updatedSubTasks}}));
-
-                            return { ...dm, subTasks: updatedSubTasks };
-                        }
-                        return dm;
-                    })
-                };
+                const updatedDailyMissions = rm.missoes_diarias.map(dm => {
+                    if (dm.id === mission.id) {
+                        const updatedSubTasks = dm.subTasks.map(st => {
+                            if (st.name === subTask.name) {
+                                const newCurrent = Math.min(st.target, (st.current || 0) + amount);
+                                return { ...st, current: newCurrent };
+                            }
+                            return st;
+                        });
+                        // Update the popup state with the new mission object
+                        setShowQuestInfo(prev => ({...prev, dailyMission: {...prev.dailyMission, subTasks: updatedSubTasks}}));
+                        return { ...dm, subTasks: updatedSubTasks };
+                    }
+                    return dm;
+                });
+                return { ...rm, missoes_diarias: updatedDailyMissions };
             }
             return rm;
         }));
@@ -836,7 +832,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         </div>
                                      )}
                                      {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && (
-                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMission: activeDailyMission, epicMissionName: mission.nome })}>
+                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMission: activeDailyMission, epicMissionName: mission.nome, rankedMissionId: mission.id })}>
                                             <Eye className="h-4 w-4 mr-2" />
                                             Ver Missão
                                         </Button>
