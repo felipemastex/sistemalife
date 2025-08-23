@@ -977,7 +977,7 @@ export default function App() {
       'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers} currentGuild={currentGuild} />,
       'shop': <ShopView profile={profile} setProfile={persistProfile} />,
       'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
-      'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
+      'ai-chat': <AIChatView />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
     };
 
@@ -1053,5 +1053,3 @@ export default function App() {
     </div>
   );
 }
-
-    

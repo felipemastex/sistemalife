@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Bot, User, Send, LoaderCircle } from 'lucide-react';
+import { Bot, Send, LoaderCircle } from 'lucide-react';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +10,26 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 
-const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
+const AIChatViewComponent = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const isInitialMount = useRef(true);
+    const { user } = useAuth();
+    
+    // Store data in refs to avoid re-triggering effects
+    const profileRef = useRef(null);
+    const metasRef = useRef([]);
+    const routineRef = useRef({});
+    const missionsRef = useRef([]);
 
 
     const scrollToBottom = () => {
@@ -32,15 +43,17 @@ const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
 
     useEffect(scrollToBottom, [messages, isLoading]);
 
-    const getSystemResponse = useCallback(async (query, isInitial = false) => {
+    const getSystemResponse = useCallback(async (query) => {
+         if (!isDataLoaded) return;
          setIsLoading(true);
+         
         try {
           const result = await generateSystemAdvice({
-            userName: profile.nome_utilizador,
-            profile: JSON.stringify(profile),
-            metas: JSON.stringify(metas),
-            routine: JSON.stringify(routine),
-            missions: JSON.stringify(missions.filter(m => !m.concluido)),
+            userName: profileRef.current.nome_utilizador,
+            profile: JSON.stringify(profileRef.current),
+            metas: JSON.stringify(metasRef.current),
+            routine: JSON.stringify(routineRef.current),
+            missions: JSON.stringify(missionsRef.current.filter(m => !m.concluido)),
             query: query,
           });
           const aiMessage = { sender: 'ai', text: result.response };
@@ -61,14 +74,41 @@ const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
         } finally {
           setIsLoading(false);
         }
-    }, [profile, metas, routine, missions, toast]);
-
+    }, [isDataLoaded, toast]);
+    
     useEffect(() => {
-        if (isInitialMount.current) {
-            getSystemResponse('Forneça uma análise estratégica do meu estado atual.', true);
-            isInitialMount.current = false;
-        }
-    }, [getSystemResponse]);
+        const fetchData = async () => {
+            if (!user) return;
+            setIsLoading(true);
+            try {
+                const userDocRef = doc(db, 'users', user.uid);
+                const [profileDoc, metasSnapshot, missionsSnapshot, routineDoc] = await Promise.all([
+                    getDoc(userDocRef),
+                    getDocs(collection(userDocRef, 'metas')),
+                    getDocs(collection(userDocRef, 'missions')),
+                    getDoc(doc(userDocRef, 'routine', 'main')),
+                ]);
+
+                if (profileDoc.exists()) {
+                    profileRef.current = profileDoc.data();
+                    metasRef.current = metasSnapshot.docs.map(doc => doc.data());
+                    missionsRef.current = missionsSnapshot.docs.map(doc => doc.data());
+                    routineRef.current = routineDoc.exists() ? routineDoc.data() : {};
+                    setIsDataLoaded(true);
+                    
+                    // Initial message after data is loaded
+                    await getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
+                }
+            } catch (error) {
+                console.error("Error fetching data for AI Chat:", error);
+                toast({ variant: 'destructive', title: 'Erro de Carregamento', description: 'Não foi possível carregar os dados para o chat.' });
+            } finally {
+                // setIsLoading will be set to false inside getSystemResponse
+            }
+        };
+
+        fetchData();
+    }, [user, toast]);
 
 
     const handleSend = async () => {
@@ -127,11 +167,11 @@ const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Digite sua diretiva..."
+                        placeholder={isDataLoaded ? "Digite sua diretiva..." : "A aguardar conexão com o Sistema..."}
                         className="flex-1 bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-                        disabled={isLoading}
+                        disabled={isLoading || !isDataLoaded}
                     />
-                    <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
+                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
                         {isLoading ? <LoaderCircle className="animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
                 </div>
@@ -141,5 +181,3 @@ const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
 };
 
 export const AIChatView = memo(AIChatViewComponent);
-
-    
