@@ -21,6 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
+import { cn } from '@/lib/utils';
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
@@ -369,7 +370,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         setGenerating(rankedMissionId);
         const now = new Date();
     
-        // 1. Process local updates first (Profile, Skills, etc.)
         const originalRankedMission = missions.find(m => m.id === rankedMissionId);
         const dailyMissionToComplete = originalRankedMission?.missoes_diarias.find(d => d.id === dailyMissionId);
     
@@ -377,8 +377,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             setGenerating(null);
             return;
         }
-    
+
+        // --- Start Atomic State Update ---
         let updatedProfile = { ...profile };
+        let updatedSkills = [...skills];
+        let updatedMetas = [...metas];
+    
+        // 1. Process Profile Update
         const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
         const finalXPGained = Math.round(dailyMissionToComplete.xp_conclusao * xpMultiplier);
@@ -395,8 +400,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             updatedProfile = handleLevelUp(updatedProfile);
         }
         updatedProfile = checkAndUnlockAchievements(updatedProfile);
-        setProfile(updatedProfile);
     
+        // 2. Process Skill Update
         const meta = metas.find(m => m.nome === originalRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
             const skillToUpdate = skills.find(s => s.id === meta.habilidade_associada_id);
@@ -406,19 +411,33 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         missionText: `${dailyMissionToComplete.nome}: ${dailyMissionToComplete.subTasks.map(st => st.name).join(', ')}`,
                         skillLevel: skillToUpdate.nivel_atual,
                     });
-                    const updatedSkill = { ...skillToUpdate, xp_atual: skillToUpdate.xp_atual + xp, ultima_atividade_em: now.toISOString() };
-                    if (updatedSkill.xp_atual >= updatedSkill.xp_para_proximo_nivel) {
-                        const statsToUpgrade = statCategoryMapping[updatedSkill.categoria] || [];
-                        handleSkillUp(updatedSkill, statsToUpgrade);
+                    const skillWithNewXp = { ...skillToUpdate, xp_atual: skillToUpdate.xp_atual + xp, ultima_atividade_em: now.toISOString() };
+                    
+                    if (skillWithNewXp.xp_atual >= skillWithNewXp.xp_para_proximo_nivel) {
+                        const leveledUpSkill = {
+                            ...skillWithNewXp,
+                            nivel_atual: skillWithNewXp.nivel_atual + 1,
+                            xp_atual: skillWithNewXp.xp_atual - skillWithNewXp.xp_para_proximo_nivel,
+                            xp_para_proximo_nivel: Math.floor(skillWithNewXp.xp_para_proximo_nivel * 1.5)
+                        };
+                        const statsToUpgrade = statCategoryMapping[leveledUpSkill.categoria] || [];
+                        const statNames = statsToUpgrade.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+                        onSkillUpNotification(leveledUpSkill.nome, leveledUpSkill.nivel_atual, statNames);
+                        if (statsToUpgrade.length > 0) {
+                            const newStats = { ...updatedProfile.estatisticas };
+                            statsToUpgrade.forEach(stat => { newStats[stat] = (newStats[stat] || 0) + 1; });
+                            updatedProfile.estatisticas = newStats;
+                        }
+                        updatedSkills = skills.map(s => s.id === leveledUpSkill.id ? leveledUpSkill : s);
                     } else {
-                        setSkills(skills.map(s => s.id === updatedSkill.id ? updatedSkill : s));
+                        updatedSkills = skills.map(s => s.id === skillWithNewXp.id ? skillWithNewXp : s);
                     }
                 } catch (error) { handleToastError(error, "Não foi possível calcular o XP da habilidade."); }
             }
         }
     
-        // 2. Mark daily mission as complete
-        const missionsAfterCompletion = missions.map(rm =>
+        // 3. Prepare Mission Update (Part 1: Mark as complete)
+        let tempMissionsState = missions.map(rm =>
             rm.id === rankedMissionId
                 ? {
                     ...rm,
@@ -427,14 +446,18 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 }
                 : rm
         );
-        setMissions(missionsAfterCompletion);
     
-        // 3. Generate the next mission or complete the epic one
+        // --- Commit state changes before async operation ---
+        setProfile(updatedProfile);
+        setSkills(updatedSkills);
+        setMissions(tempMissionsState);
+    
+        // 4. Generate next mission (Async) and update missions again
         try {
-            const tempRankedMission = missionsAfterCompletion.find(rm => rm.id === rankedMissionId);
+            const tempRankedMission = tempMissionsState.find(rm => rm.id === rankedMissionId);
             const isRankedMissionComplete = tempRankedMission.missoes_diarias.filter(d => d.concluido).length >= (tempRankedMission.total_missoes_diarias || 10);
             
-            let finalMissionsState = missionsAfterCompletion;
+            let finalMissionsState = tempMissionsState;
     
             if (isRankedMissionComplete) {
                 finalMissionsState = finalMissionsState.map(rm => rm.id === rankedMissionId ? { ...rm, concluido: true } : rm);
@@ -490,10 +513,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         } finally {
             setGenerating(null);
         }
-    }, [missions, profile, metas, skills, missionFeedback]);
+    }, [missions, profile, metas, skills, missionFeedback, setProfile, setMissions, setSkills, setMetas, onLevelUpNotification, onNewEpicMissionNotification, onSkillUpNotification, onGoalCompletedNotification, onAchievementUnlockedNotification]);
     
     const handleAddProgress = (rankedMissionId, dailyMissionId, subTask, amount) => {
         let allSubTasksCompleted = false;
+        let missionJustCompleted = false;
+
         const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
                 return {
@@ -507,7 +532,10 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 return st;
                             });
                             
+                            const wereAllTasksCompletedBefore = dm.subTasks.every(st => (st.current || 0) >= st.target);
                             allSubTasksCompleted = updatedSubTasks.every(st => (st.current || 0) >= st.target);
+                            missionJustCompleted = allSubTasksCompleted && !wereAllTasksCompletedBefore;
+
                             return { ...dm, subTasks: updatedSubTasks };
                         }
                         return dm;
@@ -519,16 +547,14 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         
         setMissions(updatedMissions);
 
-        if (allSubTasksCompleted) {
+        if (missionJustCompleted) {
             completeDailyMission(rankedMissionId, dailyMissionId);
         }
     };
     
     const handleAddProgressPopup = (mission, subTask, amount) => {
-        if (!mission) return;
-        const { rankedMissionId } = showQuestInfo || {};
-        if (!rankedMissionId) return;
-        handleAddProgress(rankedMissionId, mission.id, subTask, amount);
+        if (!mission || !showQuestInfo) return;
+        handleAddProgress(showQuestInfo.rankedMissionId, mission.id, subTask, amount);
     };
 
     const openContributionDialog = (rankedMissionId, dailyMissionId, subTask) => {
@@ -712,7 +738,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 </AccordionTrigger>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
                                      {onCooldown && (
-                                        <div className="flex items-center text-cyan-400 text-xs font-mono bg-secondary px-2 py-1 rounded-md">
+                                        <div className="flex items-center text-cyan-400 text-xs font-mono bg-secondary px-2 py-1 rounded-md animate-in fade-in">
                                             <Timer className="h-4 w-4 mr-1.5"/>
                                             {timers[mission.id]}
                                         </div>
@@ -732,7 +758,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
                                 {missionViewStyle === 'inline' && activeDailyMission && !onCooldown && !generating && (
-                                     <div className={`bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4`}>
+                                     <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in slide-in-from-top-4 duration-500">
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                              <div className="flex-grow">
                                                 <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
@@ -807,7 +833,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
                                 
                                 {onCooldown && lastCompletedMission && (
-                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 opacity-80">
+                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 opacity-80 animate-in fade-in duration-500">
                                         <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
                                         <div className="flex-grow">
                                             <p className="text-lg font-bold text-muted-foreground line-through">{lastCompletedMission.nome}</p>
@@ -821,7 +847,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
 
                                 {generating === mission.id && (
-                                     <div className="relative">
+                                     <div className="relative animate-in fade-in duration-300">
                                          {lastCompletedMission && (
                                              <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4 blur-sm grayscale">
                                                 <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0" />
@@ -844,7 +870,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                 )}
 
                                 {mission.concluido && (
-                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center">
+                                     <div className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex items-center animate-in fade-in">
                                         <CheckCircle className="h-8 w-8 text-green-500 mr-4"/>
                                         <div>
                                             <p className="text-lg font-bold text-foreground">Missão Épica Concluída!</p>
@@ -858,7 +884,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                          <h4 className="text-md font-bold text-muted-foreground mb-2 flex items-center"><History className="h-5 w-5 mr-2"/> Histórico de Conclusão</h4>
                                          <div className="space-y-2">
                                          {completedDailyMissions.map((completed, index) => (
-                                              <div key={completed.id} className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 opacity-60">
+                                              <div key={completed.id} className="bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 opacity-60 animate-in fade-in duration-500">
                                                 <CheckCircle className="h-6 w-6 text-green-500 mr-3 flex-shrink-0" />
                                                 <div className="flex-grow">
                                                     <p className="text-md font-medium text-muted-foreground line-through">{completed.nome}</p>
@@ -990,16 +1016,18 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             {showQuestInfo && (() => {
                 const rankedMission = missions.find(m => m.id === showQuestInfo.rankedMissionId);
                 const dailyMission = rankedMission?.missoes_diarias.find(dm => dm.id === showQuestInfo.dailyMissionId);
-                if (!dailyMission) return null;
+                if (!dailyMission || !rankedMission) return null;
+
+                const onCooldown = !!timers[rankedMission.id];
 
                 return (
                      <QuestInfoDialog
                         mission={dailyMission}
-                        epicMissionName={rankedMission?.nome}
+                        epicMissionName={rankedMission.nome}
                         onClose={() => setShowQuestInfo(null)}
                         onContribute={(subTask, amount) => handleAddProgressPopup(dailyMission, subTask, amount)}
-                        onCooldown={!!timers[rankedMission?.id]}
-                        timer={timers[rankedMission?.id]}
+                        onCooldown={onCooldown}
+                        timer={timers[rankedMission.id]}
                     />
                 )
             })()}
