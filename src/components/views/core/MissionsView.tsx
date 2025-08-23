@@ -19,7 +19,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QuestInfoDialog, ContributionDialog } from '@/components/custom/QuestInfoDialog';
+import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
@@ -74,6 +74,60 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
         </Dialog>
     );
 }
+
+const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
+
+    const remaining = subTask.target - (subTask.current || 0);
+
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(subTask, contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
+                    <DialogDescription>
+                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
+                    </p>
+                    <div>
+                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
+                        <Input
+                            id="contribution-amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={`Ex: 5 (Faltam ${remaining})`}
+                            min="1"
+                            max={remaining}
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                        Registar
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -460,7 +514,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                             nome: result.nextMissionName,
                             descricao: result.nextMissionDescription,
                             xp_conclusao: result.xp,
-                            fragments: result.fragments,
+                            fragmentos: result.fragments,
                             concluido: false,
                             tipo: 'diaria',
                             learningResources: result.learningResources,
@@ -515,7 +569,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
-                fragments: result.fragments,
+                fragmentos: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -666,7 +720,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
-                fragments: result.fragments,
+                fragmentos: result.fragments,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources,
@@ -1047,8 +1101,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     epicMissionName={showQuestInfo.epicMissionName}
                     onClose={() => setShowQuestInfo(null)}
                     onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo.dailyMission, subTask, amount)}
-                    onCooldown={!!timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
-                    timer={timers[visibleMissions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
+                    onCooldown={!!timers[missions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
+                    timer={timers[missions.find(vm => vm.missoes_diarias.some(dm => dm.id === showQuestInfo.dailyMission.id))?.id]}
                 />
             )}
         </div>

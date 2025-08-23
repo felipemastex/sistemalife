@@ -1,7 +1,7 @@
 
 "use client";
 
-import * as React from "react";
+import React from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Award, X, Timer, Gem, Plus, Link } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -102,6 +102,7 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
                 <h3 className="text-lg font-bold tracking-wider font-cinzel text-cyan-400">{mission.nome}</h3>
             </div>
             
+             <h4 className="font-bold text-green-400 text-lg tracking-wider">OBJETIVOS</h4>
             <ScrollArea className="max-h-[300px] pr-3 -mr-3">
                 <div className="space-y-3 text-left w-full mx-auto">
                     {mission.subTasks?.map((task, index) => {
@@ -110,7 +111,7 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
                             <div key={index} className="flex justify-between items-center gap-4 font-mono text-gray-300 text-sm p-2 bg-black/20 rounded-md">
                                 <span className={cn("break-words whitespace-pre-wrap flex-1", isTaskCompleted && "line-through text-gray-500")}>{task.name}</span>
                                 <div className="flex items-center gap-2">
-                                    <span className={cn("text-right break-words whitespace-pre-wrap", isTaskCompleted && "text-green-400")}>[{task.current || 0}/{task.target}]</span>
+                                    <span className={cn("text-right break-words whitespace-pre-wrap", isTaskCompleted && "text-green-400")}>[{task.current || 0}/{task.target}] {task.unit}</span>
                                     <Button 
                                         size="icon" 
                                         variant="ghost" 
