@@ -1,7 +1,7 @@
 
 "use client";
 
-import { memo } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { cn } from '@/lib/utils';
 import { CircularProgress } from '@/components/ui/circular-progress';
-
+import { useToast } from '@/hooks/use-toast';
+import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 
 // Helper Dialog for getting user feedback
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -73,12 +74,10 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 };
 
 
-const MissionsViewComponent = ({ missions, onCompleteMission }) => {
-    const [generating, setGenerating] = useState(null); // Stores rankedMissionId
+const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMissionFeedback, onReactivateMission, reactivatingMissionId }) => {
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
-    const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     
@@ -153,7 +152,7 @@ const MissionsViewComponent = ({ missions, onCompleteMission }) => {
         }
     }
     
-    const getVisibleMissions = () => {
+    const getVisibleMissions = useCallback(() => {
         const visible = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
@@ -173,7 +172,7 @@ const MissionsViewComponent = ({ missions, onCompleteMission }) => {
             }
         }
         return visible.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
-    };
+    }, [missions, rankOrder]);
 
     const completedMissions = missions.filter(m => m.concluido);
     const visibleMissions = getVisibleMissions();
@@ -271,7 +270,7 @@ const MissionsViewComponent = ({ missions, onCompleteMission }) => {
                                                                 size="icon" 
                                                                 variant="outline" 
                                                                 className="h-7 w-7" 
-                                                                onClick={() => onCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1 })}
+                                                                onClick={() => onCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
                                                                 disabled={(st.current || 0) >= st.target}
                                                                 aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
@@ -323,6 +322,15 @@ const MissionsViewComponent = ({ missions, onCompleteMission }) => {
                                              <p className="font-bold text-muted-foreground line-through">{mission.nome}</p>
                                              <p className="text-sm text-muted-foreground/80 mt-1">{mission.descricao}</p>
                                          </div>
+                                         <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            onClick={() => onReactivateMission(mission.id)}
+                                            disabled={reactivatingMissionId === mission.id}
+                                        >
+                                             {reactivatingMissionId === mission.id ? <LoaderCircle className="h-4 w-4 animate-spin"/> : <RefreshCw className="h-4 w-4"/>}
+                                             <span className="ml-2">Reativar</span>
+                                         </Button>
                                      </div>
                                 ))}
                              </AccordionContent>
