@@ -75,60 +75,6 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     );
 }
 
-const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
-    const [amount, setAmount] = useState('');
-    
-    if (!subTask) return null;
-
-    const remaining = subTask.target - (subTask.current || 0);
-
-    const handleContribute = () => {
-        const contribution = parseInt(amount, 10);
-        if (!isNaN(contribution) && contribution > 0) {
-            onContribute(subTask, contribution);
-            onOpenChange(false);
-            setAmount('');
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Registar Progresso: {subTask.name}</DialogTitle>
-                    <DialogDescription>
-                        Insira a quantidade que você progrediu. O seu esforço fortalece-o!
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
-                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
-                    </p>
-                    <div>
-                        <Label htmlFor="contribution-amount">Adicionar Progresso</Label>
-                        <Input
-                            id="contribution-amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder={`Ex: 5 (Faltam ${remaining})`}
-                            min="1"
-                            max={remaining}
-                        />
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
-                        Registar
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
@@ -150,7 +96,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
-    const [showQuestInfo, setShowQuestInfo] = useState(null); // Holds { dailyMission, epicMissionName, rankedMissionId } for the popup
+    const [showQuestInfo, setShowQuestInfo] = useState<{dailyMissionId: string; rankedMissionId: string} | null>(null);
 
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -186,7 +132,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         newTimers[mission.id] = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                     } else {
                         if(timers[mission.id]){
-                            // Timer finished, mark mission for update
                             missionsToUpdate.push(mission.id);
                         }
                     }
@@ -359,13 +304,11 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         };
 
         if (streakProtected) {
-            // Remove the used amulet effect
             updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
         }
 
         return updatedProfile;
     };
-
 
     const completeDailyMission = async (rankedMissionId, dailyMissionId) => {
         const now = new Date();
@@ -389,7 +332,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
 
         let isRankedMissionComplete = false;
 
-        // Apply XP Boost if active
         let xpMultiplier = 1;
         const xpBoostEffect = (profile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > now);
         if (xpBoostEffect) {
@@ -432,25 +374,19 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
              });
         }
 
-
-        // Profile XP, Level Up, and Streak
         let newProfile = { 
             ...profile, 
             xp: profile.xp + finalXPGained,
             fragmentos: (profile.fragmentos || 0) + fragmentsGained,
             missoes_concluidas_total: (profile.missoes_concluidas_total || 0) + 1,
         };
-        newProfile = handleStreak(newProfile); // Handle streak logic
+        newProfile = handleStreak(newProfile); 
         if (newProfile.xp >= newProfile.xp_para_proximo_nivel) {
             newProfile = handleLevelUp(newProfile);
         }
-
-        // Check for achievements
         newProfile = checkAndUnlockAchievements(newProfile);
-
         setProfile(newProfile);
 
-        // Skill XP and Level Up
         const meta = metas.find(m => m.nome === rankedMission.meta_associada);
         if (meta && meta.habilidade_associada_id && completedDailyMission) {
             const skillToUpdate = skills.find(s => s.id === meta.habilidade_associada_id);
@@ -494,7 +430,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         const result = await generateNextDailyMission({
                             rankedMissionName: nextMission.nome,
                             metaName: meta?.nome || "Objetivo geral",
-                            goalDeadline: meta?.prazo,
+                            goalDeadline: meta?.prazo || null,
                             history: history,
                             userLevel: newProfile.nivel,
                         });
@@ -516,7 +452,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     }
                 }
             } else {
-                // This was the last epic mission for this goal, so the goal is complete.
                 const completedGoal = metas.find(m => m.nome === rankedMission.meta_associada);
                 if (completedGoal) {
                     setMetas(currentMetas => currentMetas.map(m => m.id === completedGoal.id ? {...m, concluida: true} : m));
@@ -535,11 +470,11 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                 .join('\n');
 
             const feedbackForNextMission = missionFeedback[rankedMission.id];
-
+            const meta = metas.find(m => m.nome === rankedMission.meta_associada);
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
+                goalDeadline: meta?.prazo || null,
                 history: history || `O utilizador acabou de completar: "${completedDailyMission.nome}".`,
                 userLevel: profile.nivel,
                 feedback: feedbackForNextMission,
@@ -579,15 +514,11 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         }
     };
     
-    const handleAddProgress = (subTask, amount) => {
-        const { rankedMissionId, dailyMissionId } = contributionState;
-        
-        let updatedMissions = [...missions];
+    const handleAddProgress = (rankedMissionId, dailyMissionId, subTask, amount) => {
         let missionCompleted = false;
 
-        updatedMissions = updatedMissions.map(rm => {
+        const updatedMissions = missions.map(rm => {
             if (rm.id === rankedMissionId) {
-                let dailyMissionToComplete = null;
                 const updatedDailyMissions = rm.missoes_diarias.map(dm => {
                     if (dm.id === dailyMissionId) {
                         const updatedSubTasks = dm.subTasks.map(st => {
@@ -601,17 +532,13 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         const updatedDailyMission = { ...dm, subTasks: updatedSubTasks };
                         
                         if (updatedDailyMission.subTasks.every(st => (st.current || 0) >= st.target)) {
-                           dailyMissionToComplete = updatedDailyMission;
+                           missionCompleted = true;
                         }
 
                         return updatedDailyMission;
                     }
                     return dm;
                 });
-
-                if (dailyMissionToComplete) {
-                    missionCompleted = true;
-                }
                 return { ...rm, missoes_diarias: updatedDailyMissions };
             }
             return rm;
@@ -628,42 +555,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const rankedMissionId = showQuestInfo?.rankedMissionId;
         if (!rankedMissionId) return;
 
-        let missionCompleted = false;
-        
-        const updatedMissions = missions.map(rm => {
-            if (rm.id === rankedMissionId) {
-                 const updatedDailyMissions = rm.missoes_diarias.map(dm => {
-                    if (dm.id === mission.id) {
-                        const updatedSubTasks = dm.subTasks.map(st => {
-                            if (st.name === subTask.name) {
-                                const newCurrent = Math.min(st.target, (st.current || 0) + amount);
-                                return { ...st, current: newCurrent };
-                            }
-                            return st;
-                        });
-
-                        const updatedDailyMission = { ...dm, subTasks: updatedSubTasks };
-                        setShowQuestInfo(prev => ({...prev, dailyMission: updatedDailyMission}));
-                        
-                        if (updatedDailyMission.subTasks.every(st => (st.current || 0) >= st.target)) {
-                            missionCompleted = true;
-                        }
-
-                        return updatedDailyMission;
-                    }
-                    return dm;
-                });
-                return { ...rm, missoes_diarias: updatedDailyMissions };
-            }
-            return rm;
-        });
-
-        setMissions(updatedMissions);
-
-         if (missionCompleted) {
-            setShowQuestInfo(null); // Close popup before showing notifications
-            completeDailyMission(rankedMissionId, mission.id);
-        }
+        handleAddProgress(rankedMissionId, mission.id, subTask, amount);
     };
 
     const revertLastDailyMission = (rankedMissionId) => {
@@ -726,7 +618,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const result = await generateNextDailyMission({
                 rankedMissionName: missionToReactivate.nome,
                 metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
+                goalDeadline: meta?.prazo || null,
                 history: "Esta é a primeira missão para este objetivo (reativado).",
                 userLevel: profile.nivel,
             });
@@ -854,7 +746,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         </div>
                                      )}
                                      {missionViewStyle === 'popup' && activeDailyMission && !onCooldown && (
-                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMission: activeDailyMission, epicMissionName: mission.nome, rankedMissionId: mission.id })}>
+                                        <Button variant="outline" size="sm" onClick={() => setShowQuestInfo({ dailyMissionId: activeDailyMission.id, rankedMissionId: mission.id })}>
                                             <Eye className="h-4 w-4 mr-2" />
                                             Ver Missão
                                         </Button>
@@ -913,7 +805,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                                                 size="icon" 
                                                                 variant="outline" 
                                                                 className="h-7 w-7" 
-                                                                onClick={() => setContributionState({ open: true, subTask: st, dailyMissionId: activeDailyMission.id, rankedMissionId: mission.id })}
+                                                                onClick={() => handleAddProgress(mission.id, activeDailyMission.id, st, 1)}
                                                                 disabled={(st.current || 0) >= st.target}
                                                                 aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
@@ -1102,23 +994,23 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                     </div>
                 </DialogContent>
             </Dialog>
-            <ContributionDialog
-                open={contributionState.open}
-                onOpenChange={(isOpen) => setContributionState(prev => ({...prev, open: isOpen}))}
-                subTask={contributionState.subTask}
-                onContribute={handleAddProgress}
-            />
 
-            {showQuestInfo && (
-                <QuestInfoDialog
-                    mission={showQuestInfo.dailyMission}
-                    epicMissionName={showQuestInfo.epicMissionName}
-                    onClose={() => setShowQuestInfo(null)}
-                    onContribute={(subTask, amount) => handleAddProgressPopup(showQuestInfo.dailyMission, subTask, amount)}
-                    onCooldown={!!timers[showQuestInfo.rankedMissionId]}
-                    timer={timers[showQuestInfo.rankedMissionId]}
-                />
-            )}
+            {showQuestInfo && (() => {
+                const rankedMission = missions.find(m => m.id === showQuestInfo.rankedMissionId);
+                const dailyMission = rankedMission?.missoes_diarias.find(dm => dm.id === showQuestInfo.dailyMissionId);
+                if (!dailyMission) return null;
+
+                return (
+                     <QuestInfoDialog
+                        mission={dailyMission}
+                        epicMissionName={rankedMission?.nome}
+                        onClose={() => setShowQuestInfo(null)}
+                        onContribute={(subTask, amount) => handleAddProgressPopup(dailyMission, subTask, amount)}
+                        onCooldown={!!timers[rankedMission.id]}
+                        timer={timers[rankedMission.id]}
+                    />
+                )
+            })()}
         </div>
     );
 };
