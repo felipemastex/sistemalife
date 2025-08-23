@@ -1,20 +1,23 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, User, Send, LoaderCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { Bot, Send, LoaderCircle } from 'lucide-react';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-
-export const AIChatView = ({ profile, metas, routine, missions }) => {
+const AIChatViewComponent = () => {
+    const { profile, metas, routine, missions, isDataLoaded } = usePlayerDataContext();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const isInitialMount = useRef(true);
@@ -31,8 +34,9 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
 
     useEffect(scrollToBottom, [messages, isLoading]);
 
-    const getSystemResponse = useCallback(async (query, isInitial = false) => {
-         setIsLoading(true);
+    const getSystemResponse = useCallback(async (query) => {
+        if (!isDataLoaded) return;
+        setIsLoading(true);
         try {
           const result = await generateSystemAdvice({
             userName: profile.nome_utilizador,
@@ -60,14 +64,14 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
         } finally {
           setIsLoading(false);
         }
-    }, [profile, metas, routine, missions, toast]);
-
+    }, [isDataLoaded, profile, metas, routine, missions, toast]);
+    
     useEffect(() => {
-        if (isInitialMount.current) {
-            getSystemResponse('Forneça uma análise estratégica do meu estado atual.', true);
-            isInitialMount.current = false;
+        if (isDataLoaded && isInitialMount.current) {
+             getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
+             isInitialMount.current = false;
         }
-    }, [getSystemResponse]);
+    }, [isDataLoaded, getSystemResponse]);
 
 
     const handleSend = async () => {
@@ -105,18 +109,16 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
                             </div>
                         </div>
                     ))}
-                    {isLoading && ( 
-                        <div className="flex items-start gap-4">
-                            <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
-                            <div className="max-w-lg p-4 text-muted-foreground">
-                                <div className="flex items-center space-x-2">
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {isLoading && (
+                         <div className="flex items-start gap-4 animate-in fade-in-50 duration-500">
+                             <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
+                             <div className="max-w-2xl rounded-lg p-4 text-base space-y-2 w-full">
+                                 <Skeleton className="h-4 w-4/5" />
+                                 <Skeleton className="h-4 w-full" />
+                                 <Skeleton className="h-4 w-2/3" />
+                             </div>
+                         </div>
+                     )}
                  </div>
             </ScrollArea>
 
@@ -128,11 +130,11 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Digite sua diretiva..."
+                        placeholder={isDataLoaded ? "Digite sua diretiva..." : "A aguardar conexão com o Sistema..."}
                         className="flex-1 bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-                        disabled={isLoading}
+                        disabled={isLoading || !isDataLoaded}
                     />
-                    <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
+                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
                         {isLoading ? <LoaderCircle className="animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
                 </div>
@@ -141,4 +143,4 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
     );
 };
 
-    
+export const AIChatView = memo(AIChatViewComponent);
