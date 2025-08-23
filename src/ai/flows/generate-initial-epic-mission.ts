@@ -115,11 +115,11 @@ A sua resposta deve ser um objeto JSON contendo apenas a lista de 'progression'.
         return {
             progression: output.progression,
             firstDailyMissionName: firstDailyMissionResult.nextMissionName,
-            firstDailyMissionDescription: "", // Campo obsoleto, mas necessário para evitar 'undefined'
+            firstDailyMissionDescription: "",
             firstDailyMissionXp: firstDailyMissionResult.xp,
             firstDailyMissionFragments: firstDailyMissionResult.fragments,
             firstDailyMissionSubTasks: firstDailyMissionResult.subTasks.map(st => ({...st, current: 0 })),
-            firstDailyMissionLearningResources: firstDailyMissionResult.learningResources,
+            firstDailyMissionLearningResources: firstDailyMissionResult.learningResources || [],
             fallback: false,
         };
     } catch (error) {
