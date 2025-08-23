@@ -6,8 +6,11 @@ import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadius
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, Gem } from 'lucide-react';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-const DashboardViewComponent = ({ profile }) => {
+const DashboardViewComponent = () => {
+  const { profile } = usePlayerDataContext();
+  
   const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
@@ -131,5 +134,3 @@ const DashboardViewComponent = ({ profile }) => {
 };
 
 export const DashboardView = memo(DashboardViewComponent);
-
-    

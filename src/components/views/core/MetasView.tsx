@@ -29,6 +29,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 
 const statIcons = {
@@ -347,7 +348,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     )
 }
 
-const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
+const MetasViewComponent = () => {
+    const { profile, metas, missions, skills, persistData } = usePlayerDataContext();
     const [showWizardDialog, setShowWizardDialog] = useState(false);
     const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
     const [quickGoalData, setQuickGoalData] = useState({ name: '', prazo: null });
@@ -478,11 +480,11 @@ const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, s
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
                     );
-                    setSkills(newSkills);
+                    persistData('skills', newSkills);
                 }
 
-                setMissions(updatedMissions);
-                setMetas(updatedMetas);
+                persistData('missions', updatedMissions);
+                persistData('metas', updatedMetas);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
@@ -570,9 +572,9 @@ const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, s
                     };
                 });
                 
-                setSkills(currentSkills => [...currentSkills, newSkill]);
-                setMetas([...metas, newMetaWithId]);
-                setMissions([...missions, ...newMissions]);
+                persistData('skills', [...skills, newSkill]);
+                persistData('metas', [...metas, newMetaWithId]);
+                persistData('missions', [...missions, ...newMissions]);
                 
                 // Show roadmap after creation
                 handleGetRoadmap(newMetaWithId);
@@ -620,10 +622,10 @@ const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, s
     const handleDelete = async (id) => {
         const metaToDelete = metas.find(m => m.id === id);
         if (metaToDelete) {
-            setMissions(missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            setMetas(metas.filter(m => m.id !== id));
+            persistData('missions', missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
+            persistData('metas', metas.filter(m => m.id !== id));
             if (metaToDelete.habilidade_associada_id) {
-                setSkills(skills.filter(s => s.id !== metaToDelete.habilidade_associada_id));
+                persistData('skills', skills.filter(s => s.id !== metaToDelete.habilidade_associada_id));
             }
             toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" e seus componentes foram removidos.` });
         }
@@ -1028,5 +1030,3 @@ const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, s
 };
 
 export const MetasView = memo(MetasViewComponent);
-
-    

@@ -10,8 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-const InventoryViewComponent = ({ profile, setProfile }) => {
+const InventoryViewComponent = () => {
+    const { profile, persistData } = usePlayerDataContext();
     const { toast } = useToast();
 
     if (!profile) {
@@ -68,7 +70,7 @@ const InventoryViewComponent = ({ profile, setProfile }) => {
         // Consume item by removing it from inventory
         updatedProfile.inventory = (updatedProfile.inventory || []).filter(invItem => invItem.instanceId !== item.instanceId);
         
-        setProfile(updatedProfile);
+        persistData('profile', updatedProfile);
     };
 
 
@@ -135,5 +137,3 @@ const InventoryViewComponent = ({ profile, setProfile }) => {
 };
 
 export const InventoryView = memo(InventoryViewComponent);
-
-    

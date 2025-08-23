@@ -126,37 +126,47 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const persistData = useCallback(async (key, data) => {
         if (!user) return;
-        const collections = {
+        
+        const singleDocCollections = {
+            profile: () => doc(db, 'users', user.uid),
+            routine: () => doc(db, 'users', user.uid, 'routine', 'main'),
+            routineTemplates: () => doc(db, 'users', user.uid, 'routine', 'templates'),
+        };
+
+        if (singleDocCollections[key]) {
+            await setDoc(singleDocCollections[key](), data, { merge: true });
+            dispatch({ type: `SET_${key.toUpperCase()}`, payload: data });
+            return;
+        }
+
+        const multiDocCollections = {
             metas: 'metas',
             missions: 'missions',
             skills: 'skills',
             guilds: 'guilds',
-        };
-        const routineCollections = {
-            routine: 'main',
-            routineTemplates: 'templates',
+            allUsers: 'users',
         };
 
-        if (key === 'profile') {
-            await setDoc(doc(db, 'users', user.uid), data, { merge: true });
-        } else if (collections[key]) {
-            const batch = writeBatch(db);
-            const ref = collection(db, collections[key] === 'guilds' ? 'guilds' : `users/${user.uid}/${collections[key]}`);
-            const snapshot = await getDocs(ref);
-            const existingIds = snapshot.docs.map(d => d.id);
-            const newIds = data.map(item => String(item.id));
-            const idsToDelete = existingIds.filter(id => !newIds.includes(id));
-            idsToDelete.forEach(id => batch.delete(doc(ref, id)));
-            data.forEach(item => {
+        if (multiDocCollections[key]) {
+             const collectionName = multiDocCollections[key];
+             const isGlobalCollection = key === 'guilds' || key === 'allUsers';
+             const ref = collection(db, isGlobalCollection ? collectionName : `users/${user.uid}/${collectionName}`);
+             
+             const batch = writeBatch(db);
+             const snapshot = await getDocs(ref);
+             const existingIds = snapshot.docs.map(d => d.id);
+             const newIds = data.map(item => String(item.id));
+             const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+             idsToDelete.forEach(id => batch.delete(doc(ref, id)));
+             data.forEach(item => {
                 const docRef = doc(ref, String(item.id));
                 batch.set(docRef, item);
-            });
-            await batch.commit();
-        } else if (routineCollections[key]) {
-            await setDoc(doc(db, 'users', user.uid, 'routine', routineCollections[key]), data);
-        } else if (key === 'allUsers') {
-            // This is read-only, no persistence needed from client
+             });
+             await batch.commit();
+             dispatch({ type: `SET_${key.toUpperCase()}`, payload: data });
         }
+
     }, [user]);
 
     const handleLevelUp = (currentProfile) => {
@@ -190,8 +200,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     conditionMet = (currentProfile.nivel || 1) >= achievement.criteria.value;
                     break;
                 case 'goals_created':
-                    conditionMet = currentMetas.length >= achievement.criteria.value;
-                    break;
+                     conditionMet = currentMetas.length >= achievement.criteria.value;
+                     break;
                 case 'goals_completed':
                      conditionMet = currentMetas.filter(m => m.concluida).length >= achievement.criteria.value;
                      break;
@@ -221,6 +231,37 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             checkAndUnlockAchievements(state.profile, state.metas, state.skills);
         }
     }, [state.profile, state.metas, state.skills, state.isDataLoaded, checkAndUnlockAchievements]);
+    
+    const handleStreak = (currentProfile) => {
+        const today = new Date();
+        const lastCompletionDateStr = currentProfile.ultimo_dia_de_missao_concluida;
+        if (lastCompletionDateStr && isToday(new Date(lastCompletionDateStr))) return { ...currentProfile, streakUpdated: false };
+        let newStreak = currentProfile.streak_atual || 0;
+        let streakProtected = false;
+        if (!lastCompletionDateStr) {
+            newStreak = 1;
+            toast({ title: 'Nova Sequência Iniciada!' });
+        } else {
+            const diffDays = differenceInCalendarDays(today, new Date(lastCompletionDateStr));
+            if (diffDays === 1) {
+                newStreak++;
+                toast({ title: `Sequência Mantida: Dia ${newStreak}!` });
+            } else if (diffDays > 1) {
+                const streakRecoveryAmulet = (currentProfile.active_effects || []).find(eff => eff.type === 'streak_recovery');
+                if (streakRecoveryAmulet) {
+                    newStreak++;
+                    streakProtected = true;
+                    toast({ title: 'Amuleto Ativado!', description: 'A sua sequência foi salva!' });
+                } else {
+                    newStreak = 1;
+                    toast({ title: 'Nova Sequência Iniciada!' });
+                }
+            }
+        }
+        const updatedProfile = { ...currentProfile, streak_atual: newStreak, ultimo_dia_de_missao_concluida: today.toISOString(), streakUpdated: true };
+        if (streakProtected) updatedProfile.active_effects = updatedProfile.active_effects.filter(eff => eff.type !== 'streak_recovery');
+        return updatedProfile;
+    };
 
 
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback }) => {
@@ -237,19 +278,33 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const allSubTasksCompleted = dailyMission.subTasks.every(st =>
             st.name === subTask.name ? newCurrent >= st.target : (st.current || 0) >= st.target
         );
+        
+        const tempMissions = state.missions.map(rm => rm.id !== rankedMissionId ? rm : { ...rm, missoes_diarias: rm.missoes_diarias.map(dm => dm.id !== dailyMissionId ? dm : { ...dm, subTasks: dm.subTasks.map(st => st.name === subTask.name ? { ...st, current: newCurrent } : st) }) });
+        persistData('missions', tempMissions);
+
 
         if (!allSubTasksCompleted) {
-             persistData('missions', state.missions.map(rm => rm.id !== rankedMissionId ? rm : { ...rm, missoes_diarias: rm.missoes_diarias.map(dm => dm.id !== dailyMissionId ? dm : { ...dm, subTasks: dm.subTasks.map(st => st.name === subTask.name ? { ...st, current: newCurrent } : st) }) }));
              return;
         }
 
         // --- Daily Mission is Complete ---
         let updatedProfile = { ...state.profile };
-        updatedProfile.xp += dailyMission.xp_conclusao;
+        
+        const xpBoostEffect = (updatedProfile.active_effects || []).find(eff => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
+        const xpMultiplier = xpBoostEffect ? xpBoostEffect.multiplier : 1;
+        const finalXPGained = Math.round(dailyMission.xp_conclusao * xpMultiplier);
+        if (xpMultiplier > 1) toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!` });
+        
+        updatedProfile.xp += finalXPGained;
         updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (dailyMission.fragmentos_conclusao || 0);
+        updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
+
+        updatedProfile = handleStreak(updatedProfile);
+
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
         }
+        
         dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
         
         // IA calls can happen in parallel
@@ -286,7 +341,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('profile', updatedProfile);
         await persistData('skills', state.skills); // This needs to be improved as state updates are async
         await persistData('missions', state.missions); // Same here
-    }, [state, persistData]);
+    }, [state, persistData, toast]);
 
 
     const fetchData = useCallback(async (userId) => {
@@ -340,7 +395,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch,
         persistData,
         completeMission,
-        // Pass down other values as needed
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding
@@ -360,5 +414,3 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
-
-    

@@ -14,6 +14,7 @@ import * as mockData from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 
 const statIcons = {
@@ -26,7 +27,8 @@ const statIcons = {
 };
 
 
-const SkillsViewComponent = ({ skills, setSkills, metas, setMetas }) => {
+const SkillsViewComponent = () => {
+    const { skills, metas, persistData } = usePlayerDataContext();
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [selectedMetaId, setSelectedMetaId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -52,11 +54,11 @@ const SkillsViewComponent = ({ skills, setSkills, metas, setMetas }) => {
             }
             return meta;
         });
-        await setMetas(updatedMetas);
+        await persistData('metas', updatedMetas);
 
         // Delete the skill
         const newSkills = skills.filter(s => s.id !== skillId);
-        await setSkills(newSkills);
+        await persistData('skills', newSkills);
 
         toast({
             title: "Habilidade Removida",
@@ -104,14 +106,14 @@ const SkillsViewComponent = ({ skills, setSkills, metas, setMetas }) => {
                 ultima_atividade_em: new Date().toISOString(),
             };
 
-            await setSkills([...skills, newSkill]);
+            await persistData('skills', [...skills, newSkill]);
             
             const updatedMetas = metas.map(meta => 
                 meta.id === Number(selectedMetaId)
                 ? { ...meta, habilidade_associada_id: newSkillId }
                 : meta
             );
-            await setMetas(updatedMetas);
+            await persistData('metas', updatedMetas);
 
             toast({ title: 'Nova Habilidade Adquirida!', description: `A habilidade "${newSkill.nome}" foi adicionada à sua árvore.`});
             setShowAddDialog(false);
@@ -280,5 +282,3 @@ const SkillsViewComponent = ({ skills, setSkills, metas, setMetas }) => {
 };
 
 export const SkillsView = memo(SkillsViewComponent);
-
-    

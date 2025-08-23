@@ -8,13 +8,22 @@ import { GuildForm } from '@/components/guilds/GuildForm';
 import { SearchGuildView } from '@/components/guilds/SearchGuildView';
 import { NoGuildView } from '@/components/guilds/NoGuildView';
 import { GuildDashboard } from '@/components/guilds/GuildDashboard';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 
-const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers, currentGuild }) => {
+const GuildsViewComponent = () => {
+    const { profile, guilds, metas, allUsers, persistData } = usePlayerDataContext();
     const [view, setView] = useState('no-guild'); // 'dashboard', 'search', 'create', 'edit', 'no-guild'
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     
+    const currentGuild = useMemo(() => {
+        if (profile?.guild_id) {
+            return guilds.find(g => g.id === profile.guild_id) || null;
+        }
+        return null;
+    }, [profile?.guild_id, guilds]);
+
     useEffect(() => {
         if (profile) {
             setIsLoading(false);
@@ -29,10 +38,10 @@ const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, al
     const handleGuildCreated = (newGuildData) => {
         const newGuildWithId = { ...newGuildData, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
         const updatedGuilds = [...guilds, newGuildWithId];
-        setGuilds(updatedGuilds);
+        persistData('guilds', updatedGuilds);
         
         const updatedProfile = { ...profile, guild_id: newGuildWithId.id, guild_role: 'Líder' };
-        setProfile(updatedProfile);
+        persistData('profile', updatedProfile);
 
         toast({ title: "Guilda Forjada!", description: `A guilda "${newGuildData.nome}" foi criada com sucesso.` });
     };
@@ -45,7 +54,7 @@ const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, al
             }
             return g;
         });
-        setGuilds(updatedGuilds);
+        persistData('guilds', updatedGuilds);
         toast({ title: "Pedido Enviado!", description: "O seu pedido para se juntar à guilda foi enviado para o líder." });
     };
     
@@ -58,20 +67,25 @@ const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, al
             const updatedGuild = { ...guildToLeave, membros: updatedMembers };
             // If the leader leaves, the guild should be handled (e.g., disbanded or leadership transferred). For now, we'll just update members.
             const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
-            setGuilds(updatedGuilds);
+            persistData('guilds', updatedGuilds);
         }
 
-        setProfile(updatedProfile);
+        persistData('profile', updatedProfile);
         setView('no-guild');
         toast({ title: "Você saiu da guilda."});
     };
 
      const handleGuildUpdate = (updatedGuildData) => {
         const updatedGuilds = guilds.map(g => g.id === updatedGuildData.id ? updatedGuildData : g);
-        setGuilds(updatedGuilds);
+        persistData('guilds', updatedGuilds);
         toast({ title: "Guilda Atualizada!", description: `Os dados da guilda "${updatedGuildData.nome}" foram salvos.` });
         setView('dashboard');
     };
+
+     const handleUsersUpdate = (updatedUsers) => {
+        persistData('allUsers', updatedUsers);
+     }
+
 
     if (isLoading || !profile) {
         return <div className="p-6 flex justify-center items-center h-full"><LoaderCircle className="animate-spin h-8 w-8" /></div>;
@@ -79,15 +93,16 @@ const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, al
 
     const renderContent = () => {
         if (view === 'dashboard' && currentGuild) {
+            const members = allUsers.filter(u => u.guild_id === currentGuild.id);
             return <GuildDashboard 
                         guild={currentGuild}
                         profile={profile}
-                        members={allUsers.filter(u => u.guild_id === currentGuild.id)} 
+                        members={members} 
                         onGuildUpdate={handleGuildUpdate}
                         onLeaveGuild={handleLeaveGuild}
                         onEdit={() => setView('edit')}
                         allUsers={allUsers}
-                        setAllUsers={setAllUsers}
+                        setAllUsers={(updatedUsers) => persistData('allUsers', updatedUsers)}
                     />;
         }
         if (view === 'create') {
@@ -126,5 +141,3 @@ const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, al
 };
 
 export const GuildsView = memo(GuildsViewComponent);
-
-    

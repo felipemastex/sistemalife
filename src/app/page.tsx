@@ -30,7 +30,7 @@ export default function App() {
   const { user, loading, logout } = useAuth();
   const { 
       isDataLoaded, profile, metas, missions, skills, routine, routineTemplates, guilds, allUsers,
-      dispatch, persistData, completeMission, handleFullReset,
+      dispatch, persistData,
       questNotification, systemAlert, showOnboarding,
       setQuestNotification, setSystemAlert, setShowOnboarding
    } = usePlayerDataContext();
@@ -143,22 +143,22 @@ export default function App() {
     }
     
     const views = {
-      'dashboard': <DashboardView profile={profile} />,
-      'metas': <MetasView metas={metas} setMetas={(d) => persistData('metas', d)} missions={missions} setMissions={(d) => persistData('missions', d)} profile={profile} skills={skills} setSkills={(d) => persistData('skills', d)} />,
-      'missions': <MissionsView missions={missions} onCompleteMission={completeMission} />,
-      'skills': <SkillsView skills={skills} setSkills={(d) => persistData('skills', d)} metas={metas} setMetas={(d) => persistData('metas', d)} />,
-      'routine': <RoutineView initialRoutine={routine} persistRoutine={(d) => persistData('routine', d)} missions={missions} initialTemplates={routineTemplates} persistTemplates={(d) => persistData('routineTemplates', d)} />,
-      'achievements': <AchievementsView profile={profile} />,
-      'guilds': <GuildsView profile={profile} setProfile={(d) => persistData('profile', d)} guilds={guilds} setGuilds={(d) => persistData('guilds', d)} metas={metas} allUsers={allUsers} setAllUsers={(d) => dispatch({ type: 'SET_ALL_USERS', payload: d })} currentGuild={currentGuild} />,
-      'shop': <ShopView profile={profile} setProfile={(d) => persistData('profile', d)} />,
-      'inventory': <InventoryView profile={profile} setProfile={(d) => persistData('profile', d)} />,
+      'dashboard': <DashboardView />,
+      'metas': <MetasView />,
+      'missions': <MissionsView />,
+      'skills': <SkillsView />,
+      'routine': <RoutineView />,
+      'achievements': <AchievementsView />,
+      'guilds': <GuildsView />,
+      'shop': <ShopView />,
+      'inventory': <InventoryView />,
       'ai-chat': <AIChatView />,
-      'settings': <SettingsView profile={profile} setProfile={(d) => persistData('profile', d)} onReset={handleFullReset} />,
+      'settings': <SettingsView />,
     };
 
     return (
       <div key={currentPage} className="animate-in fade-in-50 duration-500">
-        {views[currentPage] || <DashboardView profile={profile} />}
+        {views[currentPage] || <DashboardView />}
       </div>
     )
   };

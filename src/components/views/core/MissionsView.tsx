@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { useToast } from '@/hooks/use-toast';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 // Helper Dialog for getting user feedback
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -74,7 +75,8 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 };
 
 
-const MissionsViewComponent = ({ missions, onCompleteMission }) => {
+const MissionsViewComponent = () => {
+    const { missions, completeMission } = usePlayerDataContext();
     const [generating, setGenerating] = useState(null); // Stores rankedMissionId
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -159,7 +161,7 @@ const MissionsViewComponent = ({ missions, onCompleteMission }) => {
     const handleCompleteMission = async (payload) => {
         setGenerating(payload.rankedMissionId);
         try {
-            await onCompleteMission(payload);
+            await completeMission(payload);
         } catch (e) {
              toast({ variant: 'destructive', title: "Erro ao Completar Missão", description: "Não foi possível processar a conclusão da missão." });
         } finally {

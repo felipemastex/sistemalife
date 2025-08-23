@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
 import { LoaderCircle, Wand2, Bell, BellOff, List, Square } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -45,7 +46,8 @@ const InfoField = ({ label, value, editable = false, onChange, placeholder, clas
 
 
 // O componente principal da vista de Configurações
-const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
+const SettingsViewComponent = () => {
+    const { profile, persistData, handleFullReset } = usePlayerDataContext();
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
         apelido: '',
@@ -127,7 +129,7 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
 
         setIsSaving(true);
         try {
-            await setProfile({ ...profile, ...profileData });
+            await persistData('profile', { ...profile, ...profileData });
             toast({
                 title: "Perfil Atualizado!",
                 description: "Os seus dados foram alterados com sucesso.",
@@ -146,7 +148,7 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     
     const handleReset = async () => {
         setIsResetting(true);
-        await onReset();
+        await handleFullReset();
         setIsResetting(false);
     };
 
@@ -357,5 +359,3 @@ const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
 };
 
 export const SettingsView = memo(SettingsViewComponent);
-
-    

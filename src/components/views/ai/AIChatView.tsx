@@ -10,26 +10,17 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
-
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 const AIChatViewComponent = () => {
+    const { profile, metas, routine, missions, isDataLoaded } = usePlayerDataContext();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isDataLoaded, setIsDataLoaded] = useState(false);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const { user } = useAuth();
-    
-    // Store data in refs to avoid re-triggering effects
-    const profileRef = useRef(null);
-    const metasRef = useRef([]);
-    const routineRef = useRef({});
-    const missionsRef = useRef([]);
+    const isInitialMount = useRef(true);
 
 
     const scrollToBottom = () => {
@@ -44,16 +35,15 @@ const AIChatViewComponent = () => {
     useEffect(scrollToBottom, [messages, isLoading]);
 
     const getSystemResponse = useCallback(async (query) => {
-         if (!isDataLoaded) return;
-         setIsLoading(true);
-         
+        if (!isDataLoaded) return;
+        setIsLoading(true);
         try {
           const result = await generateSystemAdvice({
-            userName: profileRef.current.nome_utilizador,
-            profile: JSON.stringify(profileRef.current),
-            metas: JSON.stringify(metasRef.current),
-            routine: JSON.stringify(routineRef.current),
-            missions: JSON.stringify(missionsRef.current.filter(m => !m.concluido)),
+            userName: profile.nome_utilizador,
+            profile: JSON.stringify(profile),
+            metas: JSON.stringify(metas),
+            routine: JSON.stringify(routine),
+            missions: JSON.stringify(missions.filter(m => !m.concluido)),
             query: query,
           });
           const aiMessage = { sender: 'ai', text: result.response };
@@ -74,40 +64,14 @@ const AIChatViewComponent = () => {
         } finally {
           setIsLoading(false);
         }
-    }, [isDataLoaded, toast]);
+    }, [isDataLoaded, profile, metas, routine, missions, toast]);
     
     useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return;
-            setIsLoading(true);
-            try {
-                const userDocRef = doc(db, 'users', user.uid);
-                const [profileDoc, metasSnapshot, missionsSnapshot, routineDoc] = await Promise.all([
-                    getDoc(userDocRef),
-                    getDocs(collection(userDocRef, 'metas')),
-                    getDocs(collection(userDocRef, 'missions')),
-                    getDoc(doc(userDocRef, 'routine', 'main')),
-                ]);
-
-                if (profileDoc.exists()) {
-                    profileRef.current = profileDoc.data();
-                    metasRef.current = metasSnapshot.docs.map(doc => doc.data());
-                    missionsRef.current = missionsSnapshot.docs.map(doc => doc.data());
-                    routineRef.current = routineDoc.exists() ? routineDoc.data() : {};
-                    setIsDataLoaded(true);
-                    
-                    // Initial message after data is loaded
-                    getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
-                }
-            } catch (error) {
-                console.error("Error fetching data for AI Chat:", error);
-                toast({ variant: 'destructive', title: 'Erro de Carregamento', description: 'Não foi possível carregar os dados para o chat.' });
-                 setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [user, toast, getSystemResponse]);
+        if (isDataLoaded && isInitialMount.current) {
+             getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
+             isInitialMount.current = false;
+        }
+    }, [isDataLoaded, getSystemResponse]);
 
 
     const handleSend = async () => {

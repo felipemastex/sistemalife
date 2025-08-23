@@ -9,8 +9,11 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-const AchievementsViewComponent = ({ profile }) => {
+const AchievementsViewComponent = () => {
+    const { profile } = usePlayerDataContext();
+    
     if (!profile) {
         return <div>A carregar perfil...</div>;
     }
@@ -104,5 +107,3 @@ const AchievementsViewComponent = ({ profile }) => {
 }
 
 export const AchievementsView = memo(AchievementsViewComponent);
-
-    

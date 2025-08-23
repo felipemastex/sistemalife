@@ -5,7 +5,7 @@ export const shopItems = [
   {
     id: 'potion_double_xp_1h',
     name: 'Poção de Foco Intenso',
-    description: 'Dobra todo o XP ganho de missões durante 1 hora. O tempo começa a contar a partir da compra.',
+    description: 'Dobra todo o XP ganho de missões durante 1 hora. O tempo começa a contar a partir do momento em que o item é usado.',
     price: 150,
     icon: Zap,
     category: 'Consumíveis',

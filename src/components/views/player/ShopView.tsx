@@ -8,8 +8,10 @@ import { Gem } from 'lucide-react';
 import { shopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
-const ShopViewComponent = ({ profile, setProfile }) => {
+const ShopViewComponent = () => {
+    const { profile, persistData } = usePlayerDataContext();
     const { toast } = useToast();
     const [isBuying, setIsBuying] = useState(null);
 
@@ -41,7 +43,7 @@ const ShopViewComponent = ({ profile, setProfile }) => {
                 inventory: [...(profile.inventory || []), newInventoryItem]
             };
 
-            setProfile(updatedProfile);
+            persistData('profile', updatedProfile);
 
             toast({
                 title: 'Compra Efetuada!',
@@ -120,5 +122,3 @@ const ShopViewComponent = ({ profile, setProfile }) => {
 };
 
 export const ShopView = memo(ShopViewComponent);
-
-    

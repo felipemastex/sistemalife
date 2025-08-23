@@ -17,12 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 
-const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
-    const [routine, setRoutine] = useState(initialRoutine);
-    const [routineTemplates, setRoutineTemplates] = useState(initialTemplates);
-
+const RoutineViewComponent = () => {
+    const { routine, persistData, missions, routineTemplates } = usePlayerDataContext();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
     const [editedItem, setEditedItem] = useState({ id: null, start_time: '', end_time: '', activity: '' });
@@ -47,25 +46,6 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
     
     // State for deleting template
     const [templateToDelete, setTemplateToDelete] = useState(null);
-
-
-    useEffect(() => {
-        setRoutine(initialRoutine);
-    }, [initialRoutine]);
-    
-    useEffect(() => {
-        setRoutineTemplates(initialTemplates);
-    }, [initialTemplates]);
-
-    const handleRoutineChange = (newRoutine) => {
-        setRoutine(newRoutine);
-        persistRoutine(newRoutine);
-    }
-    
-    const handleTemplateChange = (newTemplates) => {
-        setRoutineTemplates(newTemplates);
-        persistTemplates(newTemplates);
-    }
 
     const getWeekDays = () => {
         const todayDate = new Date();
@@ -164,7 +144,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
             }
         }
         
-        handleRoutineChange({ ...routine, [selectedDay]: updatedDayRoutine });
+        persistData('routine', { ...routine, [selectedDay]: updatedDayRoutine });
         setIsDialogOpen(false);
     };
 
@@ -172,7 +152,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
     const handleDelete = (id) => {
         const currentDayRoutine = routine[selectedDay] || [];
         const updatedDayRoutine = currentDayRoutine.filter(item => item.id !== id);
-        handleRoutineChange({...routine, [selectedDay]: updatedDayRoutine});
+        persistData('routine', {...routine, [selectedDay]: updatedDayRoutine});
     };
     
     const handleLoadTemplate = (templateName) => {
@@ -187,7 +167,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
         if (selectedTemplate) {
             // Add new unique IDs to template items to avoid key conflicts
             const templateWithNewIds = selectedTemplate.map(item => ({...item, id: Date.now() + Math.random()}));
-            handleRoutineChange({ ...routine, [selectedDay]: templateWithNewIds });
+            persistData('routine', { ...routine, [selectedDay]: templateWithNewIds });
             toast({ title: "Template Carregado!", description: `A rotina de ${selectedDay} foi atualizada.` });
         }
         setShowTemplateDialog(false);
@@ -205,7 +185,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
             return;
         }
 
-        handleTemplateChange({ ...routineTemplates, [newTemplateName]: currentDayRoutine });
+        persistData('routineTemplates', { ...routineTemplates, [newTemplateName]: currentDayRoutine });
         toast({ title: "Template Salvo!", description: `O template "${newTemplateName}" foi criado com sucesso.` });
         setShowSaveTemplateDialog(false);
         setNewTemplateName('');
@@ -215,7 +195,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
         if (!templateToDelete) return;
         const newTemplates = { ...routineTemplates };
         delete newTemplates[templateToDelete];
-        handleTemplateChange(newTemplates);
+        persistData('routineTemplates', newTemplates);
         toast({ title: 'Template Eliminado', description: `O template "${templateToDelete}" foi removido.` });
         setTemplateToDelete(null);
     };
@@ -295,7 +275,7 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
             newDayRoutine = [...dayRoutine, newRoutineItem];
         }
         
-        handleRoutineChange({...routine, [selectedDay]: newDayRoutine});
+        persistData('routine', {...routine, [selectedDay]: newDayRoutine});
     
         // Remove suggestion after implementing
         setSuggestions(prev => {
@@ -616,5 +596,3 @@ const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initia
 };
 
 export const RoutineView = memo(RoutineViewComponent);
-
-    
