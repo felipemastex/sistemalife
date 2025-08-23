@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { QuestInfoProps } from '@/components/custom/QuestInfoDialog';
+import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
 import { ShopView } from '@/components/views/player/ShopView';
@@ -28,7 +28,6 @@ import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
-import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { useSwipe } from '@/hooks/useSwipe';
 
 
@@ -49,7 +48,7 @@ export default function App() {
   const [allUsers, setAllUsers] = useState([]);
   const [guilds, setGuilds] = useState([]);
 
-  const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
+  const [questNotification, setQuestNotification] = useState<QuestInfoDialog | null>(null);
 
   // State for proactive AI alerts
   const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
@@ -706,6 +705,12 @@ export default function App() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col">
+                        <SheetHeader className="sr-only">
+                           <SheetTitle>Menu de Navegação</SheetTitle>
+                           <SheetDescription>
+                               Use esta barra lateral para navegar entre as diferentes secções da aplicação.
+                           </SheetDescription>
+                        </SheetHeader>
                         <NavContent inSheet={true}/>
                     </SheetContent>
                 </Sheet>
@@ -726,3 +731,5 @@ export default function App() {
     </div>
   );
 }
+
+    
