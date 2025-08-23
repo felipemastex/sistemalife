@@ -1,15 +1,16 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import { Award, X, Timer, Gem, Plus, Link, Eye } from 'lucide-react';
+import { Award, X, Gem, Plus, Link } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Progress } from "../ui/progress";
+import { usePlayerDataContext } from "@/hooks/use-player-data.tsx";
 
 
 const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
@@ -63,11 +64,13 @@ const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
     );
 };
 
-export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClose, onCooldown, timer }) => {
-  
+export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClose }) => {
+  const { timers } = usePlayerDataContext();
   const [contributionState, setContributionState] = useState({ open: false, subTask: null });
 
   if (!mission) return null;
+
+  const onCooldown = !!timers[mission.id];
 
   const handleOpenContributeDialog = (subTask) => {
     setContributionState({ open: true, subTask });
@@ -150,10 +153,10 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
                 </div>
             )}
              <div className="text-center mt-4 pt-4 border-t border-border/50">
-                {onCooldown && timer ? (
+                {onCooldown && timers[mission.id] ? (
                     <>
                         <p className="text-sm text-cyan-400/80 uppercase tracking-wider">Próxima Missão Em:</p>
-                        <p className="text-3xl font-mono text-cyan-400 font-bold">{timer}</p>
+                        <p className="text-3xl font-mono text-cyan-400 font-bold">{timers[mission.id]}</p>
                     </>
                 ): (
                     <p className="text-xs text-yellow-500/80 font-semibold tracking-wider uppercase">

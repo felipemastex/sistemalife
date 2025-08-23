@@ -1,7 +1,7 @@
 
 "use client";
 
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect, useCallback, useMemo } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { cn } from '@/lib/utils';
 import { CircularProgress } from '@/components/ui/circular-progress';
@@ -76,14 +74,10 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 
 
 const MissionsViewComponent = () => {
-    const { missions, completeMission } = usePlayerDataContext();
-    const [generating, setGenerating] = useState(null); // Stores rankedMissionId
-    const [timers, setTimers] = useState({});
+    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
-    const [missionFeedback, setMissionFeedback] = useState({}); // { [rankedMissionId]: "feedback text" }
-    const [reactivatingMissionId, setReactivatingMissionId] = useState(null);
 
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     
@@ -127,7 +121,7 @@ const MissionsViewComponent = () => {
                 
                 const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
                 if (rankedMission) {
-                     setMissionFeedback(prev => ({...prev, [rankedMission.id]: feedbackValue }));
+                     setMissionFeedback(rankedMission.id, feedbackValue);
                 }
             }
         } catch (error) {
@@ -157,19 +151,8 @@ const MissionsViewComponent = () => {
             default: return 'bg-gray-700 text-gray-400';
         }
     }
-
-    const handleCompleteMission = async (payload) => {
-        setGenerating(payload.rankedMissionId);
-        try {
-            await completeMission(payload);
-        } catch (e) {
-             toast({ variant: 'destructive', title: "Erro ao Completar Missão", description: "Não foi possível processar a conclusão da missão." });
-        } finally {
-            setGenerating(null);
-        }
-    }
     
-    const getVisibleMissions = useCallback(() => {
+    const visibleMissions = useMemo(() => {
         const visible = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
@@ -191,8 +174,7 @@ const MissionsViewComponent = () => {
         return visible.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
     }, [missions, rankOrder]);
 
-    const completedMissions = missions.filter(m => m.concluido);
-    const visibleMissions = getVisibleMissions();
+    const completedMissions = useMemo(() => missions.filter(m => m.concluido), [missions]);
 
     return (
         <div className="p-4 md:p-6">
@@ -206,8 +188,7 @@ const MissionsViewComponent = () => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
                     const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
-                    const onCooldown = !!timers[mission.id];
-
+                    
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg">
                            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
@@ -235,17 +216,18 @@ const MissionsViewComponent = () => {
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
-                                {generating === mission.id ? (
+                                {generatingMission === mission.id ? (
                                     <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
                                         <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
                                         <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
                                         <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
                                     </div>
-                                ) : activeDailyMission && !onCooldown ? (
+                                ) : activeDailyMission ? (
                                      <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                              <div className="flex-grow">
                                                 <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
+                                                <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
                                              </div>
                                             <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                                                 <div className="flex flex-col items-end">
@@ -277,27 +259,30 @@ const MissionsViewComponent = () => {
                                         </div>
 
                                         <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                                            {activeDailyMission.subTasks?.map((st, index) => (
-                                                <div key={index}>
-                                                     <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                                        <p className="font-semibold text-foreground flex-1">{st.name}</p>
-                                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                                            <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
-                                                             <Button 
-                                                                size="icon" 
-                                                                variant="outline" 
-                                                                className="h-7 w-7" 
-                                                                onClick={() => handleCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
-                                                                disabled={(st.current || 0) >= st.target}
-                                                                aria-label={`Adicionar progresso para ${st.name}`}
-                                                            >
-                                                                <Plus className="h-4 w-4" />
-                                                            </Button>
+                                            {activeDailyMission.subTasks?.map((st, index) => {
+                                                const isCompleted = (st.current || 0) >= st.target;
+                                                return(
+                                                    <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
+                                                        <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                                            <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
+                                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                                <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
+                                                                <Button 
+                                                                    size="icon" 
+                                                                    variant="outline" 
+                                                                    className="h-7 w-7" 
+                                                                    onClick={() => completeMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
+                                                                    disabled={isCompleted}
+                                                                    aria-label={`Adicionar progresso para ${st.name}`}
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
+                                                        <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
                                                     </div>
-                                                    <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
 
                                          {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
@@ -314,7 +299,13 @@ const MissionsViewComponent = () => {
                                             </div>
                                         )}
                                     </div>
-                                ) : null }
+                                ) : (
+                                    <div className="bg-secondary/30 border-2 border-dashed border-cyan-400/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                                        <Timer className="h-10 w-10 text-cyan-400 mb-4"/>
+                                        <p className="text-lg font-bold text-foreground">Missão em Cooldown</p>
+                                        <p className="text-sm text-muted-foreground">Uma nova missão diária estará disponível à meia-noite.</p>
+                                    </div>
+                                )}
                                 
                             </AccordionContent>
                         </AccordionItem>
@@ -329,7 +320,7 @@ const MissionsViewComponent = () => {
                              <AccordionTrigger className="hover:no-underline px-4 py-3 text-muted-foreground">
                                  <div className="flex items-center gap-2">
                                     {completedAccordionOpen ? <ChevronsUp className="h-5 w-5"/> : <ChevronsDown className="h-5 w-5"/>}
-                                    Missões Concluídas ({completedMissions.length})
+                                    Missões Épicas Concluídas ({completedMissions.length})
                                  </div>
                              </AccordionTrigger>
                              <AccordionContent className="px-4 pb-4 space-y-4">
