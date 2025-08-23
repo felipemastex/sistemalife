@@ -94,7 +94,7 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
                 <DialogTitle asChild>
                     <h2 className="text-2xl font-bold tracking-wider font-cinzel text-foreground">{mission.nome}</h2>
                 </DialogTitle>
-                 <div className="flex justify-center items-center gap-6 mt-2 text-sm text-yellow-400">
+                 <div className="flex justify-center items-center gap-6 mt-4 text-sm text-yellow-400">
                     <div className="flex items-center gap-1.5">
                         <Award className="h-4 w-4"/>
                         <span>{mission.xp_conclusao} XP</span>
