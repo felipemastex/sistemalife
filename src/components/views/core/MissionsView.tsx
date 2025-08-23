@@ -253,7 +253,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         try {
             const result = await generateMissionSuggestion({
                 missionName: mission.nome,
-                missionDescription: mission.descricao,
+                missionDescription: mission.subTasks.map(st => st.name).join(', '),
                 feedbackType,
                 userText: userText,
             });
@@ -467,7 +467,7 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             if (skillToUpdate && skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
                 try {
                     const { xp } = await generateSkillExperience({ 
-                        missionText: `${completedDailyMission.nome}: ${completedDailyMission.descricao}`,
+                        missionText: `${completedDailyMission.nome}: ${completedDailyMission.subTasks.map(st => st.name).join(', ')}`,
                         skillLevel: skillToUpdate.nivel_atual,
                      });
                      
@@ -512,7 +512,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                         const newDailyMission = {
                             id: Date.now(),
                             nome: result.nextMissionName,
-                            descricao: result.nextMissionDescription,
                             xp_conclusao: result.xp,
                             fragmentos: result.fragments,
                             concluido: false,
@@ -567,7 +566,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
             const newDailyMission = {
                 id: Date.now(),
                 nome: result.nextMissionName,
-                descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
                 fragmentos: result.fragments,
                 concluido: false,
@@ -718,7 +716,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
              const newDailyMission = {
                 id: Date.now(),
                 nome: result.nextMissionName,
-                descricao: result.nextMissionDescription,
                 xp_conclusao: result.xp,
                 fragmentos: result.fragments,
                 concluido: false,
@@ -857,7 +854,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                              <div className="flex-grow">
                                                 <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
-                                                <p className="text-sm text-muted-foreground">{activeDailyMission.descricao}</p>
                                              </div>
                                             <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                                                 <div className="flex flex-col items-end">

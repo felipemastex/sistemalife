@@ -30,7 +30,6 @@ export type GenerateNextDailyMissionInput = z.infer<typeof GenerateNextDailyMiss
 
 const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico (ex: 'Treino de Força Fundamental', 'Sessão de Estudo Focada')."),
-    nextMissionDescription: z.string().describe("Uma breve descrição da próxima missão diária. Deve ser detalhada e acionável."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
     learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
@@ -73,28 +72,25 @@ const generateNextDailyMissionFlow = ai.defineFlow(
     }
 
 
-    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real, um especialista em criação de hábitos. O utilizador (Nível ${input.userLevel}) está a trabalhar na missão épica "${input.rankedMissionName}", ligada à meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
-A sua diretiva é criar a PRÓXIMA missão diária. Siga estas regras:
+    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
+Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de objetivos claros e mensuráveis.
 
-1.  **Nome e Descrição Gerais:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código") e uma breve descrição motivacional.
-2.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas que compõem a missão diária. ESTAS são as ações que o utilizador irá de facto realizar e acompanhar.
-    *   Cada sub-tarefa deve ser EXTREMAMENTE ESPECÍFICA e MENSURÁVEL. O nome da sub-tarefa deve ser a própria ação (ex: "Caminhada leve", "Escrever código de teste", "Ler artigo técnico").
-    *   Defina um 'target' numérico claro para cada sub-tarefa.
-    *   Defina uma 'unit' (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-    *   **Exemplo de Sub-tarefas Boas:**
-        *   { name: "Fazer flexões", target: 20, unit: "repetições" }
-        *   { name: "Meditar em silêncio", target: 10, unit: "minutos" }
-        *   { name: "Resolver problemas de algoritmo", target: 2, unit: "problemas" }
-    *   **Exemplo de Sub-tarefa Ruim:** { name: "Exercitar" } (Não é específico nem mensurável).
-
-3.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de aprendizagem de alta qualidade (documentação, vídeos, artigos) que ajudem diretamente a concluir as sub-tarefas.
+**REGRAS:**
+1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código").
+2.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
+    *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste", "Ler artigo técnico").
+    *   Defina um **'target'** numérico claro para cada sub-tarefa.
+    *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
+    *   **Exemplo Bom:** { name: "Fazer flexões", target: 20, unit: "repetições" }
+    *   **Exemplo Ruim:** { name: "Exercitar" } (Não é específico nem mensurável).
+3.  **NÃO GERE DESCRIÇÕES LONGAS.** O output deve ser o nome da missão e a lista de sub-tarefas.
+4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de aprendizagem de alta qualidade.
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
 `;
 
     const MissionSchema = z.object({
         nextMissionName: z.string(),
-        nextMissionDescription: z.string(),
         learningResources: z.array(z.string().url()).optional(),
         subTasks: z.array(SubTaskSchema),
     });
@@ -105,18 +101,16 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       output: {schema: MissionSchema},
     });
 
-    const missionText = `${output!.nextMissionName}: ${output!.nextMissionDescription}`;
+    const missionTextForRewards = `${output!.nextMissionName}: ${output!.subTasks.map(st => st.name).join(', ')}`;
     const rewards = await generateMissionRewards({
-      missionText,
+      missionText: missionTextForRewards,
       userLevel: input.userLevel,
     });
 
-    // Initialize sub-tasks with current progress
     const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0}));
 
     return {
       nextMissionName: output!.nextMissionName,
-      nextMissionDescription: output!.nextMissionDescription,
       xp: rewards.xp,
       fragments: rewards.fragments,
       learningResources: output!.learningResources,
