@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
@@ -347,7 +347,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     )
 }
 
-export const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
+const MetasViewComponent = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
     const [showWizardDialog, setShowWizardDialog] = useState(false);
     const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
     const [quickGoalData, setQuickGoalData] = useState({ name: '', prazo: null });
@@ -1026,3 +1026,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         </div>
     );
 };
+
+export const MetasView = memo(MetasViewComponent);
+
+    

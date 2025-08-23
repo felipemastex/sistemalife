@@ -466,7 +466,7 @@ export default function App() {
     }
     
     return { updatedSkills, skillsChanged };
-  }, [handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
+  }, []);
   
   const checkDailyLogin = useCallback((profileData, missionsData) => {
     const now = new Date();
@@ -511,7 +511,7 @@ export default function App() {
         return true; // Indicates that profile needs update
     }
     return false; // No update needed
-  }, [rankOrder, handleShowDailyBriefingNotification]);
+  }, [rankOrder]);
 
 
   const fetchData = useCallback(async (userId) => {
@@ -581,7 +581,7 @@ export default function App() {
       } finally {
           setIsDataLoaded(true);
       }
-  }, [user, toast, checkSkillStatus, checkDailyLogin, persistSkills, setupInitialData]);
+  }, [user, toast, checkSkillStatus, checkDailyLogin, persistSkills, setupInitialData, rankOrder]);
 
   // --- Proactive AI Alert Logic ---
   useEffect(() => {
@@ -955,6 +955,13 @@ export default function App() {
     );
   };
 
+  const currentGuild = useMemo(() => {
+    if (profile?.guild_id) {
+        return guilds.find(g => g.id === profile.guild_id) || null;
+    }
+    return null;
+  }, [profile?.guild_id, guilds]);
+
   const renderContent = () => {
     if (!profile) {
       return null
@@ -967,7 +974,7 @@ export default function App() {
       'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={setMetas} />,
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'achievements': <AchievementsView profile={profile} />,
-      'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers}/>,
+      'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers} currentGuild={currentGuild} />,
       'shop': <ShopView profile={profile} setProfile={persistProfile} />,
       'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,

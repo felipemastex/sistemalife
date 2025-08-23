@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Bot, User, Send, LoaderCircle } from 'lucide-react';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
-export const AIChatView = ({ profile, metas, routine, missions }) => {
+const AIChatViewComponent = ({ profile, metas, routine, missions }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -139,3 +139,7 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
         </div>
     );
 };
+
+export const AIChatView = memo(AIChatViewComponent);
+
+    

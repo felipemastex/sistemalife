@@ -1,12 +1,13 @@
 
 "use client";
 
+import { memo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, Gem } from 'lucide-react';
 
-export const DashboardView = ({ profile }) => {
+const DashboardViewComponent = ({ profile }) => {
   const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
@@ -128,3 +129,7 @@ export const DashboardView = ({ profile }) => {
     </div>
   );
 };
+
+export const DashboardView = memo(DashboardViewComponent);
+
+    

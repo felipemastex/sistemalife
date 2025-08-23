@@ -1,6 +1,7 @@
 
 "use client";
 
+import { memo } from 'react';
 import { achievements } from '@/lib/achievements';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
@@ -9,7 +10,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
-export const AchievementsView = ({ profile }) => {
+const AchievementsViewComponent = ({ profile }) => {
     if (!profile) {
         return <div>A carregar perfil...</div>;
     }
@@ -101,5 +102,7 @@ export const AchievementsView = ({ profile }) => {
         </div>
     );
 }
+
+export const AchievementsView = memo(AchievementsViewComponent);
 
     

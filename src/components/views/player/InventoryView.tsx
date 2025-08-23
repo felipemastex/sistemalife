@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Backpack } from 'lucide-react';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export const InventoryView = ({ profile, setProfile }) => {
+const InventoryViewComponent = ({ profile, setProfile }) => {
     const { toast } = useToast();
 
     if (!profile) {
@@ -133,5 +133,7 @@ export const InventoryView = ({ profile, setProfile }) => {
         </div>
     );
 };
+
+export const InventoryView = memo(InventoryViewComponent);
 
     

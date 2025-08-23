@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
-export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
+const RoutineViewComponent = ({ initialRoutine, persistRoutine, missions, initialTemplates, persistTemplates }) => {
     const [routine, setRoutine] = useState(initialRoutine);
     const [routineTemplates, setRoutineTemplates] = useState(initialTemplates);
 
@@ -614,3 +614,7 @@ export const RoutineView = ({ initialRoutine, persistRoutine, missions, initialT
         </div>
     );
 };
+
+export const RoutineView = memo(RoutineViewComponent);
+
+    

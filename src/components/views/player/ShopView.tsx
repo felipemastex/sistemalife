@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Gem } from 'lucide-react';
@@ -9,7 +9,7 @@ import { shopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export const ShopView = ({ profile, setProfile }) => {
+const ShopViewComponent = ({ profile, setProfile }) => {
     const { toast } = useToast();
     const [isBuying, setIsBuying] = useState(null);
 
@@ -118,5 +118,7 @@ export const ShopView = ({ profile, setProfile }) => {
         </div>
     );
 };
+
+export const ShopView = memo(ShopViewComponent);
 
     

@@ -45,7 +45,7 @@ const InfoField = ({ label, value, editable = false, onChange, placeholder, clas
 
 
 // O componente principal da vista de Configurações
-export const SettingsView = ({ profile, setProfile, onReset }) => {
+const SettingsViewComponent = ({ profile, setProfile, onReset }) => {
     const [profileData, setProfileData] = useState({
         primeiro_nome: '',
         apelido: '',
@@ -355,3 +355,7 @@ export const SettingsView = ({ profile, setProfile, onReset }) => {
         </div>
     );
 };
+
+export const SettingsView = memo(SettingsViewComponent);
+
+    

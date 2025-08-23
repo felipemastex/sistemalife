@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle } from 'lucide-react';
 import { GuildForm } from '@/components/guilds/GuildForm';
@@ -11,24 +10,21 @@ import { NoGuildView } from '@/components/guilds/NoGuildView';
 import { GuildDashboard } from '@/components/guilds/GuildDashboard';
 
 
-export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers }) => {
-    const [view, setView] = useState('dashboard'); // 'dashboard', 'search', 'create', 'edit'
+const GuildsViewComponent = ({ profile, setProfile, guilds, setGuilds, metas, allUsers, setAllUsers, currentGuild }) => {
+    const [view, setView] = useState('no-guild'); // 'dashboard', 'search', 'create', 'edit', 'no-guild'
     const [isLoading, setIsLoading] = useState(true);
-    const [currentGuild, setCurrentGuild] = useState(null);
     const { toast } = useToast();
-
+    
     useEffect(() => {
-        if (profile && guilds) {
-            if (profile.guild_id) {
-                const foundGuild = guilds.find(g => g.id === profile.guild_id);
-                setCurrentGuild(foundGuild);
+        if (profile) {
+            setIsLoading(false);
+            if (currentGuild) {
                 setView('dashboard');
             } else {
                 setView('no-guild');
             }
         }
-        setIsLoading(false);
-    }, [profile, guilds]);
+    }, [profile, currentGuild]);
 
     const handleGuildCreated = (newGuildData) => {
         const newGuildWithId = { ...newGuildData, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
@@ -39,7 +35,6 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         setProfile(updatedProfile);
 
         toast({ title: "Guilda Forjada!", description: `A guilda "${newGuildData.nome}" foi criada com sucesso.` });
-        setView('dashboard');
     };
     
     const handleJoinRequestSent = (guildId) => {
@@ -57,7 +52,6 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
     const handleLeaveGuild = () => {
         const updatedProfile = {...profile, guild_id: null, guild_role: null};
         
-        // Remove member from guild object
         const guildToLeave = guilds.find(g => g.id === profile.guild_id);
         if (guildToLeave) {
             const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
@@ -68,7 +62,6 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         }
 
         setProfile(updatedProfile);
-        setCurrentGuild(null);
         setView('no-guild');
         toast({ title: "Você saiu da guilda."});
     };
@@ -76,7 +69,6 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
      const handleGuildUpdate = (updatedGuildData) => {
         const updatedGuilds = guilds.map(g => g.id === updatedGuildData.id ? updatedGuildData : g);
         setGuilds(updatedGuilds);
-        setCurrentGuild(updatedGuildData);
         toast({ title: "Guilda Atualizada!", description: `Os dados da guilda "${updatedGuildData.nome}" foram salvos.` });
         setView('dashboard');
     };
@@ -132,3 +124,7 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         </div>
     );
 };
+
+export const GuildsView = memo(GuildsViewComponent);
+
+    

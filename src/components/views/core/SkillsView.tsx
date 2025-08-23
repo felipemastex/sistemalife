@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -26,7 +26,7 @@ const statIcons = {
 };
 
 
-export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
+const SkillsViewComponent = ({ skills, setSkills, metas, setMetas }) => {
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [selectedMetaId, setSelectedMetaId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -278,3 +278,7 @@ export const SkillsView = ({ skills, setSkills, metas, setMetas }) => {
         </div>
     );
 };
+
+export const SkillsView = memo(SkillsViewComponent);
+
+    

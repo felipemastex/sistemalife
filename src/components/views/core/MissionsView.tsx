@@ -1,11 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { memo } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle } from 'lucide-react';
-import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
-import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
-import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -76,7 +73,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 };
 
 
-export const MissionsView = ({ missions, onCompleteMission }) => {
+const MissionsViewComponent = ({ missions, onCompleteMission }) => {
     const [generating, setGenerating] = useState(null); // Stores rankedMissionId
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
@@ -371,5 +368,8 @@ export const MissionsView = ({ missions, onCompleteMission }) => {
             </Dialog>
         </div>
     );
+};
+
+export const MissionsView = memo(MissionsViewComponent);
 
     
