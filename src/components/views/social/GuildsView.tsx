@@ -30,15 +30,15 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         setIsLoading(false);
     }, [profile, guilds]);
 
-    const handleGuildCreated = (newGuild) => {
-        const newGuildWithId = { ...newGuild, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
+    const handleGuildCreated = (newGuildData) => {
+        const newGuildWithId = { ...newGuildData, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
         const updatedGuilds = [...guilds, newGuildWithId];
         setGuilds(updatedGuilds);
         
         const updatedProfile = { ...profile, guild_id: newGuildWithId.id, guild_role: 'Líder' };
         setProfile(updatedProfile);
 
-        toast({ title: "Guilda Forjada!", description: `A guilda "${newGuild.nome}" foi criada com sucesso.` });
+        toast({ title: "Guilda Forjada!", description: `A guilda "${newGuildData.nome}" foi criada com sucesso.` });
         setView('dashboard');
     };
     
@@ -73,10 +73,12 @@ export const GuildsView = ({ profile, setProfile, guilds, setGuilds, metas, allU
         toast({ title: "Você saiu da guilda."});
     };
 
-     const handleGuildUpdate = (updatedGuild) => {
-        const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
+     const handleGuildUpdate = (updatedGuildData) => {
+        const updatedGuilds = guilds.map(g => g.id === updatedGuildData.id ? updatedGuildData : g);
         setGuilds(updatedGuilds);
-        setCurrentGuild(updatedGuild);
+        setCurrentGuild(updatedGuildData);
+        toast({ title: "Guilda Atualizada!", description: `Os dados da guilda "${updatedGuildData.nome}" foram salvos.` });
+        setView('dashboard');
     };
 
     if (isLoading || !profile) {
