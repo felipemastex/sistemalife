@@ -254,7 +254,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                         <h2 className="text-2xl text-cyan-400 mb-6 min-h-[6rem] flex items-center justify-center">{currentQuestion}</h2>
                         
                         {!isEditing && (
-                             <div className="mb-4">
+                             <div className="mb-4 text-left">
                                 <Label htmlFor="prazo" className="text-primary">Prazo (Opcional)</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -350,7 +350,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
 export const MetasView = ({ metas, setMetas, missions, setMissions, profile, skills, setSkills }) => {
     const [showWizardDialog, setShowWizardDialog] = useState(false);
     const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
-    const [wizardInitialName, setWizardInitialName] = useState('');
+    const [quickGoalData, setQuickGoalData] = useState({ name: '', prazo: null });
     
     const [isEditing, setIsEditing] = useState(false);
     const [metaToEdit, setMetaToEdit] = useState(null);
@@ -397,7 +397,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         } finally {
             setIsLoadingSuggestions(false);
         }
-    }
+    };
     
     const handleGetRoadmap = async (meta) => {
         setRoadmapMeta(meta);
@@ -420,7 +420,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     
     const handleSelectSuggestion = (suggestionName) => {
         setShowSuggestionDialog(false);
-        setWizardInitialName(suggestionName);
+        setQuickGoalData({ name: suggestionName, prazo: null });
         setWizardMode('simple');
         setShowWizardDialog(true);
     };
@@ -433,7 +433,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
     const handleCloseWizard = () => {
         setShowWizardDialog(false);
         setWizardMode(null);
-        setWizardInitialName('');
+        setQuickGoalData({ name: '', prazo: null });
     };
     
     const handleOpenEditDialog = (meta) => {
@@ -450,7 +450,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         if (!metaToEdit) return;
         handleSave(metaToEdit);
         handleCloseEditDialog();
-    }
+    };
 
 
     const handleSave = async (newOrUpdatedMeta) => {
@@ -585,11 +585,11 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
         }
     };
     
-    const handleCreateSimpleGoal = async (goalName) => {
-        if (!goalName.trim()) return;
+    const handleCreateSimpleGoal = async () => {
+        if (!quickGoalData.name.trim()) return;
         setIsLoadingSimpleGoal(true);
         try {
-            const { refinedGoal, fallback } = await generateSimpleSmartGoal({ goalName });
+            const { refinedGoal, fallback } = await generateSimpleSmartGoal({ goalName: quickGoalData.name });
             
             if (fallback) {
                  toast({
@@ -603,7 +603,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                 id: null,
                 nome: refinedGoal.name,
                 categoria: 'Desenvolvimento Pessoal', // Default category
-                prazo: null,
+                prazo: quickGoalData.prazo,
                 concluida: false,
                 detalhes_smart: refinedGoal,
                 user_id: profile.id
@@ -663,18 +663,47 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                                 Digite o nome da sua meta. O Sistema irá transformá-la num objetivo SMART para si.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4">
-                            <Input
-                                placeholder="Ex: Aprender a investir na bolsa"
-                                value={wizardInitialName}
-                                onChange={(e) => setWizardInitialName(e.target.value)}
-                                disabled={isLoadingSimpleGoal}
-                                onKeyPress={(e) => e.key === 'Enter' && handleCreateSimpleGoal(wizardInitialName)}
-                            />
+                        <div className="py-4 space-y-4">
+                             <div>
+                                <Label htmlFor="goal-name">Nome da Meta</Label>
+                                <Input
+                                    id="goal-name"
+                                    placeholder="Ex: Aprender a investir na bolsa"
+                                    value={quickGoalData.name}
+                                    onChange={(e) => setQuickGoalData(prev => ({...prev, name: e.target.value}))}
+                                    disabled={isLoadingSimpleGoal}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleCreateSimpleGoal()}
+                                />
+                             </div>
+                             <div>
+                                <Label htmlFor="prazo" className="text-primary">Prazo (Opcional)</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal mt-1",
+                                            !quickGoalData.prazo && "text-muted-foreground"
+                                        )}
+                                        >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {quickGoalData.prazo ? format(new Date(quickGoalData.prazo), "PPP") : <span>Escolha uma data</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                        mode="single"
+                                        selected={quickGoalData.prazo ? new Date(quickGoalData.prazo) : null}
+                                        onSelect={(date) => setQuickGoalData(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                        initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
                         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
                             <Button variant="outline" onClick={handleCloseWizard} disabled={isLoadingSimpleGoal}>Cancelar</Button>
-                            <Button onClick={() => handleCreateSimpleGoal(wizardInitialName)} disabled={isLoadingSimpleGoal || !wizardInitialName.trim()}>
+                            <Button onClick={handleCreateSimpleGoal} disabled={isLoadingSimpleGoal || !quickGoalData.name.trim()}>
                                 {isLoadingSimpleGoal ? "A criar..." : "Criar Meta"}
                             </Button>
                         </DialogFooter>
@@ -687,7 +716,7 @@ export const MetasView = ({ metas, setMetas, missions, setMissions, profile, ski
                         onSave={handleSave}
                         metaToEdit={null}
                         profile={profile}
-                        initialGoalName={wizardInitialName}
+                        initialGoalName={quickGoalData.name}
                     />
                 );
             default:
