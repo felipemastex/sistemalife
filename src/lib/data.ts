@@ -142,9 +142,9 @@ export const missoes = [
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 101, nome: 'Instalar o Compilador Python', descricao: 'Aceda a python.org, descarregue e instale a versão mais recente do Python no seu sistema operativo.', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria' },
-        { id: 102, nome: 'Configurar o Editor de Código', descricao: 'Abra o VS Code, aceda à loja de extensões e instale a extensão oficial "Python" da Microsoft.', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria' },
-        { id: 103, nome: 'Invocar o Terminal', descricao: 'Crie um novo ficheiro chamado hello.py e escreva a linha: print("Hello, World!"). Execute o ficheiro no terminal com o comando `python hello.py`.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria' },
+        { id: 101, nome: 'Sessão de Instalação', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria', subTasks: [{ name: 'Instalar Python', target: 1, unit: 'ação', current: 1}] },
+        { id: 102, nome: 'Configuração do Ambiente', concluido: true, xp_conclusao: 15, fragmentos_conclusao: 2, tipo: 'diaria', subTasks: [{ name: 'Instalar extensão Python no VSCode', target: 1, unit: 'ação', current: 1}] },
+        { id: 103, nome: 'Invocando o Terminal', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria', subTasks: [{ name: 'Executar "Hello, World!"', target: 1, unit: 'vez', current: 0 }] },
     ]
   },
    {
@@ -158,7 +158,7 @@ export const missoes = [
     total_missoes_diarias: 15,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 107, nome: 'Entrar na Arena', descricao: 'Crie uma conta no LeetCode, HackerRank ou Beecrowd e resolva o primeiro problema "Two Sum".', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria' },
+        { id: 107, nome: 'Entrar na Arena', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria', subTasks: [{ name: 'Resolver problema "Two Sum" no LeetCode', target: 1, unit: 'problema', current: 0 }] },
     ]
   },
   {
@@ -172,7 +172,7 @@ export const missoes = [
     total_missoes_diarias: 20,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 109, nome: 'Importar o Arsenal', descricao: 'Crie um novo Jupyter Notebook e importe a biblioteca Pandas com o alias `pd`.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
+        { id: 109, nome: 'Importar o Arsenal', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria', subTasks: [{ name: 'Importar Pandas em Jupyter Notebook', target: 1, unit: 'vez', current: 0 }] },
     ]
   },
   {
@@ -186,7 +186,7 @@ export const missoes = [
     total_missoes_diarias: 25,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 108, nome: 'Fundação com Flask', descricao: 'Configure um novo projeto Flask e crie um endpoint básico que retorne um JSON de "status: online".', concluido: false, xp_conclusao: 35, fragmentos_conclusao: 7, tipo: 'diaria' },
+        { id: 108, nome: 'Fundação com Flask', concluido: false, xp_conclusao: 35, fragmentos_conclusao: 7, tipo: 'diaria', subTasks: [{ name: 'Criar endpoint básico com Flask', target: 1, unit: 'endpoint', current: 0 }] },
     ]
   },
   {
@@ -200,7 +200,7 @@ export const missoes = [
     total_missoes_diarias: 30,
     ultima_missao_concluida_em: null,
      missoes_diarias: [
-        { id: 110, nome: 'Desenhar a Arquitetura', descricao: 'Num quadro branco ou ferramenta de diagramação, desenhe o fluxo do seu pipeline de dados: de onde os dados virão, como serão transformados e onde serão armazenados.', concluido: false, xp_conclusao: 40, fragmentos_conclusao: 8, tipo: 'diaria' },
+        { id: 110, nome: 'Desenhar a Arquitetura', concluido: false, xp_conclusao: 40, fragmentos_conclusao: 8, tipo: 'diaria', subTasks: [{ name: 'Desenhar fluxo de pipeline de dados', target: 1, unit: 'diagrama', current: 0 }] },
     ]
   },
   
@@ -216,8 +216,8 @@ export const missoes = [
     total_missoes_diarias: 10,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 104, nome: 'Preparar o Equipamento de Batalha', descricao: 'Separe os seus sapatos de corrida, meias confortáveis e roupas adequadas para o clima de hoje.', concluido: true, xp_conclusao: 10, fragmentos_conclusao: 1, tipo: 'diaria' },
-       { id: 105, nome: 'Ritual de Aquecimento', descricao: 'Faça uma caminhada rápida de 5 minutos seguida de 5 minutos de alongamentos dinâmicos focados nas pernas e ancas.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria' },
+       { id: 104, nome: 'Preparação Estratégica', concluido: true, xp_conclusao: 10, fragmentos_conclusao: 1, tipo: 'diaria', subTasks: [{ name: 'Separar equipamento de corrida', target: 1, unit: 'conjunto', current: 1 }] },
+       { id: 105, nome: 'A Caminhada de Adaptação', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 3, tipo: 'diaria', subTasks: [{ name: 'Caminhada leve', target: 20, unit: 'minutos', current: 0 }] },
     ]
   },
   {
@@ -231,7 +231,7 @@ export const missoes = [
     total_missoes_diarias: 15,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 111, nome: 'Análise Pós-Batalha', descricao: 'Reflita sobre o seu treino de 5km. O que funcionou? O que pode ser melhorado? Anote 3 lições aprendidas.', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria' },
+       { id: 111, nome: 'Análise Pós-Batalha', concluido: false, xp_conclusao: 25, fragmentos_conclusao: 5, tipo: 'diaria', subTasks: [{ name: 'Anotar 3 lições aprendidas', target: 3, unit: 'lições', current: 0 }] },
     ]
   },
   {
@@ -245,7 +245,7 @@ export const missoes = [
     total_missoes_diarias: 20,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-       { id: 112, nome: 'Estudar o Terreno', descricao: 'Pesquise e inscreva-se num plano de treino de 12 semanas para uma meia maratona.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
+       { id: 112, nome: 'Estudar o Terreno', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria', subTasks: [{ name: 'Inscrever-se num plano de treino', target: 1, unit: 'plano', current: 0 }] },
     ]
   },
 
@@ -261,7 +261,7 @@ export const missoes = [
     total_missoes_diarias: 12,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 106, nome: 'A Escolha do Tomo', descricao: 'Pesquise e selecione o primeiro livro de não-ficção que você lerá este ano. Adicione-o à sua lista de leitura no Goodreads ou numa aplicação similar.', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 4, tipo: 'diaria' },
+        { id: 106, nome: 'A Escolha do Tomo', concluido: false, xp_conclusao: 20, fragmentos_conclusao: 4, tipo: 'diaria', subTasks: [{ name: 'Escolher e listar próximo livro', target: 1, unit: 'livro', current: 0 }] },
     ]
   },
   {
@@ -275,7 +275,7 @@ export const missoes = [
     total_missoes_diarias: 24,
     ultima_missao_concluida_em: null,
     missoes_diarias: [
-        { id: 113, nome: 'Otimizar a Fila de Leitura', descricao: 'Selecione os próximos 3 livros que você lerá. Tenha-os prontos para começar assim que terminar o atual.', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria' },
+        { id: 113, nome: 'Otimizar a Fila de Leitura', concluido: false, xp_conclusao: 30, fragmentos_conclusao: 6, tipo: 'diaria', subTasks: [{ name: 'Selecionar os próximos 3 livros', target: 3, unit: 'livros', current: 0 }] },
     ]
   }
 ];
