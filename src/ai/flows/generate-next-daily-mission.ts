@@ -21,7 +21,7 @@ const SubTaskSchema = z.object({
 const GenerateNextDailyMissionInputSchema = z.object({
   rankedMissionName: z.string().describe("O nome da missão épica ou ranqueada principal."),
   metaName: z.string().describe("A meta de longo prazo associada a esta missão."),
-  goalDeadline: z.string().optional().describe("A data final para a meta (prazo), no formato YYYY-MM-DD."),
+  goalDeadline: z.string().nullable().optional().describe("A data final para a meta (prazo), no formato YYYY-MM-DD."),
   history: z.string().describe("O histórico das últimas missões diárias concluídas para dar contexto."),
   userLevel: z.number().describe("O nível atual do utilizador para ajustar a dificuldade."),
   feedback: z.string().optional().describe("Feedback do utilizador sobre a missão anterior (ex: 'muito fácil', 'muito difícil', ou um texto descritivo) para calibrar a próxima."),
@@ -107,7 +107,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       userLevel: input.userLevel,
     });
 
-    const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0}));
+    const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
 
     return {
       nextMissionName: output!.nextMissionName,
