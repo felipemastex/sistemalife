@@ -62,7 +62,7 @@ export const DashboardView = ({ profile }) => {
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <div className="md:col-span-2 space-y-4">
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
                       <StatItem label="Título" value={profileRank.title}/>
                       <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
@@ -118,7 +118,7 @@ export const DashboardView = ({ profile }) => {
                     </ResponsiveContainer>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {statsData.map((stat) => (
                         <StatItem key={stat.subject} label={stat.subject} value={stat.value} />
                     ))}
@@ -128,5 +128,3 @@ export const DashboardView = ({ profile }) => {
     </div>
   );
 };
-
-    
