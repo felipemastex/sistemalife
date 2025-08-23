@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent as OriginalDialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { Award, X, Timer, Gem, Plus, Link, Eye } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import { Progress } from "../ui/progress";
 
 
 const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
-    const [amount, setAmount] = React.useState('');
+    const [amount, setAmount] = useState('');
     
     if (!subTask) return null;
 
@@ -66,7 +66,7 @@ const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
 
 export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClose, onCooldown, timer }) => {
   
-  const [contributionState, setContributionState] = React.useState({ open: false, subTask: null });
+  const [contributionState, setContributionState] = useState({ open: false, subTask: null });
 
   if (!mission) return null;
 
