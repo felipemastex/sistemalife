@@ -30,6 +30,7 @@ export type GenerateNextDailyMissionInput = z.infer<typeof GenerateNextDailyMiss
 
 const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico (ex: 'Treino de Força Fundamental', 'Sessão de Estudo Focada')."),
+    nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
     learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
@@ -77,13 +78,13 @@ Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de 
 
 **REGRAS:**
 1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código").
-2.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
+2.  **Descrição da Missão:** Escreva uma breve descrição (1-2 frases) que explique o propósito da missão diária.
+3.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
     *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste", "Ler artigo técnico").
     *   Defina um **'target'** numérico claro para cada sub-tarefa.
     *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
     *   **Exemplo Bom:** { name: "Fazer flexões", target: 20, unit: "repetições" }
     *   **Exemplo Ruim:** { name: "Exercitar" } (Não é específico nem mensurável).
-3.  **NÃO GERE DESCRIÇÕES LONGAS.** O output deve ser o nome da missão e a lista de sub-tarefas.
 4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de aprendizagem de alta qualidade.
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
@@ -91,6 +92,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
 
     const MissionSchema = z.object({
         nextMissionName: z.string(),
+        nextMissionDescription: z.string(),
         learningResources: z.array(z.string().url()).optional(),
         subTasks: z.array(SubTaskSchema),
     });
@@ -111,6 +113,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
 
     return {
       nextMissionName: output!.nextMissionName,
+      nextMissionDescription: output!.nextMissionDescription,
       xp: rewards.xp,
       fragments: rewards.fragments,
       learningResources: output!.learningResources,

@@ -22,7 +22,7 @@ import { ShopView } from '@/components/views/player/ShopView';
 import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
-import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -30,7 +30,7 @@ export default function App() {
   const { user, loading, logout } = useAuth();
   const { 
       isDataLoaded, profile, metas, missions, skills, routine, routineTemplates, guilds, allUsers,
-      dispatch, persistData, completeMission,
+      dispatch, persistData, completeMission, handleFullReset,
       questNotification, systemAlert, showOnboarding,
       setQuestNotification, setSystemAlert, setShowOnboarding
    } = usePlayerDataContext();
@@ -44,46 +44,6 @@ export default function App() {
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50;
-
-    // --- Persistence Wrappers ---
-    const persistProfile = (newProfile) => {
-        dispatch({ type: 'SET_PROFILE', payload: newProfile });
-        persistData('profile', newProfile);
-    };
-
-    const persistMetas = (newMetas) => {
-        dispatch({ type: 'SET_METAS', payload: newMetas });
-        persistData('metas', newMetas);
-    };
-
-    const persistMissions = (newMissions) => {
-        dispatch({ type: 'SET_MISSIONS', payload: newMissions });
-        persistData('missions', newMissions);
-    };
-    
-    const persistSkills = (newSkills) => {
-        dispatch({ type: 'SET_SKILLS', payload: newSkills });
-        persistData('skills', newSkills);
-    };
-    
-    const persistRoutine = (newRoutine) => {
-        dispatch({ type: 'SET_ROUTINE', payload: newRoutine });
-        persistData('routine', newRoutine);
-    };
-
-    const persistRoutineTemplates = (newTemplates) => {
-        dispatch({ type: 'SET_ROUTINE_TEMPLATES', payload: newTemplates });
-        persistData('routineTemplates', newTemplates);
-    };
-
-    const persistGuilds = (newGuilds) => {
-        dispatch({ type: 'SET_GUILDS', payload: newGuilds });
-        persistData('guilds', newGuilds);
-    };
-    
-    const setAllUsers = (newUsers) => {
-        dispatch({ type: 'SET_ALL_USERS', payload: newUsers });
-    }
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndRef.current = null;
@@ -184,16 +144,16 @@ export default function App() {
     
     const views = {
       'dashboard': <DashboardView profile={profile} />,
-      'metas': <MetasView metas={metas} setMetas={persistMetas} missions={missions} setMissions={persistMissions} profile={profile} skills={skills} setSkills={persistSkills} />,
+      'metas': <MetasView metas={metas} setMetas={(d) => persistData('metas', d)} missions={missions} setMissions={(d) => persistData('missions', d)} profile={profile} skills={skills} setSkills={(d) => persistData('skills', d)} />,
       'missions': <MissionsView missions={missions} onCompleteMission={completeMission} />,
-      'skills': <SkillsView skills={skills} setSkills={persistSkills} metas={metas} setMetas={persistMetas} />,
-      'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
+      'skills': <SkillsView skills={skills} setSkills={(d) => persistData('skills', d)} metas={metas} setMetas={(d) => persistData('metas', d)} />,
+      'routine': <RoutineView initialRoutine={routine} persistRoutine={(d) => persistData('routine', d)} missions={missions} initialTemplates={routineTemplates} persistTemplates={(d) => persistData('routineTemplates', d)} />,
       'achievements': <AchievementsView profile={profile} />,
-      'guilds': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} setAllUsers={setAllUsers} currentGuild={currentGuild} />,
-      'shop': <ShopView profile={profile} setProfile={persistProfile} />,
-      'inventory': <InventoryView profile={profile} setProfile={persistProfile} />,
+      'guilds': <GuildsView profile={profile} setProfile={(d) => persistData('profile', d)} guilds={guilds} setGuilds={(d) => persistData('guilds', d)} metas={metas} allUsers={allUsers} setAllUsers={(d) => dispatch({ type: 'SET_ALL_USERS', payload: d })} currentGuild={currentGuild} />,
+      'shop': <ShopView profile={profile} setProfile={(d) => persistData('profile', d)} />,
+      'inventory': <InventoryView profile={profile} setProfile={(d) => persistData('profile', d)} />,
       'ai-chat': <AIChatView />,
-      'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={() => {}} />,
+      'settings': <SettingsView profile={profile} setProfile={(d) => persistData('profile', d)} onReset={handleFullReset} />,
     };
 
     return (
@@ -259,7 +219,7 @@ export default function App() {
         {showOnboarding && <OnboardingGuide onFinish={() => {
             setShowOnboarding(false);
             if (profile) {
-              persistProfile({...profile, onboarding_completed: true});
+              persistData('profile', {...profile, onboarding_completed: true});
             }
         }} />}
         {systemAlert && (
@@ -273,5 +233,3 @@ export default function App() {
     </div>
   );
 }
-
-    

@@ -74,11 +74,15 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 };
 
 
-const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMissionFeedback, onReactivateMission, reactivatingMissionId }) => {
+const MissionsViewComponent = ({ missions, onCompleteMission }) => {
+    const [generating, setGenerating] = useState(null); // Stores rankedMissionId
     const [timers, setTimers] = useState({});
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
+    const [missionFeedback, setMissionFeedback] = useState({}); // { [rankedMissionId]: "feedback text" }
+    const [reactivatingMissionId, setReactivatingMissionId] = useState(null);
+
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     
     const { toast } = useToast();
@@ -149,6 +153,17 @@ const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMis
             case 'SS': return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/50';
             case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
             default: return 'bg-gray-700 text-gray-400';
+        }
+    }
+
+    const handleCompleteMission = async (payload) => {
+        setGenerating(payload.rankedMissionId);
+        try {
+            await onCompleteMission(payload);
+        } catch (e) {
+             toast({ variant: 'destructive', title: "Erro ao Completar Missão", description: "Não foi possível processar a conclusão da missão." });
+        } finally {
+            setGenerating(null);
         }
     }
     
@@ -270,7 +285,7 @@ const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMis
                                                                 size="icon" 
                                                                 variant="outline" 
                                                                 className="h-7 w-7" 
-                                                                onClick={() => onCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
+                                                                onClick={() => handleCompleteMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
                                                                 disabled={(st.current || 0) >= st.target}
                                                                 aria-label={`Adicionar progresso para ${st.name}`}
                                                             >
@@ -322,15 +337,6 @@ const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMis
                                              <p className="font-bold text-muted-foreground line-through">{mission.nome}</p>
                                              <p className="text-sm text-muted-foreground/80 mt-1">{mission.descricao}</p>
                                          </div>
-                                         <Button 
-                                            size="sm" 
-                                            variant="outline" 
-                                            onClick={() => onReactivateMission(mission.id)}
-                                            disabled={reactivatingMissionId === mission.id}
-                                        >
-                                             {reactivatingMissionId === mission.id ? <LoaderCircle className="h-4 w-4 animate-spin"/> : <RefreshCw className="h-4 w-4"/>}
-                                             <span className="ml-2">Reativar</span>
-                                         </Button>
                                      </div>
                                 ))}
                              </AccordionContent>
@@ -379,5 +385,3 @@ const MissionsViewComponent = ({ missions, onCompleteMission, generating, setMis
 };
 
 export const MissionsView = memo(MissionsViewComponent);
-
-    
