@@ -4,6 +4,7 @@ import { Inter, Cinzel_Decorative } from 'next/font/google'
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
+import { PlayerDataProvider } from '@/hooks/use-player-data';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,7 +47,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans">
         <AuthProvider>
-          {children}
+            <PlayerDataProvider>
+              {children}
+            </PlayerDataProvider>
         </AuthProvider>
         <Toaster />
       </body>

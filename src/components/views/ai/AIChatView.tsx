@@ -97,18 +97,17 @@ const AIChatViewComponent = () => {
                     setIsDataLoaded(true);
                     
                     // Initial message after data is loaded
-                    await getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
+                    getSystemResponse('Forneça uma análise estratégica do meu estado atual.');
                 }
             } catch (error) {
                 console.error("Error fetching data for AI Chat:", error);
                 toast({ variant: 'destructive', title: 'Erro de Carregamento', description: 'Não foi possível carregar os dados para o chat.' });
-            } finally {
-                // setIsLoading will be set to false inside getSystemResponse
+                 setIsLoading(false);
             }
         };
 
         fetchData();
-    }, [user, toast]);
+    }, [user, toast, getSystemResponse]);
 
 
     const handleSend = async () => {
