@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export const AIChatView = ({ profile, metas, routine, missions }) => {
@@ -105,18 +106,16 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
                             </div>
                         </div>
                     ))}
-                    {isLoading && ( 
-                        <div className="flex items-start gap-4">
-                            <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
-                            <div className="max-w-lg p-4 text-muted-foreground">
-                                <div className="flex items-center space-x-2">
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                                    <div className="h-2 w-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {isLoading && (
+                         <div className="flex items-start gap-4 animate-in fade-in-50 duration-500">
+                             <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
+                             <div className="max-w-2xl rounded-lg p-4 text-base space-y-2 w-full">
+                                 <Skeleton className="h-4 w-4/5" />
+                                 <Skeleton className="h-4 w-full" />
+                                 <Skeleton className="h-4 w-2/3" />
+                             </div>
+                         </div>
+                     )}
                  </div>
             </ScrollArea>
 
@@ -140,5 +139,3 @@ export const AIChatView = ({ profile, metas, routine, missions }) => {
         </div>
     );
 };
-
-    
