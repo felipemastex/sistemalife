@@ -95,7 +95,8 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
     const [missionFeedback, setMissionFeedback] = useState({}); // Stores text feedback for next mission generation
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
-    const [contributionState, setContributionState] = useState({ open: false, subTask: null, dailyMissionId: null, rankedMissionId: null });
+    
+    // showQuestInfo will now only store the IDs.
     const [showQuestInfo, setShowQuestInfo] = useState<{dailyMissionId: string; rankedMissionId: string} | null>(null);
 
     const { toast } = useToast();
@@ -152,12 +153,12 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         return () => clearInterval(interval);
     }, [missions, setMissions, timers]);
     
-    const handleHackerMode = () => {
+    const handleResetCooldowns = () => {
         const updatedMissions = missions.map(m => ({ ...m, ultima_missao_concluida_em: null }));
         setMissions(updatedMissions);
         toast({
-            title: "Modo Hacker Ativado!",
-            description: "Tempos de espera das missões eliminados.",
+            title: "Temporizadores Reiniciados!",
+            description: "Todos os tempos de espera das missões foram eliminados.",
         });
     };
 
@@ -315,16 +316,6 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         const rankedMission = missions.find(m => m.id === rankedMissionId);
         if (!rankedMission) return;
         
-        const isOnCooldown = !!rankedMission.ultima_missao_concluida_em;
-        if (isOnCooldown) {
-            toast({
-                variant: "destructive",
-                title: "Aguarde o Cooldown!",
-                description: "A próxima missão estará disponível quando o temporizador zerar.",
-            });
-            return;
-        }
-
         setGenerating(dailyMissionId);
         let xpGained = 0;
         let fragmentsGained = 0;
@@ -712,8 +703,9 @@ export const MissionsView = ({ missions, setMissions, profile, setProfile, metas
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
-                 <Button onClick={handleHackerMode} variant="outline" size="sm" aria-label="Ativar Modo Hacker">
-                    Modo Hacker
+                 <Button onClick={handleResetCooldowns} variant="outline" size="sm" aria-label="Reiniciar Missões">
+                    <RefreshCw className="mr-2 h-4 w-4"/>
+                    Reiniciar Missões (Temp)
                 </Button>
             </div>
             <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
