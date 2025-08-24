@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { differenceInDays, parseISO } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Label } from '@/components/ui/label';
 
 
 // Helper Dialog for getting user feedback
@@ -77,12 +78,68 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     );
 };
 
+const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+    const [amount, setAmount] = useState('');
+    
+    if (!subTask) return null;
+
+    const remaining = subTask.target - (subTask.current || 0);
+
+    const handleContribute = () => {
+        const contribution = parseInt(amount, 10);
+        if (!isNaN(contribution) && contribution > 0) {
+            onContribute(contribution);
+            onOpenChange(false);
+            setAmount('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Contribuir para: {subTask.name}</DialogTitle>
+                    <DialogDescription>
+                        Insira a quantidade que você concluiu. O seu esforço fortalece o seu progresso.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                        Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
+                    </p>
+                    <div>
+                        <Label htmlFor="contribution-amount">Nova Contribuição</Label>
+                        <Input
+                            id="contribution-amount"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder={`Ex: 5 (Máx: ${remaining})`}
+                            min="1"
+                            max={remaining}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                        Contribuir
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
 
 const MissionsViewComponent = () => {
     const { profile, missions, metas, completeMission, generatingMission, missionFeedback, setMissionFeedback, persistData } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
+    const [contributionModalState, setContributionModalState] = useState({ open: false, subTask: null, mission: null });
+
     const [activeAccordionItem, setActiveAccordionItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [rankFilter, setRankFilter] = useState('all');
@@ -458,7 +515,7 @@ const MissionsViewComponent = () => {
                                                                     size="icon" 
                                                                     variant="outline" 
                                                                     className="h-7 w-7" 
-                                                                    onClick={() => onContributeToQuest(st, 1, activeDailyMission)}
+                                                                    onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission})}
                                                                     disabled={isCompleted}
                                                                     aria-label={`Adicionar progresso para ${st.name}`}
                                                                 >
@@ -513,6 +570,17 @@ const MissionsViewComponent = () => {
                 onSubmit={handleMissionFeedback}
                 mission={feedbackModalState.mission}
                 feedbackType={feedbackModalState.type}
+            />
+
+            <ContributionDialog
+                open={contributionModalState.open}
+                onOpenChange={(isOpen) => setContributionModalState({ open: isOpen, subTask: null, mission: null })}
+                subTask={contributionModalState.subTask}
+                onContribute={(amount) => {
+                    if (contributionModalState.subTask && contributionModalState.mission) {
+                        onContributeToQuest(contributionModalState.subTask, amount, contributionModalState.mission);
+                    }
+                }}
             />
 
             { dialogState.open &&
