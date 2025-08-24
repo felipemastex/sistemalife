@@ -149,8 +149,8 @@ const GuildsViewComponent = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col">
-            <div className="animate-in fade-in-50 duration-500 h-full flex flex-col">
+        <div className="p-4 md:p-6">
+            <div className="animate-in fade-in-50 duration-500">
               {renderContent()}
             </div>
         </div>
