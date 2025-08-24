@@ -146,3 +146,10 @@ O coração da aplicação é a sua capacidade de usar IA generativa para person
 - **5.4. Melhorias na Interface (UI/UX):**
   - **Objetivo:** Tornar a experiência do usuário mais fluida e informativa.
   - **Ação:** Implementar feedback visual imediato ao completar missões (ex: animações de "check"). Adicionar paginação ou um botão "Carregar Mais" para a secção de missões concluídas. Mover o "Modo Hacker" para um menu de configurações de desenvolvedor.
+
+### 6. Melhorias na Aba Configurações (`SettingsView.tsx`)
+- **Descrição:** Transformar a aba de configurações num centro de controlo abrangente para a personalização da experiência do utilizador.
+- **6.1. Reorganização da Interface:** Implementar um sistema de navegação por abas (`Perfil`, `Interface`, `IA`, `Notificações`, `Privacidade`, etc.).
+- **6.2. Configurações Expandidas:** Adicionar opções detalhadas para personalizar temas visuais, a personalidade da IA, a frequência de sugestões, tipos de notificações, e controlos de privacidade.
+- **6.3. Funcionalidades Avançadas:** Implementar um sistema de backup e sincronização de dados (ex: Google Drive), um dashboard de analytics pessoais e controlos de acessibilidade.
+- **Ver Documentação Detalhada:** Para uma análise completa desta funcionalidade, consulte o [`ROADMAP_SETTINGS.md`](./ROADMAP_SETTINGS.md).
