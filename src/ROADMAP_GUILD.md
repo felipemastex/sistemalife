@@ -45,7 +45,7 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 **Objetivo:** Introduzir mecânicas de recompensa e melhorar a comunicação.
 
 - **[ ] Implementar `GuildRewards` (3.2.2):**
-    - [ ] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
+    - [x] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
     - [ ] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições.
 - **[ ] Implementar `GuildNotifications` (3.4.1):**
     - [ ] Criar a interface para exibir as notificações da guilda.
