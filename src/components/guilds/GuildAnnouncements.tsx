@@ -53,10 +53,11 @@ const AnnouncementForm = ({ open, onOpenChange, onSave, announcementToEdit = nul
 };
 
 
-export const GuildAnnouncements = ({ announcements = [], onUpdate, canManage, userProfile }) => {
+export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfile }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [announcementToEdit, setAnnouncementToEdit] = useState(null);
 
+    const announcements = guild.announcements || [];
     const sortedAnnouncements = [...announcements].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     const handleSave = (content) => {
@@ -78,12 +79,12 @@ export const GuildAnnouncements = ({ announcements = [], onUpdate, canManage, us
             };
             updatedAnnouncements = [newAnnouncement, ...announcements];
         }
-        onUpdate(updatedAnnouncements);
+        onGuildUpdate({...guild, announcements: updatedAnnouncements});
     };
 
     const handleDelete = (id) => {
         const updatedAnnouncements = announcements.filter(ann => ann.id !== id);
-        onUpdate(updatedAnnouncements);
+        onGuildUpdate({...guild, announcements: updatedAnnouncements});
     };
 
     const handleOpenEdit = (ann) => {

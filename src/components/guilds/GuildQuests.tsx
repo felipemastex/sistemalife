@@ -67,13 +67,14 @@ const ContributionDialog = ({ open, onOpenChange, subTask, onContribute, userDai
 };
 
 
-export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData, userProfile }) => {
+export const GuildQuests = ({ guild, onGuildUpdate, canManage, userProfile }) => {
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [questTheme, setQuestTheme] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [contributionDialogState, setContributionDialogState] = useState({ open: false, subTask: null, userDailyContribution: 0 });
 
     const { toast } = useToast();
+    const quests = guild.quests || [];
     
     const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -84,8 +85,8 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
         }
         setIsCreating(true);
         try {
-            const memberCount = guildData.membros?.length || 1;
-            const guildLevel = guildData.level || 1; 
+            const memberCount = guild.membros?.length || 1;
+            const guildLevel = guild.level || 1; 
 
             const result = await generateGuildQuest({
                 theme: questTheme,
@@ -93,7 +94,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                 memberCount,
             });
 
-            const leader = (guildData.membros || []).find(m => m.role === 'Líder');
+            const leader = (guild.membros || []).find(m => m.role === 'Líder');
 
             const newQuest = {
                 id: `quest_${Date.now()}`,
@@ -104,8 +105,8 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
                 criador_id: leader ? leader.user_id : null,
             };
             
-            const updatedQuests = [...(quests || []), newQuest];
-            onQuestsUpdate(updatedQuests);
+            const updatedGuild = { ...guild, quests: [...quests, newQuest] };
+            onGuildUpdate(updatedGuild);
 
             toast({ title: "Missão de Guilda Criada!", description: `A missão "${newQuest.nome}" está agora ativa.` });
             setShowCreateDialog(false);
@@ -152,7 +153,8 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
             })
         }));
         
-        onQuestsUpdate(updatedQuests);
+        const updatedGuild = { ...guild, quests: updatedQuests };
+        onGuildUpdate(updatedGuild);
         toast({ title: "Contribuição Registada!", description: `Você contribuiu com ${amount} para "${subTask.name}".`});
     };
 
@@ -173,7 +175,7 @@ export const GuildQuests = ({ quests = [], onQuestsUpdate, canManage, guildData,
             <CardContent className="flex-grow overflow-hidden p-0">
                 <ScrollArea className="h-full">
                 <div className="space-y-4 p-6 pt-0">
-                    {(quests || []).length > 0 ? (
+                    {quests.length > 0 ? (
                         quests.map(quest => {
                             const totalTarget = quest.subTasks.reduce((sum, task) => sum + task.target, 0);
                             const totalCurrent = quest.subTasks.reduce((sum, task) => sum + (task.current || 0), 0);
