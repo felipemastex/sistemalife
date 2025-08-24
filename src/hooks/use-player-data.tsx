@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -283,9 +284,7 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
                     const newDailyMissionsList = rm.missoes_diarias.map((dm: DailyMission) => 
                         dm.id === dailyMissionId ? { ...dm, concluido: true, completed_at: new Date().toISOString() } : dm
                     );
-                    if (newDailyMission) {
-                        newDailyMissionsList.push(newDailyMission);
-                    }
+                    // A nova missão (newDailyMission) será adicionada à meia-noite pelo `generatePendingDailyMissions`
                     return { ...rm, missoes_diarias: newDailyMissionsList, ultima_missao_concluida_em: new Date().toISOString() };
                 }
                 return rm;
@@ -535,6 +534,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
              return;
         }
 
+        // Não gerar nova missão aqui. Apenas completar a atual.
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
         
         if (!state.profile) return;
@@ -576,7 +576,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     handleShowSkillUpNotification(updatedSkill.nome, (updatedSkill.nivel_atual || 0) + 1, statsToUpgrade.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)));
                     if (statsToUpgrade.length > 0 && updatedProfile.estatisticas) {
                         statsToUpgrade.forEach((stat: string) => { 
-                            // Type assertion to avoid TypeScript error
                             const statKey = stat as keyof typeof updatedProfile.estatisticas;
                             updatedProfile.estatisticas[statKey] = (updatedProfile.estatisticas[statKey] || 0) + 1; 
                         });
@@ -589,57 +588,21 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        // Armazenar feedback para usar na próxima missão (à meia-noite)
         if (feedback) {
             dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId: rankedMissionId, feedback } });
         }
 
-        // Gerar nova missão imediatamente após completar a missão anterior
-        let newDailyMission = null;
-        try {
-            const meta = state.metas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
-            const history = tempRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
-            const feedbackForAI = state.missionFeedback[rankedMissionId];
-            
-            const result = await generateNextDailyMission({
-                rankedMissionName: tempRankedMission.nome,
-                metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
-                history: history || `O utilizador completou missões anteriores.`,
-                userLevel: state.profile?.nivel || 1,
-                feedback: feedbackForAI
-            });
-            
-            newDailyMission = {
-                id: Date.now() + Math.random(), // Garantir IDs únicos
-                nome: result.nextMissionName,
-                descricao: result.nextMissionDescription,
-                xp_conclusao: result.xp,
-                fragmentos_conclusao: result.fragments,
-                concluido: false,
-                tipo: 'diaria',
-                learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0}))
-            };
-            
-            // Limpar feedback usado
-            if (feedbackForAI) {
-                dispatch({ type: 'CLEAR_MISSION_FEEDBACK', payload: { missionId: rankedMissionId }});
-            }
-        } catch (error) {
-            console.error("Erro ao gerar nova missão imediatamente:", error);
-        }
+        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
 
-        // Completar a missão E gerar nova missão imediatamente (mas bloqueada até meia-noite)
-        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+        const finalStateAfterCompletion = playerDataReducer(tempState, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
 
-        const finalRankedMission = tempState.missions.find((m: RankedMission) => m.id === rankedMissionId);
+        const finalRankedMission = finalStateAfterCompletion.missions.find((m: RankedMission) => m.id === rankedMissionId);
         const isRankedMissionComplete = finalRankedMission && finalRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).length >= (finalRankedMission.total_missoes_diarias || 10);
         
         if(isRankedMissionComplete && finalRankedMission) {
             dispatch({ type: 'COMPLETE_EPIC_MISSION', payload: { rankedMissionId } });
             toast({ title: "Missão Épica Concluída!", description: `Você conquistou "${tempRankedMission.nome}"!` });
-            const goalMissions = tempState.missions.filter((m: RankedMission) => m.meta_associada === tempRankedMission.meta_associada).sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            const goalMissions = finalStateAfterCompletion.missions.filter((m: RankedMission) => m.meta_associada === tempRankedMission.meta_associada).sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
             const currentIndex = goalMissions.findIndex((m: RankedMission) => m.id === rankedMissionId);
             const nextMission = goalMissions[currentIndex + 1];
             if (nextMission) { handleShowNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
@@ -654,34 +617,19 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
         await persistData('profile', updatedProfile);
-        await persistData('missions', tempState.missions.map((rm: RankedMission) => rm.id === rankedMissionId ? {...rm, missoes_diarias: [...rm.missoes_diarias.filter((dm: DailyMission) => dm.id !== dailyMissionId), {...tempDailyMission, concluido: true}]} : rm));
+        await persistData('missions', finalStateAfterCompletion.missions);
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
     
     const generatePendingDailyMissions = useCallback(async () => {
-        // Encontrar missões que precisam de nova missão diária
         const missionsNeedingNewDaily = state.missions.filter(mission => {
-            // Verificar se a missão épica não está completa
             if (mission.concluido) return false;
-            
-            // Verificar se não há missão diária ativa
             const hasActiveDaily = mission.missoes_diarias?.some(dm => !dm.concluido);
-            if (hasActiveDaily) return false;
-            
-            // Verificar se foi completada uma missão hoje
-            if (!mission.ultima_missao_concluida_em) return false;
-            
-            const completedDate = new Date(mission.ultima_missao_concluida_em);
-            const today = new Date();
-            const wasCompletedToday = completedDate.getFullYear() === today.getFullYear() &&
-                                    completedDate.getMonth() === today.getMonth() &&
-                                    completedDate.getDate() === today.getDate();
-            
-            return wasCompletedToday;
+            return !hasActiveDaily && mission.ultima_missao_concluida_em;
         });
 
-        // Gerar nova missão para cada missão que precisa
         for (const mission of missionsNeedingNewDaily) {
+            dispatch({ type: 'SET_GENERATING_MISSION', payload: mission.id });
             try {
                 const meta = state.metas.find((m: Meta) => m.nome === mission.meta_associada);
                 const history = mission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
@@ -697,7 +645,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 });
                 
                 const newDailyMission = {
-                    id: Date.now() + Math.random(), // Garantir IDs únicos
+                    id: Date.now() + Math.random(),
                     nome: result.nextMissionName,
                     descricao: result.nextMissionDescription,
                     xp_conclusao: result.xp,
@@ -708,21 +656,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     subTasks: result.subTasks.map(st => ({...st, current: 0}))
                 };
                 
-                dispatch({
-                    type: 'ADD_DAILY_MISSION',
-                    payload: {
-                        rankedMissionId: mission.id,
-                        newDailyMission
-                    }
-                });
+                dispatch({ type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } });
                 
-                // Limpar feedback usado
                 if (feedbackForAI) {
                     dispatch({ type: 'CLEAR_MISSION_FEEDBACK', payload: { missionId: mission.id }});
                 }
                 
-                // Persistir mudanças
-                await persistData('missions', state.missions);
+                await persistData('missions', playerDataReducer(state, { type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } }).missions);
                 
                 toast({
                     title: "Nova Missão Disponível!",
@@ -731,6 +671,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 
             } catch (error) {
                 console.error('Erro ao gerar missão pendente:', error);
+                 toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a próxima missão. Tente novamente mais tarde.' });
+            } finally {
+                dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
             }
         }
     }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
@@ -756,9 +699,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const emailUsername = user.email!.split('@')[0];
             
             const defaultUserSettings = {
-                mission_view_style: 'inline', // 'inline' or 'popup'
-                ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
-                theme_accent_color: '198 90% 55%', // HSL string
+                mission_view_style: 'inline',
+                ai_personality: 'balanced',
+                theme_accent_color: '198 90% 55%',
                 reduce_motion: false,
                 layout_density: 'default',
                 suggestion_frequency: 'medium',
@@ -814,7 +757,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
                     const batch = writeBatch(db);
                     
-                    // O ID do perfil no backup é ignorado; usamos o ID do utilizador atual.
                     const importedProfile = { ...data.profile, id: user.uid, email: user.email };
                     batch.set(userRef, importedProfile);
 
@@ -837,7 +779,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     resolve(true);
 
                 } catch (e) {
-                    dispatch({ type: 'SET_DATA_LOADED', payload: true }); // Reset loading state on error
+                    dispatch({ type: 'SET_DATA_LOADED', payload: true });
                     reject(e);
                 }
             };

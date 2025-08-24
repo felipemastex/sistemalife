@@ -427,19 +427,14 @@ const MissionsViewComponent = () => {
     
      useEffect(() => {
         const calculateTimeUntilMidnight = () => {
-            // Usar fuso horário local (-3) para cálculos
             const now = new Date();
-            
-            // Criar meia-noite local (próxima meia-noite no fuso local)
             const midnight = new Date(now);
-            midnight.setHours(24, 0, 0, 0); // Próxima meia-noite
+            midnight.setHours(24, 0, 0, 0);
             
             const diff = midnight.getTime() - now.getTime();
 
             if (diff <= 0) {
                 setTimeUntilMidnight('00:00:00');
-                
-                // MEIA-NOITE CHEGOU - Gerar missões pendentes
                 if (generatePendingDailyMissions) {
                     generatePendingDailyMissions();
                 }
@@ -509,7 +504,6 @@ const MissionsViewComponent = () => {
         
         let feedbackText = null;
         
-        // Convert feedback to text for AI
         if (feedbackData.difficulty !== 'perfect') {
             const difficultyText: Record<DifficultyType, string> = {
                 'too_easy': 'muito fácil',
@@ -524,13 +518,10 @@ const MissionsViewComponent = () => {
             }
         }
         
-        // Get mission data for animation
         const missionToComplete = missions.find((rm: RankedMission) => rm.id === rankedMissionId)?.missoes_diarias?.find((dm: DailyMission) => dm.id === dailyMissionId);
         const currentLevel = profile.nivel;
         
-        // Show animation first
         if (missionToComplete) {
-            // Calculate if user will level up (this is a simplified check)
             const currentXP = profile.xp || 0;
             const xpForNextLevel = profile.xp_para_proximo_nivel || 100;
             const willLevelUp = (currentXP + missionToComplete.xp_conclusao) >= xpForNextLevel;
@@ -545,7 +536,6 @@ const MissionsViewComponent = () => {
             });
         }
         
-        // Complete the mission with feedback after a short delay to let animation start
         setTimeout(async () => {
             if (rankedMissionId !== null && dailyMissionId !== null && subTask !== null && amount !== null) {
                 await completeMission({ 
@@ -558,7 +548,6 @@ const MissionsViewComponent = () => {
             }
         }, 500);
         
-        // Show appropriate toast based on feedback (this will appear after animation)
         setTimeout(() => {
             if (feedbackData.difficulty === 'perfect') {
                 toast({ 
@@ -574,7 +563,7 @@ const MissionsViewComponent = () => {
                     description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
                 });
             }
-        }, 4000); // Show toast after animation completes
+        }, 4000);
         
         setMissionCompletionFeedbackState({ open: false, missionName: '', rankedMissionId: null });
     };
@@ -598,7 +587,7 @@ const MissionsViewComponent = () => {
             case 'S': return 'text-yellow-400';
             case 'SS': return 'text-orange-400';
             case 'SSS': return 'text-pink-400';
-            case 'M': return 'text-slate-400'; // Cor para Manual
+            case 'M': return 'text-slate-400';
             default: return 'text-gray-500';
         }
     }
@@ -621,7 +610,6 @@ const MissionsViewComponent = () => {
          } else {
              const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === missionToUpdate.id));
              if(rankedMission) {
-                // Check if this contribution will complete the mission
                 const updatedSubTask = { ...subTask, current: Math.min(subTask.target, (subTask.current || 0) + amount) };
                 const willCompleteMission = missionToUpdate.subTasks?.every((st: SubTask) => {
                     if (st.name === subTask.name) {
@@ -630,7 +618,6 @@ const MissionsViewComponent = () => {
                     return (st.current || 0) >= st.target;
                 });
                 
-                // If mission will be completed, show feedback dialog first
                 if (willCompleteMission) {
                     setMissionCompletionFeedbackState({
                         open: true,
@@ -641,7 +628,6 @@ const MissionsViewComponent = () => {
                         amount
                     });
                 } else {
-                    // Just update progress without completing
                     completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: missionToUpdate.id, subTask, amount, feedback: null });
                 }
              }
@@ -652,9 +638,9 @@ const MissionsViewComponent = () => {
         const manualMissions = profile.manual_missions || [];
         let updatedMissions;
 
-        if (missionData.id) { // Editing
+        if (missionData.id) {
             updatedMissions = manualMissions.map((m: RankedMission) => m.id === missionData.id ? missionData : m);
-        } else { // Creating
+        } else {
             const newMission = { ...missionData, id: `manual_${Date.now()}`, concluido: false };
             updatedMissions = [...manualMissions, newMission];
         }
@@ -720,6 +706,116 @@ const MissionsViewComponent = () => {
     }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
+    
+    const renderActiveMissionContent = (mission: RankedMission) => {
+        const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
+
+        if (generatingMission === mission.id) {
+            return (
+                <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                    <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
+                    <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                    <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
+                </div>
+            );
+        }
+
+        const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+        
+        if (wasCompletedToday) {
+            return (
+                <div className="relative">
+                    <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 transition-all blur-sm pointer-events-none">
+                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex-grow">
+                                <p className="text-lg font-bold text-foreground">Missão Concluída</p>
+                                <p className="text-sm text-muted-foreground mt-1">Aguardando a próxima diretiva...</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/70 to-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500">
+                        <div className="text-center space-y-2 p-4">
+                            <Timer className="h-12 w-12 text-cyan-400 mb-2 mx-auto animate-pulse"/>
+                            <p className="text-lg font-bold text-foreground font-cinzel">Próxima Missão em:</p>
+                            <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        if (activeDailyMission) {
+            return (
+                <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex-grow">
+                            <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
+                        </div>
+                        <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
+                            <div className="flex flex-col items-end">
+                                {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
+                                <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
+                            )}
+                            {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
+                                <p className="text-sm font-semibold text-amber-500 flex items-center">
+                                    <Gem className="w-4 h-4 mr-1" />
+                                    +{activeDailyMission.fragmentos_conclusao || 0}
+                                </p>
+                            )}
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
+                                        <LifeBuoy className="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'hint')}>Preciso de uma dica</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_hard')}>Está muito difícil</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_easy')}>Está muito fácil</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                        {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
+                            const isCompleted = (st.current || 0) >= st.target;
+                            return(
+                                <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
+                                    <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                        <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
+                                            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} disabled={isCompleted} aria-label={`Adicionar progresso para ${st.name}`}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                </div>
+                            )
+                        })}
+                    </div>
+                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((link: string, index: number) => (
+                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md mt-3">
+                            <Link className="h-4 w-4"/>
+                            <span className="truncate">{link}</span>
+                        </a>
+                    ))}
+                </div>
+            );
+        }
+
+        return (
+            <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
+                <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
+                <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
+            </div>
+        );
+    };
+
 
     return (
         <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
@@ -798,7 +894,6 @@ const MissionsViewComponent = () => {
             >
                 {visibleMissions.map(mission => {
                     const isManualMission = mission.isManual;
-                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
                     const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
                     
                     let missionProgress;
@@ -812,6 +907,8 @@ const MissionsViewComponent = () => {
                     
                     const associatedMeta = !isManualMission ? metas.find((m: Meta) => m.nome === mission.meta_associada) : null;
                     const daysRemaining = associatedMeta && associatedMeta.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
+                    
+                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
                     const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
                         if (missionViewStyle === 'inline' && !isManualMission) {
@@ -820,49 +917,10 @@ const MissionsViewComponent = () => {
                         return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
                     };
                     
-                    // Verificar se a missão foi completada hoje usando fuso local
-                    const wasCompletedToday = mission.ultima_missao_concluida_em && (() => {
-                        const completedDate = new Date(mission.ultima_missao_concluida_em);
-                        const today = new Date();
-                        
-                        // Comparar apenas a data (ano, mês, dia) sem considerar horário
-                        const isSameDay = completedDate.getFullYear() === today.getFullYear() &&
-                               completedDate.getMonth() === today.getMonth() &&
-                               completedDate.getDate() === today.getDate();
-                               
-                        // Debug temporário
-                        if (mission.ultima_missao_concluida_em) {
-                            console.log('Debug Missão:', {
-                                missionName: mission.nome,
-                                completedAt: mission.ultima_missao_concluida_em,
-                                completedDate: completedDate.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                                today: today.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                                isSameDay,
-                                hasActiveDailyMission: !!activeDailyMission
-                            });
-                        }
-                        
-                        return isSameDay;
-                    })();
-
-                    // Se a missão foi completada hoje, mostrar com blur e temporizador
-                    const showBlurEffect = wasCompletedToday && activeDailyMission;
-
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
-                           <div className={cn("flex flex-col p-4 gap-4", showBlurEffect ? "opacity-70 blur-[2px] pointer-events-none" : "")}>
-                               <div className="flex items-center gap-4">
-                               {/* Timer overlay for completed missions */}
-                               {showBlurEffect && (
-                                    <div className="absolute inset-0 bg-black/30 rounded-lg flex flex-col items-center justify-center z-10">
-                                        <Timer className="w-8 h-8 text-white mb-2" />
-                                        <p className="text-white font-bold text-lg">Nova missão em:</p>
-                                        <p className="text-white text-xl font-mono">{timeUntilMidnight}</p>
-                                        <p className="text-white/80 text-sm mt-2 text-center px-4">
-                                            Complete sua jornada. Uma nova missão será liberada à meia-noite.
-                                        </p>
-                                    </div>
-                                )}
+                           <div className="flex flex-col p-4 gap-4">
+                                <div className="flex items-center gap-4">
                                 <TriggerWrapper>
                                     <div className="flex-1 text-left min-w-0 flex items-center gap-4">
                                         <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
@@ -899,167 +957,7 @@ const MissionsViewComponent = () => {
                                )}
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                <div className="relative">
-                                    {generatingMission === mission.id ? (
-                                        <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                                            <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
-                                            <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
-                                            <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
-                                        </div>
-                                    ) : wasCompletedToday ? (
-                                        // Mostrar temporizador se uma missão foi completada hoje, independentemente de haver nova missão
-                                        <div className="bg-gradient-to-br from-background/95 via-background/90 to-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500 border-2 border-cyan-400/30 h-48">
-                                            <div className="text-center space-y-4 p-6">
-                                                <div className="relative">
-                                                    <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
-                                                    <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-xl font-bold text-foreground font-cinzel">Missão Completada!</p>
-                                                    <p className="text-sm text-muted-foreground">Próxima missão disponível em:</p>
-                                                    <p className="text-xs text-muted-foreground opacity-75">
-                                                        Horário local: {new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-                                                    </p>
-                                                </div>
-                                                <div className="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-4">
-                                                    <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest animate-pulse">{timeUntilMidnight}</p>
-                                                    <p className="text-xs text-cyan-300 mt-2">Horas : Minutos : Segundos</p>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                                                    Descanse e prepare-se para o próximo desafio, Caçador. A nova missão será revelada à meia-noite.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : activeDailyMission ? (
-                                        <div className="relative">
-                                            {/* Missão Normal ou Missão com Temporizador */}
-                                            <div className={cn(
-                                                "bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 transition-all",
-                                                wasCompletedToday && "blur-sm pointer-events-none"
-                                            )}>
-                                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                                    <div className="flex-grow">
-                                                        <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
-                                                    </div>
-                                                    <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
-                                                        <div className="flex flex-col items-end">
-                                                            {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
-                                                            <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
-                                                        )}
-                                                        {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
-                                                            <p className="text-sm font-semibold text-amber-500 flex items-center">
-                                                                <Gem className="w-4 h-4 mr-1" />
-                                                                +{activeDailyMission.fragmentos_conclusao || 0}
-                                                            </p>
-                                                        )}
-                                                        </div>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button 
-                                                                    variant="ghost" 
-                                                                    size="icon" 
-                                                                    className="h-8 w-8 text-muted-foreground hover:text-primary" 
-                                                                    aria-label="Opções da missão"
-                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
-                                                                >
-                                                                    <LifeBuoy className="h-5 w-5" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuItem 
-                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'hint')}
-                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
-                                                                >
-                                                                    Preciso de uma dica
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem 
-                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_hard')}
-                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
-                                                                >
-                                                                    Está muito difícil
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem 
-                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_easy')}
-                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
-                                                                >
-                                                                    Está muito fácil
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                                                    {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
-                                                        const isCompleted = (st.current || 0) >= st.target;
-                                                        return(
-                                                            <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
-                                                                <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                                                    <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
-                                                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                                                        <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
-                                                                        <Button 
-                                                                            size="icon" 
-                                                                            variant="outline" 
-                                                                            className="h-7 w-7" 
-                                                                            onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})}
-                                                                            disabled={!!(isCompleted || wasCompletedToday)}
-                                                                            aria-label={`Adicionar progresso para ${st.name}`}
-                                                                        >
-                                                                            <Plus className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                                <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
-
-                                                {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((link: string, index: number) => (
-                                                    <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
-                                                        <Link className="h-4 w-4"/>
-                                                        <span className="truncate">{link}</span>
-                                                    </a>
-                                                ))}
-                                            </div>
-                                            
-                                            {/* Overlay com temporizador quando a missão foi gerada mas ainda não está ativa */}
-                                            {wasCompletedToday && (
-                                                <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500 border-2 border-cyan-400/30">
-                                                    <div className="text-center space-y-4 p-6">
-                                                        <div className="relative">
-                                                            <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
-                                                            <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping" />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <p className="text-xl font-bold text-foreground font-cinzel">Missão Bloqueada!</p>
-                                                            <p className="text-sm text-muted-foreground">Disponível em:</p>
-                                                            <p className="text-xs text-muted-foreground opacity-75">
-                                                                Horário local: {new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-                                                            </p>
-                                                        </div>
-                                                        <div className="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-4">
-                                                            <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest animate-pulse">{timeUntilMidnight}</p>
-                                                            <p className="text-xs text-cyan-300 mt-2">Horas : Minutos : Segundos</p>
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                                                            A nova missão será desbloqueada à meia-noite.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                                            <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
-                                            <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
-                                            <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
-                                        </div>
-                                    )}
-
-                                </div>
+                                {renderActiveMissionContent(mission)}
                             </AccordionContent>
                         </AccordionItem>
                     )
@@ -1168,4 +1066,3 @@ const MissionsViewComponent = () => {
 
 export const MissionsView = memo(MissionsViewComponent);
 
-    
