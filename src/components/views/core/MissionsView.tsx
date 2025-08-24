@@ -74,7 +74,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 
 
 const MissionsViewComponent = () => {
-    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, setQuestNotification } = usePlayerDataContext();
+    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, questNotification, setQuestNotification } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
@@ -379,6 +379,15 @@ const MissionsViewComponent = () => {
                 mission={feedbackModalState.mission}
                 feedbackType={feedbackModalState.type}
             />
+
+            { questNotification && !questNotification.title &&
+                <QuestInfoDialog 
+                    mission={questNotification.mission}
+                    epicMissionName={questNotification.epicMissionName}
+                    onContribute={onContributeToQuest}
+                    onClose={questNotification.onClose}
+                />
+            }
 
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
                 <DialogContent className="max-w-2xl">

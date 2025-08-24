@@ -36,6 +36,19 @@ export const perfis = [
         mission_view_style: 'inline', // 'inline' or 'popup'
         ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
         theme_accent_color: '198 90% 55%', // HSL string
+        reduce_motion: false,
+        font_size: 'medium',
+        layout_density: 'default',
+        notifications: {
+            daily_briefing: true,
+            goal_completed: true,
+            level_up: true,
+            quiet_hours: {
+                enabled: false,
+                start: '22:00',
+                end: '08:00',
+            }
+        }
     }
   },
 ];
