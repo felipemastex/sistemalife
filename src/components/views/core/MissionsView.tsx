@@ -487,104 +487,106 @@ const MissionsViewComponent = () => {
                                )}
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                
-                                {generatingMission === mission.id ? (
-                                    <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                                        <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
-                                        <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
-                                        <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
-                                    </div>
-                                ) : activeDailyMission ? (
-                                     <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                             <div className="flex-grow">
-                                                <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
-                                                <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
-                                             </div>
-                                            <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
-                                                <div className="flex flex-col items-end">
-                                                    <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
-                                                    <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
-                                                        <Gem className="h-3 w-3"/>
-                                                        +{activeDailyMission.fragmentos_conclusao || 0}
-                                                    </p>
-                                                </div>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
-                                                            <LifeBuoy className="h-5 w-5" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
-                                                            Preciso de uma dica
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
-                                                            Está muito difícil
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
-                                                            Está muito fácil
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
+                                <div className="relative">
+                                    {generatingMission === mission.id ? (
+                                        <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                                            <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
+                                            <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                            <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
                                         </div>
-
-                                        <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                                            {activeDailyMission.subTasks?.map((st, index) => {
-                                                const isCompleted = (st.current || 0) >= st.target;
-                                                return(
-                                                    <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
-                                                        <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                                            <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
-                                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                                <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
-                                                                <Button 
-                                                                    size="icon" 
-                                                                    variant="outline" 
-                                                                    className="h-7 w-7" 
-                                                                    onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission})}
-                                                                    disabled={isCompleted}
-                                                                    aria-label={`Adicionar progresso para ${st.name}`}
-                                                                >
-                                                                    <Plus className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                        <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                    ) : activeDailyMission ? (
+                                        <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                                <div className="flex-grow">
+                                                    <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
+                                                </div>
+                                                <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
+                                                    <div className="flex flex-col items-end">
+                                                        <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
+                                                        <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
+                                                            <Gem className="h-3 w-3"/>
+                                                            +{activeDailyMission.fragmentos_conclusao || 0}
+                                                        </p>
                                                     </div>
-                                                )
-                                            })}
-                                        </div>
-
-                                         {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
-                                            <div className="mt-4 pt-3 border-t border-border/50">
-                                                <h5 className="text-sm font-bold text-muted-foreground mb-2">Recursos de Aprendizagem Sugeridos</h5>
-                                                <div className="space-y-2">
-                                                    {activeDailyMission.learningResources.map((link, index) => (
-                                                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
-                                                            <Link className="h-4 w-4"/>
-                                                            <span className="truncate">{link}</span>
-                                                        </a>
-                                                    ))}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
+                                                                <LifeBuoy className="h-5 w-5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
+                                                                Preciso de uma dica
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
+                                                                Está muito difícil
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
+                                                                Está muito fácil
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                ) : wasCompletedToday ? (
-                                    <div className="bg-secondary/30 border-2 border-dashed border-cyan-400/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                                        <Timer className="h-10 w-10 text-cyan-400 mb-4"/>
-                                        <p className="text-lg font-bold text-foreground">Próxima Missão em:</p>
-                                        <p className="text-2xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
-                                    </div>
-                                ) : (
-                                    <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                                        <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
-                                        <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
-                                        <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
-                                    </div>
-                                )}
-                                
+
+                                            <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                                                {activeDailyMission.subTasks?.map((st, index) => {
+                                                    const isCompleted = (st.current || 0) >= st.target;
+                                                    return(
+                                                        <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
+                                                            <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                                                <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
+                                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                                    <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
+                                                                    <Button 
+                                                                        size="icon" 
+                                                                        variant="outline" 
+                                                                        className="h-7 w-7" 
+                                                                        onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission})}
+                                                                        disabled={isCompleted}
+                                                                        aria-label={`Adicionar progresso para ${st.name}`}
+                                                                    >
+                                                                        <Plus className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                            <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+
+                                            {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
+                                                <div className="mt-4 pt-3 border-t border-border/50">
+                                                    <h5 className="text-sm font-bold text-muted-foreground mb-2">Recursos de Aprendizagem Sugeridos</h5>
+                                                    <div className="space-y-2">
+                                                        {activeDailyMission.learningResources.map((link, index) => (
+                                                            <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
+                                                                <Link className="h-4 w-4"/>
+                                                                <span className="truncate">{link}</span>
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                                            <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
+                                            <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
+                                            <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
+                                        </div>
+                                    )}
+
+                                    {wasCompletedToday && (
+                                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500">
+                                            <Timer className="h-10 w-10 text-cyan-400 mb-4"/>
+                                            <p className="text-lg font-bold text-foreground">Próxima Missão em:</p>
+                                            <p className="text-2xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </AccordionContent>
                         </AccordionItem>
                     )
