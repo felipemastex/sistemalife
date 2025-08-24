@@ -58,9 +58,8 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
             <GuildHeader guild={guild} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
              <Tabs defaultValue="overview" className="mt-6 flex-grow">
-                <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
-                    <TabsTrigger value="quests"><Swords className="mr-2 h-4 w-4"/>Quartel General</TabsTrigger>
                     <TabsTrigger value="members"><Users className="mr-2 h-4 w-4"/>Membros</TabsTrigger>
                     <TabsTrigger value="chat"><MessageSquare className="mr-2 h-4 w-4"/>Chat</TabsTrigger>
                     {canManage && <TabsTrigger value="management"><Shield className="mr-2 h-4 w-4"/>Gestão</TabsTrigger>}
@@ -81,17 +80,13 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                                 userProfile={profile}
                             />
                         </div>
-                        <GuildStats />
+                         <GuildQuests 
+                            guild={guild}
+                            onGuildUpdate={onGuildUpdate}
+                            canManage={canManage}
+                            userProfile={profile}
+                        />
                     </div>
-                </TabsContent>
-
-                 <TabsContent value="quests" className="mt-6">
-                    <GuildQuests 
-                        guild={guild}
-                        onGuildUpdate={onGuildUpdate}
-                        canManage={canManage}
-                        userProfile={profile}
-                    />
                 </TabsContent>
 
                  <TabsContent value="members" className="mt-6">
