@@ -446,6 +446,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 ai_personality: 'balanced',
                 theme_accent_color: '198 90% 55%',
                 reduce_motion: false,
+                font_size: 'medium',
                 notifications: {
                     daily_briefing: true,
                     goal_completed: true,

@@ -29,6 +29,7 @@ const aiSettingsFormSchema = z.object({
     ai_personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']),
     theme_accent_color: z.string(),
     reduce_motion: z.boolean(),
+    font_size: z.enum(['small', 'medium', 'large']),
 });
 
 export default function AISettingsTab() {
@@ -43,6 +44,7 @@ export default function AISettingsTab() {
             ai_personality: 'balanced',
             theme_accent_color: '198 90% 55%',
             reduce_motion: false,
+            font_size: 'medium',
         },
     });
 
@@ -53,6 +55,7 @@ export default function AISettingsTab() {
                 ai_personality: profile.user_settings.ai_personality || 'balanced',
                 theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
                 reduce_motion: profile.user_settings.reduce_motion || false,
+                font_size: profile.user_settings.font_size || 'medium',
             });
         }
     }, [profile, form]);
@@ -90,7 +93,7 @@ export default function AISettingsTab() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>IA & Interface</CardTitle>
+                        <CardTitle>IA &amp; Interface</CardTitle>
                         <CardDescription>Personalize como você interage com o Sistema e a interface da aplicação.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -152,6 +155,34 @@ export default function AISettingsTab() {
                                 </FormItem>
                             )}
                         />
+                        
+                        <Separator/>
+
+                        <FormField
+                            control={form.control}
+                            name="font_size"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tamanho da Fonte</FormLabel>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione um tamanho" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="small">Pequeno</SelectItem>
+                                            <SelectItem value="medium">Médio (Padrão)</SelectItem>
+                                            <SelectItem value="large">Grande</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Ajuste o tamanho do texto em toda a aplicação para uma melhor legibilidade.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <Separator/>
 
@@ -188,7 +219,7 @@ export default function AISettingsTab() {
                                     </div>
                                     <FormControl>
                                         <Switch
-                                            checked={field.checked}
+                                            checked={field.value}
                                             onCheckedChange={field.onChange}
                                         />
                                     </FormControl>

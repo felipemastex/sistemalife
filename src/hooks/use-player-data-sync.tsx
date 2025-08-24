@@ -18,6 +18,15 @@ export function PlayerDataSync() {
     } else {
         document.documentElement.classList.remove('reduce-motion');
     }
+    if (profile?.user_settings?.font_size) {
+      document.documentElement.classList.remove('font-size-small', 'font-size-large');
+      if (profile.user_settings.font_size === 'small') {
+        document.documentElement.classList.add('font-size-small');
+      } else if (profile.user_settings.font_size === 'large') {
+        document.documentElement.classList.add('font-size-large');
+      }
+    }
+
   }, [profile?.user_settings]);
 
   return null;
