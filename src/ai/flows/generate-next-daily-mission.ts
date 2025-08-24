@@ -16,7 +16,9 @@ const SubTaskSchema = z.object({
   name: z.string().describe("O nome da sub-tarefa específica e acionável (ex: 'Ler um capítulo', 'Fazer 20 flexões')."),
   target: z.number().describe("A meta numérica para esta sub-tarefa (ex: 1, 20)."),
   unit: z.string().optional().describe("A unidade de medida, se aplicável (ex: 'páginas', 'repetições', 'minutos', 'km')."),
+  current: z.number().optional().describe("O progresso atual da sub-tarefa, que deve ser inicializado como 0.")
 });
+
 
 const GenerateNextDailyMissionInputSchema = z.object({
   rankedMissionName: z.string().describe("O nome da missão épica ou ranqueada principal."),
