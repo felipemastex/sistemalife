@@ -48,6 +48,10 @@ export const perfis = [
                 start: '22:00',
                 end: '08:00',
             }
+        },
+        privacy_settings: {
+            profile_visibility: 'public', // 'public' or 'private'
+            analytics_opt_in: true,
         }
     }
   },

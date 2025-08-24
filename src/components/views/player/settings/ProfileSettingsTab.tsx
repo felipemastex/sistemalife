@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
 import { LoaderCircle, Wand2, Check } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 const getProfileRank = (level) => {
     if (level <= 5) return 'Novato (F)';
@@ -33,6 +35,10 @@ const profileFormSchema = z.object({
     genero: z.string().max(30).optional(),
     nacionalidade: z.string().max(50).optional(),
     avatar_url: z.string().url({ message: "Por favor, insira um URL válido." }).or(z.literal('')),
+    privacy_settings: z.object({
+        profile_visibility: z.enum(['public', 'private']),
+        analytics_opt_in: z.boolean(),
+    })
 });
 
 export default function ProfileSettingsTab() {
@@ -50,6 +56,10 @@ export default function ProfileSettingsTab() {
             genero: '',
             nacionalidade: '',
             avatar_url: '',
+            privacy_settings: {
+                profile_visibility: 'public',
+                analytics_opt_in: true,
+            }
         },
     });
 
@@ -61,6 +71,10 @@ export default function ProfileSettingsTab() {
                 genero: profile.genero || 'Não especificado',
                 nacionalidade: profile.nacionalidade || 'Não especificada',
                 avatar_url: profile.avatar_url || '',
+                privacy_settings: {
+                    profile_visibility: profile.user_settings?.privacy_settings?.profile_visibility || 'public',
+                    analytics_opt_in: profile.user_settings?.privacy_settings?.analytics_opt_in !== false,
+                }
             });
         }
     }, [profile, form]);
@@ -68,7 +82,20 @@ export default function ProfileSettingsTab() {
     const onSubmit = async (data: z.infer<typeof profileFormSchema>) => {
         setIsSaving(true);
         try {
-            await persistData('profile', { ...profile, ...data });
+             const updatedProfile = {
+                ...profile,
+                primeiro_nome: data.primeiro_nome,
+                apelido: data.apelido,
+                genero: data.genero,
+                nacionalidade: data.nacionalidade,
+                avatar_url: data.avatar_url,
+                user_settings: {
+                    ...profile.user_settings,
+                    privacy_settings: data.privacy_settings,
+                }
+            };
+            await persistData('profile', updatedProfile);
+
             toast({
                 title: "Perfil Atualizado!",
                 description: "Os seus dados foram alterados com sucesso.",
@@ -221,6 +248,57 @@ export default function ProfileSettingsTab() {
                         </div>
                     </CardContent>
                 </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Privacidade & Visibilidade</CardTitle>
+                        <CardDescription>Controle como os seus dados são vistos e utilizados.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="privacy_settings.profile_visibility"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Perfil Público</FormLabel>
+                                        <FormDescription>
+                                            Se desativado, o seu perfil não será visível para outros utilizadores (ex: na procura de guildas).
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value === 'public'}
+                                            onCheckedChange={(checked) => field.onChange(checked ? 'public' : 'private')}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="privacy_settings.analytics_opt_in"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Análise de Dados do Sistema</FormLabel>
+                                        <FormDescription>
+                                           Permitir que o Sistema utilize os seus dados de progresso para melhorar os algoritmos de sugestão.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+
                 <div className="flex justify-end">
                      <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
                         {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check/> : "Salvar Alterações"}

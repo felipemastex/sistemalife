@@ -465,6 +465,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     goal_completed: true,
                     level_up: true,
                     quiet_hours: { enabled: false, start: '22:00', end: '08:00' }
+                },
+                privacy_settings: {
+                    profile_visibility: 'public',
+                    analytics_opt_in: true,
                 }
             };
             
