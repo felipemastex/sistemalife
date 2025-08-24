@@ -23,11 +23,11 @@ Este roadmap delineia a implementação de melhorias significativas para a aba d
 ### Fase 2: Gamificação e Personalização
 **Objetivo:** Aprofundar os elementos de jogo e dar ao utilizador mais controlo sobre a sua experiência de missões.
 
+- **[x] Criação Manual de Missões:**
+    - [x] Desenvolver uma interface para que os utilizadores possam criar as suas próprias missões diárias personalizadas, não necessariamente ligadas a uma meta.
 - **[ ] Templates de Missões:**
     - [ ] Permitir que os utilizadores guardem uma missão ou um conjunto de tarefas como um template reutilizável.
     - [ ] Criar uma biblioteca de templates predefinidos (ex: "Rotina Matinal Produtiva", "Sessão de Estudos Focada").
-- **[ ] Criação Manual de Missões:**
-    - [ ] Desenvolver uma interface para que os utilizadores possam criar as suas próprias missões diárias personalizadas, não necessariamente ligadas a uma meta.
 - **[ ] Power-ups e Consumíveis:**
     - [ ] Integrar os itens da loja (ex: Poção de XP, Amuleto da Segunda Chance) para que possam ser usados para afetar as missões.
 - **[ ] Sistema de Badges:**

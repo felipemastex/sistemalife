@@ -1,16 +1,15 @@
 
 "use client";
 
-import { memo, useState, useEffect, useCallback, useMemo } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search } from 'lucide-react';
+import { memo, useState, useEffect, useMemo } from 'react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search, PlusCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
-import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
+import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
 import { cn } from '@/lib/utils';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { useToast } from '@/hooks/use-toast';
@@ -78,7 +77,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 
 
 const MissionsViewComponent = () => {
-    const { missions, metas, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, questNotification, setQuestNotification } = usePlayerDataContext();
+    const { profile, missions, metas, completeMission, generatingMission, missionFeedback, setMissionFeedback, persistData } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
@@ -86,6 +85,8 @@ const MissionsViewComponent = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [rankFilter, setRankFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('active');
+
+    const [dialogState, setDialogState] = useState({ open: false, mission: null, isManual: false });
 
     
     const { toast } = useToast();
@@ -162,18 +163,50 @@ const MissionsViewComponent = () => {
         }
     }
 
-    const onContributeToQuest = (subTask, amount) => {
-         const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.subTasks.some(st => st.name === subTask.name)));
-         if(rankedMission) {
-            const dailyMission = rankedMission.missoes_diarias.find(dm => !dm.concluido);
-            if(dailyMission) {
-                completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: dailyMission.id, subTask, amount, feedback: missionFeedback[rankedMission.id] || null });
-            }
+    const onContributeToQuest = (subTask, amount, missionToUpdate) => {
+         if (missionToUpdate.isManual) {
+            const updatedManualMissions = (profile.manual_missions || []).map(m => 
+                m.id === missionToUpdate.id 
+                ? {
+                    ...m,
+                    subTasks: m.subTasks.map(st => 
+                        st.name === subTask.name 
+                        ? {...st, current: Math.min(st.target, (st.current || 0) + amount) } 
+                        : st
+                    )
+                }
+                : m
+            );
+            persistData('profile', { ...profile, manual_missions: updatedManualMissions });
+         } else {
+             const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === missionToUpdate.id));
+             if(rankedMission) {
+                completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: missionToUpdate.id, subTask, amount, feedback: missionFeedback[rankedMission.id] || null });
+             }
          }
     };
+
+    const handleSaveManualMission = (missionData) => {
+        const manualMissions = profile.manual_missions || [];
+        let updatedMissions;
+
+        if (missionData.id) { // Editing
+            updatedMissions = manualMissions.map(m => m.id === missionData.id ? missionData : m);
+        } else { // Creating
+            const newMission = { ...missionData, id: `manual_${Date.now()}`, concluido: false };
+            updatedMissions = [...manualMissions, newMission];
+        }
+        persistData('profile', { ...profile, manual_missions: updatedMissions });
+        setDialogState({ open: false, mission: null, isManual: false });
+    }
+
+    const handleDeleteManualMission = (missionId) => {
+        const updatedMissions = (profile.manual_missions || []).filter(m => m.id !== missionId);
+        persistData('profile', { ...profile, manual_missions: updatedMissions });
+    }
     
     const visibleMissions = useMemo(() => {
-        const activeMissions = [];
+        const activeEpicMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
                 acc[mission.meta_associada] = [];
@@ -188,23 +221,28 @@ const MissionsViewComponent = () => {
                 .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
 
             if (goalMissions.length > 0) {
-                activeMissions.push(goalMissions[0]);
+                activeEpicMissions.push(goalMissions[0]);
             }
         }
         
-        const completedMissions = missions.filter(m => m.concluido);
-        
+        const completedEpicMissions = missions.filter(m => m.concluido);
+        const manualMissions = (profile.manual_missions || []).map(m => ({...m, isManual: true, rank: 'M'}));
+
         let missionsToDisplay = [];
         if (statusFilter === 'active') {
-            missionsToDisplay = activeMissions;
+            missionsToDisplay = [...activeEpicMissions, ...manualMissions.filter(m => !m.concluido)];
         } else if (statusFilter === 'completed') {
-            missionsToDisplay = completedMissions;
+            missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter(m => m.concluido)];
         } else {
-            missionsToDisplay = [...activeMissions, ...completedMissions];
+            missionsToDisplay = [...activeEpicMissions, ...completedEpicMissions, ...manualMissions];
         }
 
         if (rankFilter !== 'all') {
-            missionsToDisplay = missionsToDisplay.filter(m => m.rank === rankFilter);
+            if (rankFilter === 'M') {
+                missionsToDisplay = missionsToDisplay.filter(m => m.isManual);
+            } else {
+                missionsToDisplay = missionsToDisplay.filter(m => m.rank === rankFilter);
+            }
         }
         
         if (searchTerm) {
@@ -217,19 +255,26 @@ const MissionsViewComponent = () => {
              return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank)
         });
 
-    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder]);
+    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
 
     return (
         <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
             <div className="flex-shrink-0">
-                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                    <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
+                    <Button onClick={() => setDialogState({ open: true, mission: null, isManual: true })} className="w-full sm:w-auto">
+                        <PlusCircle className="mr-2 h-4 w-4"/>
+                        Criar Missão Manual
+                    </Button>
+                </div>
+
                 <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
                 
                 <MissionStatsPanel />
 
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Input 
                         placeholder="Procurar missão..."
                         value={searchTerm}
@@ -241,6 +286,7 @@ const MissionsViewComponent = () => {
                         <SelectContent>
                             <SelectItem value="all">Todos os Ranks</SelectItem>
                             {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
+                            <SelectItem value="M">Manual</SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -266,18 +312,27 @@ const MissionsViewComponent = () => {
                 }}
             >
                 {visibleMissions.map(mission => {
-                    const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
-                    const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
-                    const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
+                    const isManualMission = mission.isManual;
+                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find(d => !d.concluido);
+                    const completedDailyMissions = isManualMission ? [] : mission.missoes_diarias.filter(d => d.concluido).reverse();
                     
-                    const associatedMeta = metas.find(m => m.nome === mission.meta_associada);
+                    let missionProgress;
+                    if (isManualMission) {
+                         const totalSubs = mission.subTasks?.length || 0;
+                         const completedSubs = mission.subTasks?.filter(st => (st.current || 0) >= st.target).length || 0;
+                         missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
+                    } else {
+                        missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
+                    }
+                    
+                    const associatedMeta = !isManualMission && metas.find(m => m.nome === mission.meta_associada);
                     const daysRemaining = associatedMeta?.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
 
                     const TriggerWrapper = ({ children }) => {
-                        if (missionViewStyle === 'inline') {
+                        if (missionViewStyle === 'inline' && !isManualMission) {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
                         }
-                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setQuestNotification({ mission: activeDailyMission, epicMissionName: mission.nome, onContribute: onContributeToQuest, onClose: () => setQuestNotification(null) })}>{children}</div>;
+                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: activeDailyMission || mission, isManual: isManualMission })}>{children}</div>;
                     };
 
                     return (
@@ -303,9 +358,11 @@ const MissionsViewComponent = () => {
                                     </div>
                                 </TriggerWrapper>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                        <GitMerge className="h-5 w-5" />
-                                    </Button>
+                                    {!isManualMission && (
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                            <GitMerge className="h-5 w-5" />
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
@@ -365,7 +422,7 @@ const MissionsViewComponent = () => {
                                                                     size="icon" 
                                                                     variant="outline" 
                                                                     className="h-7 w-7" 
-                                                                    onClick={() => onContributeToQuest(st, 1)}
+                                                                    onClick={() => onContributeToQuest(st, 1, activeDailyMission)}
                                                                     disabled={isCompleted}
                                                                     aria-label={`Adicionar progresso para ${st.name}`}
                                                                 >
@@ -422,12 +479,15 @@ const MissionsViewComponent = () => {
                 feedbackType={feedbackModalState.type}
             />
 
-            { questNotification && !questNotification.title &&
-                <QuestInfoDialog 
-                    mission={questNotification.mission}
-                    epicMissionName={questNotification.epicMissionName}
+            { dialogState.open &&
+                <MissionDetailsDialog
+                    isOpen={dialogState.open}
+                    onClose={() => setDialogState({ open: false, mission: null, isManual: false })}
+                    mission={dialogState.mission}
+                    isManual={dialogState.isManual}
                     onContribute={onContributeToQuest}
-                    onClose={questNotification.onClose}
+                    onSave={handleSaveManualMission}
+                    onDelete={handleDeleteManualMission}
                 />
             }
 

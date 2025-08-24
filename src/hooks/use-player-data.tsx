@@ -455,9 +455,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const emailUsername = user.email.split('@')[0];
             
             const defaultUserSettings = {
-                mission_view_style: 'inline',
-                ai_personality: 'balanced',
-                theme_accent_color: '198 90% 55%',
+                mission_view_style: 'inline', // 'inline' or 'popup'
+                ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
+                theme_accent_color: '198 90% 55%', // HSL string
                 reduce_motion: false,
                 layout_density: 'default',
                 suggestion_frequency: 'medium',
@@ -476,7 +476,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [] };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));

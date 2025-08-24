@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -13,7 +14,6 @@ import { AIChatView } from '@/components/views/ai/AIChatView';
 import { SettingsView } from '@/components/views/player/SettingsView';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { QuestInfoDialog } from '@/components/custom/QuestInfoDialog';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
 import { ShopView } from '@/components/views/player/ShopView';
@@ -236,7 +236,7 @@ export default function App() {
             </header>
           )}
         {renderContent()}
-        {questNotification && <QuestInfoDialog {...questNotification} onClose={() => setQuestNotification(null)} />}
+        
         {showOnboarding && <OnboardingGuide onFinish={() => {
             setShowOnboarding(false);
             if (profile) {
