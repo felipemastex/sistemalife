@@ -12,11 +12,18 @@ import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useEffect, useState } from 'react';
 import { LoaderCircle, Check } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 const notificationsFormSchema = z.object({
     daily_briefing: z.boolean(),
     goal_completed: z.boolean(),
     level_up: z.boolean(),
+    quiet_hours: z.object({
+        enabled: z.boolean(),
+        start: z.string(),
+        end: z.string(),
+    }),
 });
 
 export default function NotificationsSettingsTab() {
@@ -31,6 +38,11 @@ export default function NotificationsSettingsTab() {
             daily_briefing: true,
             goal_completed: true,
             level_up: true,
+            quiet_hours: {
+                enabled: false,
+                start: '22:00',
+                end: '08:00',
+            }
         },
     });
 
@@ -40,6 +52,11 @@ export default function NotificationsSettingsTab() {
                 daily_briefing: profile.user_settings.notifications.daily_briefing !== false,
                 goal_completed: profile.user_settings.notifications.goal_completed !== false,
                 level_up: profile.user_settings.notifications.level_up !== false,
+                quiet_hours: {
+                    enabled: profile.user_settings.notifications.quiet_hours?.enabled || false,
+                    start: profile.user_settings.notifications.quiet_hours?.start || '22:00',
+                    end: profile.user_settings.notifications.quiet_hours?.end || '08:00',
+                }
             });
         }
     }, [profile, form]);
@@ -76,6 +93,8 @@ export default function NotificationsSettingsTab() {
             setIsSaving(false);
         }
     };
+    
+    const watchQuietHoursEnabled = form.watch('quiet_hours.enabled');
 
     return (
         <Form {...form}>
@@ -83,7 +102,7 @@ export default function NotificationsSettingsTab() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Preferências de Notificação</CardTitle>
-                        <CardDescription>Controle quais alertas do Sistema você deseja receber.</CardDescription>
+                        <CardDescription>Controle quais alertas do Sistema você deseja receber e quando os recebe.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <FormField
@@ -146,6 +165,59 @@ export default function NotificationsSettingsTab() {
                                 </FormItem>
                             )}
                         />
+                        
+                        <Separator />
+
+                        <FormField
+                            control={form.control}
+                            name="quiet_hours.enabled"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Modo "Não Perturbar"</FormLabel>
+                                        <FormDescription>
+                                            Silenciar todas as notificações durante um período específico.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        {watchQuietHoursEnabled && (
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-4 border-l-2 ml-4">
+                                <FormField
+                                    control={form.control}
+                                    name="quiet_hours.start"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Início do Silêncio</FormLabel>
+                                            <FormControl>
+                                                <Input type="time" {...field} />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="quiet_hours.end"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Fim do Silêncio</FormLabel>
+                                            <FormControl>
+                                                <Input type="time" {...field} />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+
+
                     </CardContent>
                 </Card>
 

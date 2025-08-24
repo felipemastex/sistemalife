@@ -8,7 +8,36 @@ export function usePlayerNotifications(profile) {
     const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
     const [showOnboarding, setShowOnboarding] = useState(false);
 
+    const isWithinQuietHours = () => {
+        if (!profile?.user_settings?.notifications?.quiet_hours?.enabled) {
+            return false;
+        }
+
+        const { start, end } = profile.user_settings.notifications.quiet_hours;
+        if (!start || !end) return false;
+
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+
+        const [startHour, startMinute] = start.split(':').map(Number);
+        const startTime = startHour * 60 + startMinute;
+
+        const [endHour, endMinute] = end.split(':').map(Number);
+        const endTime = endHour * 60 + endMinute;
+
+        // Handle overnight quiet hours (e.g., 22:00 to 08:00)
+        if (startTime > endTime) {
+            return currentTime >= startTime || currentTime < endTime;
+        }
+        
+        // Handle same-day quiet hours (e.g., 13:00 to 15:00)
+        return currentTime >= startTime && currentTime < endTime;
+    };
+
+
     const checkNotificationPreference = (type) => {
+        if (isWithinQuietHours()) return false;
+
         if (!profile || !profile.user_settings || !profile.user_settings.notifications) {
             return true; // Default to on if settings don't exist
         }
