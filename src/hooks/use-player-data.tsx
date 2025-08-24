@@ -141,6 +141,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
+        timers,
         handleShowLevelUpNotification,
         handleShowNewEpicMissionNotification,
         handleShowSkillUpNotification,
@@ -570,7 +571,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 description: "Usando dados locais. Algumas funcionalidades podem estar limitadas." 
             });
         }
-    }, [toast, handleFullReset, setShowOnboarding]);
+    }, [toast, handleFullReset, setShowOnboarding, user]);
     
     useEffect(() => {
         console.log('🔄 useEffect - user:', user ? 'presente' : 'null', 'isDataLoaded:', state.isDataLoaded);
@@ -597,7 +598,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
-        setMissionFeedback
+        setMissionFeedback,
+        timers,
     };
 
     return (

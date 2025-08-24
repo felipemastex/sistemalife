@@ -70,7 +70,7 @@ export const QuestInfoDialog = ({ mission, epicMissionName, onContribute, onClos
 
   if (!mission) return null;
 
-  const onCooldown = !!timers[mission.id];
+  const onCooldown = timers && !!timers[mission.id];
 
   const handleOpenContributeDialog = (subTask) => {
     setContributionState({ open: true, subTask });
