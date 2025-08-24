@@ -9,16 +9,16 @@ Este roadmap delineia a implementação de melhorias significativas para a aba d
 ### Fase 1: Fundação (UI/UX e Funcionalidades Essenciais)
 **Objetivo:** Modernizar a interface, adicionar controlos básicos de organização e fornecer ao utilizador estatísticas de progresso.
 
-- **[ ] Sistema de Filtros e Busca:**
-    - [ ] Implementar filtros dropdown para missões (por Rank, Status, Meta Associada).
-    - [ ] Adicionar um campo de busca textual para filtrar missões por nome.
-- **[ ] Indicadores de Prioridade:**
-    - [ ] Adicionar indicadores visuais (cores/ícones) para missões com deadlines próximos.
-- **[ ] Painel de Estatísticas de Missões:**
-    - [ ] Criar um novo componente para exibir estatísticas chave (Streak de missões, taxa de conclusão, missões concluídas no total).
-- **[ ] Melhorias na UI:**
-    - [ ] Refinar o layout da lista de missões para uma aparência mais limpa e moderna.
-    - [ ] Adicionar micro-interações, como animações subtis na conclusão de tarefas.
+- **[x] Sistema de Filtros e Busca:**
+    - [x] Implementar filtros dropdown para missões (por Rank, Status, Meta Associada).
+    - [x] Adicionar um campo de busca textual para filtrar missões por nome.
+- **[x] Indicadores de Prioridade:**
+    - [x] Adicionar indicadores visuais (cores/ícones) para missões com deadlines próximos.
+- **[x] Painel de Estatísticas de Missões:**
+    - [x] Criar um novo componente para exibir estatísticas chave (Streak de missões, taxa de conclusão, missões concluídas no total).
+- **[x] Melhorias na UI:**
+    - [x] Refinar o layout da lista de missões para uma aparência mais limpa e moderna.
+    - [x] Adicionar micro-interações, como animações subtis na conclusão de tarefas.
 
 ### Fase 2: Gamificação e Personalização
 **Objetivo:** Aprofundar os elementos de jogo e dar ao utilizador mais controlo sobre a sua experiência de missões.

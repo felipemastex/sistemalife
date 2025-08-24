@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useState, useEffect, useCallback, useMemo } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -16,6 +16,10 @@ import { CircularProgress } from '@/components/ui/circular-progress';
 import { useToast } from '@/hooks/use-toast';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { MissionStatsPanel } from './missions/MissionStatsPanel';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { differenceInDays, parseISO } from 'date-fns';
 
 // Helper Dialog for getting user feedback
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -74,20 +78,21 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 
 
 const MissionsViewComponent = () => {
-    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, questNotification, setQuestNotification } = usePlayerDataContext();
+    const { missions, metas, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, questNotification, setQuestNotification } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [activeAccordionItem, setActiveAccordionItem] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [rankFilter, setRankFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('active');
 
-    const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
     const layout = profile?.user_settings?.layout_density || 'default';
     const accordionSpacing = layout === 'compact' ? 'space-y-2' : layout === 'comfortable' ? 'space-y-6' : 'space-y-4';
-    const cardPadding = layout === 'compact' ? 'p-3' : layout === 'comfortable' ? 'p-8' : 'p-6';
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -168,7 +173,7 @@ const MissionsViewComponent = () => {
     };
     
     const visibleMissions = useMemo(() => {
-        const visible = [];
+        const activeMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
                 acc[mission.meta_associada] = [];
@@ -183,27 +188,76 @@ const MissionsViewComponent = () => {
                 .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
 
             if (goalMissions.length > 0) {
-                visible.push(goalMissions[0]);
+                activeMissions.push(goalMissions[0]);
             }
         }
-        return visible.sort((a,b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
-    }, [missions, rankOrder]);
+        
+        const completedMissions = missions.filter(m => m.concluido);
+        
+        let missionsToDisplay = [];
+        if (statusFilter === 'active') {
+            missionsToDisplay = activeMissions;
+        } else if (statusFilter === 'completed') {
+            missionsToDisplay = completedMissions;
+        } else {
+            missionsToDisplay = [...activeMissions, ...completedMissions];
+        }
 
-    const completedMissions = useMemo(() => missions.filter(m => m.concluido), [missions]);
+        if (rankFilter !== 'all') {
+            missionsToDisplay = missionsToDisplay.filter(m => m.rank === rankFilter);
+        }
+        
+        if (searchTerm) {
+            missionsToDisplay = missionsToDisplay.filter(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        return missionsToDisplay.sort((a,b) => {
+             if (a.concluido && !b.concluido) return 1;
+             if (!a.concluido && b.concluido) return -1;
+             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank)
+        });
+
+    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
 
     return (
-        <div className={cn("h-full overflow-y-auto", cardPadding)}>
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
+        <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
+            <div className="flex-shrink-0">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
+                <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
+                
+                <MissionStatsPanel />
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Input 
+                        placeholder="Procurar missão..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="sm:col-span-1 bg-card"
+                    />
+                    <Select value={rankFilter} onValueChange={setRankFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os Ranks</SelectItem>
+                            {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="all">Todos os Status</SelectItem>
+                             <SelectItem value="active">Ativas</SelectItem>
+                             <SelectItem value="completed">Concluídas</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-            <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
             
             <Accordion 
                 type="single" 
                 collapsible 
-                className={cn("w-full", accordionSpacing)}
+                className={cn("w-full flex-grow overflow-y-auto mt-6 pr-2", accordionSpacing)}
                 value={activeAccordionItem}
                 onValueChange={(value) => {
                      if (missionViewStyle === 'inline') {
@@ -216,6 +270,9 @@ const MissionsViewComponent = () => {
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
                     const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     
+                    const associatedMeta = metas.find(m => m.nome === mission.meta_associada);
+                    const daysRemaining = associatedMeta?.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
+
                     const TriggerWrapper = ({ children }) => {
                         if (missionViewStyle === 'inline') {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
@@ -224,7 +281,7 @@ const MissionsViewComponent = () => {
                     };
 
                     return (
-                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg">
+                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors">
                            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
                                 <TriggerWrapper>
                                     <div className="flex-1 text-left min-w-0 flex items-center gap-4">
@@ -237,7 +294,10 @@ const MissionsViewComponent = () => {
                                             </div>
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-lg font-bold text-foreground break-words">{mission.nome}</p>
+                                            <div className="flex items-center gap-2">
+                                                 {daysRemaining !== null && daysRemaining <= 3 && <AlertTriangle className={cn("h-4 w-4", daysRemaining <= 1 ? "text-red-500" : "text-yellow-500")} />}
+                                                <p className="text-lg font-bold text-foreground break-words">{mission.nome}</p>
+                                            </div>
                                             <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
                                         </div>
                                     </div>
@@ -345,33 +405,15 @@ const MissionsViewComponent = () => {
                         </AccordionItem>
                     )
                 })}
+                 {visibleMissions.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
+                        <Search className="h-16 w-16 mb-4" />
+                        <p className="font-semibold text-lg">Nenhuma Missão Encontrada</p>
+                        <p className="text-sm mt-1">Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
+                    </div>
+                )}
             </Accordion>
             
-            {completedMissions.length > 0 && (
-                 <div className="mt-8">
-                     <Accordion type="single" collapsible value={completedAccordionOpen ? "completed" : ""} onValueChange={(value) => setCompletedAccordionOpen(value === "completed")}>
-                         <AccordionItem value="completed" className="bg-card/60 border border-border/70 rounded-lg">
-                             <AccordionTrigger className="hover:no-underline px-4 py-3 text-muted-foreground">
-                                 <div className="flex items-center gap-2">
-                                    {completedAccordionOpen ? <ChevronsUp className="h-5 w-5"/> : <ChevronsDown className="h-5 w-5"/>}
-                                    Missões Épicas Concluídas ({completedMissions.length})
-                                 </div>
-                             </AccordionTrigger>
-                             <AccordionContent className="px-4 pb-4 space-y-4">
-                                {completedMissions.map(mission => (
-                                     <div key={mission.id} className={`bg-secondary/50 border-l-4 border-green-500 rounded-r-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 opacity-70`}>
-                                         <div className="flex-grow">
-                                             <p className="font-bold text-muted-foreground line-through">{mission.nome}</p>
-                                             <p className="text-sm text-muted-foreground/80 mt-1">{mission.descricao}</p>
-                                         </div>
-                                     </div>
-                                ))}
-                             </AccordionContent>
-                         </AccordionItem>
-                     </Accordion>
-                 </div>
-            )}
-
             <MissionFeedbackDialog 
                 open={feedbackModalState.open}
                 onOpenChange={(isOpen) => setFeedbackModalState(prev => ({...prev, open: isOpen}))}
