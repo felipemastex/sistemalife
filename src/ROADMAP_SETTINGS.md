@@ -23,32 +23,31 @@ Aprimorar a aba de configurações do "Sistema de Vida" para fornecer aos usuár
     - **[x] Integração com o Flow:** Modificar o flow `generateSystemAdvice` para aceitar um parâmetro `personality` e ajustar o prompt do sistema de acordo.
 - **[x] Layout Adaptativo:**
     - **[x] Densidade da Interface:** Opções para layout `Compacto`, `Padrão` ou `Confortável`, ajustando o espaçamento e o padding em componentes chave.
-    - **[x] Tamanho da Fonte:** (Adiado) Controlos para aumentar ou diminuir o tamanho da fonte globalmente para melhor acessibilidade.
 - **[x] Acessibilidade:**
     - **[x] Reduzir Animações:** Adicionar um `Switch` que, quando ativado, adiciona uma classe ao `body` para desativar ou reduzir as animações da interface.
 
 ### Fase 3: Gestão de Notificações e Dados
-- **[x] Aba de Notificações:**
-    - **[x] Controlos de Ativação/Desativação:** Switches para os principais tipos de notificações (`Briefing Diário`, `Meta Concluída`, `Nível Aumentado`).
-    - **[x] Horário de "Não Perturbar":** Permitir que o utilizador defina um intervalo de tempo durante o qual nenhuma notificação será enviada.
-- **[x] Aba de Dados & Backup:**
-    - **[x] Exportar Dados:** Um botão para descarregar um ficheiro JSON com todos os dados do utilizador (`profile`, `metas`, `missions`, `skills`, `routine`, etc.).
-    - **[x] Importar Dados:** Uma interface para carregar um ficheiro JSON de backup, que irá substituir os dados existentes (com um `AlertDialog` de confirmação claro sobre a ação destrutiva).
-- **[x] Aba "Zona de Perigo":**
-    - **[x] Resetar Conta:** Um botão (com múltipla confirmação) para apagar todos os dados do utilizador e reverter a conta para o estado inicial de mock.
-- **[x] Aba de Analytics Pessoais:**
-    - **[x] Estrutura da Aba:** Criar o componente `AnalyticsTab`.
-    - **[x] Gráfico de Distribuição de Metas:** Adicionar um gráfico de barras que mostra quantas metas o utilizador tem em cada categoria.
-    - **[x] Gráfico de Produtividade:** Adicionar um gráfico de linhas ou barras que mostra o número de missões concluídas por dia/semana.
+- **[ ] Aba de Notificações:**
+    - **[ ] Controlos de Ativação/Desativação:** Switches para os principais tipos de notificações (`Briefing Diário`, `Meta Concluída`, `Nível Aumentado`).
+    - **[ ] Horário de "Não Perturbar":** Permitir que o utilizador defina um intervalo de tempo durante o qual nenhuma notificação será enviada.
+- **[ ] Aba de Dados & Backup:**
+    - **[ ] Exportar Dados:** Um botão para descarregar um ficheiro JSON com todos os dados do utilizador (`profile`, `metas`, `missions`, `skills`, `routine`, etc.).
+    - **[ ] Importar Dados:** Uma interface para carregar um ficheiro JSON de backup, que irá substituir os dados existentes (com um `AlertDialog` de confirmação claro sobre a ação destrutiva).
+- **[ ] Aba "Zona de Perigo":**
+    - **[ ] Resetar Conta:** Um botão (com múltipla confirmação) para apagar todos os dados do utilizador e reverter a conta para o estado inicial de mock.
+- **[ ] Aba de Analytics Pessoais:**
+    - **[ ] Estrutura da Aba:** Criar o componente `AnalyticsTab`.
+    - **[ ] Gráfico de Distribuição de Metas:** Adicionar um gráfico de barras que mostra quantas metas o utilizador tem em cada categoria.
+    - **[ ] Gráfico de Produtividade:** Adicionar um gráfico de linhas ou barras que mostra o número de missões concluídas por dia/semana.
     - **[ ] Identificação de Padrões pela IA:** (Futuro) Secção onde a IA apresenta insights textuais com base nos dados.
 
 ### Fase 4: Privacidade e Gamificação
-- **[x] Configurações de Privacidade:**
-    - **[x] Visibilidade do Perfil:** Um `Switch` para permitir que o perfil seja `público` ou `privado` (relevante para futuras funcionalidades sociais como guildas).
-    - **[x] Opt-in de Analytics:** Um `Switch` para permitir que dados anónimos sejam usados para melhorar o sistema.
-- **[x] Configurações de Gamificação:**
-    - **[x] Nova Aba "Gamificação":** Criar a estrutura para esta secção.
-    - **[x] Intensidade do Feedback:** Adicionar um controlo para o quão "celebratório" o sistema é (efeitos visuais, etc.).
+- **[ ] Configurações de Privacidade:**
+    - **[ ] Visibilidade do Perfil:** Um `Switch` para permitir que o perfil seja `público` ou `privado` (relevante para futuras funcionalidades sociais como guildas).
+    - **[ ] Opt-in de Analytics:** Um `Switch` para permitir que dados anónimos sejam usados para melhorar o sistema.
+- **[ ] Configurações de Gamificação:**
+    - **[ ] Nova Aba "Gamificação":** Criar a estrutura para esta secção.
+    - **[ ] Intensidade do Feedback:** Adicionar um controlo para o quão "celebratório" o sistema é (efeitos visuais, etc.).
 
 ## 3. Considerações Técnicas
 - **Centralização de Estado:** A maior parte do estado da aplicação e das configurações será gerida através do `PlayerDataContext`.
