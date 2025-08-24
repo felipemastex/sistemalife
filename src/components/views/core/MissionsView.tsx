@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
 import { cn } from '@/lib/utils';
-import { CircularProgress } from '@/components/ui/circular-progress';
 import { useToast } from '@/hooks/use-toast';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
@@ -19,6 +18,7 @@ import { MissionStatsPanel } from './missions/MissionStatsPanel';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { differenceInDays, parseISO } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Helper Dialog for getting user feedback
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -150,17 +150,17 @@ const MissionsViewComponent = () => {
 
     const getRankColor = (rank) => {
         switch (rank) {
-            case 'F': return 'bg-gray-500 text-gray-100';
-            case 'E': return 'bg-green-700 text-green-200';
-            case 'D': return 'bg-cyan-700 text-cyan-200';
-            case 'C': return 'bg-blue-700 text-blue-200';
-            case 'B': return 'bg-purple-700 text-purple-200';
-            case 'A': return 'bg-red-700 text-red-200';
-            case 'S': return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
-            case 'SS': return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/50';
-            case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
-            case 'M': return 'bg-slate-600 text-slate-100'; // Cor para Manual
-            default: return 'bg-gray-700 text-gray-400';
+            case 'F': return 'text-gray-400';
+            case 'E': return 'text-green-400';
+            case 'D': return 'text-cyan-400';
+            case 'C': return 'text-blue-400';
+            case 'B': return 'text-purple-400';
+            case 'A': return 'text-red-400';
+            case 'S': return 'text-yellow-400';
+            case 'SS': return 'text-orange-400';
+            case 'SSS': return 'text-pink-400';
+            case 'M': return 'text-slate-400'; // Cor para Manual
+            default: return 'text-gray-500';
         }
     }
 
@@ -315,7 +315,7 @@ const MissionsViewComponent = () => {
                 {visibleMissions.map(mission => {
                     const isManualMission = mission.isManual;
                     const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find(d => !d.concluido);
-                    const completedDailyMissions = isManualMission ? [] : mission.missoes_diarias.filter(d => d.concluido).reverse();
+                    const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter(d => d.concluido);
                     
                     let missionProgress;
                     if (isManualMission) {
@@ -338,16 +338,12 @@ const MissionsViewComponent = () => {
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors">
-                           <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
+                           <div className="flex flex-col p-4 gap-4">
+                               <div className="flex items-center gap-4">
                                 <TriggerWrapper>
                                     <div className="flex-1 text-left min-w-0 flex items-center gap-4">
-                                        <div className="relative w-16 h-16 flex-shrink-0">
-                                            <CircularProgress value={missionProgress} strokeWidth={6} />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", getRankColor(mission.rank))}>
-                                                    <Trophy className="w-5 h-5"/>
-                                                 </div>
-                                            </div>
+                                        <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
+                                            {mission.rank}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
@@ -365,6 +361,19 @@ const MissionsViewComponent = () => {
                                         </Button>
                                     )}
                                 </div>
+                               </div>
+                               {!isManualMission && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger className="w-full">
+                                                <Progress value={missionProgress} className="h-2" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                               )}
                             </div>
                             <AccordionContent className="px-4 pb-4 space-y-4">
                                 
