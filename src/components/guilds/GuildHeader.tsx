@@ -33,20 +33,21 @@ const StatCard = ({ icon: Icon, title, value }) => (
 export const GuildHeader = ({ guild, onEdit, onLeave, isLeader }) => {
     if (!guild) return null;
 
-    const getIconComponent = (iconName) => {
-        const Icon = LucideIcons[iconName];
-        return Icon ? <Icon className="h-10 w-10 text-white" /> : null;
-    };
+    const IconComponent = LucideIcons[guild.emblema_icon || 'Shield'];
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 bg-card/50 border border-border rounded-lg">
             <div className="lg:col-span-2 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <Avatar className="h-24 w-24 rounded-md flex-shrink-0" style={{ backgroundColor: guild.emblema_bg || 'hsl(215, 28%, 48%)'}}>
-                    <div className="flex items-center justify-center h-full w-full">
-                        {getIconComponent(guild.emblema_icon || 'Shield')}
-                    </div>
-                    <AvatarFallback>{guild.tag}</AvatarFallback>
-                </Avatar>
+                 <div 
+                    className="h-24 w-24 rounded-md flex-shrink-0 flex items-center justify-center" 
+                    style={{ backgroundColor: guild.emblema_bg || 'hsl(215, 28%, 48%)'}}
+                >
+                    {IconComponent ? (
+                        <IconComponent className="h-12 w-12 text-white" />
+                     ) : (
+                        <AvatarFallback className="text-2xl font-bold text-white bg-transparent">{guild.tag}</AvatarFallback>
+                    )}
+                </div>
                 <div className="flex-1">
                     <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">{guild.nome} [{guild.tag}]</h1>
                     <p className="text-muted-foreground mt-1">{guild.descricao}</p>
