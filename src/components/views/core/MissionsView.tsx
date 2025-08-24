@@ -1,7 +1,7 @@
 
 "use client";
 
-import { memo, useState, useEffect, useMemo } from 'react';
+import { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { MissionStatsPanel } from './missions/MissionStatsPanel';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, isToday, endOfDay } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
@@ -148,12 +148,38 @@ const MissionsViewComponent = () => {
     const [dialogState, setDialogState] = useState({ open: false, mission: null, isManual: false });
     const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(true);
 
+    const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
+
     
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
     const layout = profile?.user_settings?.layout_density || 'default';
     const accordionSpacing = layout === 'compact' ? 'space-y-2' : layout === 'comfortable' ? 'space-y-6' : 'space-y-4';
+    
+     useEffect(() => {
+        const calculateTimeUntilMidnight = () => {
+            const now = new Date();
+            const midnight = endOfDay(now);
+            const diff = midnight.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeUntilMidnight('00:00:00');
+                return;
+            }
+
+            const hours = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            const minutes = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+            const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+            
+            setTimeUntilMidnight(`${hours}:${minutes}:${seconds}`);
+        };
+
+        calculateTimeUntilMidnight();
+        const timerId = setInterval(calculateTimeUntilMidnight, 1000);
+
+        return () => clearInterval(timerId);
+    }, []);
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -418,6 +444,8 @@ const MissionsViewComponent = () => {
                         }
                         return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: activeDailyMission || mission, isManual: isManualMission })}>{children}</div>;
                     };
+                    
+                    const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
 
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors">
@@ -543,11 +571,17 @@ const MissionsViewComponent = () => {
                                             </div>
                                         )}
                                     </div>
-                                ) : (
+                                ) : wasCompletedToday ? (
                                     <div className="bg-secondary/30 border-2 border-dashed border-cyan-400/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
                                         <Timer className="h-10 w-10 text-cyan-400 mb-4"/>
-                                        <p className="text-lg font-bold text-foreground">Missão em Cooldown</p>
-                                        <p className="text-sm text-muted-foreground">Uma nova missão diária estará disponível à meia-noite.</p>
+                                        <p className="text-lg font-bold text-foreground">Próxima Missão em:</p>
+                                        <p className="text-2xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                                        <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
+                                        <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
+                                        <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
                                     </div>
                                 )}
                                 
