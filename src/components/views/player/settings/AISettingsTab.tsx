@@ -12,9 +12,11 @@ import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useEffect, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const aiSettingsFormSchema = z.object({
     mission_view_style: z.enum(['inline', 'popup']),
+    ai_personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']),
 });
 
 export default function AISettingsTab() {
@@ -26,6 +28,7 @@ export default function AISettingsTab() {
         resolver: zodResolver(aiSettingsFormSchema),
         defaultValues: {
             mission_view_style: 'inline',
+            ai_personality: 'balanced',
         },
     });
 
@@ -33,6 +36,7 @@ export default function AISettingsTab() {
         if (profile?.user_settings) {
             form.reset({
                 mission_view_style: profile.user_settings.mission_view_style || 'inline',
+                ai_personality: profile.user_settings.ai_personality || 'balanced',
             });
         }
     }, [profile, form]);
@@ -74,6 +78,32 @@ export default function AISettingsTab() {
                         <CardDescription>Personalize como você interage com o Sistema e a interface da aplicação.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                         <FormField
+                            control={form.control}
+                            name="ai_personality"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Personalidade do Sistema</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione uma personalidade" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="balanced">Equilibrado (Padrão)</SelectItem>
+                                            <SelectItem value="mentor">Mentor Sábio</SelectItem>
+                                            <SelectItem value="strategist">Estratega Frio</SelectItem>
+                                            <SelectItem value="friendly">Parceiro Amigável</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Escolha como o "Arquiteto" (IA) deve comunicar consigo.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="mission_view_style"

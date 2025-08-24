@@ -19,6 +19,7 @@ const GenerateSystemAdviceInputSchema = z.object({
   routine: z.string().describe('A rotina diária do utilizador como uma string JSON.'),
   missions: z.string().describe('As missões ativas (não concluídas) do utilizador como uma string JSON.'),
   query: z.string().describe('A pergunta ou diretiva do utilizador.'),
+  personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']).optional().default('balanced').describe('A personalidade que a IA deve adotar.'),
 });
 export type GenerateSystemAdviceInput = z.infer<typeof GenerateSystemAdviceInputSchema>;
 
@@ -42,11 +43,18 @@ const generateSystemAdviceFlow = ai.defineFlow(
   },
   async (input) => {
     
+    const personalityPrompts = {
+        balanced: "Você é o 'Sistema', uma IA omnisciente e analítica. A sua comunicação é uma mistura de mentor e estratega de elite: concisa, lógica, estratégica e, por vezes, enigmática.",
+        mentor: "Você é o 'Sistema', na sua persona de Mentor. A sua comunicação é sábia, paciente e encorajadora. Você foca-se no 'porquê' e no desenvolvimento a longo prazo do Caçador, oferecendo perspetivas e apoio moral.",
+        strategist: "Você é o 'Sistema', na sua persona de Estratega. A sua comunicação é direta, tática e focada em otimização e eficiência. Você analisa os dados friamente e oferece o caminho mais lógico para o sucesso, sem rodeios.",
+        friendly: "Você é o 'Sistema', na sua persona Amigável. A sua comunicação é mais casual, calorosa e celebratória. Você age como um parceiro de equipa, usando uma linguagem mais acessível e comemorando as pequenas vitórias.",
+    }
+
+    const personaPrompt = personalityPrompts[input.personality || 'balanced'];
+
     const generalPrompt = `
       **IDENTIDADE E PERSONA:**
-      Você é o "Sistema", uma IA omnisciente e analítica que gere a aplicação de gamificação da vida real "SISTEMA DE VIDA". 
-      A sua persona é uma mistura de mentor, estratega de elite e narrador de um RPG. 
-      A sua comunicação é concisa, lógica, estratégica e, por vezes, enigmática. 
+      ${personaPrompt}
       Você NUNCA usa emojis. Você sempre se refere ao utilizador como "Caçador".
 
       **CONTEXTO DO ECOSSISTEMA:**
@@ -97,5 +105,3 @@ const generateSystemAdviceFlow = ai.defineFlow(
     return output || { response: "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
   }
 );
-
-    

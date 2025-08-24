@@ -45,6 +45,7 @@ const AIChatViewComponent = () => {
             routine: JSON.stringify(routine),
             missions: JSON.stringify(missions.filter(m => !m.concluido)),
             query: query,
+            personality: profile.user_settings?.ai_personality || 'balanced',
           });
           const aiMessage = { sender: 'ai', text: result.response };
           setMessages(prev => [...prev, aiMessage]);
