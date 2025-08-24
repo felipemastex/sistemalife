@@ -10,10 +10,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
+import { MissionCompletionAnimation } from './missions/MissionCompletionAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { MissionStatsPanel } from './missions/MissionStatsPanel';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,19 +25,137 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TrendingDown, TrendingUp, CheckCircle2, MessageSquare } from 'lucide-react';
 
+// Type definitions
+interface SubTask {
+  name: string;
+  target: number;
+  unit: string;
+  current: number;
+}
+
+interface DailyMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido: boolean;
+  tipo: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
+  completed_at?: string;
+}
+
+interface RankedMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  concluido: boolean;
+  rank: string;
+  level_requirement: number;
+  meta_associada: string;
+  total_missoes_diarias: number;
+  ultima_missao_concluida_em: string | null;
+  missoes_diarias: DailyMission[];
+  isManual?: boolean;
+  subTasks?: SubTask[];
+}
+
+interface Meta {
+  id: string | number;
+  nome: string;
+  prazo?: string;
+  concluida: boolean;
+}
+
+interface Profile {
+  nivel: number;
+  xp: number;
+  xp_para_proximo_nivel: number;
+  user_settings: {
+    layout_density: string;
+    mission_view_style: string;
+  };
+  manual_missions: RankedMission[];
+}
+
+type FeedbackType = 'hint' | 'too_hard' | 'too_easy';
+type DifficultyType = 'too_easy' | 'perfect' | 'too_hard';
+
+interface FeedbackModalState {
+  open: boolean;
+  mission: DailyMission | null;
+  type: FeedbackType | null;
+}
+
+interface ContributionModalState {
+  open: boolean;
+  subTask: SubTask | null;
+  mission: DailyMission | null;
+}
+
+interface MissionCompletionFeedbackState {
+  open: boolean;
+  missionName: string;
+  rankedMissionId: string | number | null;
+  dailyMissionId?: string | number | null;
+  subTask?: SubTask | null;
+  amount?: number | null;
+}
+
+interface AnimationState {
+  showAnimation: boolean;
+  missionName: string;
+  xpGained: number;
+  fragmentsGained: number;
+  levelUp: boolean;
+  newLevel: number;
+}
+
+interface DialogState {
+  open: boolean;
+  mission: DailyMission | RankedMission | null;
+  isManual: boolean;
+}
+
+interface MissionFeedbackDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (feedbackType: FeedbackType, userText: string) => void;
+  mission: DailyMission;
+  feedbackType: FeedbackType;
+}
+
+interface ContributionDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  subTask: SubTask;
+  onContribute: (amount: number) => void;
+}
+
+interface MissionCompletionFeedbackDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmitFeedback: (feedbackData: { difficulty: DifficultyType; comment?: string }) => void;
+  missionName: string;
+}
+
+interface TriggerWrapperProps {
+  children: React.ReactNode;
+}
 
 // Helper Dialog for getting user feedback
-const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
+const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const dialogTitles = {
+    const dialogTitles: Record<FeedbackType, string> = {
         'hint': 'Precisa de uma Dica?',
         'too_hard': 'Missão Muito Difícil?',
         'too_easy': 'Missão Muito Fácil?'
     };
 
-    const dialogDescriptions = {
+    const dialogDescriptions: Record<FeedbackType, string> = {
         'hint': 'Descreva onde você está bloqueado e o Sistema fornecerá uma pista.',
         'too_hard': 'Descreva por que a missão está muito difícil. O Sistema irá ajustar o próximo passo.',
         'too_easy': 'Descreva por que a missão foi muito fácil para que o Sistema possa aumentar o desafio.'
@@ -80,7 +199,7 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
     );
 };
 
-const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
+const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenChange, subTask, onContribute }) => {
     const [amount, setAmount] = useState('');
     
     if (!subTask) return null;
@@ -133,8 +252,8 @@ const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
     );
 };
 
-const MissionCompletionFeedbackDialog = ({ isOpen, onClose, onSubmitFeedback, missionName }) => {
-  const [difficulty, setDifficulty] = useState('');
+const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogProps> = ({ isOpen, onClose, onSubmitFeedback, missionName }) => {
+  const [difficulty, setDifficulty] = useState<DifficultyType | ''>('');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,7 +263,7 @@ const MissionCompletionFeedbackDialog = ({ isOpen, onClose, onSubmitFeedback, mi
     setIsSubmitting(true);
     
     const feedbackData = {
-      difficulty,
+      difficulty: difficulty as DifficultyType,
       comment: comment.trim() || undefined,
     };
     
@@ -204,12 +323,12 @@ const MissionCompletionFeedbackDialog = ({ isOpen, onClose, onSubmitFeedback, mi
         <div className="py-4 space-y-4">
           <div>
             <Label className="text-sm font-medium">Dificuldade da Missão</Label>
-            <RadioGroup value={difficulty} onValueChange={setDifficulty} className="mt-2">
+            <RadioGroup value={difficulty as string} onValueChange={(value) => setDifficulty(value as DifficultyType | '')} className="mt-2">
               {difficultyOptions.map((option) => (
                 <div 
                   key={option.value} 
                   className={`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`}
-                  onClick={() => setDifficulty(option.value)}
+                  onClick={() => setDifficulty(option.value as DifficultyType | '')}
                 >
                   <RadioGroupItem value={option.value} id={option.value} className="mt-0.5 pointer-events-none" />
                   <div className="flex-1 space-y-1">
@@ -260,23 +379,41 @@ const MissionCompletionFeedbackDialog = ({ isOpen, onClose, onSubmitFeedback, mi
 
 
 const MissionsViewComponent = () => {
-    const { profile, missions, metas, completeMission, generatingMission, missionFeedback, setMissionFeedback, persistData } = usePlayerDataContext();
+    const { profile, missions, metas, completeMission, generatingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions } = usePlayerDataContext() as {
+        profile: Profile;
+        missions: RankedMission[];
+        metas: Meta[];
+        completeMission: (params: { rankedMissionId: string | number; dailyMissionId: string | number; subTask: SubTask; amount: number; feedback: string | null }) => Promise<void>;
+        generatingMission: string | number | null;
+        missionFeedback: Record<string | number, string>;
+        setMissionFeedback: (missionId: string | number, feedback: string) => void;
+        persistData: (key: string, data: any) => Promise<void>;
+        generatePendingDailyMissions?: () => Promise<void>;
+    };
     const [showProgressionTree, setShowProgressionTree] = useState(false);
-    const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
-    const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
-    const [contributionModalState, setContributionModalState] = useState({ open: false, subTask: null, mission: null });
-    const [missionCompletionFeedbackState, setMissionCompletionFeedbackState] = useState({ 
+    const [selectedGoalMissions, setSelectedGoalMissions] = useState<RankedMission[]>([]);
+    const [feedbackModalState, setFeedbackModalState] = useState<FeedbackModalState>({ open: false, mission: null, type: null });
+    const [contributionModalState, setContributionModalState] = useState<ContributionModalState>({ open: false, subTask: null, mission: null });
+    const [missionCompletionFeedbackState, setMissionCompletionFeedbackState] = useState<MissionCompletionFeedbackState>({ 
         open: false, 
         missionName: '', 
         rankedMissionId: null 
     });
+    const [animationState, setAnimationState] = useState<AnimationState>({
+        showAnimation: false,
+        missionName: '',
+        xpGained: 0,
+        fragmentsGained: 0,
+        levelUp: false,
+        newLevel: 0
+    });
 
-    const [activeAccordionItem, setActiveAccordionItem] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [rankFilter, setRankFilter] = useState('all');
-    const [statusFilter, setStatusFilter] = useState('active');
+    const [activeAccordionItem, setActiveAccordionItem] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [rankFilter, setRankFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('active');
 
-    const [dialogState, setDialogState] = useState({ open: false, mission: null, isManual: false });
+    const [dialogState, setDialogState] = useState<DialogState>({ open: false, mission: null, isManual: false });
     const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(true);
 
     const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
@@ -290,12 +427,22 @@ const MissionsViewComponent = () => {
     
      useEffect(() => {
         const calculateTimeUntilMidnight = () => {
+            // Usar fuso horário local (-3) para cálculos
             const now = new Date();
-            const midnight = endOfDay(now);
+            
+            // Criar meia-noite local (próxima meia-noite no fuso local)
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0); // Próxima meia-noite
+            
             const diff = midnight.getTime() - now.getTime();
 
             if (diff <= 0) {
                 setTimeUntilMidnight('00:00:00');
+                
+                // MEIA-NOITE CHEGOU - Gerar missões pendentes
+                if (generatePendingDailyMissions) {
+                    generatePendingDailyMissions();
+                }
                 return;
             }
 
@@ -310,9 +457,9 @@ const MissionsViewComponent = () => {
         const timerId = setInterval(calculateTimeUntilMidnight, 1000);
 
         return () => clearInterval(timerId);
-    }, []);
+    }, [generatePendingDailyMissions]);
 
-    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+    const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
              toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
@@ -321,11 +468,11 @@ const MissionsViewComponent = () => {
         }
     };
     
-    const handleOpenFeedbackModal = (mission, type) => {
+    const handleOpenFeedbackModal = (mission: DailyMission, type: FeedbackType) => {
         setFeedbackModalState({ open: true, mission, type });
     };
     
-    const handleMissionFeedback = async (feedbackType, userText) => {
+    const handleMissionFeedback = async (feedbackType: FeedbackType, userText: string) => {
         const { mission } = feedbackModalState;
         if (!mission) return;
         
@@ -347,7 +494,7 @@ const MissionsViewComponent = () => {
                     ? `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}' com o seguinte comentário: "${userText}"`
                     : `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}'`;
                 
-                const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id));
+                const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
                 if (rankedMission) {
                      setMissionFeedback(rankedMission.id, feedbackValue);
                 }
@@ -357,61 +504,90 @@ const MissionsViewComponent = () => {
         }
     };
     
-    const handleMissionCompletionFeedback = async (feedbackData) => {
+    const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
         const { rankedMissionId, dailyMissionId, subTask, amount } = missionCompletionFeedbackState;
         
         let feedbackText = null;
         
         // Convert feedback to text for AI
         if (feedbackData.difficulty !== 'perfect') {
-            const difficultyText = {
+            const difficultyText: Record<DifficultyType, string> = {
                 'too_easy': 'muito fácil',
-                'too_hard': 'muito difícil'
-            }[feedbackData.difficulty];
-            
-            feedbackText = `O utilizador considerou a missão ${difficultyText}`;
+                'too_hard': 'muito difícil',
+                'perfect': 'perfeita'
+            };
+            const selectedDifficultyText = difficultyText[feedbackData.difficulty];
+
+            feedbackText = `O utilizador considerou a missão ${selectedDifficultyText}`;
             if (feedbackData.comment) {
                 feedbackText += `. Comentário adicional: "${feedbackData.comment}"`;
             }
         }
         
-        // Complete the mission with feedback
-        await completeMission({ 
-            rankedMissionId, 
-            dailyMissionId, 
-            subTask, 
-            amount, 
-            feedback: feedbackText 
-        });
+        // Get mission data for animation
+        const missionToComplete = missions.find((rm: RankedMission) => rm.id === rankedMissionId)?.missoes_diarias?.find((dm: DailyMission) => dm.id === dailyMissionId);
+        const currentLevel = profile.nivel;
         
-        // Show appropriate toast based on feedback
-        if (feedbackData.difficulty === 'perfect') {
-            toast({ 
-                title: "Missão Concluída!", 
-                description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar." 
-            });
-        } else {
-            const adjustmentText = feedbackData.difficulty === 'too_easy' 
-                ? 'mais desafiadora' 
-                : 'mais acessível';
-            toast({ 
-                title: "Missão Concluída!", 
-                description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
+        // Show animation first
+        if (missionToComplete) {
+            // Calculate if user will level up (this is a simplified check)
+            const currentXP = profile.xp || 0;
+            const xpForNextLevel = profile.xp_para_proximo_nivel || 100;
+            const willLevelUp = (currentXP + missionToComplete.xp_conclusao) >= xpForNextLevel;
+            
+            setAnimationState({
+                showAnimation: true,
+                missionName: missionToComplete.nome,
+                xpGained: missionToComplete.xp_conclusao,
+                fragmentsGained: missionToComplete.fragmentos_conclusao || 0,
+                levelUp: willLevelUp,
+                newLevel: willLevelUp ? currentLevel + 1 : currentLevel
             });
         }
+        
+        // Complete the mission with feedback after a short delay to let animation start
+        setTimeout(async () => {
+            if (rankedMissionId !== null && dailyMissionId !== null && subTask !== null && amount !== null) {
+                await completeMission({ 
+                    rankedMissionId: rankedMissionId as string | number, 
+                    dailyMissionId: dailyMissionId as string | number, 
+                    subTask: subTask as SubTask, 
+                    amount: amount as number, 
+                    feedback: feedbackText 
+                });
+            }
+        }, 500);
+        
+        // Show appropriate toast based on feedback (this will appear after animation)
+        setTimeout(() => {
+            if (feedbackData.difficulty === 'perfect') {
+                toast({ 
+                    title: "Missão Concluída!", 
+                    description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar." 
+                });
+            } else {
+                const adjustmentText = feedbackData.difficulty === 'too_easy' 
+                    ? 'mais desafiadora' 
+                    : 'mais acessível';
+                toast({ 
+                    title: "Missão Concluída!", 
+                    description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
+                });
+            }
+        }, 4000); // Show toast after animation completes
         
         setMissionCompletionFeedbackState({ open: false, missionName: '', rankedMissionId: null });
     };
     
-    const handleShowProgression = (clickedMission) => {
+    const handleShowProgression = (clickedMission: RankedMission) => {
         const goalMissions = missions
-            .filter(m => m.meta_associada === clickedMission.meta_associada)
-            .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            .filter((m: RankedMission) => m.meta_associada === clickedMission.meta_associada)
+            .sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
         setSelectedGoalMissions(goalMissions);
         setShowProgressionTree(true);
     };
 
-    const getRankColor = (rank) => {
+    const getRankColor = (rank: string) => {
         switch (rank) {
             case 'F': return 'text-gray-400';
             case 'E': return 'text-green-400';
@@ -427,27 +603,27 @@ const MissionsViewComponent = () => {
         }
     }
 
-    const onContributeToQuest = (subTask, amount, missionToUpdate) => {
+    const onContributeToQuest = (subTask: SubTask, amount: number, missionToUpdate: RankedMission) => {
          if (missionToUpdate.isManual) {
-            const updatedManualMissions = (profile.manual_missions || []).map(m => 
+            const updatedManualMissions = (profile.manual_missions || []).map((m: RankedMission) => 
                 m.id === missionToUpdate.id 
                 ? {
                     ...m,
-                    subTasks: m.subTasks.map(st => 
+                    subTasks: m.subTasks?.map((st: SubTask) => 
                         st.name === subTask.name 
                         ? {...st, current: Math.min(st.target, (st.current || 0) + amount) } 
                         : st
-                    )
+                    ) || []
                 }
                 : m
             );
             persistData('profile', { ...profile, manual_missions: updatedManualMissions });
          } else {
-             const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === missionToUpdate.id));
+             const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === missionToUpdate.id));
              if(rankedMission) {
                 // Check if this contribution will complete the mission
                 const updatedSubTask = { ...subTask, current: Math.min(subTask.target, (subTask.current || 0) + amount) };
-                const willCompleteMission = missionToUpdate.subTasks.every(st => {
+                const willCompleteMission = missionToUpdate.subTasks?.every((st: SubTask) => {
                     if (st.name === subTask.name) {
                         return updatedSubTask.current >= updatedSubTask.target;
                     }
@@ -472,12 +648,12 @@ const MissionsViewComponent = () => {
          }
     };
 
-    const handleSaveManualMission = (missionData) => {
+    const handleSaveManualMission = (missionData: RankedMission) => {
         const manualMissions = profile.manual_missions || [];
         let updatedMissions;
 
         if (missionData.id) { // Editing
-            updatedMissions = manualMissions.map(m => m.id === missionData.id ? missionData : m);
+            updatedMissions = manualMissions.map((m: RankedMission) => m.id === missionData.id ? missionData : m);
         } else { // Creating
             const newMission = { ...missionData, id: `manual_${Date.now()}`, concluido: false };
             updatedMissions = [...manualMissions, newMission];
@@ -486,14 +662,14 @@ const MissionsViewComponent = () => {
         setDialogState({ open: false, mission: null, isManual: false });
     }
 
-    const handleDeleteManualMission = (missionId) => {
-        const updatedMissions = (profile.manual_missions || []).filter(m => m.id !== missionId);
+    const handleDeleteManualMission = (missionId: string | number) => {
+        const updatedMissions = (profile.manual_missions || []).filter((m: RankedMission) => m.id !== missionId);
         persistData('profile', { ...profile, manual_missions: updatedMissions });
     }
     
     const visibleMissions = useMemo(() => {
         const activeEpicMissions = [];
-        const missionsByGoal = missions.reduce((acc, mission) => {
+        const missionsByGoal = missions.reduce((acc: Record<string, RankedMission[]>, mission: RankedMission) => {
             if (!acc[mission.meta_associada]) {
                 acc[mission.meta_associada] = [];
             }
@@ -503,39 +679,39 @@ const MissionsViewComponent = () => {
 
         for (const goalName in missionsByGoal) {
             const goalMissions = missionsByGoal[goalName]
-                .filter(m => !m.concluido)
-                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+                .filter((m: RankedMission) => !m.concluido)
+                .sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
 
             if (goalMissions.length > 0) {
                 activeEpicMissions.push(goalMissions[0]);
             }
         }
         
-        const completedEpicMissions = missions.filter(m => m.concluido);
-        const manualMissions = (profile.manual_missions || []).map(m => ({...m, isManual: true, rank: 'M'}));
+        const completedEpicMissions = missions.filter((m: RankedMission) => m.concluido);
+        const manualMissions = (profile.manual_missions || []).map((m: RankedMission) => ({...m, isManual: true, rank: 'M'}));
 
         let missionsToDisplay = [];
         if (statusFilter === 'active') {
-            missionsToDisplay = [...activeEpicMissions, ...manualMissions.filter(m => !m.concluido)];
+            missionsToDisplay = [...activeEpicMissions, ...manualMissions.filter((m: RankedMission) => !m.concluido)];
         } else if (statusFilter === 'completed') {
-            missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter(m => m.concluido)];
+            missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter((m: RankedMission) => m.concluido)];
         } else {
             missionsToDisplay = [...activeEpicMissions, ...completedEpicMissions, ...manualMissions];
         }
 
         if (rankFilter !== 'all') {
             if (rankFilter === 'M') {
-                missionsToDisplay = missionsToDisplay.filter(m => m.isManual);
+                missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.isManual);
             } else {
-                missionsToDisplay = missionsToDisplay.filter(m => m.rank === rankFilter);
+                missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.rank === rankFilter);
             }
         }
         
         if (searchTerm) {
-            missionsToDisplay = missionsToDisplay.filter(m => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
+            missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
         }
 
-        return missionsToDisplay.sort((a,b) => {
+        return missionsToDisplay.sort((a: RankedMission, b: RankedMission) => {
              if (a.concluido && !b.concluido) return 1;
              if (!a.concluido && b.concluido) return -1;
              return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank)
@@ -613,43 +789,80 @@ const MissionsViewComponent = () => {
                 type="single" 
                 collapsible 
                 className={cn("w-full flex-grow overflow-y-auto mt-6 pr-2", accordionSpacing)}
-                value={activeAccordionItem}
-                onValueChange={(value) => {
+                value={activeAccordionItem || undefined}
+                onValueChange={(value: string) => {
                      if (missionViewStyle === 'inline') {
-                        setActiveAccordionItem(value);
+                        setActiveAccordionItem(value || null);
                      }
                 }}
             >
                 {visibleMissions.map(mission => {
                     const isManualMission = mission.isManual;
-                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find(d => !d.concluido);
-                    const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter(d => d.concluido);
+                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
+                    const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
                     
                     let missionProgress;
                     if (isManualMission) {
                          const totalSubs = mission.subTasks?.length || 0;
-                         const completedSubs = mission.subTasks?.filter(st => (st.current || 0) >= st.target).length || 0;
+                         const completedSubs = mission.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0;
                          missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
                     } else {
                         missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     }
                     
-                    const associatedMeta = !isManualMission && metas.find(m => m.nome === mission.meta_associada);
-                    const daysRemaining = associatedMeta?.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
+                    const associatedMeta = !isManualMission ? metas.find((m: Meta) => m.nome === mission.meta_associada) : null;
+                    const daysRemaining = associatedMeta && associatedMeta.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
 
-                    const TriggerWrapper = ({ children }) => {
+                    const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
                         if (missionViewStyle === 'inline' && !isManualMission) {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
                         }
-                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: activeDailyMission || mission, isManual: isManualMission })}>{children}</div>;
+                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
                     };
                     
-                    const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+                    // Verificar se a missão foi completada hoje usando fuso local
+                    const wasCompletedToday = mission.ultima_missao_concluida_em && (() => {
+                        const completedDate = new Date(mission.ultima_missao_concluida_em);
+                        const today = new Date();
+                        
+                        // Comparar apenas a data (ano, mês, dia) sem considerar horário
+                        const isSameDay = completedDate.getFullYear() === today.getFullYear() &&
+                               completedDate.getMonth() === today.getMonth() &&
+                               completedDate.getDate() === today.getDate();
+                               
+                        // Debug temporário
+                        if (mission.ultima_missao_concluida_em) {
+                            console.log('Debug Missão:', {
+                                missionName: mission.nome,
+                                completedAt: mission.ultima_missao_concluida_em,
+                                completedDate: completedDate.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+                                today: today.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+                                isSameDay,
+                                hasActiveDailyMission: !!activeDailyMission
+                            });
+                        }
+                        
+                        return isSameDay;
+                    })();
+
+                    // Se a missão foi completada hoje, mostrar com blur e temporizador
+                    const showBlurEffect = wasCompletedToday && activeDailyMission;
 
                     return (
-                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors">
-                           <div className="flex flex-col p-4 gap-4">
+                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
+                           <div className={cn("flex flex-col p-4 gap-4", showBlurEffect ? "opacity-70 blur-[2px] pointer-events-none" : "")}>
                                <div className="flex items-center gap-4">
+                               {/* Timer overlay for completed missions */}
+                               {showBlurEffect && (
+                                    <div className="absolute inset-0 bg-black/30 rounded-lg flex flex-col items-center justify-center z-10">
+                                        <Timer className="w-8 h-8 text-white mb-2" />
+                                        <p className="text-white font-bold text-lg">Nova missão em:</p>
+                                        <p className="text-white text-xl font-mono">{timeUntilMidnight}</p>
+                                        <p className="text-white/80 text-sm mt-2 text-center px-4">
+                                            Complete sua jornada. Uma nova missão será liberada à meia-noite.
+                                        </p>
+                                    </div>
+                                )}
                                 <TriggerWrapper>
                                     <div className="flex-1 text-left min-w-0 flex items-center gap-4">
                                         <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
@@ -693,79 +906,147 @@ const MissionsViewComponent = () => {
                                             <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
                                             <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
                                         </div>
+                                    ) : wasCompletedToday ? (
+                                        // Mostrar temporizador se uma missão foi completada hoje, independentemente de haver nova missão
+                                        <div className="bg-gradient-to-br from-background/95 via-background/90 to-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500 border-2 border-cyan-400/30 h-48">
+                                            <div className="text-center space-y-4 p-6">
+                                                <div className="relative">
+                                                    <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
+                                                    <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-xl font-bold text-foreground font-cinzel">Missão Completada!</p>
+                                                    <p className="text-sm text-muted-foreground">Próxima missão disponível em:</p>
+                                                    <p className="text-xs text-muted-foreground opacity-75">
+                                                        Horário local: {new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                                                    </p>
+                                                </div>
+                                                <div className="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-4">
+                                                    <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest animate-pulse">{timeUntilMidnight}</p>
+                                                    <p className="text-xs text-cyan-300 mt-2">Horas : Minutos : Segundos</p>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                                                    Descanse e prepare-se para o próximo desafio, Caçador. A nova missão será revelada à meia-noite.
+                                                </p>
+                                            </div>
+                                        </div>
                                     ) : activeDailyMission ? (
-                                        <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                                <div className="flex-grow">
-                                                    <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
-                                                    <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
-                                                </div>
-                                                <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
-                                                    <div className="flex flex-col items-end">
-                                                        <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
-                                                        <p className="text-xs font-semibold text-yellow-400 flex items-center gap-1">
-                                                            <Gem className="h-3 w-3"/>
-                                                            +{activeDailyMission.fragmentos_conclusao || 0}
-                                                        </p>
+                                        <div className="relative">
+                                            {/* Missão Normal ou Missão com Temporizador */}
+                                            <div className={cn(
+                                                "bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 transition-all",
+                                                wasCompletedToday && "blur-sm pointer-events-none"
+                                            )}>
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                                    <div className="flex-grow">
+                                                        <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
                                                     </div>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
-                                                                <LifeBuoy className="h-5 w-5" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent>
-                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'hint')}>
-                                                                Preciso de uma dica
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_hard')}>
-                                                                Está muito difícil
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission, 'too_easy')}>
-                                                                Está muito fácil
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                                                {activeDailyMission.subTasks?.map((st, index) => {
-                                                    const isCompleted = (st.current || 0) >= st.target;
-                                                    return(
-                                                        <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
-                                                            <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                                                <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
-                                                                <div className="flex items-center gap-2 flex-shrink-0">
-                                                                    <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
-                                                                    <Button 
-                                                                        size="icon" 
-                                                                        variant="outline" 
-                                                                        className="h-7 w-7" 
-                                                                        onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission})}
-                                                                        disabled={isCompleted}
-                                                                        aria-label={`Adicionar progresso para ${st.name}`}
-                                                                    >
-                                                                        <Plus className="h-4 w-4" />
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                            <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                                    <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
+                                                        <div className="flex flex-col items-end">
+                                                            {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
+                                                            <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
+                                                        )}
+                                                        {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
+                                                            <p className="text-sm font-semibold text-amber-500 flex items-center">
+                                                                <Gem className="w-4 h-4 mr-1" />
+                                                                +{activeDailyMission.fragmentos_conclusao || 0}
+                                                            </p>
+                                                        )}
                                                         </div>
-                                                    )
-                                                })}
-                                            </div>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="h-8 w-8 text-muted-foreground hover:text-primary" 
+                                                                    aria-label="Opções da missão"
+                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
+                                                                >
+                                                                    <LifeBuoy className="h-5 w-5" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent>
+                                                                <DropdownMenuItem 
+                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'hint')}
+                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
+                                                                >
+                                                                    Preciso de uma dica
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_hard')}
+                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
+                                                                >
+                                                                    Está muito difícil
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_easy')}
+                                                                    disabled={wasCompletedToday !== null && wasCompletedToday !== undefined ? !!wasCompletedToday : false}
+                                                                >
+                                                                    Está muito fácil
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                </div>
 
-                                            {activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
-                                                <div className="mt-4 pt-3 border-t border-border/50">
-                                                    <h5 className="text-sm font-bold text-muted-foreground mb-2">Recursos de Aprendizagem Sugeridos</h5>
-                                                    <div className="space-y-2">
-                                                        {activeDailyMission.learningResources.map((link, index) => (
-                                                            <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
-                                                                <Link className="h-4 w-4"/>
-                                                                <span className="truncate">{link}</span>
-                                                            </a>
-                                                        ))}
+                                                <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                                                    {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
+                                                        const isCompleted = (st.current || 0) >= st.target;
+                                                        return(
+                                                            <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
+                                                                <div className="flex justify-between items-center text-sm mb-1 gap-2">
+                                                                    <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
+                                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                                        <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
+                                                                        <Button 
+                                                                            size="icon" 
+                                                                            variant="outline" 
+                                                                            className="h-7 w-7" 
+                                                                            onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})}
+                                                                            disabled={!!(isCompleted || wasCompletedToday)}
+                                                                            aria-label={`Adicionar progresso para ${st.name}`}
+                                                                        >
+                                                                            <Plus className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                                <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+
+                                                {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((link: string, index: number) => (
+                                                    <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md">
+                                                        <Link className="h-4 w-4"/>
+                                                        <span className="truncate">{link}</span>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                            
+                                            {/* Overlay com temporizador quando a missão foi gerada mas ainda não está ativa */}
+                                            {wasCompletedToday && (
+                                                <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/95 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500 border-2 border-cyan-400/30">
+                                                    <div className="text-center space-y-4 p-6">
+                                                        <div className="relative">
+                                                            <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
+                                                            <div className="absolute inset-0 bg-cyan-400/20 rounded-full animate-ping" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <p className="text-xl font-bold text-foreground font-cinzel">Missão Bloqueada!</p>
+                                                            <p className="text-sm text-muted-foreground">Disponível em:</p>
+                                                            <p className="text-xs text-muted-foreground opacity-75">
+                                                                Horário local: {new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                                                            </p>
+                                                        </div>
+                                                        <div className="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-4">
+                                                            <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest animate-pulse">{timeUntilMidnight}</p>
+                                                            <p className="text-xs text-cyan-300 mt-2">Horas : Minutos : Segundos</p>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                                                            A nova missão será desbloqueada à meia-noite.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             )}
@@ -778,13 +1059,6 @@ const MissionsViewComponent = () => {
                                         </div>
                                     )}
 
-                                    {wasCompletedToday && (
-                                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500">
-                                            <Timer className="h-10 w-10 text-cyan-400 mb-4"/>
-                                            <p className="text-lg font-bold text-foreground">Próxima Missão em:</p>
-                                            <p className="text-2xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
-                                        </div>
-                                    )}
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -799,12 +1073,22 @@ const MissionsViewComponent = () => {
                 )}
             </Accordion>
             
+            <MissionCompletionAnimation
+                isOpen={animationState.showAnimation}
+                onClose={() => setAnimationState(prev => ({ ...prev, showAnimation: false }))}
+                missionName={animationState.missionName}
+                xpGained={animationState.xpGained}
+                fragmentsGained={animationState.fragmentsGained}
+                levelUp={animationState.levelUp}
+                newLevel={animationState.newLevel}
+            />
+
             <MissionFeedbackDialog 
-                open={feedbackModalState.open}
-                onOpenChange={(isOpen) => setFeedbackModalState(prev => ({...prev, open: isOpen}))}
+                open={feedbackModalState.open} 
+                onOpenChange={(open) => setFeedbackModalState(prev => ({ ...prev, open }))}
                 onSubmit={handleMissionFeedback}
-                mission={feedbackModalState.mission}
-                feedbackType={feedbackModalState.type}
+                mission={feedbackModalState.mission as DailyMission}
+                feedbackType={feedbackModalState.type as FeedbackType}
             />
             
             <MissionCompletionFeedbackDialog
@@ -816,26 +1100,40 @@ const MissionsViewComponent = () => {
 
             <ContributionDialog
                 open={contributionModalState.open}
-                onOpenChange={(isOpen) => setContributionModalState({ open: isOpen, subTask: null, mission: null })}
-                subTask={contributionModalState.subTask}
+                onOpenChange={(open) => setContributionModalState(prev => ({ ...prev, open }))}
+                subTask={contributionModalState.subTask as SubTask}
                 onContribute={(amount) => {
                     if (contributionModalState.subTask && contributionModalState.mission) {
-                        onContributeToQuest(contributionModalState.subTask, amount, contributionModalState.mission);
+                        onContributeToQuest(contributionModalState.subTask, amount, contributionModalState.mission as unknown as RankedMission);
                     }
                 }}
             />
 
             { dialogState.open &&
                 <MissionDetailsDialog
-                    isOpen={dialogState.open}
+                    isOpen={dialogState.open} 
                     onClose={() => setDialogState({ open: false, mission: null, isManual: false })}
-                    mission={dialogState.mission}
-                    isManual={dialogState.isManual}
-                    onContribute={onContributeToQuest}
-                    onSave={handleSaveManualMission}
-                    onDelete={handleDeleteManualMission}
+                    mission={dialogState.mission as DailyMission}
+                    isManual={false}
+                    onContribute={(subTask, amount) => {
+                        if (dialogState.mission) {
+                            onContributeToQuest(subTask, amount, dialogState.mission as unknown as RankedMission);
+                        }
+                    }}
+                    onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
+                    onDelete={(missionId) => handleDeleteManualMission(missionId)}
                 />
             }
+
+            <MissionCompletionAnimation
+                isOpen={animationState.showAnimation}
+                onClose={() => setAnimationState(prev => ({ ...prev, showAnimation: false }))}
+                missionName={animationState.missionName}
+                xpGained={animationState.xpGained}
+                fragmentsGained={animationState.fragmentsGained}
+                levelUp={animationState.levelUp}
+                newLevel={animationState.newLevel}
+            />
 
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
                 <DialogContent className="max-w-2xl">
@@ -846,7 +1144,7 @@ const MissionsViewComponent = () => {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                        {selectedGoalMissions.map((m, index) => (
+                        {selectedGoalMissions.map((m: RankedMission, index: number) => (
                              <div key={m.id} className={`p-4 rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'}`}>
                                 <div className="flex justify-between items-center">
                                     <p className={`font-bold ${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{m.nome}</p>

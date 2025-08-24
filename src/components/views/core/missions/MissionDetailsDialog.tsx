@@ -12,7 +12,49 @@ import { Card, CardContent, CardHeader } from "../../../ui/card";
 import { Progress } from "../../../ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 
-const SubTaskCreator = ({ subTasks, onSubTasksChange }) => {
+// Type definitions
+interface SubTask {
+  name: string;
+  target: number;
+  unit: string;
+  current: number;
+}
+
+interface Mission {
+  id?: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido?: boolean;
+  tipo?: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
+  isManual?: boolean;
+}
+
+interface ContributionState {
+  open: boolean;
+  subTask: SubTask | null;
+  amount: number;
+}
+
+interface SubTaskCreatorProps {
+  subTasks: SubTask[];
+  onSubTasksChange: (subTasks: SubTask[]) => void;
+}
+
+interface MissionDetailsDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  mission: Mission | null;
+  isManual: boolean;
+  onContribute: (subTask: SubTask, amount: number, mission: Mission) => void;
+  onSave: (mission: Mission) => void;
+  onDelete: (missionId: string | number) => void;
+}
+
+const SubTaskCreator: React.FC<SubTaskCreatorProps> = ({ subTasks, onSubTasksChange }) => {
     const [name, setName] = useState('');
     const [target, setTarget] = useState(1);
     const [unit, setUnit] = useState('');
@@ -26,14 +68,14 @@ const SubTaskCreator = ({ subTasks, onSubTasksChange }) => {
         setUnit('');
     };
 
-    const handleRemove = (index) => {
-        onSubTasksChange(subTasks.filter((_, i) => i !== index));
+    const handleRemove = (index: number) => {
+        onSubTasksChange(subTasks.filter((_: SubTask, i: number) => i !== index));
     };
 
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                {subTasks.map((task, index) => (
+                {subTasks.map((task: SubTask, index: number) => (
                     <div key={index} className="flex items-center gap-2 bg-secondary/30 p-2 rounded-md border border-border/20">
                         <p className="flex-grow text-sm text-foreground break-words">{task.name} ({task.target} {task.unit})</p>
                         <Button size="icon" variant="ghost" onClick={() => handleRemove(index)} className="h-6 w-6 text-red-500 hover:bg-red-500/20 flex-shrink-0">
@@ -56,9 +98,9 @@ const SubTaskCreator = ({ subTasks, onSubTasksChange }) => {
 };
 
 
-export const MissionDetailsDialog = ({ isOpen, onClose, mission, isManual, onContribute, onSave, onDelete }) => {
-  const [editedMission, setEditedMission] = useState(null);
-  const [contributionState, setContributionState] = useState({ open: false, subTask: null, amount: 1 });
+export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOpen, onClose, mission, isManual, onContribute, onSave, onDelete }) => {
+  const [editedMission, setEditedMission] = useState<Mission | null>(null);
+  const [contributionState, setContributionState] = useState<ContributionState>({ open: false, subTask: null, amount: 1 });
 
   useEffect(() => {
     if (mission) {
@@ -74,32 +116,38 @@ export const MissionDetailsDialog = ({ isOpen, onClose, mission, isManual, onCon
 
   const handleContribute = async () => {
     // Update local state immediately for real-time feedback
-    const updatedSubTasks = editedMission.subTasks.map(task => 
-      task.name === contributionState.subTask.name 
+    if (!contributionState.subTask || !editedMission) return;
+    
+    const updatedSubTasks = editedMission.subTasks.map((task: SubTask) => 
+      task.name === contributionState.subTask!.name 
         ? { ...task, current: (task.current || 0) + contributionState.amount }
         : task
     );
     
-    setEditedMission(prev => ({ ...prev, subTasks: updatedSubTasks }));
+    setEditedMission(prev => prev ? ({ ...prev, subTasks: updatedSubTasks }) : null);
     
     // Call the external handler
-    onContribute(contributionState.subTask, contributionState.amount, mission);
+    if (mission) {
+      onContribute(contributionState.subTask, contributionState.amount, mission);
+    }
     setContributionState({ open: false, subTask: null, amount: 1 });
   }
 
   const handleSave = () => {
-    onSave(editedMission);
+    if (editedMission) {
+      onSave(editedMission);
+    }
   }
 
-  const handleInputChange = (field, value) => {
-    setEditedMission(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof Mission, value: string) => {
+    setEditedMission(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
-   const handleNumericInputChange = (field, value) => {
-    setEditedMission(prev => ({ ...prev, [field]: Number(value) }));
+   const handleNumericInputChange = (field: keyof Mission, value: string) => {
+    setEditedMission(prev => prev ? ({ ...prev, [field]: Number(value) }) : null);
   };
 
-  const handleSubTasksChange = (newSubTasks) => {
-    setEditedMission(prev => ({ ...prev, subTasks: newSubTasks }));
+  const handleSubTasksChange = (newSubTasks: SubTask[]) => {
+    setEditedMission(prev => prev ? ({ ...prev, subTasks: newSubTasks }) : null);
   };
 
   const renderViewMode = () => (
@@ -123,7 +171,7 @@ export const MissionDetailsDialog = ({ isOpen, onClose, mission, isManual, onCon
           <div>
             <h4 className="font-semibold text-muted-foreground text-sm uppercase mb-3 text-center">Objetivos</h4>
             <div className="space-y-3 bg-secondary/20 p-3 rounded-md border border-border/30">
-                {(editedMission.subTasks || []).map((task, index) => {
+                {(editedMission.subTasks || []).map((task: SubTask, index: number) => {
                     const isTaskCompleted = (task.current || 0) >= task.target;
                     return (
                          <div key={index} className="space-y-2 p-2 rounded border border-border/20 bg-background/50">
@@ -159,7 +207,7 @@ export const MissionDetailsDialog = ({ isOpen, onClose, mission, isManual, onCon
             <div>
                 <h5 className="text-sm font-semibold text-muted-foreground mb-2 text-center uppercase">Recursos</h5>
                 <div className="space-y-2">
-                    {editedMission.learningResources.map((link, index) => (
+                    {editedMission.learningResources.map((link: string, index: number) => (
                         <a href={link} target="_blank" rel="noopener noreferrer" key={index} 
                            className="flex items-center gap-2 text-primary hover:text-primary/80 text-xs p-2 rounded bg-secondary/30 border border-border/20 break-all">
                             <Link className="h-3 w-3 flex-shrink-0"/>
@@ -171,7 +219,7 @@ export const MissionDetailsDialog = ({ isOpen, onClose, mission, isManual, onCon
         )}
         {isManual && (
             <DialogFooter className="pt-3 px-4">
-                <Button variant="destructive" size="sm" onClick={() => onDelete(editedMission.id)}>
+                <Button variant="destructive" size="sm" onClick={() => editedMission?.id && onDelete(editedMission.id)}>
                   <Trash2 className="mr-1 h-3 w-3"/> 
                   Excluir
                 </Button>
