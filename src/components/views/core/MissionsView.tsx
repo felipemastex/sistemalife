@@ -1,4 +1,3 @@
-
 "use client";
 
 import { memo, useState, useEffect, useCallback, useMemo } from 'react';
@@ -74,10 +73,11 @@ const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedback
 
 
 const MissionsViewComponent = () => {
-    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback } = usePlayerDataContext();
+    const { missions, completeMission, profile, generatingMission, missionFeedback, setMissionFeedback, setQuestNotification } = usePlayerDataContext();
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
+    const [activeAccordionItem, setActiveAccordionItem] = useState(null);
 
     const [completedAccordionOpen, setCompletedAccordionOpen] = useState(false);
     
@@ -151,6 +151,16 @@ const MissionsViewComponent = () => {
             default: return 'bg-gray-700 text-gray-400';
         }
     }
+
+    const onContributeToQuest = (subTask, amount) => {
+         const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.subTasks.some(st => st.name === subTask.name)));
+         if(rankedMission) {
+            const dailyMission = rankedMission.missoes_diarias.find(dm => !dm.concluido);
+            if(dailyMission) {
+                completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: dailyMission.id, subTask, amount, feedback: missionFeedback[rankedMission.id] || null });
+            }
+         }
+    };
     
     const visibleMissions = useMemo(() => {
         const visible = [];
@@ -176,6 +186,8 @@ const MissionsViewComponent = () => {
 
     const completedMissions = useMemo(() => missions.filter(m => m.concluido), [missions]);
 
+    const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
+
     return (
         <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
@@ -183,16 +195,33 @@ const MissionsViewComponent = () => {
             </div>
             <p className="text-muted-foreground mb-6">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
             
-            <Accordion type="single" collapsible className="w-full space-y-4">
+            <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full space-y-4"
+                value={activeAccordionItem}
+                onValueChange={(value) => {
+                     if (missionViewStyle === 'inline') {
+                        setActiveAccordionItem(value);
+                     }
+                }}
+            >
                 {visibleMissions.map(mission => {
                     const activeDailyMission = mission.missoes_diarias.find(d => !d.concluido);
                     const completedDailyMissions = mission.missoes_diarias.filter(d => d.concluido).reverse();
                     const missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                     
+                    const TriggerWrapper = ({ children }) => {
+                        if (missionViewStyle === 'inline') {
+                            return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
+                        }
+                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setQuestNotification({ mission: activeDailyMission, epicMissionName: mission.nome, onContribute: onContributeToQuest, onClose: () => setQuestNotification(null) })}>{children}</div>;
+                    };
+
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg">
                            <div className="flex flex-col sm:flex-row items-start sm:items-center p-4 gap-4">
-                                <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">
+                                <TriggerWrapper>
                                     <div className="flex-1 text-left min-w-0 flex items-center gap-4">
                                         <div className="relative w-16 h-16 flex-shrink-0">
                                             <CircularProgress value={missionProgress} strokeWidth={6} />
@@ -207,7 +236,7 @@ const MissionsViewComponent = () => {
                                             <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
                                         </div>
                                     </div>
-                                </AccordionTrigger>
+                                </TriggerWrapper>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
                                         <GitMerge className="h-5 w-5" />
@@ -271,7 +300,7 @@ const MissionsViewComponent = () => {
                                                                     size="icon" 
                                                                     variant="outline" 
                                                                     className="h-7 w-7" 
-                                                                    onClick={() => completeMission({ rankedMissionId: mission.id, dailyMissionId: activeDailyMission.id, subTask: st, amount: 1, feedback: missionFeedback[mission.id] || null })}
+                                                                    onClick={() => onContributeToQuest(st, 1)}
                                                                     disabled={isCompleted}
                                                                     aria-label={`Adicionar progresso para ${st.name}`}
                                                                 >

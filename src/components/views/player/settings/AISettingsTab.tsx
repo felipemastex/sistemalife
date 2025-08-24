@@ -109,7 +109,7 @@ export default function AISettingsTab() {
                             render={({ field }) => (
                                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Visualização de Missão Diária em Pop-up</FormLabel>
+                                        <FormLabel className="text-base">Visualização de Missão em Pop-up</FormLabel>
                                         <FormDescription>
                                             Ative para que os detalhes da missão diária abram num pop-up em vez de expandir na lista.
                                         </FormDescription>

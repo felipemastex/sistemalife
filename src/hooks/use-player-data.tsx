@@ -329,7 +329,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
     };
 
-    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount }) => {
+    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback }) => {
         
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
@@ -396,10 +396,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const isRankedMissionComplete = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).length >= (rankedMissionAfterDaily.total_missoes_diarias || 10);
             if (!isRankedMissionComplete) {
                 const history = rankedMissionAfterDaily.missoes_diarias.filter(d => d.concluido).map(d => `- ${d.nome}`).join('\n');
-                const feedback = state.missionFeedback[rankedMissionId];
-                const result = await generateNextDailyMission({ rankedMissionName: tempRankedMission.nome, metaName: meta?.nome || "Objetivo geral", goalDeadline: meta?.prazo, history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`, userLevel: updatedProfile.nivel, feedback });
+                const feedbackForAI = feedback || state.missionFeedback[rankedMissionId];
+                const result = await generateNextDailyMission({ rankedMissionName: tempRankedMission.nome, metaName: meta?.nome || "Objetivo geral", goalDeadline: meta?.prazo, history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`, userLevel: updatedProfile.nivel, feedback: feedbackForAI });
                 newDailyMission = { id: Date.now(), nome: result.nextMissionName, descricao: result.nextMissionDescription, xp_conclusao: result.xp, fragmentos_conclusao: result.fragments, concluido: false, tipo: 'diaria', learningResources: result.learningResources || [], subTasks: result.subTasks.map(st => ({...st, current: 0})) };
-                if (feedback) {
+                if (feedbackForAI) {
                     dispatch({ type: 'CLEAR_MISSION_FEEDBACK', payload: { missionId: rankedMissionId }});
                 }
             }
