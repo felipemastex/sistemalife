@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, collection, getDocs, writeBatch } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
 import { useToast } from './use-toast';
 import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
@@ -432,19 +432,31 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('missions', tempState.missions.map(rm => rm.id === rankedMissionId ? {...rm, missoes_diarias: [...rm.missoes_diarias.filter(dm => dm.id !== dailyMissionId), {...tempDailyMission, concluido: true}, ...(newDailyMission ? [newDailyMission] : [])]} : rm));
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
+    
+    const resetUserSubCollections = async (userRef) => {
+        const batch = writeBatch(db);
+        const collectionsToDelete = ['metas', 'missions', 'skills'];
+        for (const coll of collectionsToDelete) {
+            const snapshot = await getDocs(collection(userRef, coll));
+            snapshot.forEach(doc => batch.delete(doc.ref));
+        }
+        await batch.commit();
+    };
 
     const handleFullReset = async () => {
         if (!user) return;
         dispatch({ type: 'SET_DATA_LOADED', payload: false });
         try {
             const userRef = doc(db, 'users', user.uid);
+            await resetUserSubCollections(userRef);
+
             const batch = writeBatch(db);
             const emailUsername = user.email.split('@')[0];
             
             const defaultUserSettings = {
-                mission_view_style: 'inline', // 'inline' or 'popup'
-                ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
-                theme_accent_color: '198 90% 55%', // HSL string
+                mission_view_style: 'inline',
+                ai_personality: 'balanced',
+                theme_accent_color: '198 90% 55%',
                 reduce_motion: false,
                 font_size: 'medium',
                 layout_density: 'default',
@@ -452,47 +464,77 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     daily_briefing: true,
                     goal_completed: true,
                     level_up: true,
-                    quiet_hours: {
-                        enabled: false,
-                        start: '22:00',
-                        end: '08:00',
-                    }
+                    quiet_hours: { enabled: false, start: '22:00', end: '08:00' }
                 }
             };
             
             const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings };
             batch.set(userRef, initialProfile);
 
-            const metasRef = collection(db, 'users', user.uid, 'metas');
-            mockData.metas.forEach(meta => batch.set(doc(metasRef, String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
-            const missionsRef = collection(db, 'users', user.uid, 'missions');
-            mockData.missoes.forEach(mission => batch.set(doc(missionsRef, String(mission.id)), mission));
-            const skillsRef = collection(db, 'users', user.uid, 'skills');
-            mockData.habilidades.forEach(skill => batch.set(doc(skillsRef, String(skill.id)), skill));
-            batch.set(doc(db, 'users', user.uid, 'routine', 'main'), mockData.rotina);
-            batch.set(doc(db, 'users', user.uid, 'routine', 'templates'), mockData.rotinaTemplates);
+            mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
+            mockData.missoes.forEach(mission => batch.set(doc(collection(userRef, 'missions'), String(mission.id)), mission));
+            mockData.habilidades.forEach(skill => batch.set(doc(collection(userRef, 'skills'), String(skill.id)), skill));
+            batch.set(doc(collection(userRef, 'routine'), 'main'), mockData.rotina);
+            batch.set(doc(collection(userRef, 'routine'), 'templates'), mockData.rotinaTemplates);
             await batch.commit();
 
-            dispatch({
-                type: 'SET_INITIAL_DATA',
-                payload: {
-                    profile: initialProfile,
-                    metas: mockData.metas.map(m => ({ ...m, prazo: m.prazo || null, concluida: m.concluida || false })),
-                    missions: mockData.missoes,
-                    skills: mockData.habilidades,
-                    routine: mockData.rotina,
-                    routineTemplates: mockData.rotinaTemplates,
-                    allUsers: [],
-                    guilds: state.guilds,
-                }
-            });
-            setShowOnboarding(true);
+            window.location.reload();
 
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${error.message}` });
-        } finally {
-            dispatch({ type: 'SET_DATA_LOADED', payload: true });
+             dispatch({ type: 'SET_DATA_LOADED', payload: true });
         }
+    };
+    
+    const handleImportData = async (file) => {
+        if (!user) throw new Error("Utilizador não autenticado.");
+        
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const data = JSON.parse(event.target.result as string);
+                    
+                    if (!data.profile || !data.metas || !data.missions || !data.skills) {
+                        throw new Error("O ficheiro de backup está incompleto ou mal formatado.");
+                    }
+                    
+                    dispatch({ type: 'SET_DATA_LOADED', payload: false });
+                    const userRef = doc(db, 'users', user.uid);
+                    await resetUserSubCollections(userRef);
+
+                    const batch = writeBatch(db);
+                    
+                    // O ID do perfil no backup é ignorado; usamos o ID do utilizador atual.
+                    const importedProfile = { ...data.profile, id: user.uid, email: user.email };
+                    batch.set(userRef, importedProfile);
+
+                    const collectionsToImport = {
+                        metas: data.metas,
+                        missions: data.missions,
+                        skills: data.skills,
+                    };
+                    for (const [collName, collData] of Object.entries(collectionsToImport)) {
+                        collData.forEach(item => batch.set(doc(collection(userRef, collName), String(item.id)), item));
+                    }
+
+                    if (data.routine) batch.set(doc(userRef, 'routine', 'main'), data.routine);
+                    if (data.routineTemplates) batch.set(doc(userRef, 'routine', 'templates'), data.routineTemplates);
+                    
+                    await batch.commit();
+
+                    toast({ title: "Importação Concluída!", description: "Os seus dados foram restaurados. A página será recarregada." });
+                    setTimeout(() => window.location.reload(), 2000);
+                    resolve(true);
+
+                } catch (e) {
+                    dispatch({ type: 'SET_DATA_LOADED', payload: true }); // Reset loading state on error
+                    reject(e);
+                }
+            };
+            reader.onerror = (e) => reject(new Error("Não foi possível ler o ficheiro."));
+            reader.readAsText(file);
+        });
     };
 
 
@@ -541,7 +583,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             console.error('🚨 Erro no fetchData:', error);
             console.log('📝 Carregando dados de fallback (mock)...');
             
-            // Fallback com dados mock em caso de erro de conexão
             const fallbackProfile = { 
                 ...mockData.perfis[0], 
                 id: userId, 
@@ -589,11 +630,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             console.log('🔄 Chamando fetchData...');
             fetchData(user.uid);
             
-            // Timeout de segurança para evitar travamento no carregamento de dados
             const dataTimeout = setTimeout(() => {
                 console.warn('🚨 Timeout no carregamento de dados, forçando isDataLoaded = true');
                 dispatch({ type: 'SET_DATA_LOADED', payload: true });
-            }, 15000); // 15 segundos
+            }, 15000);
             
             return () => clearTimeout(dataTimeout);
         }
@@ -604,6 +644,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         persistData,
         completeMission,
         handleFullReset,
+        handleImportData,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,

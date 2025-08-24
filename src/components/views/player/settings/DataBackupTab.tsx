@@ -4,26 +4,38 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { Download } from 'lucide-react';
+import { Download, Upload, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 export default function DataBackupTab() {
-    const { profile, metas, missions, skills, routine, routineTemplates } = usePlayerDataContext();
+    const { profile, handleImportData, isDataLoaded } = usePlayerDataContext();
     const { toast } = useToast();
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+
 
     const handleExportData = () => {
         try {
-            const userBackupData = {
-                profile,
-                metas,
-                missions,
-                skills,
-                routine,
-                routineTemplates,
+            const allData = (isDataLoaded && profile) ? {
+                profile: profile,
+                metas: profile.metas,
+                missions: profile.missions,
+                skills: profile.skills,
+                routine: profile.routine,
+                routineTemplates: profile.routineTemplates,
                 export_date: new Date().toISOString(),
-            };
+            } : null;
 
-            const jsonString = JSON.stringify(userBackupData, null, 2);
+            if (!allData) {
+                toast({ variant: "destructive", title: "Erro na Exportação", description: "Os dados do jogador ainda não foram carregados." });
+                return;
+            }
+
+            const jsonString = JSON.stringify(allData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
@@ -53,13 +65,38 @@ export default function DataBackupTab() {
         }
     };
 
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            const file = event.target.files[0];
+            if (file.type === 'application/json') {
+                setSelectedFile(file);
+            } else {
+                toast({ variant: 'destructive', title: 'Ficheiro Inválido', description: 'Por favor, selecione um ficheiro .json válido.'});
+                setSelectedFile(null);
+            }
+        }
+    };
+    
+    const onImportConfirm = async () => {
+        if (!selectedFile) return;
+        setIsImporting(true);
+        try {
+            await handleImportData(selectedFile);
+            // A página deve recarregar automaticamente após a importação bem-sucedida.
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro na Importação', description: error.message });
+            setIsImporting(false);
+        }
+    };
+
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Dados & Backup</CardTitle>
-                <CardDescription>Faça o download de todos os seus dados do Sistema de Vida.</CardDescription>
+                <CardDescription>Faça o download de todos os seus dados do Sistema de Vida ou restaure-os a partir de um backup.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-lg border border-border p-4">
                     <div>
                         <p className="font-bold text-foreground">Exportar os seus dados</p>
@@ -67,10 +104,57 @@ export default function DataBackupTab() {
                             Crie um ficheiro JSON com todo o seu progresso, incluindo perfil, metas, missões, habilidades e rotinas.
                         </p>
                     </div>
-                    <Button onClick={handleExportData} className="w-full sm:w-auto">
+                    <Button onClick={handleExportData} className="w-full sm:w-auto" disabled={!isDataLoaded}>
                         <Download className="mr-2 h-4 w-4" />
                         Descarregar Backup
                     </Button>
+                </div>
+                
+                <Separator />
+
+                <div className="flex flex-col gap-4 rounded-lg border border-destructive/30 p-4">
+                     <div>
+                        <div className="flex items-center gap-2">
+                             <AlertTriangle className="h-5 w-5 text-destructive" />
+                            <p className="font-bold text-destructive">Importar dados de um backup</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Esta ação é destrutiva e irá substituir todos os seus dados atuais pelos dados do ficheiro de backup. Use com cuidado.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                         <Input 
+                            type="file" 
+                            accept=".json"
+                            onChange={handleFileSelect}
+                            className="flex-grow file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                            disabled={isImporting}
+                        />
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full sm:w-auto" disabled={!selectedFile || isImporting}>
+                                    {isImporting ? <LoaderCircle className="animate-spin mr-2" /> : <Upload className="mr-2 h-4 w-4" />}
+                                    {isImporting ? "A importar..." : "Importar Dados"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação irá **substituir permanentemente** todos os seus dados atuais pelos dados do ficheiro <span className="font-bold text-foreground">{selectedFile?.name}</span>. Esta operação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={isImporting}>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={onImportConfirm} disabled={isImporting} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                                        Sim, substituir tudo
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+
                 </div>
             </CardContent>
         </Card>
