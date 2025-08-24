@@ -32,7 +32,11 @@ export const perfis = [
     ultimo_dia_de_missao_concluida: null, // formato ISO: 'YYYY-MM-DD'
     guild_id: null,
     guild_role: null,
-    mission_view_style: 'inline', // 'inline' or 'popup'
+    user_settings: {
+        mission_view_style: 'inline', // 'inline' or 'popup'
+        ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
+        theme_accent_color: '198 90% 55%', // HSL string
+    }
   },
 ];
 

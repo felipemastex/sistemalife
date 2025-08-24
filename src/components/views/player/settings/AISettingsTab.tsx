@@ -10,12 +10,23 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription, For
 import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useEffect, useState } from 'react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+
+const themeColors = [
+    { name: 'Ciano (Padrão)', value: '198 90% 55%' },
+    { name: 'Púrpura', value: '262 84% 59%' },
+    { name: 'Verde Esmeralda', value: '142 71% 45%' },
+    { name: 'Laranja Ardente', value: '25 95% 53%' },
+    { name: 'Rosa Elétrico', value: '330 81% 60%' },
+    { name: 'Amarelo Dourado', value: '45 93% 47%' },
+];
 
 const aiSettingsFormSchema = z.object({
     mission_view_style: z.enum(['inline', 'popup']),
     ai_personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']),
+    theme_accent_color: z.string(),
 });
 
 export default function AISettingsTab() {
@@ -28,6 +39,7 @@ export default function AISettingsTab() {
         defaultValues: {
             mission_view_style: 'inline',
             ai_personality: 'balanced',
+            theme_accent_color: '198 90% 55%',
         },
     });
 
@@ -36,6 +48,7 @@ export default function AISettingsTab() {
             form.reset({
                 mission_view_style: profile.user_settings.mission_view_style || 'inline',
                 ai_personality: profile.user_settings.ai_personality || 'balanced',
+                theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
             });
         }
     }, [profile, form]);
@@ -77,6 +90,36 @@ export default function AISettingsTab() {
                         <CardDescription>Personalize como você interage com o Sistema e a interface da aplicação.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="theme_accent_color"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tema Visual</FormLabel>
+                                    <FormDescription>Escolha a cor de destaque para a interface do Sistema.</FormDescription>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
+                                        {themeColors.map((color) => (
+                                            <div key={color.value}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => field.onChange(color.value)}
+                                                    className={cn(
+                                                        "w-full h-16 rounded-md border-2 flex items-center justify-center transition-all duration-200",
+                                                        field.value === color.value ? "border-foreground" : "border-transparent hover:border-muted-foreground/50"
+                                                    )}
+                                                    style={{ backgroundColor: `hsl(${color.value})`}}
+                                                >
+                                                    {field.value === color.value && <Check className="h-6 w-6 text-white mix-blend-difference" />}
+                                                </button>
+                                                <p className="text-center text-sm mt-2 text-muted-foreground">{color.name}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
                          <FormField
                             control={form.control}
                             name="ai_personality"

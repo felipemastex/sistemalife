@@ -444,6 +444,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const defaultUserSettings = {
                 mission_view_style: 'inline',
                 ai_personality: 'balanced',
+                theme_accent_color: '198 90% 55%',
                 notifications: {
                     daily_briefing: true,
                     goal_completed: true,

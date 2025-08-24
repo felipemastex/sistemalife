@@ -5,6 +5,7 @@ import './globals.css';
 import { Toaster as ToasterContainer } from 'react-hot-toast';
 import { AuthProvider } from '@/hooks/use-auth';
 import { PlayerDataProvider } from '@/hooks/use-player-data';
+import { PlayerDataSync } from '@/hooks/use-player-data-sync';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${cinzel.variable} dark`} suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
        <head>
         <meta name="application-name" content="SISTEMA DE VIDA" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -45,9 +46,10 @@ export default function RootLayout({
         <meta name="theme-color" content="#0d1117" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="antialiased font-sans">
+      <body className={`antialiased font-sans ${inter.variable} ${cinzel.variable}`}>
         <AuthProvider>
             <PlayerDataProvider>
+              <PlayerDataSync />
               {children}
             </PlayerDataProvider>
         </AuthProvider>
