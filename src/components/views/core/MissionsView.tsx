@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search, PlusCircle } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -159,6 +159,7 @@ const MissionsViewComponent = () => {
             case 'S': return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
             case 'SS': return 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-orange-500/50';
             case 'SSS': return 'bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white shadow-xl shadow-purple-500/50 animate-pulse';
+            case 'M': return 'bg-slate-600 text-slate-100'; // Cor para Manual
             default: return 'bg-gray-700 text-gray-400';
         }
     }
@@ -343,9 +344,9 @@ const MissionsViewComponent = () => {
                                         <div className="relative w-16 h-16 flex-shrink-0">
                                             <CircularProgress value={missionProgress} strokeWidth={6} />
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className={`text-lg font-bold ${getRankColor(mission.rank)} rounded-full w-8 h-8 flex items-center justify-center`}>
-                                                    {mission.rank}
-                                                </span>
+                                                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", getRankColor(mission.rank))}>
+                                                    <Trophy className="w-5 h-5"/>
+                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex-1">
