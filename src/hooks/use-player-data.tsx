@@ -101,7 +101,7 @@ function playerDataReducer(state, action) {
              const updatedMissions = state.missions.map(rm => {
                 if (rm.id === rankedMissionId) {
                     const newDailyMissionsList = rm.missoes_diarias.map(dm => 
-                        dm.id === dailyMissionId ? { ...dm, concluido: true } : dm
+                        dm.id === dailyMissionId ? { ...dm, concluido: true, completed_at: new Date().toISOString() } : dm
                     );
                     if (newDailyMission) {
                         newDailyMissionsList.push(newDailyMission);

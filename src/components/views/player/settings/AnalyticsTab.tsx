@@ -1,17 +1,20 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart3, LoaderCircle } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useMemo } from 'react';
+import { format, subDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background/80 backdrop-blur-sm border border-border p-2 rounded-md shadow-lg">
-        <p className="font-bold text-foreground">{`${label}`}</p>
-        <p className="text-sm text-primary">{`Total: ${payload[0].value}`}</p>
+        <p className="font-bold text-foreground">{label}</p>
+        <p className="text-sm text-primary">{`Missões Concluídas: ${payload[0].value}`}</p>
       </div>
     );
   }
@@ -20,7 +23,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 
 export default function AnalyticsTab() {
-    const { metas, isDataLoaded } = usePlayerDataContext();
+    const { metas, missions, isDataLoaded } = usePlayerDataContext();
 
     const goalsByCategory = useMemo(() => {
         if (!metas || metas.length === 0) return [];
@@ -34,6 +37,29 @@ export default function AnalyticsTab() {
         return Object.entries(categoryCount).map(([name, count]) => ({ name, count }));
 
     }, [metas]);
+    
+    const weeklyProductivity = useMemo(() => {
+        if (!missions || missions.length === 0) return [];
+        
+        const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i));
+        
+        const data = last7Days.map(date => {
+            const dateString = date.toISOString().split('T')[0];
+            const count = missions
+                .flatMap(m => m.missoes_diarias || [])
+                .filter(dm => dm.concluido && dm.completed_at?.startsWith(dateString))
+                .length;
+            
+            return {
+                name: format(date, 'dd/MM', { locale: ptBR }),
+                date: dateString,
+                count: count
+            };
+        }).reverse();
+        
+        return data;
+
+    }, [missions]);
 
 
     if (!isDataLoaded) {
@@ -63,6 +89,32 @@ export default function AnalyticsTab() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
+                 <Card className="bg-secondary/30">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Produtividade da Última Semana</CardTitle>
+                        <CardDescription>Missões diárias concluídas nos últimos 7 dias.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {weeklyProductivity.length > 0 ? (
+                             <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <BarChart data={weeklyProductivity} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
+                                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-4 border-2 border-dashed border-border rounded-lg">
+                                <p>Nenhum dado de produtividade encontrado.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <Card className="bg-secondary/30">
                     <CardHeader>
                         <CardTitle className="text-lg">Distribuição de Metas por Categoria</CardTitle>
@@ -74,8 +126,8 @@ export default function AnalyticsTab() {
                                 <ResponsiveContainer>
                                     <BarChart data={goalsByCategory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
                                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
                                         <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                                     </BarChart>
