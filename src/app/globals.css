@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,7 +35,6 @@
     --ring: hsl(var(--theme-accent-color, 198 90% 58%));
 
     --radius: 0.5rem;
-    font-size: 16px; /* Tamanho de fonte base */
   }
 
   .dark {
@@ -58,14 +58,6 @@
     --input: 217 33% 17%;
     --ring: hsl(var(--theme-accent-color, 198 90% 58%));
   }
-
-  /* Font size variants */
-  .font-size-small {
-    font-size: 14px;
-  }
-  .font-size-large {
-    font-size: 18px;
-  }
 }
 
 @layer base {
@@ -79,26 +71,4 @@
     transition: none !important;
     animation: none !important;
   }
-}
-
-@layer components {
-    .layout-compact .compact-spacing {
-      @apply gap-2;
-    }
-    .layout-compact .compact-padding {
-      @apply p-2;
-    }
-    .layout-compact .compact-text {
-      @apply text-sm;
-    }
-
-    .layout-comfortable .comfortable-spacing {
-        @apply gap-8;
-    }
-    .layout-comfortable .comfortable-padding {
-        @apply p-8;
-    }
-     .layout-comfortable .comfortable-text {
-        @apply text-lg;
-    }
 }
