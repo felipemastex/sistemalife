@@ -103,5 +103,11 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate'), radialGradientPlugin],
+  plugins: [
+    require('tailwindcss-animate'),
+    radialGradientPlugin,
+    plugin(function ({ addVariant }) {
+        addVariant('reduce-motion', '.reduce-motion &')
+    })
+  ],
 } satisfies Config;

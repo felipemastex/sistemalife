@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { LoaderCircle, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const themeColors = [
     { name: 'Ciano (Padrão)', value: '198 90% 55%' },
@@ -27,6 +28,7 @@ const aiSettingsFormSchema = z.object({
     mission_view_style: z.enum(['inline', 'popup']),
     ai_personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']),
     theme_accent_color: z.string(),
+    reduce_motion: z.boolean(),
 });
 
 export default function AISettingsTab() {
@@ -40,6 +42,7 @@ export default function AISettingsTab() {
             mission_view_style: 'inline',
             ai_personality: 'balanced',
             theme_accent_color: '198 90% 55%',
+            reduce_motion: false,
         },
     });
 
@@ -49,6 +52,7 @@ export default function AISettingsTab() {
                 mission_view_style: profile.user_settings.mission_view_style || 'inline',
                 ai_personality: profile.user_settings.ai_personality || 'balanced',
                 theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
+                reduce_motion: profile.user_settings.reduce_motion || false,
             });
         }
     }, [profile, form]);
@@ -120,13 +124,15 @@ export default function AISettingsTab() {
                             )}
                         />
 
+                        <Separator/>
+
                          <FormField
                             control={form.control}
                             name="ai_personality"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Personalidade do Sistema</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecione uma personalidade" />
@@ -146,6 +152,9 @@ export default function AISettingsTab() {
                                 </FormItem>
                             )}
                         />
+
+                        <Separator/>
+
                         <FormField
                             control={form.control}
                             name="mission_view_style"
@@ -161,6 +170,26 @@ export default function AISettingsTab() {
                                         <Switch
                                             checked={field.value === 'popup'}
                                             onCheckedChange={(checked) => field.onChange(checked ? 'popup' : 'inline')}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="reduce_motion"
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">Reduzir Animações</FormLabel>
+                                        <FormDescription>
+                                            Ative para desativar ou reduzir as animações da interface.
+                                        </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.checked}
+                                            onCheckedChange={field.onChange}
                                         />
                                     </FormControl>
                                 </FormItem>

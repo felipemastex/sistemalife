@@ -6,6 +6,7 @@ import { Toaster as ToasterContainer } from 'react-hot-toast';
 import { AuthProvider } from '@/hooks/use-auth';
 import { PlayerDataProvider } from '@/hooks/use-player-data';
 import { PlayerDataSync } from '@/hooks/use-player-data-sync';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,7 +47,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0d1117" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`antialiased font-sans ${inter.variable} ${cinzel.variable}`}>
+      <body className={cn("antialiased font-sans", inter.variable, cinzel.variable)}>
         <AuthProvider>
             <PlayerDataProvider>
               <PlayerDataSync />

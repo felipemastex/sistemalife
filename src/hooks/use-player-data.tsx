@@ -445,6 +445,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 mission_view_style: 'inline',
                 ai_personality: 'balanced',
                 theme_accent_color: '198 90% 55%',
+                reduce_motion: false,
                 notifications: {
                     daily_briefing: true,
                     goal_completed: true,
