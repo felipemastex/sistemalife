@@ -1,3 +1,4 @@
+
 "use client";
 
 import { memo, useState, useEffect, useCallback, useMemo } from 'react';
@@ -83,6 +84,10 @@ const MissionsViewComponent = () => {
     
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+
+    const layout = profile?.user_settings?.layout_density || 'default';
+    const accordionSpacing = layout === 'compact' ? 'space-y-2' : layout === 'comfortable' ? 'space-y-6' : 'space-y-4';
+    const cardPadding = layout === 'compact' ? 'p-3' : layout === 'comfortable' ? 'p-8' : 'p-6';
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -189,7 +194,7 @@ const MissionsViewComponent = () => {
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
 
     return (
-        <div className="p-4 md:p-6">
+        <div className={cn("h-full overflow-y-auto", cardPadding)}>
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
             </div>
@@ -198,7 +203,7 @@ const MissionsViewComponent = () => {
             <Accordion 
                 type="single" 
                 collapsible 
-                className="w-full space-y-4"
+                className={cn("w-full", accordionSpacing)}
                 value={activeAccordionItem}
                 onValueChange={(value) => {
                      if (missionViewStyle === 'inline') {

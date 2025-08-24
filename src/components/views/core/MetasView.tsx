@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
@@ -368,6 +369,10 @@ const MetasViewComponent = () => {
     const [roadmapMeta, setRoadmapMeta] = useState(null);
 
     const { toast } = useToast();
+    
+    const layout = profile?.user_settings?.layout_density || 'default';
+    const cardPadding = layout === 'compact' ? 'p-3' : layout === 'comfortable' ? 'p-8' : 'p-6';
+    const gapSize = layout === 'compact' ? 'gap-4' : layout === 'comfortable' ? 'gap-8' : 'gap-6';
 
     const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -725,7 +730,7 @@ const MetasViewComponent = () => {
     const sortedMetas = [...metas].sort((a, b) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto">
+        <div className={cn("h-full overflow-y-auto", cardPadding)}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Metas</h1>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -741,7 +746,7 @@ const MetasViewComponent = () => {
             </div>
             <p className="text-muted-foreground mb-8 max-w-4xl">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className={cn("grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3", gapSize)}>
                 {sortedMetas.map(meta => {
                     const skill = skills.find(s => s.id === meta.habilidade_associada_id);
                     const stats = skill ? statCategoryMapping[skill.categoria] : [];

@@ -31,10 +31,11 @@ const aiSettingsFormSchema = z.object({
     theme_accent_color: z.string(),
     reduce_motion: z.boolean(),
     font_size: z.enum(['small', 'medium', 'large']),
+    layout_density: z.enum(['compact', 'default', 'comfortable']),
 });
 
 export default function AISettingsTab() {
-    const { profile, persistData } = usePlayerDataContext();
+    const { profile, persistData, isDataLoaded } = usePlayerDataContext();
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const { toast } = useToast();
@@ -47,6 +48,7 @@ export default function AISettingsTab() {
             theme_accent_color: '198 90% 55%',
             reduce_motion: false,
             font_size: 'medium',
+            layout_density: 'default',
         },
     });
 
@@ -58,9 +60,10 @@ export default function AISettingsTab() {
                 theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
                 reduce_motion: profile.user_settings.reduce_motion || false,
                 font_size: profile.user_settings.font_size || 'medium',
+                layout_density: profile.user_settings.layout_density || 'default',
             });
         }
-    }, [profile, form]);
+    }, [profile, form, isDataLoaded]);
 
     const onSubmit = async (data: z.infer<typeof aiSettingsFormSchema>) => {
         setIsSaving(true);
@@ -161,32 +164,59 @@ export default function AISettingsTab() {
                         />
                         
                         <Separator/>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                                control={form.control}
+                                name="font_size"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tamanho da Fonte</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione um tamanho" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="small">Pequeno</SelectItem>
+                                                <SelectItem value="medium">Médio (Padrão)</SelectItem>
+                                                <SelectItem value="large">Grande</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                            Ajuste o tamanho do texto em toda a aplicação.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="layout_density"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Densidade do Layout</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione uma densidade" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="compact">Compacto</SelectItem>
+                                                <SelectItem value="default">Padrão</SelectItem>
+                                                <SelectItem value="comfortable">Confortável</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                           Ajuste o espaçamento dos elementos.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                        <FormField
-                            control={form.control}
-                            name="font_size"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tamanho da Fonte</FormLabel>
-                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione um tamanho" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="small">Pequeno</SelectItem>
-                                            <SelectItem value="medium">Médio (Padrão)</SelectItem>
-                                            <SelectItem value="large">Grande</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Ajuste o tamanho do texto em toda a aplicação para uma melhor legibilidade.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
 
                         <Separator/>
 

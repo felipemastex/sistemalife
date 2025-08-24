@@ -80,3 +80,25 @@
     animation: none !important;
   }
 }
+
+@layer components {
+    .layout-compact .compact-spacing {
+      @apply gap-2;
+    }
+    .layout-compact .compact-padding {
+      @apply p-2;
+    }
+    .layout-compact .compact-text {
+      @apply text-sm;
+    }
+
+    .layout-comfortable .comfortable-spacing {
+        @apply gap-8;
+    }
+    .layout-comfortable .comfortable-padding {
+        @apply p-8;
+    }
+     .layout-comfortable .comfortable-text {
+        @apply text-lg;
+    }
+}

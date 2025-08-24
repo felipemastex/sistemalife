@@ -47,7 +47,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0d1117" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={cn("antialiased font-sans", inter.variable, cinzel.variable)}>
+      <body className={cn("antialiased font-sans bg-background text-foreground", inter.variable, cinzel.variable)}>
         <AuthProvider>
             <PlayerDataProvider>
               <PlayerDataSync />
