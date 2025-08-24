@@ -6,14 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
-import { LoaderCircle, Wand2, Bell, BellOff, List, Square, User, Settings as SettingsIcon } from 'lucide-react';
+import { LoaderCircle, Wand2, User, Settings as SettingsIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
@@ -36,6 +35,7 @@ const settingsFormSchema = z.object({
     nacionalidade: z.string().max(50).optional(),
     avatar_url: z.string().url({ message: "Por favor, insira um URL válido." }).or(z.literal('')),
     mission_view_style: z.enum(['inline', 'popup']),
+    notifications_enabled: z.boolean().default(false),
 });
 
 
@@ -56,6 +56,7 @@ const SettingsViewComponent = () => {
             nacionalidade: '',
             avatar_url: '',
             mission_view_style: 'inline',
+            notifications_enabled: false,
         },
     });
 
@@ -68,6 +69,7 @@ const SettingsViewComponent = () => {
                 nacionalidade: profile.nacionalidade || 'Não especificada',
                 avatar_url: profile.avatar_url || '',
                 mission_view_style: profile.mission_view_style || 'inline',
+                notifications_enabled: typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted'
             });
         }
          if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -84,29 +86,35 @@ const SettingsViewComponent = () => {
         if (enabled) {
             if (Notification.permission === 'granted') {
                 setNotificationPermission('granted');
+                 form.setValue('notifications_enabled', true);
                 return;
             }
             if (Notification.permission === 'denied') {
                 toast({ variant: 'destructive', title: 'Permissão Bloqueada', description: 'Você precisa de permitir as notificações nas configurações do seu navegador.' });
+                form.setValue('notifications_enabled', false);
                 return;
             }
             const permission = await Notification.requestPermission();
             setNotificationPermission(permission);
             if (permission === 'granted') {
                 toast({ title: 'Notificações Ativadas!', description: 'Você receberá alertas do Sistema.' });
+                form.setValue('notifications_enabled', true);
             } else {
                  toast({ title: 'Permissão Recusada', description: 'Você não receberá notificações.' });
+                 form.setValue('notifications_enabled', false);
             }
         } else {
             setNotificationPermission('default');
-            toast({ title: 'Notificações Desativadas', description: 'Você não receberá mais alertas.' });
+            form.setValue('notifications_enabled', false);
         }
     };
 
     const onSubmit = async (data: z.infer<typeof settingsFormSchema>) => {
         setIsSaving(true);
         try {
-            await persistData('profile', { ...profile, ...data });
+            // We don't persist notification_enabled to the database profile
+            const { notifications_enabled, ...profileData } = data;
+            await persistData('profile', { ...profile, ...profileData });
             toast({
                 title: "Perfil Atualizado!",
                 description: "Os seus dados foram alterados com sucesso.",
@@ -302,20 +310,28 @@ const SettingsViewComponent = () => {
                                     </FormItem>
                                 )}
                             />
-                            <div className="flex items-center justify-between rounded-lg border p-4">
-                               <div className="space-y-0.5">
-                                    <Label className="text-base">Notificações Push</Label>
-                                    <p className="text-sm text-muted-foreground">Receba alertas proativos do Sistema sobre a sua jornada.</p>
-                                    {notificationPermission === 'denied' && (
-                                        <p className="text-xs text-yellow-500 pt-1">As notificações foram bloqueadas no seu navegador.</p>
-                                    )}
-                                 </div>
-                               <Switch
-                                   checked={notificationPermission === 'granted'}
-                                   onCheckedChange={handleNotificationToggle}
-                                   disabled={notificationPermission === 'denied'}
-                               />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="notifications_enabled"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                            <FormLabel className="text-base">Notificações Push</FormLabel>
+                                            <p className="text-sm text-muted-foreground">Receba alertas proativos do Sistema sobre a sua jornada.</p>
+                                            {notificationPermission === 'denied' && (
+                                                <p className="text-xs text-yellow-500 pt-1">As notificações foram bloqueadas no seu navegador.</p>
+                                            )}
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={handleNotificationToggle}
+                                            disabled={notificationPermission === 'denied'}
+                                        />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                            />
                         </CardContent>
                     </Card>
                     
