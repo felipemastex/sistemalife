@@ -37,9 +37,9 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 - **[x] Implementar `GuildStats` (3.2.1):**
     - [x] Adicionar gráficos (`recharts`) para mostrar a contribuição da guilda ao longo do tempo.
     - [x] Implementar o seletor de período (semanal, mensal, total).
-- **[ ] Implementar `MemberLeaderboard` (3.3.2):**
-    - [ ] Criar a lista de membros classificada por contribuição.
-    - [ ] Adicionar indicadores visuais para as primeiras posições (Ouro, Prata, Bronze).
+- **[x] Implementar `MemberLeaderboard` (3.3.2):**
+    - [x] Criar a lista de membros classificada por contribuição.
+    - [x] Adicionar indicadores visuais para as primeiras posições (Ouro, Prata, Bronze).
 
 ### Fase 3: Sistemas de Recompensas e Notificações
 **Objetivo:** Introduzir mecânicas de recompensa e melhorar a comunicação.
