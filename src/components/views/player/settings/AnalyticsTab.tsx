@@ -1,19 +1,21 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart3, LoaderCircle } from 'lucide-react';
+import { BarChart3, LoaderCircle, Sparkles } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useMemo } from 'react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background/80 backdrop-blur-sm border border-border p-2 rounded-md shadow-lg">
         <p className="font-bold text-foreground">{label}</p>
-        <p className="text-sm text-primary">{`Missões Concluídas: ${payload[0].value}`}</p>
+        <p className="text-sm text-primary">{`Contagem: ${payload[0].value}`}</p>
       </div>
     );
   }
@@ -50,8 +52,8 @@ export default function AnalyticsTab() {
                 .length;
             
             return {
-                name: format(date, 'dd/MM', { locale: ptBR }),
-                date: dateString,
+                name: format(date, 'EEE', { locale: ptBR }), // Ex: 'seg', 'ter'
+                fullName: format(date, 'dd/MM', { locale: ptBR }),
                 count: count
             };
         }).reverse();
@@ -79,6 +81,19 @@ export default function AnalyticsTab() {
         )
     }
 
+    const ProductivityTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            const fullDateLabel = weeklyProductivity.find(d => d.name === label)?.fullName;
+            return (
+            <div className="bg-background/80 backdrop-blur-sm border border-border p-2 rounded-md shadow-lg">
+                <p className="font-bold text-foreground">{fullDateLabel}</p>
+                <p className="text-sm text-primary">{`Missões Concluídas: ${payload[0].value}`}</p>
+            </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -101,7 +116,7 @@ export default function AnalyticsTab() {
                                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                                         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
-                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
+                                        <Tooltip content={<ProductivityTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
                                         <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -123,12 +138,12 @@ export default function AnalyticsTab() {
                         {goalsByCategory.length > 0 ? (
                              <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
-                                    <BarChart data={goalsByCategory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <BarChart data={goalsByCategory} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={60} />
-                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+                                        <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={150} />
                                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
-                                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -140,11 +155,13 @@ export default function AnalyticsTab() {
                     </CardContent>
                 </Card>
 
-                 <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
-                    <BarChart3 className="h-16 w-16 mb-4" />
-                    <p className="font-semibold text-lg">Mais Análises em Breve</p>
-                    <p className="text-sm mt-1">Esta secção está a ser forjada pelo Sistema e terá mais insights em breve.</p>
-                </div>
+                 <Alert className="border-cyan-500/30 bg-cyan-900/10">
+                    <Sparkles className="h-5 w-5 text-cyan-400" />
+                    <AlertTitle className="text-cyan-300">Análise Proativa da IA em Breve</AlertTitle>
+                    <AlertDescription className="text-cyan-300/80">
+                        O Sistema está a aprender com os seus padrões. Em breve, esta secção irá fornecer-lhe insights e sugestões personalizadas para otimizar a sua jornada.
+                    </AlertDescription>
+                </Alert>
             </CardContent>
         </Card>
     );

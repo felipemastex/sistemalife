@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -458,8 +459,11 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 ai_personality: 'balanced',
                 theme_accent_color: '198 90% 55%',
                 reduce_motion: false,
-                font_size: 'medium',
                 layout_density: 'default',
+                suggestion_frequency: 'medium',
+                gamification: {
+                    progress_feedback_intensity: 'default',
+                },
                 notifications: {
                     daily_briefing: true,
                     goal_completed: true,

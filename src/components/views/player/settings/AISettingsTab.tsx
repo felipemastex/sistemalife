@@ -15,6 +15,7 @@ import { LoaderCircle, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const themeColors = [
     { name: 'Ciano (Padrão)', value: '198 90% 55%' },
@@ -30,6 +31,8 @@ const aiSettingsFormSchema = z.object({
     ai_personality: z.enum(['balanced', 'mentor', 'strategist', 'friendly']),
     theme_accent_color: z.string(),
     reduce_motion: z.boolean(),
+    layout_density: z.enum(['compact', 'default', 'comfortable']),
+    suggestion_frequency: z.enum(['low', 'medium', 'high']),
 });
 
 export default function AISettingsTab() {
@@ -45,6 +48,8 @@ export default function AISettingsTab() {
             ai_personality: 'balanced',
             theme_accent_color: '198 90% 55%',
             reduce_motion: false,
+            layout_density: 'default',
+            suggestion_frequency: 'medium',
         },
     });
 
@@ -55,6 +60,8 @@ export default function AISettingsTab() {
                 ai_personality: profile.user_settings.ai_personality || 'balanced',
                 theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
                 reduce_motion: profile.user_settings.reduce_motion || false,
+                layout_density: profile.user_settings.layout_density || 'default',
+                suggestion_frequency: profile.user_settings.suggestion_frequency || 'medium',
             });
         }
     }, [profile, form, isDataLoaded]);
@@ -129,6 +136,62 @@ export default function AISettingsTab() {
                         />
 
                         <Separator/>
+                        
+                         <FormField
+                            control={form.control}
+                            name="layout_density"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormLabel>Densidade do Layout</FormLabel>
+                                <FormDescription>
+                                    Ajuste o espaçamento na interface para corresponder às suas preferências visuais.
+                                </FormDescription>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    value={field.value}
+                                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
+                                    >
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'compact' ? 'checked' : 'unchecked'}>
+                                                    <RadioGroupItem value="compact" id="density-compact" className="sr-only"/>
+                                                    <FormLabel htmlFor="density-compact" className="font-normal cursor-pointer w-full text-center">
+                                                        Compacto
+                                                    </FormLabel>
+                                                </div>
+                                            </FormControl>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                             <FormControl>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'}>
+                                                    <RadioGroupItem value="default" id="density-default" className="sr-only"/>
+                                                    <FormLabel htmlFor="density-default" className="font-normal cursor-pointer w-full text-center">
+                                                        Padrão
+                                                    </FormLabel>
+                                                </div>
+                                            </FormControl>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'comfortable' ? 'checked' : 'unchecked'}>
+                                                    <RadioGroupItem value="comfortable" id="density-comfortable" className="sr-only"/>
+                                                    <FormLabel htmlFor="density-comfortable" className="font-normal cursor-pointer w-full text-center">
+                                                        Confortável
+                                                    </FormLabel>
+                                                </div>
+                                            </FormControl>
+                                        </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+
+                        <Separator/>
 
                          <FormField
                             control={form.control}
@@ -151,6 +214,32 @@ export default function AISettingsTab() {
                                     </Select>
                                     <FormDescription>
                                         Escolha como o "Arquiteto" (IA) deve comunicar consigo.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        
+                         <FormField
+                            control={form.control}
+                            name="suggestion_frequency"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Frequência de Sugestões</FormLabel>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione uma frequência" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="low">Baixa</SelectItem>
+                                            <SelectItem value="medium">Média (Padrão)</SelectItem>
+                                            <SelectItem value="high">Alta</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                       Defina com que frequência o Sistema deve oferecer sugestões proativas.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { memo } from 'react';
-import { User, Bot, AlertTriangle, Bell, Database, BarChart3 } from 'lucide-react';
+import { User, Bot, AlertTriangle, Bell, Database, BarChart3, Trophy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileSettingsTab from './ProfileSettingsTab';
 import AISettingsTab from './AISettingsTab';
@@ -9,6 +10,7 @@ import DangerZoneTab from './DangerZoneTab';
 import NotificationsSettingsTab from './NotificationsSettingsTab';
 import DataBackupTab from './DataBackupTab';
 import AnalyticsTab from './AnalyticsTab';
+import GamificationSettingsTab from './GamificationSettingsTab';
 
 const SettingsViewComponent = () => {
     return (
@@ -21,7 +23,7 @@ const SettingsViewComponent = () => {
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 mb-6">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7 mb-6">
                     <TabsTrigger value="profile">
                         <User className="mr-2 h-4 w-4" />
                         Perfil
@@ -33,6 +35,10 @@ const SettingsViewComponent = () => {
                     <TabsTrigger value="notifications">
                          <Bell className="mr-2 h-4 w-4" />
                         Notificações
+                    </TabsTrigger>
+                     <TabsTrigger value="gamification">
+                         <Trophy className="mr-2 h-4 w-4" />
+                        Gamificação
                     </TabsTrigger>
                      <TabsTrigger value="data_backup">
                          <Database className="mr-2 h-4 w-4" />
@@ -58,6 +64,10 @@ const SettingsViewComponent = () => {
 
                 <TabsContent value="notifications">
                     <NotificationsSettingsTab />
+                </TabsContent>
+
+                <TabsContent value="gamification">
+                    <GamificationSettingsTab />
                 </TabsContent>
 
                 <TabsContent value="data_backup">
