@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA que ajuda a definir metas SMART de forma conversacional.
@@ -63,7 +64,9 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         return { isComplete: true, refinedGoal: goal };
     }
 
-    const promptTemplate = `
+    const historyString = history ? history.map(h => `- Pergunta: "${h.question}" / Resposta: "${h.answer}"`).join('\n') : '';
+
+    const prompt = `
         Você é um coach de produtividade de elite, especialista em ajudar pessoas a transformar ideias vagas em metas SMART acionáveis. A sua comunicação é concisa, motivadora e sempre focada no próximo passo.
         
         O utilizador está a definir a seguinte meta: "${goal.name}".
@@ -75,14 +78,9 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         - Relevante (R): ${goal.relevant || 'Ainda não definido'}
         - Prazo (T): ${goal.timeBound || 'Ainda não definido'}
 
-        {{#if history}}
-        Histórico da conversa:
-        {{#each history}}
-        - Pergunta: "{{this.question}}" / Resposta: "{{this.answer}}"
-        {{/each}}
-        {{/if}}
+        ${historyString ? `Histórico da conversa:\n${historyString}` : ''}
 
-        O próximo passo é definir o componente '{{nextStep}}'.
+        O próximo passo é definir o componente '${nextStep}'.
         
         Com base em todas as informações fornecidas, formule a próxima pergunta. A pergunta deve ser aberta, instigante e projetada para extrair uma resposta detalhada e útil. Não faça perguntas de sim/não.
         
@@ -97,13 +95,9 @@ const generateSmartGoalQuestionFlow = ai.defineFlow(
         
         Responda APENAS com o objeto JSON. Não inclua saudações ou texto extra.
     `;
-    
-    const handlebars = await import('handlebars');
-    const template = handlebars.compile(promptTemplate);
-    const finalPrompt = template({ history, nextStep, goal });
 
     const {output} = await ai.generate({
-        prompt: finalPrompt,
+        prompt: prompt,
         model: 'googleai/gemini-2.5-flash',
         output: { schema: z.object({
             nextQuestion: z.string(),
