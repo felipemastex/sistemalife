@@ -9,6 +9,11 @@ import { JoinRequests } from './JoinRequests';
 import { GuildQuests } from './GuildQuests';
 import { GuildAnnouncements } from './GuildAnnouncements';
 import { Card } from '../ui/card';
+import { GuildOverview } from './GuildOverview';
+import { GuildStats } from './GuildStats';
+import { MemberLeaderboard } from './MemberLeaderboard';
+import { GuildNotifications } from './GuildNotifications';
+import { GuildRewards } from './GuildRewards';
 
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
@@ -64,17 +69,15 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
-            <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
+             <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
                 
                 {/* Coluna Esquerda - Conteúdo Principal */}
                 <div className="lg:col-span-8 flex flex-col gap-6 overflow-hidden">
-                    <GuildQuests 
-                        quests={guildData.quests}
-                        onQuestsUpdate={handleQuestsUpdate}
-                        canManage={canManage}
-                        guildData={guildData}
-                        userProfile={profile}
-                    />
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <GuildOverview />
+                        <GuildStats />
+                    </div>
+                    <MemberLeaderboard />
                     <Card className="flex-grow flex flex-col min-h-[400px]">
                        <GuildChat guildId={guildData.id} userProfile={profile} />
                     </Card>
@@ -82,6 +85,21 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
 
                 {/* Coluna Direita - Painéis Laterais */}
                 <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
+                    <GuildQuests 
+                        quests={guildData.quests}
+                        onQuestsUpdate={handleQuestsUpdate}
+                        canManage={canManage}
+                        guildData={guildData}
+                        userProfile={profile}
+                    />
+                    <GuildRewards />
+                    <GuildNotifications />
+                    <GuildAnnouncements 
+                        announcements={guildData.announcements || []}
+                        onUpdate={handleAnnouncementsUpdate}
+                        canManage={canManage}
+                        userProfile={profile}
+                     />
                     {canManage && (
                         <JoinRequests
                             requests={guildData.join_requests || []}
@@ -97,12 +115,6 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                         currentUserProfile={profile}
                         allUsers={allUsers}
                     />
-                     <GuildAnnouncements 
-                        announcements={guildData.announcements || []}
-                        onUpdate={handleAnnouncementsUpdate}
-                        canManage={canManage}
-                        userProfile={profile}
-                     />
                 </div>
             </div>
         </div>

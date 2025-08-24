@@ -19,13 +19,13 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 ### Fase 1: Fundação da Interface e Estrutura
 **Objetivo:** Estabelecer a nova estrutura visual e os componentes base do dashboard da guilda.
 
-- **[ ] Redesign da Interface da Guilda (3.1.1):**
-    - [ ] Implementar um layout de dashboard mais moderno com `Card`s bem definidos.
-    - [ ] Criar os *placeholders* para os novos componentes no `GuildDashboard.tsx`.
-- **[ ] Criação de Componentes:**
-    - [ ] Criar os ficheiros e as estruturas básicas para: `GuildOverview.tsx`, `GuildStats.tsx`, `MemberLeaderboard.tsx`, `GuildNotifications.tsx`, e `GuildRewards.tsx`.
-- **[ ] Expansão do Modelo de Dados (Backend):**
-    - [ ] Adicionar os novos campos ao `erDiagram` e planear a sua integração no Firestore. Campos como `guild_xp`, `MEMBER_CONTRIBUTION`, `GUILD_REWARD`, etc.
+- **[x] Redesign da Interface da Guilda (3.1.1):**
+    - [x] Implementar um layout de dashboard mais moderno com `Card`s bem definidos.
+    - [x] Criar os *placeholders* para os novos componentes no `GuildDashboard.tsx`.
+- **[x] Criação de Componentes:**
+    - [x] Criar os ficheiros e as estruturas básicas para: `GuildOverview.tsx`, `GuildStats.tsx`, `MemberLeaderboard.tsx`, `GuildNotifications.tsx`, e `GuildRewards.tsx`.
+- **[x] Expansão do Modelo de Dados (Backend):**
+    - [x] Adicionar os novos campos ao `erDiagram` e planear a sua integração no Firestore. Campos como `guild_xp`, `MEMBER_CONTRIBUTION`, `GUILD_REWARD`, etc.
 
 ### Fase 2: Visualização de Dados e Engajamento
 **Objetivo:** Implementar a lógica para exibir dados e estatísticas, aumentando a visibilidade do progresso.
