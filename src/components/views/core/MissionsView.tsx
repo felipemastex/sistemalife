@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { differenceInDays, parseISO } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 
 // Helper Dialog for getting user feedback
 const MissionFeedbackDialog = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
@@ -87,6 +89,7 @@ const MissionsViewComponent = () => {
     const [statusFilter, setStatusFilter] = useState('active');
 
     const [dialogState, setDialogState] = useState({ open: false, mission: null, isManual: false });
+    const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(true);
 
     
     const { toast } = useToast();
@@ -264,7 +267,26 @@ const MissionsViewComponent = () => {
         <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
             <div className="flex-shrink-0">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                    <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setIsStatsPanelVisible(!isStatsPanelVisible)}
+                                        className="text-muted-foreground hover:text-foreground"
+                                    >
+                                        {isStatsPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{isStatsPanelVisible ? 'Ocultar' : 'Mostrar'} estatísticas</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                     <Button onClick={() => setDialogState({ open: true, mission: null, isManual: true })} className="w-full sm:w-auto">
                         <PlusCircle className="mr-2 h-4 w-4"/>
                         Criar Missão Manual
@@ -273,7 +295,11 @@ const MissionsViewComponent = () => {
 
                 <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
                 
-                <MissionStatsPanel />
+                 <Collapsible open={isStatsPanelVisible} onOpenChange={setIsStatsPanelVisible}>
+                    <CollapsibleContent>
+                        <MissionStatsPanel />
+                    </CollapsibleContent>
+                </Collapsible>
 
                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Input 
@@ -533,3 +559,5 @@ const MissionsViewComponent = () => {
 };
 
 export const MissionsView = memo(MissionsViewComponent);
+
+    
