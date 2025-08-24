@@ -1,9 +1,59 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, LoaderCircle } from 'lucide-react';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useMemo } from 'react';
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/80 backdrop-blur-sm border border-border p-2 rounded-md shadow-lg">
+        <p className="font-bold text-foreground">{`${label}`}</p>
+        <p className="text-sm text-primary">{`Total: ${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 
 export default function AnalyticsTab() {
+    const { metas, isDataLoaded } = usePlayerDataContext();
+
+    const goalsByCategory = useMemo(() => {
+        if (!metas || metas.length === 0) return [];
+        
+        const categoryCount = metas.reduce((acc, meta) => {
+            const category = meta.categoria || "Sem Categoria";
+            acc[category] = (acc[category] || 0) + 1;
+            return acc;
+        }, {});
+
+        return Object.entries(categoryCount).map(([name, count]) => ({ name, count }));
+
+    }, [metas]);
+
+
+    if (!isDataLoaded) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Analytics Pessoais</CardTitle>
+                    <CardDescription>
+                       A carregar dados para análise...
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
+                        <LoaderCircle className="h-16 w-16 mb-4 animate-spin" />
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -12,11 +62,37 @@ export default function AnalyticsTab() {
                     Visualize o seu progresso, identifique padrões e otimize a sua jornada com insights baseados nos seus dados.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-8">
+                <Card className="bg-secondary/30">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Distribuição de Metas por Categoria</CardTitle>
+                        <CardDescription>Uma visão geral de onde o seu foco está distribuído.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {goalsByCategory.length > 0 ? (
+                             <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <BarChart data={goalsByCategory} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                                        <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}/>
+                                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-4 border-2 border-dashed border-border rounded-lg">
+                                <p>Nenhuma meta encontrada para análise.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                  <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
                     <BarChart3 className="h-16 w-16 mb-4" />
-                    <p className="font-semibold text-lg">Em Desenvolvimento</p>
-                    <p className="text-sm mt-1">Esta funcionalidade está a ser forjada pelo Sistema e estará disponível em breve.</p>
+                    <p className="font-semibold text-lg">Mais Análises em Breve</p>
+                    <p className="text-sm mt-1">Esta secção está a ser forjada pelo Sistema e terá mais insights em breve.</p>
                 </div>
             </CardContent>
         </Card>
