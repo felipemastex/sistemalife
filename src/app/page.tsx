@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, Timer } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -19,7 +19,6 @@ import { AchievementsView } from '@/components/views/player/AchievementsView';
 import { ShopView } from '@/components/views/player/ShopView';
 import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
-import { PomodoroView } from '@/components/views/player/pomodoro-view';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -114,7 +113,6 @@ export default function App() {
               <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
               <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
-              <NavItem icon={Timer} label="Pomodoro" page="pomodoro" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
               <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
               <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
@@ -147,7 +145,6 @@ export default function App() {
       'missions': <MissionsView />,
       'skills': <SkillsView />,
       'routine': <RoutineView />,
-      'pomodoro': <PomodoroView />,
       'achievements': <AchievementsView />,
       'guilds': <GuildsView />,
       'shop': <ShopView />,
