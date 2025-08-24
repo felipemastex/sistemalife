@@ -74,7 +74,11 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                 {/* Coluna Esquerda - Conteúdo Principal */}
                 <div className="lg:col-span-8 flex flex-col gap-6 overflow-hidden">
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <GuildOverview />
+                        <GuildOverview 
+                            guild={guildData}
+                            announcements={guildData.announcements || []}
+                            quests={guildData.quests || []}
+                        />
                         <GuildStats />
                     </div>
                     <MemberLeaderboard />

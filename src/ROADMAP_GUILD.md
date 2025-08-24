@@ -30,10 +30,10 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 ### Fase 2: Visualização de Dados e Engajamento
 **Objetivo:** Implementar a lógica para exibir dados e estatísticas, aumentando a visibilidade do progresso.
 
-- **[ ] Implementar `GuildOverview` (3.1.2):**
-    - [ ] Exibir estatísticas principais da guilda (nível, XP).
-    - [ ] Mostrar progresso das missões ativas.
-    - [ ] Exibir um resumo dos anúncios recentes.
+- **[x] Implementar `GuildOverview` (3.1.2):**
+    - [x] Exibir estatísticas principais da guilda (nível, XP).
+    - [x] Mostrar progresso das missões ativas.
+    - [x] Exibir um resumo dos anúncios recentes.
 - **[ ] Implementar `GuildStats` (3.2.1):**
     - [ ] Adicionar gráficos (`recharts`) para mostrar a contribuição da guilda ao longo do tempo.
     - [ ] Implementar o seletor de período (semanal, mensal, total).
