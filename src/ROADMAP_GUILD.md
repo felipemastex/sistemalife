@@ -44,14 +44,14 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 ### Fase 3: Sistemas de Recompensas e Notificações
 **Objetivo:** Introduzir mecânicas de recompensa e melhorar a comunicação.
 
-- **[ ] Implementar `GuildRewards` (3.2.2):**
+- **[x] Implementar `GuildRewards` (3.2.2):**
     - [x] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
     - [ ] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições.
-- **[ ] Implementar `GuildNotifications` (3.4.1):**
-    - [ ] Criar a interface para exibir as notificações da guilda.
+- **[x] Implementar `GuildNotifications` (3.4.1):**
+    - [x] Criar a interface para exibir as notificações da guilda.
     - [ ] Implementar a lógica de tempo real para receber e marcar notificações como lidas.
-- **[ ] Melhorar o Perfil de Membro (3.3.1):**
-    - [ ] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro.
+- **[x] Melhorar o Perfil de Membro (3.3.1):**
+    - [x] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro.
 
 ### Fase 4: Refinamentos e Melhorias de Qualidade de Vida
 **Objetivo:** Polir a experiência do utilizador com base nas novas funcionalidades.

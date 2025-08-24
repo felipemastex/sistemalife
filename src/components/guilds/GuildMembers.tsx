@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Crown, ShieldCheck, User, Shield, MoreVertical, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Crown, ShieldCheck, User, Shield, MoreVertical, ArrowUp, ArrowDown, X, Award, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -9,6 +9,9 @@ import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
+import { ChevronsUpDown } from "lucide-react";
+import { Tooltip, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 
 const roleHierarchy = ['Líder', 'Oficial', 'Veterano', 'Membro', 'Recruta'];
@@ -87,6 +90,22 @@ export const GuildMembers = ({ members, guildMembersMeta, onMemberUpdate, curren
         return roleHierarchy.indexOf(roleA) - roleHierarchy.indexOf(roleB);
     });
 
+    const StatDisplay = ({ icon: Icon, value, label, tooltip }) => (
+         <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Icon className="h-4 w-4"/>
+                        <span>{value}</span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{tooltip}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
@@ -104,67 +123,82 @@ export const GuildMembers = ({ members, guildMembersMeta, onMemberUpdate, curren
 
 
                             return (
-                                <div key={member.id} className="flex items-center justify-between gap-4 p-2 rounded-md hover:bg-secondary/50">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar>
-                                            <AvatarImage src={member.avatar_url} />
-                                            <AvatarFallback>{member.nome_utilizador?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-semibold">{member.nome_utilizador}</p>
-                                            <div className="flex items-center gap-2">
-                                                <RoleIcon className={`h-4 w-4 ${roleInfo[role]?.color}`} />
-                                                <span className="text-sm text-muted-foreground">{role}</span>
+                                 <Collapsible key={member.id} className="p-2 rounded-md hover:bg-secondary/50">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar>
+                                                <AvatarImage src={member.avatar_url} />
+                                                <AvatarFallback>{member.nome_utilizador?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-semibold">{member.nome_utilizador}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <RoleIcon className={`h-4 w-4 ${roleInfo[role]?.color}`} />
+                                                    <span className="text-sm text-muted-foreground">{role}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                         <div className="flex items-center">
+                                            <CollapsibleTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <ChevronsUpDown className="h-4 w-4" />
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                            {canBeManagedByCurrentUser && (
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem 
+                                                                onClick={() => handleRoleChange(member.id, 'promote')} 
+                                                                disabled={!canPromote}
+                                                            >
+                                                                <ArrowUp className="mr-2 h-4 w-4" />
+                                                                Promover
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleRoleChange(member.id, 'demote')}
+                                                                disabled={!canDemote}
+                                                            >
+                                                                <ArrowDown className="mr-2 h-4 w-4" />
+                                                                Rebaixar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" className="w-full justify-start text-red-500 hover:bg-red-500/10 hover:text-red-400 px-2 py-1.5 h-auto text-sm font-normal relative">
+                                                                    <X className="mr-2 h-4 w-4" />
+                                                                    Expulsar Membro
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Expulsar {member.nome_utilizador}?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Tem a certeza de que quer remover este membro da guilda? Esta ação não pode ser desfeita.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleKickMember(member.id, member.nome_utilizador)}>Sim, expulsar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </div>
                                     </div>
-                                    {canBeManagedByCurrentUser && (
-                                         <AlertDialog>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem 
-                                                        onClick={() => handleRoleChange(member.id, 'promote')} 
-                                                        disabled={!canPromote}
-                                                    >
-                                                        <ArrowUp className="mr-2 h-4 w-4" />
-                                                        Promover
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleRoleChange(member.id, 'demote')}
-                                                        disabled={!canDemote}
-                                                    >
-                                                        <ArrowDown className="mr-2 h-4 w-4" />
-                                                        Rebaixar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" className="w-full justify-start text-red-500 hover:bg-red-500/10 hover:text-red-400 px-2 py-1.5 h-auto text-sm font-normal relative">
-                                                            <X className="mr-2 h-4 w-4" />
-                                                            Expulsar Membro
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Expulsar {member.nome_utilizador}?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Tem a certeza de que quer remover este membro da guilda? Esta ação não pode ser desfeita.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleKickMember(member.id, member.nome_utilizador)}>Sim, expulsar</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    )}
-                                </div>
+                                    <CollapsibleContent className="mt-3 pt-3 border-t border-border/50">
+                                        <div className="flex justify-around items-center">
+                                            <StatDisplay icon={BarChart3} value={1530} label="Contribuição" tooltip="Total de Contribuição na Guilda" />
+                                            <StatDisplay icon={Award} value={42} label="Missões" tooltip="Missões da Guilda Concluídas"/>
+                                        </div>
+                                    </CollapsibleContent>
+                                 </Collapsible>
                             )
                         })}
                     </div>
