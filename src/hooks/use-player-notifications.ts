@@ -3,12 +3,20 @@
 
 import { useState } from 'react';
 
-export function usePlayerNotifications() {
+export function usePlayerNotifications(profile) {
     const [questNotification, setQuestNotification] = useState(null);
     const [systemAlert, setSystemAlert] = useState<{ message: string; position: { top: string; left: string; } } | null>(null);
     const [showOnboarding, setShowOnboarding] = useState(false);
 
+    const checkNotificationPreference = (type) => {
+        if (!profile || !profile.user_settings || !profile.user_settings.notifications) {
+            return true; // Default to on if settings don't exist
+        }
+        return profile.user_settings.notifications[type] !== false;
+    };
+
     const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
+        if (!checkNotificationPreference('level_up')) return;
         setQuestNotification({
             title: 'NÍVEL AUMENTADO!',
             description: 'Você alcançou um novo patamar de poder.',
@@ -68,6 +76,7 @@ export function usePlayerNotifications() {
     };
 
     const handleShowDailyBriefingNotification = (briefingMissions) => {
+        if (!checkNotificationPreference('daily_briefing')) return;
         if (!briefingMissions || briefingMissions.length === 0) return;
         const goals = briefingMissions.map(mission => ({
             name: `- [${mission.epicMissionName}]`,
@@ -82,6 +91,7 @@ export function usePlayerNotifications() {
     };
 
     const handleShowGoalCompletedNotification = (goalName) => {
+        if (!checkNotificationPreference('goal_completed')) return;
         setQuestNotification({
             title: 'META CONCLUÍDA!',
             description: 'Parabéns, Caçador! Você completou um dos seus maiores objetivos.',
@@ -89,6 +99,8 @@ export function usePlayerNotifications() {
             caution: 'Um novo horizonte de desafios aguarda.'
         });
     };
+
+
 
     const handleShowAchievementUnlockedNotification = (achievementName) => {
         setQuestNotification({

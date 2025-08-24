@@ -151,7 +151,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         handleShowGoalCompletedNotification,
         handleShowAchievementUnlockedNotification,
         handleShowStreakBonusNotification,
-    } = usePlayerNotifications();
+    } = usePlayerNotifications(state.profile);
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 

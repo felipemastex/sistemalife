@@ -2,11 +2,12 @@
 "use client";
 
 import { memo } from 'react';
-import { User, Bot, AlertTriangle } from 'lucide-react';
+import { User, Bot, AlertTriangle, Bell } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileSettingsTab from './settings/ProfileSettingsTab';
 import AISettingsTab from './settings/AISettingsTab';
 import DangerZoneTab from './settings/DangerZoneTab';
+import NotificationsSettingsTab from './settings/NotificationsSettingsTab';
 
 const SettingsViewComponent = () => {
     return (
@@ -19,7 +20,7 @@ const SettingsViewComponent = () => {
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsList className="grid w-full grid-cols-4 mb-6">
                     <TabsTrigger value="profile">
                         <User className="mr-2 h-4 w-4" />
                         Perfil
@@ -27,6 +28,10 @@ const SettingsViewComponent = () => {
                     <TabsTrigger value="ai">
                          <Bot className="mr-2 h-4 w-4" />
                         IA & Interface
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications">
+                         <Bell className="mr-2 h-4 w-4" />
+                        Notificações
                     </TabsTrigger>
                     <TabsTrigger value="danger_zone" className="text-red-500 data-[state=active]:text-red-500">
                          <AlertTriangle className="mr-2 h-4 w-4" />
@@ -40,6 +45,10 @@ const SettingsViewComponent = () => {
 
                 <TabsContent value="ai">
                     <AISettingsTab />
+                </TabsContent>
+
+                <TabsContent value="notifications">
+                    <NotificationsSettingsTab />
                 </TabsContent>
 
                 <TabsContent value="danger_zone">
