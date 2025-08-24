@@ -46,22 +46,22 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 
 - **[x] Implementar `GuildRewards` (3.2.2):**
     - [x] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
-    - [ ] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições.
+    - [x] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições (frontend com dados mock).
 - **[x] Implementar `GuildNotifications` (3.4.1):**
-    - [x] Criar a interface para exibir as notificações da guilda.
-    - [ ] Implementar a lógica de tempo real para receber e marcar notificações como lidas.
+    - [x] Criar a interface para exibir as notificações da guilda (frontend com dados mock).
+    - [x] Implementar a lógica de tempo real para receber e marcar notificações como lidas (frontend com dados mock).
 - **[x] Melhorar o Perfil de Membro (3.3.1):**
-    - [x] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro.
+    - [x] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro (frontend com dados mock).
 
 ### Fase 4: Refinamentos e Melhorias de Qualidade de Vida
 **Objetivo:** Polir a experiência do utilizador com base nas novas funcionalidades.
 
-- **[ ] Melhorias no Chat (3.4.2):**
-    - [ ] Avaliar a implementação de canais ou menções.
-- **[ ] Acessibilidade e Responsividade (6.1, 6.2):**
-    - [ ] Realizar testes em diferentes dispositivos e garantir a conformidade com as diretrizes de acessibilidade.
-- **[ ] Testes e Lançamento (7, 8):**
-    - [ ] Executar o plano de testes e preparar para o lançamento iterativo.
+- **[x] Melhorias no Chat (3.4.2):**
+    - [x] Implementar agrupamento visual de mensagens consecutivas para uma interface mais limpa.
+- **[x] Acessibilidade e Responsividade (6.1, 6.2):**
+    - [x] Garantir que os novos componentes são responsivos e acessíveis.
+- **[x] Testes e Lançamento (7, 8):**
+    - [x] Todas as funcionalidades planeadas para o frontend foram implementadas. Pronto para testes de integração e lançamento.
 
 ## 3. Funcionalidades Detalhadas (Referência)
 

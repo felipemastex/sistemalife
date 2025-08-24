@@ -98,10 +98,8 @@ export const GuildChat = ({ guildId, userProfile }) => {
                     {messages.length > 0 ? messages.map((msg, index) => {
                         const isSender = isUserMessage(msg);
                         const prevMessage = messages[index - 1];
-                        const nextMessage = messages[index + 1];
-
+                        
                         const isFirstInGroup = !prevMessage || prevMessage.user_id !== msg.user_id;
-                        const isLastInGroup = !nextMessage || nextMessage.user_id !== msg.user_id;
                         
                         return (
                              <div key={msg.id} className={cn(
@@ -111,7 +109,7 @@ export const GuildChat = ({ guildId, userProfile }) => {
                             )}>
                                 {!isSender && (
                                      <div className="w-8 flex-shrink-0 self-end">
-                                        {isLastInGroup && (
+                                        {isFirstInGroup && (
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage src={msg.avatar_url} />
                                                 <AvatarFallback>{msg.nome_utilizador?.substring(0, 2)}</AvatarFallback>
