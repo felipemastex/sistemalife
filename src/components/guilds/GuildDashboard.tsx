@@ -8,12 +8,14 @@ import { GuildChat } from './GuildChat';
 import { JoinRequests } from './JoinRequests';
 import { GuildQuests } from './GuildQuests';
 import { GuildAnnouncements } from './GuildAnnouncements';
-import { Card } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { GuildOverview } from './GuildOverview';
 import { GuildStats } from './GuildStats';
 import { MemberLeaderboard } from './MemberLeaderboard';
 import { GuildNotifications } from './GuildNotifications';
 import { GuildRewards } from './GuildRewards';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LayoutDashboard, Users, MessageSquare, Shield } from 'lucide-react';
 
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
@@ -69,58 +71,78 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
         <div className="h-full flex flex-col">
             <GuildHeader guild={guildData} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
-             <div className="flex-grow mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+             <Tabs defaultValue="overview" className="mt-6 flex-grow">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                    <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
+                    <TabsTrigger value="members"><Users className="mr-2 h-4 w-4"/>Membros</TabsTrigger>
+                    <TabsTrigger value="chat"><MessageSquare className="mr-2 h-4 w-4"/>Chat</TabsTrigger>
+                    {canManage && <TabsTrigger value="management"><Shield className="mr-2 h-4 w-4"/>Gestão</TabsTrigger>}
+                </TabsList>
                 
-                {/* Coluna Esquerda - Conteúdo Principal */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <TabsContent value="overview" className="mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <GuildOverview 
                             guild={guildData}
                             announcements={guildData.announcements || []}
                             quests={guildData.quests || []}
                         />
-                        <GuildStats />
+                         <div className="flex flex-col gap-6">
+                             <GuildQuests 
+                                quests={guildData.quests}
+                                onQuestsUpdate={handleQuestsUpdate}
+                                canManage={canManage}
+                                guildData={guildData}
+                                userProfile={profile}
+                            />
+                            <GuildAnnouncements 
+                                announcements={guildData.announcements || []}
+                                onUpdate={handleAnnouncementsUpdate}
+                                canManage={canManage}
+                                userProfile={profile}
+                            />
+                             <GuildStats />
+                         </div>
                     </div>
-                    <MemberLeaderboard />
-                    <Card className="flex-grow flex flex-col min-h-[400px]">
+                </TabsContent>
+
+                 <TabsContent value="members" className="mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div className="lg:col-span-7">
+                            <MemberLeaderboard />
+                        </div>
+                        <div className="lg:col-span-5">
+                             <GuildMembers 
+                                members={members}
+                                guildMembersMeta={guildData.membros}
+                                onMemberUpdate={handleMemberUpdate} 
+                                currentUserProfile={profile}
+                                allUsers={allUsers}
+                            />
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="chat" className="mt-6 h-[calc(100vh-280px)]">
+                     <Card className="h-full">
                        <GuildChat guildId={guildData.id} userProfile={profile} />
                     </Card>
-                </div>
+                </TabsContent>
 
-                {/* Coluna Direita - Painéis Laterais */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    <GuildQuests 
-                        quests={guildData.quests}
-                        onQuestsUpdate={handleQuestsUpdate}
-                        canManage={canManage}
-                        guildData={guildData}
-                        userProfile={profile}
-                    />
-                    <GuildRewards />
-                    <GuildNotifications />
-                    <GuildAnnouncements 
-                        announcements={guildData.announcements || []}
-                        onUpdate={handleAnnouncementsUpdate}
-                        canManage={canManage}
-                        userProfile={profile}
-                     />
-                    {canManage && (
-                        <JoinRequests
-                            requests={guildData.join_requests || []}
-                            allUsers={allUsers}
-                            onAccept={handleAcceptRequest}
-                            onDecline={handleDeclineRequest}
-                        />
-                    )}
-                    <GuildMembers 
-                        members={members}
-                        guildMembersMeta={guildData.membros}
-                        onMemberUpdate={handleMemberUpdate} 
-                        currentUserProfile={profile}
-                        allUsers={allUsers}
-                    />
-                </div>
-            </div>
+                 {canManage && (
+                    <TabsContent value="management" className="mt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <GuildRewards />
+                            <GuildNotifications />
+                            <JoinRequests
+                                requests={guildData.join_requests || []}
+                                allUsers={allUsers}
+                                onAccept={handleAcceptRequest}
+                                onDecline={handleDeclineRequest}
+                            />
+                        </div>
+                    </TabsContent>
+                )}
+            </Tabs>
         </div>
     );
 };
