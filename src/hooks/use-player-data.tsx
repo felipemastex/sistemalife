@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -438,8 +439,20 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const userRef = doc(db, 'users', user.uid);
             const batch = writeBatch(db);
             const emailUsername = user.email.split('@')[0];
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false };
+            
+            const defaultUserSettings = {
+                mission_view_style: 'inline',
+                ai_personality: 'balanced',
+                notifications: {
+                    daily_briefing: true,
+                    goal_completed: true,
+                    level_up: true,
+                }
+            };
+            
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings };
             batch.set(userRef, initialProfile);
+
             const metasRef = collection(db, 'users', user.uid, 'metas');
             mockData.metas.forEach(meta => batch.set(doc(metasRef, String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
             const missionsRef = collection(db, 'users', user.uid, 'missions');
