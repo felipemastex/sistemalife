@@ -21,6 +21,8 @@ import { differenceInDays, parseISO, isToday, endOfDay } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { TrendingDown, TrendingUp, CheckCircle2, MessageSquare } from 'lucide-react';
 
 
 // Helper Dialog for getting user feedback
@@ -131,6 +133,130 @@ const ContributionDialog = ({ open, onOpenChange, subTask, onContribute }) => {
     );
 };
 
+const MissionCompletionFeedbackDialog = ({ isOpen, onClose, onSubmitFeedback, missionName }) => {
+  const [difficulty, setDifficulty] = useState('');
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!difficulty) return;
+    
+    setIsSubmitting(true);
+    
+    const feedbackData = {
+      difficulty,
+      comment: comment.trim() || undefined,
+    };
+    
+    // Reset form and close dialog immediately
+    setDifficulty('');
+    setComment('');
+    setIsSubmitting(false);
+    onClose();
+    
+    // Send feedback in background
+    onSubmitFeedback(feedbackData);
+  };
+
+  const handleClose = () => {
+    setDifficulty('');
+    setComment('');
+    onClose();
+  };
+
+  const difficultyOptions = [
+    {
+      value: 'too_easy',
+      label: 'Muito Fácil',
+      description: 'A missão foi simples demais, preciso de mais desafio',
+      icon: <TrendingDown className="h-4 w-4 text-green-500" />,
+      color: 'border-green-200 hover:border-green-400',
+    },
+    {
+      value: 'perfect',
+      label: 'Perfeita',
+      description: 'A dificuldade estava ideal para o meu nível',
+      icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
+      color: 'border-blue-200 hover:border-blue-400',
+    },
+    {
+      value: 'too_hard',
+      label: 'Muito Difícil',
+      description: 'A missão foi desafiadora demais, preciso de passos menores',
+      icon: <TrendingUp className="h-4 w-4 text-red-500" />,
+      color: 'border-red-200 hover:border-red-400',
+    },
+  ];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader className="text-center">
+          <DialogTitle className="flex items-center gap-2 justify-center">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Feedback da Missão
+          </DialogTitle>
+          <DialogDescription>
+            Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4 space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Dificuldade da Missão</Label>
+            <RadioGroup value={difficulty} onValueChange={setDifficulty} className="mt-2">
+              {difficultyOptions.map((option) => (
+                <div 
+                  key={option.value} 
+                  className={`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`}
+                  onClick={() => setDifficulty(option.value)}
+                >
+                  <RadioGroupItem value={option.value} id={option.value} className="mt-0.5 pointer-events-none" />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      {option.icon}
+                      <Label htmlFor={option.value} className="font-medium cursor-pointer">
+                        {option.label}
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+
+          {difficulty && (
+            <div className="space-y-2">
+              <Label htmlFor="comment" className="text-sm font-medium">
+                Comentário Adicional (Opcional)
+              </Label>
+              <Textarea
+                id="comment"
+                placeholder={`Descreva o que ${difficulty === 'too_easy' ? 'foi muito simples' : difficulty === 'too_hard' ? 'foi muito desafiador' : 'funcionou bem'} nesta missão...`}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button 
+            onClick={handleSubmit}
+            disabled={!difficulty || isSubmitting}
+            className="w-full"
+          >
+            {isSubmitting ? 'Enviando...' : 'Enviar Feedback'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 
 const MissionsViewComponent = () => {
@@ -139,6 +265,11 @@ const MissionsViewComponent = () => {
     const [selectedGoalMissions, setSelectedGoalMissions] = useState([]);
     const [feedbackModalState, setFeedbackModalState] = useState({ open: false, mission: null, type: null });
     const [contributionModalState, setContributionModalState] = useState({ open: false, subTask: null, mission: null });
+    const [missionCompletionFeedbackState, setMissionCompletionFeedbackState] = useState({ 
+        open: false, 
+        missionName: '', 
+        rankedMissionId: null 
+    });
 
     const [activeAccordionItem, setActiveAccordionItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -226,6 +357,52 @@ const MissionsViewComponent = () => {
         }
     };
     
+    const handleMissionCompletionFeedback = async (feedbackData) => {
+        const { rankedMissionId, dailyMissionId, subTask, amount } = missionCompletionFeedbackState;
+        
+        let feedbackText = null;
+        
+        // Convert feedback to text for AI
+        if (feedbackData.difficulty !== 'perfect') {
+            const difficultyText = {
+                'too_easy': 'muito fácil',
+                'too_hard': 'muito difícil'
+            }[feedbackData.difficulty];
+            
+            feedbackText = `O utilizador considerou a missão ${difficultyText}`;
+            if (feedbackData.comment) {
+                feedbackText += `. Comentário adicional: "${feedbackData.comment}"`;
+            }
+        }
+        
+        // Complete the mission with feedback
+        await completeMission({ 
+            rankedMissionId, 
+            dailyMissionId, 
+            subTask, 
+            amount, 
+            feedback: feedbackText 
+        });
+        
+        // Show appropriate toast based on feedback
+        if (feedbackData.difficulty === 'perfect') {
+            toast({ 
+                title: "Missão Concluída!", 
+                description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar." 
+            });
+        } else {
+            const adjustmentText = feedbackData.difficulty === 'too_easy' 
+                ? 'mais desafiadora' 
+                : 'mais acessível';
+            toast({ 
+                title: "Missão Concluída!", 
+                description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
+            });
+        }
+        
+        setMissionCompletionFeedbackState({ open: false, missionName: '', rankedMissionId: null });
+    };
+    
     const handleShowProgression = (clickedMission) => {
         const goalMissions = missions
             .filter(m => m.meta_associada === clickedMission.meta_associada)
@@ -268,7 +445,29 @@ const MissionsViewComponent = () => {
          } else {
              const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === missionToUpdate.id));
              if(rankedMission) {
-                completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: missionToUpdate.id, subTask, amount, feedback: missionFeedback[rankedMission.id] || null });
+                // Check if this contribution will complete the mission
+                const updatedSubTask = { ...subTask, current: Math.min(subTask.target, (subTask.current || 0) + amount) };
+                const willCompleteMission = missionToUpdate.subTasks.every(st => {
+                    if (st.name === subTask.name) {
+                        return updatedSubTask.current >= updatedSubTask.target;
+                    }
+                    return (st.current || 0) >= st.target;
+                });
+                
+                // If mission will be completed, show feedback dialog first
+                if (willCompleteMission) {
+                    setMissionCompletionFeedbackState({
+                        open: true,
+                        missionName: missionToUpdate.nome,
+                        rankedMissionId: rankedMission.id,
+                        dailyMissionId: missionToUpdate.id,
+                        subTask,
+                        amount
+                    });
+                } else {
+                    // Just update progress without completing
+                    completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: missionToUpdate.id, subTask, amount, feedback: null });
+                }
              }
          }
     };
@@ -606,6 +805,13 @@ const MissionsViewComponent = () => {
                 onSubmit={handleMissionFeedback}
                 mission={feedbackModalState.mission}
                 feedbackType={feedbackModalState.type}
+            />
+            
+            <MissionCompletionFeedbackDialog
+                isOpen={missionCompletionFeedbackState.open}
+                onClose={() => setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }))}
+                onSubmitFeedback={handleMissionCompletionFeedback}
+                missionName={missionCompletionFeedbackState.missionName}
             />
 
             <ContributionDialog
