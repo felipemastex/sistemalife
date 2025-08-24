@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { generateHunterAvatar } from '@/ai/flows/generate-hunter-avatar';
-import { LoaderCircle, Wand2 } from 'lucide-react';
+import { LoaderCircle, Wand2, Check } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 
 const getProfileRank = (level) => {
@@ -38,6 +38,7 @@ const profileFormSchema = z.object({
 export default function ProfileSettingsTab() {
     const { profile, persistData } = usePlayerDataContext();
     const [isSaving, setIsSaving] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
     const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const { toast } = useToast();
 
@@ -73,6 +74,8 @@ export default function ProfileSettingsTab() {
                 description: "Os seus dados foram alterados com sucesso.",
             });
             form.reset(data); // Re-sync form state
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 2000);
         } catch (error) {
             console.error("Erro ao salvar perfil:", error);
             toast({
@@ -219,8 +222,8 @@ export default function ProfileSettingsTab() {
                     </CardContent>
                 </Card>
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty}>
-                        {isSaving ? <LoaderCircle className="animate-spin" /> : "Salvar Alterações"}
+                     <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
+                        {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check/> : "Salvar Alterações"}
                     </Button>
                 </div>
             </form>

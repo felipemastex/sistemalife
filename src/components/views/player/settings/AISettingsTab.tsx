@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -35,6 +36,7 @@ const aiSettingsFormSchema = z.object({
 export default function AISettingsTab() {
     const { profile, persistData } = usePlayerDataContext();
     const [isSaving, setIsSaving] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
     const { toast } = useToast();
 
     const form = useForm<z.infer<typeof aiSettingsFormSchema>>({
@@ -76,6 +78,8 @@ export default function AISettingsTab() {
                 description: "As suas preferências de IA e interface foram salvas.",
             });
             form.reset(data); // Re-sync form state
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 2000);
         } catch (error) {
             console.error("Erro ao salvar preferências:", error);
             toast({
@@ -230,8 +234,8 @@ export default function AISettingsTab() {
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty}>
-                         {isSaving ? <LoaderCircle className="animate-spin" /> : "Salvar Preferências"}
+                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
+                         {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check /> : "Salvar Preferências"}
                     </Button>
                 </div>
             </form>

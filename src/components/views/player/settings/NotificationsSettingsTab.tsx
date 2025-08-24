@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } fr
 import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useEffect, useState } from 'react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Check } from 'lucide-react';
 
 const notificationsFormSchema = z.object({
     daily_briefing: z.boolean(),
@@ -22,6 +22,7 @@ const notificationsFormSchema = z.object({
 export default function NotificationsSettingsTab() {
     const { profile, persistData } = usePlayerDataContext();
     const [isSaving, setIsSaving] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
     const { toast } = useToast();
 
     const form = useForm<z.infer<typeof notificationsFormSchema>>({
@@ -61,7 +62,9 @@ export default function NotificationsSettingsTab() {
                 title: "Notificações Atualizadas!",
                 description: "As suas preferências de notificação foram salvas.",
             });
-            form.reset(data); 
+            form.reset(data);
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 2000);
         } catch (error) {
             console.error("Erro ao salvar notificações:", error);
             toast({
@@ -147,8 +150,8 @@ export default function NotificationsSettingsTab() {
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty}>
-                         {isSaving ? <LoaderCircle className="animate-spin" /> : "Salvar Preferências"}
+                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
+                         {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check /> : "Salvar Preferências"}
                     </Button>
                 </div>
             </form>
