@@ -718,7 +718,7 @@ const MissionsViewComponent = () => {
         if (generatingMission === mission.id) {
             return (
                 <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                    <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
+                    <Sparkles className="h-10 w-10 text-primary animate-pulse-slow mb-4"/>
                     <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
                     <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
                 </div>
@@ -800,8 +800,8 @@ const MissionsViewComponent = () => {
 
     return (
         <div className={cn("h-full overflow-y-auto p-4 md:p-6", accordionSpacing)}>
-            <div>
-                <div className="flex justify-between items-center gap-4 mb-6 md:justify-start">
+            <div className="mb-6">
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
                     <TooltipProvider>
                         <Tooltip>
@@ -810,7 +810,7 @@ const MissionsViewComponent = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setIsPanelVisible(!isPanelVisible)}
-                                    className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                                    className="text-muted-foreground hover:text-foreground flex-shrink-0 self-center md:self-auto"
                                 >
                                     {isPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </Button>
@@ -822,7 +822,7 @@ const MissionsViewComponent = () => {
                     </TooltipProvider>
                 </div>
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mb-6">
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4">
                     <CollapsibleContent className="space-y-6">
                         <MissionStatsPanel />
                         <div className="flex flex-col md:flex-row gap-4">
