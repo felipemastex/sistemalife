@@ -833,29 +833,33 @@ const MissionsViewComponent = () => {
                     </CollapsibleContent>
                 </Collapsible>
 
-                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Input 
-                        placeholder="Procurar missão..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="sm:col-span-1 bg-card"
-                    />
-                    <Select value={rankFilter} onValueChange={setRankFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos os Ranks</SelectItem>
-                            {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
-                            <SelectItem value="M">Manual</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="all">Todos os Status</SelectItem>
-                             <SelectItem value="active">Ativas</SelectItem>
-                             <SelectItem value="completed">Concluídas</SelectItem>
-                        </SelectContent>
-                    </Select>
+                 <div className="mt-6 flex flex-wrap gap-4">
+                    <div className="flex-grow min-w-[200px]">
+                        <Input 
+                            placeholder="Procurar missão..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="bg-card"
+                        />
+                    </div>
+                    <div className="flex gap-4 flex-grow sm:flex-grow-0">
+                        <Select value={rankFilter} onValueChange={setRankFilter}>
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os Ranks</SelectItem>
+                                {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
+                                <SelectItem value="M">Manual</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
+                            <SelectContent>
+                                 <SelectItem value="all">Todos os Status</SelectItem>
+                                 <SelectItem value="active">Ativas</SelectItem>
+                                 <SelectItem value="completed">Concluídas</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
             
@@ -909,40 +913,30 @@ const MissionsViewComponent = () => {
                                             {mission.rank}
                                         </div>
                                         <div className="flex-1">
-                                            {wasCompletedToday ? (
-                                                <div className="flex justify-between items-center">
-                                                     <p className="font-cinzel text-xl font-bold text-muted-foreground flex items-center gap-2">
-                                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                                        <span>Missão Concluída</span>
-                                                    </p>
+                                            <div className="flex justify-between items-center">
+                                                 <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
+                                                 {wasCompletedToday && (
+                                                     <div className="flex items-center gap-2 p-2 bg-secondary rounded-md ml-4">
+                                                        <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
+                                                        <span className="font-mono text-cyan-400 font-semibold">{timeUntilMidnight}</span>
+                                                    </div>
+                                                 )}
+                                            </div>
+                                            {!isManualMission && associatedMeta && (
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                    <Link className="h-3 w-3" />
+                                                    <span>{associatedMeta.nome}</span>
                                                 </div>
-                                            ) : (
-                                                <>
-                                                    <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
-                                                    {!isManualMission && associatedMeta && (
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                            <Link className="h-3 w-3" />
-                                                            <span>{associatedMeta.nome}</span>
-                                                        </div>
-                                                    )}
-                                                    <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
-                                                </>
                                             )}
+                                             <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
                                         </div>
                                     </div>
                                 </TriggerWrapper>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
-                                    {wasCompletedToday ? (
-                                        <div className="flex items-center gap-2 p-2 bg-secondary rounded-md">
-                                            <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
-                                            <span className="font-mono text-cyan-400 font-semibold">{timeUntilMidnight}</span>
-                                        </div>
-                                    ) : (
-                                        !isManualMission && (
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                                <GitMerge className="h-5 w-5" />
-                                            </Button>
-                                        )
+                                    {!wasCompletedToday && !isManualMission && (
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                            <GitMerge className="h-5 w-5" />
+                                        </Button>
                                     )}
                                 </div>
                                </div>
@@ -1024,30 +1018,10 @@ const MissionsViewComponent = () => {
                     onContribute={(subTask, amount, mission) => {
                         onContributeToQuest(subTask, amount, mission);
                     }}
-                    onComplete={(mission) => {
-                         setMissionCompletionFeedbackState({
-                            open: true,
-                            missionName: mission.nome,
-                            rankedMissionId: missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id || null,
-                            dailyMissionId: mission.id,
-                            subTask: null, // Not needed for whole mission completion
-                            amount: null,
-                        });
-                    }}
                     onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
                     onDelete={(missionId) => handleDeleteManualMission(missionId)}
                 />
             }
-
-            <MissionCompletionAnimation
-                isOpen={animationState.showAnimation}
-                onClose={() => setAnimationState(prev => ({ ...prev, showAnimation: false }))}
-                missionName={animationState.missionName}
-                xpGained={animationState.xpGained}
-                fragmentsGained={animationState.fragmentsGained}
-                levelUp={animationState.levelUp}
-                newLevel={animationState.newLevel}
-            />
 
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
                 <DialogContent className="max-w-2xl">
