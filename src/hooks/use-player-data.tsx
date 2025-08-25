@@ -92,27 +92,31 @@ interface Achievement {
 }
 
 interface UserSettings {
-  mission_view_style: string;
-  ai_personality: string;
-  theme_accent_color: string;
-  reduce_motion: boolean;
-  font_size: string;
-  layout_density: string;
-  notifications: {
-    daily_briefing: boolean;
-    goal_completed: boolean;
-    level_up: boolean;
-    quiet_hours: {
-      enabled: boolean;
-      start: string;
-      end: string;
+    mission_view_style: 'inline' | 'popup';
+    ai_personality: 'balanced' | 'mentor' | 'strategist' | 'friendly';
+    theme_accent_color: string;
+    reduce_motion: boolean;
+    layout_density: 'compact' | 'default' | 'comfortable';
+    suggestion_frequency: 'low' | 'medium' | 'high';
+    notifications: {
+        daily_briefing: boolean;
+        goal_completed: boolean;
+        level_up: boolean;
+        quiet_hours: {
+            enabled: boolean;
+            start: string;
+            end: string;
+        };
     };
-  };
-  privacy_settings: {
-    profile_visibility: string;
-    analytics_opt_in: boolean;
-  };
+    privacy_settings: {
+        profile_visibility: 'public' | 'private';
+        analytics_opt_in: boolean;
+    };
+    gamification: {
+        progress_feedback_intensity: 'subtle' | 'default' | 'celebratory';
+    }
 }
+
 
 interface Profile {
   id?: string;
@@ -181,7 +185,7 @@ interface PlayerAction {
   payload?: any;
 }
 
-type DataKey = 'profile' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'guilds' | 'allUsers';
+type DataKey = 'profile' | 'metas' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'guilds' | 'allUsers';
 
 interface CompleteMissionParams {
   rankedMissionId: string | number;

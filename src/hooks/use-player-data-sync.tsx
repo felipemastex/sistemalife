@@ -13,14 +13,12 @@ export function PlayerDataSync() {
 
     const { theme_accent_color, reduce_motion } = profile.user_settings;
 
-    if (theme_accent_color) {
-      document.documentElement.style.setProperty(
-        '--theme-accent-color',
-        theme_accent_color
-      );
-    }
-
-    document.documentElement.classList.toggle('reduce-motion', !!reduce_motion);
+    document.documentElement.style.setProperty(
+      '--theme-accent-color',
+      theme_accent_color || '198 90% 55%'
+    );
+    
+    document.body.classList.toggle('reduce-motion', !!reduce_motion);
 
   }, [profile?.user_settings]);
 

@@ -155,7 +155,7 @@ export default function AISettingsTab() {
                                     >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'compact' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'compact' ? 'checked' : 'unchecked'} onClick={() => field.onChange('compact')}>
                                                     <RadioGroupItem value="compact" id="density-compact" className="sr-only"/>
                                                     <FormLabel htmlFor="density-compact" className="font-normal cursor-pointer w-full text-center">
                                                         Compacto
@@ -165,7 +165,7 @@ export default function AISettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                              <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'} onClick={() => field.onChange('default')}>
                                                     <RadioGroupItem value="default" id="density-default" className="sr-only"/>
                                                     <FormLabel htmlFor="density-default" className="font-normal cursor-pointer w-full text-center">
                                                         Padrão
@@ -175,7 +175,7 @@ export default function AISettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'comfortable' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'comfortable' ? 'checked' : 'unchecked'} onClick={() => field.onChange('comfortable')}>
                                                     <RadioGroupItem value="comfortable" id="density-comfortable" className="sr-only"/>
                                                     <FormLabel htmlFor="density-comfortable" className="font-normal cursor-pointer w-full text-center">
                                                         Confortável
