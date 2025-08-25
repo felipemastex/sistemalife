@@ -311,10 +311,10 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader className="text-center">
-            <DialogTitle className="flex items-center gap-2 justify-center">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Feedback da Missão
-            </DialogTitle>
+          <DialogTitle className="flex items-center justify-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            Feedback da Missão
+          </DialogTitle>
           <DialogDescription>
             Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
           </DialogDescription>
@@ -710,41 +710,14 @@ const MissionsViewComponent = () => {
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
     const renderActiveMissionContent = (mission: RankedMission) => {
-        const wasCompletedToday = useMemo(() => {
-            return mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
-        }, [mission.ultima_missao_concluida_em]);
-
         const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
         
-        // This is the core logic change.
         if (generatingMission === mission.id) {
             return (
                 <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
                     <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
                     <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
                     <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
-                </div>
-            );
-        }
-
-        if (wasCompletedToday) {
-            return (
-                <div className="relative">
-                    <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 transition-all blur-sm pointer-events-none">
-                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                            <div className="flex-grow">
-                                <p className="text-lg font-bold text-foreground">Missão Concluída</p>
-                                <p className="text-sm text-muted-foreground mt-1">Aguardando a próxima diretiva...</p>
-                            </div>
-                        </div>
-                    </div>
-                     <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/70 to-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-500">
-                        <div className="text-center space-y-2 p-4">
-                            <Timer className="h-12 w-12 text-cyan-400 mb-2 mx-auto animate-pulse"/>
-                            <p className="text-lg font-bold text-foreground font-cinzel">Próxima Missão em:</p>
-                            <p className="text-3xl font-mono text-cyan-400 font-bold tracking-widest">{timeUntilMidnight}</p>
-                        </div>
-                    </div>
                 </div>
             );
         }
@@ -898,6 +871,7 @@ const MissionsViewComponent = () => {
                 }}
             >
                 {visibleMissions.map(mission => {
+                    const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
                     const isManualMission = mission.isManual;
                     const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
                     
@@ -916,6 +890,9 @@ const MissionsViewComponent = () => {
                     const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
                     const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
+                        if (wasCompletedToday) {
+                            return <div className="flex-1 text-left w-full cursor-default">{children}</div>;
+                        }
                         if (missionViewStyle === 'inline' && !isManualMission) {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
                         }
@@ -933,22 +910,36 @@ const MissionsViewComponent = () => {
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                 {daysRemaining !== null && daysRemaining <= 3 && <AlertTriangle className={cn("h-4 w-4", daysRemaining <= 1 ? "text-red-500" : "text-yellow-500")} />}
-                                                <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
+                                                {daysRemaining !== null && daysRemaining <= 3 && <AlertTriangle className={cn("h-4 w-4", daysRemaining <= 1 ? "text-red-500" : "text-yellow-500")} />}
+                                                {wasCompletedToday ? (
+                                                    <p className="font-cinzel text-xl font-bold text-muted-foreground flex items-center gap-2">
+                                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                                        <span>Missão Concluída</span>
+                                                    </p>
+                                                ) : (
+                                                    <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
+                                                )}
                                             </div>
-                                            <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                            {!wasCompletedToday && <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>}
                                         </div>
                                     </div>
                                 </TriggerWrapper>
                                 <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
-                                    {!isManualMission && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                            <GitMerge className="h-5 w-5" />
-                                        </Button>
+                                    {wasCompletedToday ? (
+                                        <div className="flex items-center gap-2 p-2 bg-secondary rounded-md">
+                                            <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
+                                            <span className="font-mono text-cyan-400 font-semibold">{timeUntilMidnight}</span>
+                                        </div>
+                                    ) : (
+                                        !isManualMission && (
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                <GitMerge className="h-5 w-5" />
+                                            </Button>
+                                        )
                                     )}
                                 </div>
                                </div>
-                               {!isManualMission && (
+                               {!isManualMission && !wasCompletedToday && (
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger className="w-full">
@@ -961,9 +952,11 @@ const MissionsViewComponent = () => {
                                     </TooltipProvider>
                                )}
                             </div>
-                            <AccordionContent className="px-4 pb-4 space-y-4">
-                                {renderActiveMissionContent(mission)}
-                            </AccordionContent>
+                            {!wasCompletedToday && (
+                                <AccordionContent className="px-4 pb-4 space-y-4">
+                                    {renderActiveMissionContent(mission)}
+                                </AccordionContent>
+                            )}
                         </AccordionItem>
                     )
                 })}
