@@ -12,6 +12,7 @@ import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mis
 import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
 import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
+import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -574,10 +575,35 @@ const MetasViewComponent = () => {
                     };
                 });
                 
-                persistData('skills', [...skills, newSkill]);
-                persistData('metas', [...metas, newMetaWithId]);
-                persistData('missions', [...missions, ...newMissions]);
+                const updatedSkills = [...skills, newSkill];
+                const updatedMetas = [...metas, newMetaWithId];
+                const updatedMissions = [...missions, ...newMissions];
+
+                persistData('skills', updatedSkills);
+                persistData('metas', updatedMetas);
+                persistData('missions', updatedMissions);
                 
+                // Gerar conquistas após salvar a meta
+                try {
+                    const achievementResult = await generateUserAchievements({
+                        profile: JSON.stringify(profile),
+                        skills: JSON.stringify(updatedSkills),
+                        goals: JSON.stringify(updatedMetas.filter(m => !m.concluida)),
+                        existingAchievementIds: profile.generated_achievements?.map(a => a.id) || [],
+                    });
+                     if (achievementResult.achievements && achievementResult.achievements.length > 0) {
+                        const newAchievements = achievementResult.achievements.map(ach => ({ ...ach, unlocked: false, unlockedAt: null }));
+                        const updatedProfileAchievements = {
+                            ...profile,
+                            generated_achievements: [...(profile.generated_achievements || []), ...newAchievements]
+                        };
+                         await persistData('profile', updatedProfileAchievements);
+                         toast({ title: 'Novas Conquistas Forjadas!', description: 'Verifique a aba de Conquistas para ver os seus novos desafios.' });
+                    }
+                } catch(achError) {
+                    handleToastError(achError, "Não foi possível gerar novas conquistas para esta meta.");
+                }
+
                 handleGetRoadmap(newMetaWithId);
             }
         } catch (error) {
@@ -1031,3 +1057,5 @@ const MetasViewComponent = () => {
 };
 
 export const MetasView = memo(MetasViewComponent);
+
+    
