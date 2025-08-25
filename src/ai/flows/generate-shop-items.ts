@@ -24,7 +24,14 @@ const GenerateShopItemsInputSchema = z.object({
     profile: z.string().describe("O perfil do utilizador, incluindo nível, fragmentos, streak, etc., como uma string JSON."),
     skills: z.string().describe("As habilidades atuais do utilizador, como uma string JSON."),
     activeMissions: z.string().describe("As missões ativas do utilizador, como uma string JSON."),
-    allItems: z.array(ShopItemSchema).describe("O catálogo completo de todos os itens disponíveis no jogo."),
+    allItems: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        price: z.number(),
+        category: z.string(),
+        effect: z.any(),
+    })).describe("O catálogo completo de todos os itens disponíveis no jogo, sem os componentes de ícone."),
 });
 export type GenerateShopItemsInput = z.infer<typeof GenerateShopItemsInputSchema>;
 

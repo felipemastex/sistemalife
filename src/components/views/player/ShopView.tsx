@@ -4,13 +4,20 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem, LoaderCircle, Sparkles } from 'lucide-react';
+import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { generateShopItems } from '@/ai/flows/generate-shop-items';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
+const iconMap = {
+    Zap,
+    Shield,
+    BookOpen,
+    Repeat
+};
 
 const ShopViewComponent = () => {
     const { profile, missions, skills, persistData, isDataLoaded } = usePlayerDataContext();
@@ -25,11 +32,13 @@ const ShopViewComponent = () => {
         setIsGeneratingItems(true);
         try {
             const activeMissions = missions.filter(m => !m.concluido);
+            const serializableShopItems = allShopItems.map(({ icon, ...rest }) => rest);
+
             const result = await generateShopItems({
                 profile: JSON.stringify(profile),
                 skills: JSON.stringify(skills),
                 activeMissions: JSON.stringify(activeMissions),
-                allItems: allShopItems,
+                allItems: serializableShopItems,
             });
             setShopItems(result.recommendedItems || []);
         } catch (error) {
@@ -136,7 +145,7 @@ const ShopViewComponent = () => {
                     const itemDetails = allShopItems.find(i => i.id === item.id);
                     if (!itemDetails) return null;
 
-                    const Icon = itemDetails.icon;
+                    const Icon = iconMap[itemDetails.icon];
                     const canAfford = (profile.fragmentos || 0) >= item.price;
                     return (
                         <Card 
