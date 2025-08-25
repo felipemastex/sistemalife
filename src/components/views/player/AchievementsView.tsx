@@ -115,7 +115,11 @@ const AchievementsViewComponent = () => {
 
 
     const allAchievements = profile?.generated_achievements || [];
-    const sortedAchievements = [...allAchievements].sort((a, b) => (a.unlocked ? 1 : 0) - (b.unlocked ? 1 : 0) || (b.progress.current / b.progress.target) - (a.progress.current / a.progress.target));
+    const sortedAchievements = [...allAchievements].sort((a, b) => {
+        const progressA = a.progress ? (a.progress.current / a.progress.target) : 0;
+        const progressB = b.progress ? (b.progress.current / b.progress.target) : 0;
+        return (a.unlocked ? 1 : 0) - (b.unlocked ? 1 : 0) || progressB - progressA;
+    });
     
     if (isLoading) {
         return (
@@ -159,7 +163,7 @@ const AchievementsViewComponent = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {sortedAchievements.map(achievement => {
                     const { unlocked, unlockedAt, progress } = achievement;
-                    const progressPercentage = progress.target > 0 ? (progress.current / progress.target) * 100 : 0;
+                    const progressPercentage = (progress && progress.target > 0) ? (progress.current / progress.target) * 100 : 0;
                     
                     const Icon = iconMap[achievement.icon] || Award;
 
@@ -203,7 +207,7 @@ const AchievementsViewComponent = () => {
                                     {achievement.description}
                                 </CardDescription>
                             </CardContent>
-                             {!unlocked && (
+                             {!unlocked && progress && (
                                 <div className="px-6 pb-4">
                                     <div className="flex justify-between items-center text-xs mb-1 text-muted-foreground">
                                         <span>Progresso</span>
