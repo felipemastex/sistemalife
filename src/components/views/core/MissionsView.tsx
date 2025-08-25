@@ -822,18 +822,12 @@ const MissionsViewComponent = () => {
                             </Tooltip>
                         </TooltipProvider>
                     </div>
-                    <Button onClick={() => setDialogState({ open: true, mission: null, isManual: true })} className="w-full sm:w-auto">
-                        <PlusCircle className="mr-2 h-4 w-4"/>
-                        Criar Missão Manual
-                    </Button>
                 </div>
 
-                <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
-                
-                 <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-6">
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-6">
                     <CollapsibleContent className="space-y-6">
                         <MissionStatsPanel />
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-grow min-w-[200px]">
                                 <Input 
                                     placeholder="Procurar missão..."
@@ -844,7 +838,7 @@ const MissionsViewComponent = () => {
                             </div>
                             <div className="flex gap-4 flex-grow sm:flex-grow-0">
                                 <Select value={rankFilter} onValueChange={setRankFilter}>
-                                    <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
+                                    <SelectTrigger className="flex-1 md:w-[180px]"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todos os Ranks</SelectItem>
                                         {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
@@ -852,7 +846,7 @@ const MissionsViewComponent = () => {
                                     </SelectContent>
                                 </Select>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
+                                    <SelectTrigger className="flex-1 md:w-[180px]"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todos os Status</SelectItem>
                                         <SelectItem value="active">Ativas</SelectItem>
@@ -916,7 +910,9 @@ const MissionsViewComponent = () => {
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center">
-                                                <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>{mission.nome}</p>
+                                                <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
+                                                    {wasCompletedToday ? "Missão Concluída" : mission.nome}
+                                                </p>
                                                  {wasCompletedToday && (
                                                      <div className="flex items-center gap-2 p-2 bg-secondary rounded-md ml-4">
                                                         <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
@@ -924,7 +920,7 @@ const MissionsViewComponent = () => {
                                                     </div>
                                                  )}
                                             </div>
-                                            {!isManualMission && associatedMeta && (
+                                            {associatedMeta && (
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                                     <Link className="h-3 w-3" />
                                                     <span>{associatedMeta.nome}</span>
