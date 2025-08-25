@@ -699,10 +699,11 @@ const MissionsViewComponent = () => {
             missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
         }
 
-        return missionsToDisplay.sort((a: RankedMission, b: RankedMission) => {
-             if (a.concluido && !b.concluido) return 1;
-             if (!a.concluido && b.concluido) return -1;
-             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank)
+        return missionsToDisplay.sort((a, b) => {
+            if (a.concluido !== b.concluido) {
+                return a.concluido ? 1 : -1;
+            }
+            return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
 
     }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
@@ -982,10 +983,7 @@ const MissionsViewComponent = () => {
             
             <MissionCompletionFeedbackDialog
                 isOpen={missionCompletionFeedbackState.open}
-                onClose={() => {
-                    setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }));
-                    setDialogState(prev => ({ ...prev, open: false }));
-                }}
+                onClose={() => setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }))}
                 onSubmitFeedback={handleMissionCompletionFeedback}
                 missionName={missionCompletionFeedbackState.missionName}
             />
