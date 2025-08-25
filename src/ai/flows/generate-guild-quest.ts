@@ -38,13 +38,17 @@ export async function generateGuildQuest(
   return generateGuildQuestFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateGuildQuestPrompt',
-  input: {schema: GenerateGuildQuestInputSchema},
-  output: {schema: GenerateGuildQuestOutputSchema},
-  prompt: `Você é o "Mestre de Missões" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é criar missões de guilda cooperativas e envolventes.
+const generateGuildQuestFlow = ai.defineFlow(
+  {
+    name: 'generateGuildQuestFlow',
+    inputSchema: GenerateGuildQuestInputSchema,
+    outputSchema: GenerateGuildQuestOutputSchema,
+  },
+  async (input) => {
+    
+    const prompt = `Você é o "Mestre de Missões" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é criar missões de guilda cooperativas e envolventes.
 
-Uma guilda com {{memberCount}} membros e nível médio de {{guildLevel}} quer uma nova missão focada no seguinte tema: "{{theme}}".
+Uma guilda com ${input.memberCount} membros e nível médio de ${input.guildLevel} quer uma nova missão focada no seguinte tema: "${input.theme}".
 
 Sua tarefa é criar uma Missão de Guilda completa. Siga estas diretivas:
 1.  **Nome e Descrição Épicos:** Crie um nome de missão e uma descrição que sejam inspiradores e se alinhem com o tema. Use uma linguagem de RPG.
@@ -60,17 +64,13 @@ Exemplo de uma sub-tarefa bem definida para o tema "Foco em fitness":
 - daily_limit_per_member: 5
 
 Analise o tema e os dados da guilda para construir a missão mais eficaz e motivadora possível.
-`,
-});
-
-const generateGuildQuestFlow = ai.defineFlow(
-  {
-    name: 'generateGuildQuestFlow',
-    inputSchema: GenerateGuildQuestInputSchema,
-    outputSchema: GenerateGuildQuestOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
+`;
+    
+    const {output} = await ai.generate({
+        prompt: prompt,
+        model: 'googleai/gemini-2.5-flash',
+        output: { schema: GenerateGuildQuestOutputSchema },
+    });
     return output!;
   }
 );

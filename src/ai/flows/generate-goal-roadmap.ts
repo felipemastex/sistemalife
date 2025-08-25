@@ -35,14 +35,18 @@ export async function generateGoalRoadmap(
   return generateGoalRoadmapFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateGoalRoadmapPrompt',
-  input: {schema: GenerateGoalRoadmapInputSchema},
-  output: {schema: GenerateGoalRoadmapOutputSchema},
-  prompt: `Você é o "Estratega Mestre" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é pegar num grande objetivo e dividi-lo num roteiro estratégico claro e motivador para um Caçador de nível {{userLevel}}.
+const generateGoalRoadmapFlow = ai.defineFlow(
+  {
+    name: 'generateGoalRoadmapFlow',
+    inputSchema: GenerateGoalRoadmapInputSchema,
+    outputSchema: GenerateGoalRoadmapOutputSchema,
+  },
+  async (input) => {
+    
+    const prompt = `Você é o "Estratega Mestre" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é pegar num grande objetivo e dividi-lo num roteiro estratégico claro e motivador para um Caçador de nível ${input.userLevel}.
 
-A meta do Caçador é: "{{goalName}}"
-Detalhes da Meta (SMART): {{goalDetails}}
+A meta do Caçador é: "${input.goalName}"
+Detalhes da Meta (SMART): ${input.goalDetails}
 
 Sua tarefa é criar um Roteiro Estratégico. Siga estas diretivas:
 1.  **Estrutura em Fases:** Crie entre 2 a 4 fases lógicas. Cada fase deve representar uma etapa significativa da jornada. Dê a cada fase um título épico e temático.
@@ -53,19 +57,13 @@ Sua tarefa é criar um Roteiro Estratégico. Siga estas diretivas:
     - Exemplo Bom: "Dominar as estruturas de dados fundamentais (Listas, Dicionários, Tuplas) e quando usar cada uma."
 
 Analise a meta e os seus detalhes para construir o roteiro mais eficaz e inspirador possível.
-`,
-});
+`;
 
-const generateGoalRoadmapFlow = ai.defineFlow(
-  {
-    name: 'generateGoalRoadmapFlow',
-    inputSchema: GenerateGoalRoadmapInputSchema,
-    outputSchema: GenerateGoalRoadmapOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
+    const {output} = await ai.generate({
+      prompt: prompt,
+      model: 'googleai/gemini-2.5-flash',
+      output: { schema: GenerateGoalRoadmapOutputSchema },
+    });
     return output!;
   }
 );
-
-    

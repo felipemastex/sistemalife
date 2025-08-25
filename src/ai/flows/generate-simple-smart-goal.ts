@@ -37,22 +37,6 @@ export async function generateSimpleSmartGoal(
   return generateSimpleSmartGoalFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateSimpleSmartGoalPrompt',
-  input: {schema: GenerateSimpleSmartGoalInputSchema},
-  output: {schema: z.object({ refinedGoal: SmartGoalSchema })},
-  prompt: `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
-Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la para uma meta SMART completa.
-
-Meta do Utilizador: "{{goalName}}"
-
-Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíveis, relevantes e com prazo para a meta.
-IMPORTANTE: O campo 'name' na resposta DEVE ser exatamente igual à "Meta do Utilizador" fornecida. Não modifique o nome.
-Para o campo 'timeBound', defina um prazo realista e futuro (ex: "nos próximos 3 meses", "até ao final do ano fiscal atual"). Não use uma data específica com ano, como "até 31/12/2024".
-
-Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
-`,
-});
 
 const generateSimpleSmartGoalFlow = ai.defineFlow(
   {
@@ -62,7 +46,23 @@ const generateSimpleSmartGoalFlow = ai.defineFlow(
   },
   async input => {
     try {
-        const {output} = await prompt(input);
+        const prompt = `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
+Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la para uma meta SMART completa.
+
+Meta do Utilizador: "${input.goalName}"
+
+Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíveis, relevantes e com prazo para a meta.
+IMPORTANTE: O campo 'name' na resposta DEVE ser exatamente igual à "Meta do Utilizador" fornecida. Não modifique o nome.
+Para o campo 'timeBound', defina um prazo realista e futuro (ex: "nos próximos 3 meses", "até ao final do ano fiscal atual"). Não use uma data específica com ano, como "até 31/12/2024".
+
+Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
+`;
+        const {output} = await ai.generate({
+            prompt: prompt,
+            model: 'googleai/gemini-2.5-flash',
+            output: { schema: z.object({ refinedGoal: SmartGoalSchema }) },
+        });
+
         return { refinedGoal: output!.refinedGoal, fallback: false };
     } catch (error) {
         console.error("Falha ao gerar meta SMART, acionando fallback:", error);

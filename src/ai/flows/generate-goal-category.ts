@@ -27,30 +27,28 @@ export async function generateGoalCategory(
   return generateGoalCategoryFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateGoalCategoryPrompt',
-  input: {schema: GenerateGoalCategoryInputSchema},
-  output: {schema: GenerateGoalCategoryOutputSchema},
-  prompt: `Analise o nome da meta a seguir e escolha a categoria mais apropriada da lista fornecida.
-
-Meta: "{{goalName}}"
-
-Categorias disponíveis:
-{{#each categories}}
-- {{this}}
-{{/each}}
-
-Responda APENAS com a categoria escolhida da lista. Não adicione nenhuma outra palavra ou pontuação.`,
-});
-
 const generateGoalCategoryFlow = ai.defineFlow(
   {
     name: 'generateGoalCategoryFlow',
     inputSchema: GenerateGoalCategoryInputSchema,
     outputSchema: GenerateGoalCategoryOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+
+    const prompt = `Analise o nome da meta a seguir e escolha a categoria mais apropriada da lista fornecida.
+
+Meta: "${input.goalName}"
+
+Categorias disponíveis:
+${input.categories.map(c => `- ${c}`).join('\n')}
+
+Responda APENAS com a categoria escolhida da lista. Não adicione nenhuma outra palavra ou pontuação.`;
+
+    const {output} = await ai.generate({
+        prompt: prompt,
+        model: 'googleai/gemini-2.5-flash',
+        output: { schema: GenerateGoalCategoryOutputSchema },
+    });
     return output!;
   }
 );
