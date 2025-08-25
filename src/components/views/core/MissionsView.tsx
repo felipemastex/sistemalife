@@ -708,8 +708,10 @@ const MissionsViewComponent = () => {
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
     const renderActiveMissionContent = (mission: RankedMission) => {
+        const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
         const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
-
+        
+        // This is the core logic change.
         if (generatingMission === mission.id) {
             return (
                 <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
@@ -720,8 +722,6 @@ const MissionsViewComponent = () => {
             );
         }
 
-        const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
-        
         if (wasCompletedToday) {
             return (
                 <div className="relative">
@@ -811,7 +811,7 @@ const MissionsViewComponent = () => {
             <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
                 <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
                 <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
-                <p className="text-sm text-muted-foreground">Complete a missão anterior para desbloquear a próxima.</p>
+                <p className="text-sm text-muted-foreground">O sistema irá gerar uma nova missão à meia-noite.</p>
             </div>
         );
     };
@@ -1065,4 +1065,3 @@ const MissionsViewComponent = () => {
 };
 
 export const MissionsView = memo(MissionsViewComponent);
-

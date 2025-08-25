@@ -278,13 +278,12 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return { ...state, missions: newMissions };
         }
         case 'COMPLETE_DAILY_MISSION': {
-             const { rankedMissionId, dailyMissionId, newDailyMission } = action.payload;
+             const { rankedMissionId, dailyMissionId } = action.payload;
              const updatedMissions = state.missions.map((rm: RankedMission) => {
                 if (rm.id === rankedMissionId) {
                     const newDailyMissionsList = rm.missoes_diarias.map((dm: DailyMission) => 
                         dm.id === dailyMissionId ? { ...dm, concluido: true, completed_at: new Date().toISOString() } : dm
                     );
-                    // A nova missão (newDailyMission) será adicionada à meia-noite pelo `generatePendingDailyMissions`
                     return { ...rm, missoes_diarias: newDailyMissionsList, ultima_missao_concluida_em: new Date().toISOString() };
                 }
                 return rm;
@@ -293,11 +292,15 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
         }
         case 'ADD_DAILY_MISSION': {
             const { rankedMissionId, newDailyMission } = action.payload;
-            const updatedMissions = state.missions.map((rm: RankedMission) => {
+            const updatedMissions = state.missions.map((rm) => {
                 if (rm.id === rankedMissionId) {
+                    // Create a new array for daily missions to ensure re-render
+                    const newDailyMissions = [...rm.missoes_diarias, newDailyMission];
                     return {
                         ...rm,
-                        missoes_diarias: [...rm.missoes_diarias, newDailyMission]
+                        missoes_diarias: newDailyMissions,
+                        // Reset the completion timestamp for the epic mission to allow new daily missions
+                        ultima_missao_concluida_em: null 
                     };
                 }
                 return rm;
@@ -534,9 +537,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
              return;
         }
 
-        // Não gerar nova missão aqui. Apenas completar a atual.
-        dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
-        
         if (!state.profile) return;
         
         let updatedProfile = { ...state.profile };
@@ -592,9 +592,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId: rankedMissionId, feedback } });
         }
 
-        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
-
-        const finalStateAfterCompletion = playerDataReducer(tempState, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
+        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
+        
+        const finalStateAfterCompletion = playerDataReducer(tempState, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
 
         const finalRankedMission = finalStateAfterCompletion.missions.find((m: RankedMission) => m.id === rankedMissionId);
         const isRankedMissionComplete = finalRankedMission && finalRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).length >= (finalRankedMission.total_missoes_diarias || 10);
@@ -615,9 +615,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
         await persistData('profile', updatedProfile);
         await persistData('missions', finalStateAfterCompletion.missions);
+        await persistData('skills', finalStateAfterCompletion.skills);
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
     
@@ -625,6 +625,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
             if (mission.concluido) return false;
             const hasActiveDaily = mission.missoes_diarias?.some(dm => !dm.concluido);
+            // Only generate if there's no active mission and it has been completed before
             return !hasActiveDaily && mission.ultima_missao_concluida_em;
         });
 
@@ -662,8 +663,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     dispatch({ type: 'CLEAR_MISSION_FEEDBACK', payload: { missionId: mission.id }});
                 }
                 
-                await persistData('missions', playerDataReducer(state, { type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } }).missions);
-                
                 toast({
                     title: "Nova Missão Disponível!",
                     description: `"${result.nextMissionName}" foi desbloqueada.`
@@ -675,6 +674,11 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             } finally {
                 dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
             }
+        }
+        // After iterating and dispatching, persist the final state
+        const finalState = playerDataReducer(state, { type: 'NO_OP' }); // A dummy action to get the current state
+        if (missionsNeedingNewDaily.length > 0) {
+            await persistData('missions', finalState.missions);
         }
     }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
     
