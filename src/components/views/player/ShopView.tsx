@@ -4,15 +4,16 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat } from 'lucide-react';
+import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { generateShopItems } from '@/ai/flows/generate-shop-items';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isToday, parseISO } from 'date-fns';
 
-const iconMap = {
+const iconMap: { [key: string]: React.ElementType } = {
     Zap,
     Shield,
     BookOpen,
@@ -22,16 +23,23 @@ const iconMap = {
 const ShopViewComponent = () => {
     const { profile, missions, skills, persistData, isDataLoaded } = usePlayerDataContext();
     const { toast } = useToast();
-    const [isBuying, setIsBuying] = useState(null);
-    const [shopItems, setShopItems] = useState([]);
-    const [isGeneratingItems, setIsGeneratingItems] = useState(true);
+    const [isBuying, setIsBuying] = useState<string | null>(null);
+    const [isGeneratingItems, setIsGeneratingItems] = useState(false);
 
-    const fetchShopItems = useCallback(async () => {
+    const fetchShopItems = useCallback(async (forceRefresh = false) => {
         if (!isDataLoaded || !profile) return;
+
+        const lastGenerated = profile.shop_last_generated_at;
+        const itemsExist = profile.recommended_shop_items && profile.recommended_shop_items.length > 0;
+
+        if (itemsExist && lastGenerated && isToday(parseISO(lastGenerated)) && !forceRefresh) {
+            console.log("A usar itens da loja em cache.");
+            return;
+        }
         
         setIsGeneratingItems(true);
         try {
-            const activeMissions = missions.filter(m => !m.concluido);
+            const activeMissions = missions.filter((m: { concluido: any; }) => !m.concluido);
             const serializableShopItems = allShopItems.map(({ icon, ...rest }) => rest);
 
             const result = await generateShopItems({
@@ -40,7 +48,18 @@ const ShopViewComponent = () => {
                 activeMissions: JSON.stringify(activeMissions),
                 allItems: serializableShopItems,
             });
-            setShopItems(result.recommendedItems || []);
+            
+            const updatedProfile = {
+                ...profile,
+                recommended_shop_items: result.recommendedItems || [],
+                shop_last_generated_at: new Date().toISOString(),
+            };
+            await persistData('profile', updatedProfile);
+
+            if (forceRefresh) {
+                 toast({ title: "Loja Atualizada!", description: "O Mercador trouxe novas ofertas." });
+            }
+
         } catch (error) {
             console.error("Failed to generate shop items:", error);
             toast({
@@ -48,18 +67,23 @@ const ShopViewComponent = () => {
                 title: "Erro ao Carregar a Loja",
                 description: "O Mercador do Sistema está indisponível. A usar ofertas padrão."
             });
-            setShopItems(allShopItems.slice(0, 3)); // Fallback to a few default items
+            const fallbackItems = {
+                ...profile,
+                recommended_shop_items: allShopItems.slice(0, 3),
+                shop_last_generated_at: new Date().toISOString(),
+            }
+             await persistData('profile', fallbackItems);
         } finally {
             setIsGeneratingItems(false);
         }
-    }, [isDataLoaded, profile, missions, skills, toast]);
+    }, [isDataLoaded, profile, missions, skills, toast, persistData]);
     
     useEffect(() => {
         fetchShopItems();
-    }, [fetchShopItems]);
+    }, [isDataLoaded]);
 
 
-    const handleBuyItem = (item) => {
+    const handleBuyItem = (item: any) => {
         if (!profile || isBuying) return;
 
         if ((profile.fragmentos || 0) < item.price) {
@@ -104,6 +128,8 @@ const ShopViewComponent = () => {
             </div>
         );
     }
+    
+    const shopItems = profile.recommended_shop_items || [];
     
     const renderShopContent = () => {
         if (isGeneratingItems) {
@@ -202,11 +228,16 @@ const ShopViewComponent = () => {
                         Ofertas diárias geradas pela IA para otimizar a sua jornada.
                     </p>
                 </div>
-                <div className="flex-shrink-0 bg-secondary border border-border rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                        <Gem className="h-6 w-6 text-yellow-400" />
-                        <span className="text-xl font-bold text-foreground">{profile.fragmentos || 0}</span>
-                        <span className="text-sm text-muted-foreground">Fragmentos</span>
+                <div className="flex items-center gap-2">
+                     <Button variant="outline" size="icon" onClick={() => fetchShopItems(true)} disabled={isGeneratingItems}>
+                        <RefreshCw className={cn("h-4 w-4", isGeneratingItems && "animate-spin")} />
+                    </Button>
+                    <div className="flex-shrink-0 bg-secondary border border-border rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                            <Gem className="h-6 w-6 text-yellow-400" />
+                            <span className="text-xl font-bold text-foreground">{profile.fragmentos || 0}</span>
+                            <span className="text-sm text-muted-foreground">Fragmentos</span>
+                        </div>
                     </div>
                 </div>
             </div>
