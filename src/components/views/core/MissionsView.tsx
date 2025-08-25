@@ -428,14 +428,14 @@ const MissionsViewComponent = () => {
      useEffect(() => {
         const calculateTimeUntilMidnight = () => {
             const now = new Date();
-            const midnight = new Date(now);
-            midnight.setHours(24, 0, 0, 0);
+            const midnight = endOfDay(now); // Use date-fns for robust end of day calculation
             
             const diff = midnight.getTime() - now.getTime();
 
             if (diff <= 0) {
                 setTimeUntilMidnight('00:00:00');
                 if (generatePendingDailyMissions) {
+                    console.log("Generating pending missions...");
                     generatePendingDailyMissions();
                 }
                 return;
@@ -708,7 +708,10 @@ const MissionsViewComponent = () => {
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
     const renderActiveMissionContent = (mission: RankedMission) => {
-        const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+        const wasCompletedToday = useMemo(() => {
+            return mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+        }, [mission.ultima_missao_concluida_em]);
+
         const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
         
         // This is the core logic change.

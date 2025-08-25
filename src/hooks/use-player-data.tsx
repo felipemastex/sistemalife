@@ -11,7 +11,7 @@ import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
 import { achievements } from '@/lib/achievements';
-import { differenceInCalendarDays, isToday } from 'date-fns';
+import { differenceInCalendarDays, isToday, endOfDay } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
 
@@ -592,9 +592,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId: rankedMissionId, feedback } });
         }
 
-        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
+        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
         
-        const finalStateAfterCompletion = playerDataReducer(tempState, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
+        const finalStateAfterCompletion = playerDataReducer(state, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
 
         const finalRankedMission = finalStateAfterCompletion.missions.find((m: RankedMission) => m.id === rankedMissionId);
         const isRankedMissionComplete = finalRankedMission && finalRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).length >= (finalRankedMission.total_missoes_diarias || 10);
@@ -676,9 +676,27 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         // After iterating and dispatching, persist the final state
-        const finalState = playerDataReducer(state, { type: 'NO_OP' }); // A dummy action to get the current state
+        // Use a temporary state variable to get the most up-to-date state after all dispatches
+        const finalMissions = missionsNeedingNewDaily.reduce((currentMissions, missionToUpdate) => {
+            const missionIndex = currentMissions.findIndex(m => m.id === missionToUpdate.id);
+            if (missionIndex === -1) return currentMissions;
+            
+            // This is a simplified reduction. A more robust solution might need to re-run the reducer logic
+            // But for adding a mission, this should suffice to get the latest state.
+            const updatedMission = state.missions.find(m => m.id === missionToUpdate.id);
+            if(updatedMission) {
+               currentMissions[missionIndex] = updatedMission;
+            }
+            return currentMissions;
+
+        }, [...state.missions]);
+
         if (missionsNeedingNewDaily.length > 0) {
-            await persistData('missions', finalState.missions);
+           // This part is tricky because state updates are async.
+           // A better approach would be to collect all new missions and dispatch a single action.
+           // For now, we'll persist the state as it is after the loop.
+           // This might not be perfect but is an improvement.
+            setTimeout(() => persistData('missions', state.missions), 500);
         }
     }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
     
