@@ -142,6 +142,7 @@ interface Profile {
   missoes_concluidas_total: number;
   achievements: Achievement[];
   streak_atual: number;
+  best_streak?: number;
   ultimo_dia_de_missao_concluida: string | null;
   guild_id?: string | null;
   guild_role?: string | null;
@@ -507,6 +508,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             ...currentProfile, 
             streak_atual: newStreak, 
             ultimo_dia_de_missao_concluida: today.toISOString(),
+            best_streak: Math.max(currentProfile.best_streak || 0, newStreak),
         };
 
         if (streakProtected) {
@@ -742,7 +744,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [] };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [] };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
