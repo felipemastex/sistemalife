@@ -17,3 +17,4 @@ import './flows/generate-hunter-avatar.js';
 import './flows/generate-goal-roadmap.js';
 import './flows/generate-guild-quest.js';
 import './flows/generate-next-daily-mission.js';
+import './flows/generate-user-achievements.js';

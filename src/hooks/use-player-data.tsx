@@ -10,7 +10,6 @@ import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
-import { achievements } from '@/lib/achievements';
 import { differenceInCalendarDays, isToday, endOfDay } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
@@ -141,6 +140,7 @@ interface Profile {
   status?: string;
   missoes_concluidas_total: number;
   achievements: Achievement[];
+  generated_achievements?: any[];
   streak_atual: number;
   best_streak?: number;
   ultimo_dia_de_missao_concluida: string | null;
@@ -418,53 +418,56 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         return newProfile;
     };
     
-    const checkAndUnlockAchievements = useCallback((currentProfile: Profile, currentMetas: Meta[], currentSkills: Skill[]) => {
-        if (!currentProfile) return;
+     const checkAndUnlockAchievements = useCallback((currentProfile: Profile) => {
+        if (!currentProfile?.generated_achievements) return;
 
-        const newlyUnlocked: Achievement[] = [];
-        achievements.forEach(achievement => {
-            const isAlreadyUnlocked = currentProfile.achievements?.some((a: Achievement) => a.achievementId === achievement.id);
-            if (isAlreadyUnlocked) return;
+        let madeChanges = false;
+        const updatedAchievements = currentProfile.generated_achievements.map(ach => {
+            if (ach.unlocked) return ach;
 
-            let conditionMet = false;
-            switch (achievement.criteria.type) {
+            const { type, value, category } = ach.criteria;
+            let current = 0;
+            switch (type) {
                 case 'missions_completed':
-                    conditionMet = (currentProfile.missoes_concluidas_total || 0) >= achievement.criteria.value;
+                    current = currentProfile.missoes_concluidas_total || 0;
                     break;
                 case 'level_reached':
-                    conditionMet = (currentProfile.nivel || 1) >= achievement.criteria.value;
+                    current = currentProfile.nivel || 1;
                     break;
-                case 'goals_created':
-                     conditionMet = currentMetas.length >= achievement.criteria.value;
-                     break;
                 case 'goals_completed':
-                     conditionMet = currentMetas.filter((m: Meta) => m.concluida).length >= achievement.criteria.value;
+                     current = state.metas.filter(m => m.concluida).length;
                      break;
-                case 'skills_acquired':
-                     conditionMet = currentSkills.length >= achievement.criteria.value;
-                     break;
-                 case 'skill_max_level':
-                     conditionMet = currentSkills.some((s: Skill) => s.nivel_atual >= s.nivel_maximo);
-                     break;
+                case 'streak_maintained':
+                    current = currentProfile.streak_atual || 0;
+                    break;
+                case 'missions_in_category_completed':
+                    const categoryGoals = state.metas.filter(m => m.categoria === category).map(m => m.nome);
+                    current = state.missions
+                        .filter(m => categoryGoals.includes(m.meta_associada))
+                        .flatMap(m => m.missoes_diarias || [])
+                        .filter(dm => dm.concluido).length;
+                    break;
             }
 
-            if (conditionMet) {
-                newlyUnlocked.push({ achievementId: achievement.id, date: new Date().toISOString() });
-                handleShowAchievementUnlockedNotification(achievement.name);
+            if (current >= value) {
+                madeChanges = true;
+                handleShowAchievementUnlockedNotification(ach.name);
+                return { ...ach, unlocked: true, unlockedAt: new Date().toISOString() };
             }
+            return ach;
         });
 
-        if (newlyUnlocked.length > 0) {
-            const updatedProfile = { ...currentProfile, achievements: [...(currentProfile.achievements || []), ...newlyUnlocked] };
-            persistData('profile', updatedProfile);
+        if (madeChanges) {
+            persistData('profile', { ...currentProfile, generated_achievements: updatedAchievements });
         }
-    }, [persistData, handleShowAchievementUnlockedNotification]);
+    }, [state.metas, state.missions, handleShowAchievementUnlockedNotification, persistData]);
+
 
     useEffect(() => {
         if (state.isDataLoaded && state.profile) {
-            checkAndUnlockAchievements(state.profile, state.metas, state.skills);
+            checkAndUnlockAchievements(state.profile);
         }
-    }, [state.profile, state.metas, state.skills, state.isDataLoaded, checkAndUnlockAchievements]);
+    }, [state.profile, state.isDataLoaded, checkAndUnlockAchievements]);
     
      const handleStreak = (currentProfile: Profile) => {
         const today = new Date();
@@ -744,7 +747,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [] };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [] };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
