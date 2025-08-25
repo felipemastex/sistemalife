@@ -414,7 +414,7 @@ const MissionsViewComponent = () => {
     const [statusFilter, setStatusFilter] = useState<string>('active');
 
     const [dialogState, setDialogState] = useState<DialogState>({ open: false, mission: null, isManual: false });
-    const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(true);
+    const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(false);
 
     const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
 
@@ -852,7 +852,7 @@ const MissionsViewComponent = () => {
 
                 <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
                 
-                 <Collapsible open={isStatsPanelVisible} onOpenChange={setIsStatsPanelVisible}>
+                 <Collapsible open={isStatsPanelVisible} onOpenChange={setIsStatsPanelVisible} className="mt-6">
                     <CollapsibleContent>
                         <MissionStatsPanel />
                     </CollapsibleContent>
