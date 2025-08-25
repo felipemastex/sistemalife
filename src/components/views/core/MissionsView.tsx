@@ -909,18 +909,25 @@ const MissionsViewComponent = () => {
                                             {mission.rank}
                                         </div>
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                                {daysRemaining !== null && daysRemaining <= 3 && <AlertTriangle className={cn("h-4 w-4", daysRemaining <= 1 ? "text-red-500" : "text-yellow-500")} />}
-                                                {wasCompletedToday ? (
-                                                    <p className="font-cinzel text-xl font-bold text-muted-foreground flex items-center gap-2">
+                                            {wasCompletedToday ? (
+                                                <div className="flex justify-between items-center">
+                                                     <p className="font-cinzel text-xl font-bold text-muted-foreground flex items-center gap-2">
                                                         <CheckCircle className="h-5 w-5 text-green-500" />
                                                         <span>Missão Concluída</span>
                                                     </p>
-                                                ) : (
+                                                </div>
+                                            ) : (
+                                                <>
                                                     <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
-                                                )}
-                                            </div>
-                                            {!wasCompletedToday && <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>}
+                                                    {!isManualMission && associatedMeta && (
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                            <Link className="h-3 w-3" />
+                                                            <span>{associatedMeta.nome}</span>
+                                                        </div>
+                                                    )}
+                                                    <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </TriggerWrapper>
