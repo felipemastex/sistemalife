@@ -414,7 +414,7 @@ const MissionsViewComponent = () => {
     const [statusFilter, setStatusFilter] = useState<string>('active');
 
     const [dialogState, setDialogState] = useState<DialogState>({ open: false, mission: null, isManual: false });
-    const [isStatsPanelVisible, setIsStatsPanelVisible] = useState(false);
+    const [isPanelVisible, setIsPanelVisible] = useState(false);
 
     const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
 
@@ -545,6 +545,9 @@ const MissionsViewComponent = () => {
                     amount: amount as number, 
                     feedback: feedbackText 
                 });
+                
+                // Close the dialog after completion
+                 setDialogState(prev => ({ ...prev, open: false }));
             }
         }, 500);
         
@@ -807,14 +810,14 @@ const MissionsViewComponent = () => {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => setIsStatsPanelVisible(!isStatsPanelVisible)}
+                                        onClick={() => setIsPanelVisible(!isPanelVisible)}
                                         className="text-muted-foreground hover:text-foreground"
                                     >
-                                        {isStatsPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        {isPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>{isStatsPanelVisible ? 'Ocultar' : 'Mostrar'} estatísticas</p>
+                                    <p>{isPanelVisible ? 'Ocultar painel de filtros e estatísticas' : 'Mostrar painel de filtros e estatísticas'}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
@@ -827,40 +830,39 @@ const MissionsViewComponent = () => {
 
                 <p className="text-muted-foreground mt-2">Complete as sub-tarefas da missão diária para progredir. Uma nova missão é liberada à meia-noite.</p>
                 
-                 <Collapsible open={isStatsPanelVisible} onOpenChange={setIsStatsPanelVisible} className="mt-6">
-                    <CollapsibleContent>
+                 <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-6">
+                    <CollapsibleContent className="space-y-6">
                         <MissionStatsPanel />
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-grow min-w-[200px]">
+                                <Input 
+                                    placeholder="Procurar missão..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="bg-card"
+                                />
+                            </div>
+                            <div className="flex gap-4 flex-grow sm:flex-grow-0">
+                                <Select value={rankFilter} onValueChange={setRankFilter}>
+                                    <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os Ranks</SelectItem>
+                                        {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
+                                        <SelectItem value="M">Manual</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os Status</SelectItem>
+                                        <SelectItem value="active">Ativas</SelectItem>
+                                        <SelectItem value="completed">Concluídas</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </CollapsibleContent>
                 </Collapsible>
-
-                 <div className="mt-6 flex flex-wrap gap-4">
-                    <div className="flex-grow min-w-[200px]">
-                        <Input 
-                            placeholder="Procurar missão..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-card"
-                        />
-                    </div>
-                    <div className="flex gap-4 flex-grow sm:flex-grow-0">
-                        <Select value={rankFilter} onValueChange={setRankFilter}>
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os Ranks</SelectItem>
-                                {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
-                                <SelectItem value="M">Manual</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
-                            <SelectContent>
-                                 <SelectItem value="all">Todos os Status</SelectItem>
-                                 <SelectItem value="active">Ativas</SelectItem>
-                                 <SelectItem value="completed">Concluídas</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
             </div>
             
             <Accordion 
@@ -914,7 +916,7 @@ const MissionsViewComponent = () => {
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center">
-                                                 <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
+                                                <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>{mission.nome}</p>
                                                  {wasCompletedToday && (
                                                      <div className="flex items-center gap-2 p-2 bg-secondary rounded-md ml-4">
                                                         <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
