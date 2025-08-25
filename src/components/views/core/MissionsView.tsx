@@ -311,10 +311,10 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader className="text-center">
-          <DialogTitle className="flex items-center gap-2 justify-center">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            Feedback da Missão
-          </DialogTitle>
+            <DialogTitle className="flex items-center gap-2 justify-center">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                Feedback da Missão
+            </DialogTitle>
           <DialogDescription>
             Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
           </DialogDescription>
@@ -592,8 +592,9 @@ const MissionsViewComponent = () => {
         }
     }
 
-    const onContributeToQuest = (subTask: SubTask, amount: number, missionToUpdate: RankedMission) => {
-         if (missionToUpdate.isManual) {
+    const onContributeToQuest = (subTask: SubTask, amount: number, missionToUpdate: DailyMission | RankedMission) => {
+        const isManual = 'isManual' in missionToUpdate && missionToUpdate.isManual;
+         if (isManual) {
             const updatedManualMissions = (profile.manual_missions || []).map((m: RankedMission) => 
                 m.id === missionToUpdate.id 
                 ? {
@@ -608,10 +609,11 @@ const MissionsViewComponent = () => {
             );
             persistData('profile', { ...profile, manual_missions: updatedManualMissions });
          } else {
-             const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === missionToUpdate.id));
+             const dailyMission = missionToUpdate as DailyMission;
+             const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === dailyMission.id));
              if(rankedMission) {
                 const updatedSubTask = { ...subTask, current: Math.min(subTask.target, (subTask.current || 0) + amount) };
-                const willCompleteMission = missionToUpdate.subTasks?.every((st: SubTask) => {
+                const willCompleteMission = dailyMission.subTasks?.every((st: SubTask) => {
                     if (st.name === subTask.name) {
                         return updatedSubTask.current >= updatedSubTask.target;
                     }
@@ -621,14 +623,14 @@ const MissionsViewComponent = () => {
                 if (willCompleteMission) {
                     setMissionCompletionFeedbackState({
                         open: true,
-                        missionName: missionToUpdate.nome,
+                        missionName: dailyMission.nome,
                         rankedMissionId: rankedMission.id,
-                        dailyMissionId: missionToUpdate.id,
+                        dailyMissionId: dailyMission.id,
                         subTask,
                         amount
                     });
                 } else {
-                    completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: missionToUpdate.id, subTask, amount, feedback: null });
+                    completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: dailyMission.id, subTask, amount, feedback: null });
                 }
              }
          }
@@ -932,7 +934,7 @@ const MissionsViewComponent = () => {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                  {daysRemaining !== null && daysRemaining <= 3 && <AlertTriangle className={cn("h-4 w-4", daysRemaining <= 1 ? "text-red-500" : "text-yellow-500")} />}
-                                                <p className="text-lg font-bold text-foreground break-words">{mission.nome}</p>
+                                                <p className="font-cinzel text-xl font-bold text-foreground break-words">{mission.nome}</p>
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
                                         </div>
@@ -994,7 +996,10 @@ const MissionsViewComponent = () => {
             
             <MissionCompletionFeedbackDialog
                 isOpen={missionCompletionFeedbackState.open}
-                onClose={() => setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }))}
+                onClose={() => {
+                    setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }));
+                    setDialogState(prev => ({ ...prev, open: false }));
+                }}
                 onSubmitFeedback={handleMissionCompletionFeedback}
                 missionName={missionCompletionFeedbackState.missionName}
             />
@@ -1005,7 +1010,7 @@ const MissionsViewComponent = () => {
                 subTask={contributionModalState.subTask as SubTask}
                 onContribute={(amount) => {
                     if (contributionModalState.subTask && contributionModalState.mission) {
-                        onContributeToQuest(contributionModalState.subTask, amount, contributionModalState.mission as unknown as RankedMission);
+                        onContributeToQuest(contributionModalState.subTask, amount, contributionModalState.mission as DailyMission);
                     }
                 }}
             />
@@ -1014,12 +1019,20 @@ const MissionsViewComponent = () => {
                 <MissionDetailsDialog
                     isOpen={dialogState.open} 
                     onClose={() => setDialogState({ open: false, mission: null, isManual: false })}
-                    mission={dialogState.mission as DailyMission}
-                    isManual={false}
-                    onContribute={(subTask, amount) => {
-                        if (dialogState.mission) {
-                            onContributeToQuest(subTask, amount, dialogState.mission as unknown as RankedMission);
-                        }
+                    mission={dialogState.mission}
+                    isManual={dialogState.isManual}
+                    onContribute={(subTask, amount, mission) => {
+                        onContributeToQuest(subTask, amount, mission);
+                    }}
+                    onComplete={(mission) => {
+                         setMissionCompletionFeedbackState({
+                            open: true,
+                            missionName: mission.nome,
+                            rankedMissionId: missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id || null,
+                            dailyMissionId: mission.id,
+                            subTask: null, // Not needed for whole mission completion
+                            amount: null,
+                        });
                     }}
                     onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
                     onDelete={(missionId) => handleDeleteManualMission(missionId)}
