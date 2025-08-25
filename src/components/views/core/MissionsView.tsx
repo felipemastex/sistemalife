@@ -801,27 +801,25 @@ const MissionsViewComponent = () => {
     return (
         <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
             <div className="flex-shrink-0">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Diário de Missões</h1>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setIsPanelVisible(!isPanelVisible)}
-                                        className="text-muted-foreground hover:text-foreground"
-                                    >
-                                        {isPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{isPanelVisible ? 'Ocultar painel de filtros e estatísticas' : 'Mostrar painel de filtros e estatísticas'}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
+                <div className="flex justify-between items-center gap-4 mb-6">
+                    <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsPanelVisible(!isPanelVisible)}
+                                    className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                                >
+                                    {isPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Mostrar/Ocultar painel de filtros e estatísticas</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
 
                 <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-6">
@@ -911,7 +909,7 @@ const MissionsViewComponent = () => {
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center">
                                                 <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
-                                                    {wasCompletedToday ? "Missão Concluída" : mission.nome}
+                                                    {mission.nome}
                                                 </p>
                                                  {wasCompletedToday && (
                                                      <div className="flex items-center gap-2 p-2 bg-secondary rounded-md ml-4">
@@ -920,7 +918,7 @@ const MissionsViewComponent = () => {
                                                     </div>
                                                  )}
                                             </div>
-                                            {associatedMeta && (
+                                            {associatedMeta && !isManualMission && (
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                                     <Link className="h-3 w-3" />
                                                     <span>{associatedMeta.nome}</span>
