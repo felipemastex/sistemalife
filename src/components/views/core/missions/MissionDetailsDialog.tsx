@@ -115,22 +115,14 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   const isEditing = !!editedMission.id;
 
   const handleContribute = async () => {
-    // Update local state immediately for real-time feedback
-    if (!contributionState.subTask || !editedMission) return;
+    if (!contributionState.subTask || !mission) return;
     
-    const updatedSubTasks = editedMission.subTasks.map((task: SubTask) => 
-      task.name === contributionState.subTask!.name 
-        ? { ...task, current: (task.current || 0) + contributionState.amount }
-        : task
-    );
-    
-    setEditedMission(prev => prev ? ({ ...prev, subTasks: updatedSubTasks }) : null);
-    
-    // Call the external handler
-    if (mission) {
-      onContribute(contributionState.subTask, contributionState.amount, mission);
-    }
+    // The main logic is now in MissionsView, just pass the data up
+    onContribute(contributionState.subTask, contributionState.amount, mission);
+
+    // Close both dialogs
     setContributionState({ open: false, subTask: null, amount: 1 });
+    onClose(); 
   }
 
   const handleSave = () => {

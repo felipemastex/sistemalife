@@ -545,9 +545,6 @@ const MissionsViewComponent = () => {
                     amount: amount as number, 
                     feedback: feedbackText 
                 });
-                
-                // Close the dialog after completion
-                 setDialogState(prev => ({ ...prev, open: false }));
             }
         }, 500);
         
@@ -597,7 +594,7 @@ const MissionsViewComponent = () => {
 
     const onContributeToQuest = (subTask: SubTask, amount: number, missionToUpdate: DailyMission | RankedMission) => {
         const isManual = 'isManual' in missionToUpdate && missionToUpdate.isManual;
-         if (isManual) {
+        if (isManual) {
             const updatedManualMissions = (profile.manual_missions || []).map((m: RankedMission) => 
                 m.id === missionToUpdate.id 
                 ? {
@@ -611,14 +608,14 @@ const MissionsViewComponent = () => {
                 : m
             );
             persistData('profile', { ...profile, manual_missions: updatedManualMissions });
-         } else {
-             const dailyMission = missionToUpdate as DailyMission;
-             const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === dailyMission.id));
-             if(rankedMission) {
-                const updatedSubTask = { ...subTask, current: Math.min(subTask.target, (subTask.current || 0) + amount) };
+        } else {
+            const dailyMission = missionToUpdate as DailyMission;
+            const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === dailyMission.id));
+            if(rankedMission) {
+                const tempCurrent = (subTask.current || 0) + amount;
                 const willCompleteMission = dailyMission.subTasks?.every((st: SubTask) => {
                     if (st.name === subTask.name) {
-                        return updatedSubTask.current >= updatedSubTask.target;
+                        return tempCurrent >= st.target;
                     }
                     return (st.current || 0) >= st.target;
                 });
@@ -635,8 +632,8 @@ const MissionsViewComponent = () => {
                 } else {
                     completeMission({ rankedMissionId: rankedMission.id, dailyMissionId: dailyMission.id, subTask, amount, feedback: null });
                 }
-             }
-         }
+            }
+        }
     };
 
     const handleSaveManualMission = (missionData: RankedMission) => {
@@ -888,7 +885,7 @@ const MissionsViewComponent = () => {
                     const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
                     const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
-                        if (missionViewStyle === 'inline' && !isManualMission) {
+                        if (missionViewStyle === 'inline' || isManualMission) {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
                         }
                         return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
@@ -945,7 +942,7 @@ const MissionsViewComponent = () => {
                                     {renderActiveMissionContent(mission)}
                                 </AccordionContent>
                             </div>
-                            {wasCompletedToday && (
+                            {wasCompletedToday && !isManualMission && (
                                 <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
                                     <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
                                     <p className="text-lg font-bold text-foreground">Nova Missão em</p>
