@@ -2,7 +2,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { TrendingDown, TrendingUp, CheckCircle2, MessageSquare } from 'lucide-react';
+import { TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
 
 // Type definitions
 interface SubTask {
@@ -334,7 +334,7 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       {option.icon}
-                      <Label htmlFor={option.value} className="font-medium cursor-pointer">
+                      <Label htmlFor={option.value} className="font-normal cursor-pointer">
                         {option.label}
                       </Label>
                     </div>
@@ -799,9 +799,9 @@ const MissionsViewComponent = () => {
 
 
     return (
-        <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
-            <div className="flex-shrink-0">
-                <div className="flex justify-between items-center gap-4 mb-6">
+        <div className={cn("h-full overflow-y-auto p-4 md:p-6", accordionSpacing)}>
+            <div>
+                <div className="flex justify-between items-center gap-4 mb-6 md:justify-start">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
                     <TooltipProvider>
                         <Tooltip>
@@ -822,7 +822,7 @@ const MissionsViewComponent = () => {
                     </TooltipProvider>
                 </div>
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-6">
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mb-6">
                     <CollapsibleContent className="space-y-6">
                         <MissionStatsPanel />
                         <div className="flex flex-col md:flex-row gap-4">
@@ -860,7 +860,7 @@ const MissionsViewComponent = () => {
             <Accordion 
                 type="single" 
                 collapsible 
-                className={cn("w-full flex-grow overflow-y-auto mt-6 pr-2", accordionSpacing)}
+                className={cn("w-full", accordionSpacing)}
                 value={activeAccordionItem || undefined}
                 onValueChange={(value: string) => {
                      if (missionViewStyle === 'inline') {
@@ -888,9 +888,6 @@ const MissionsViewComponent = () => {
                     const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
                     const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
-                        if (wasCompletedToday) {
-                            return <div className="flex-1 text-left w-full cursor-default">{children}</div>;
-                        }
                         if (missionViewStyle === 'inline' && !isManualMission) {
                             return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
                         }
@@ -899,60 +896,62 @@ const MissionsViewComponent = () => {
                     
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
-                           <div className="flex flex-col p-4 gap-4">
-                                <div className="flex items-center gap-4">
-                                <TriggerWrapper>
-                                    <div className="flex-1 text-left min-w-0 flex items-center gap-4">
-                                        <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
-                                            {mission.rank}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center">
-                                                <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
-                                                    {mission.nome}
-                                                </p>
-                                                 {wasCompletedToday && (
-                                                     <div className="flex items-center gap-2 p-2 bg-secondary rounded-md ml-4">
-                                                        <Timer className="h-5 w-5 text-cyan-400 animate-pulse"/>
-                                                        <span className="font-mono text-cyan-400 font-semibold">{timeUntilMidnight}</span>
-                                                    </div>
-                                                 )}
-                                            </div>
-                                            {associatedMeta && !isManualMission && (
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                    <Link className="h-3 w-3" />
-                                                    <span>{associatedMeta.nome}</span>
+                            <div className={cn("p-4 transition-all duration-300", wasCompletedToday && 'blur-sm pointer-events-none')}>
+                                <div className="flex flex-col p-4 gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <TriggerWrapper>
+                                            <div className="flex-1 text-left min-w-0 flex items-center gap-4">
+                                                <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
+                                                    {mission.rank}
                                                 </div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
+                                                            {mission.nome}
+                                                        </p>
+                                                    </div>
+                                                    {associatedMeta && !isManualMission && (
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                            <Link className="h-3 w-3" />
+                                                            <span>{associatedMeta.nome}</span>
+                                                        </div>
+                                                    )}
+                                                     <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                                </div>
+                                            </div>
+                                        </TriggerWrapper>
+                                        <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
+                                            {!isManualMission && (
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                    <GitMerge className="h-5 w-5" />
+                                                </Button>
                                             )}
-                                             <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
                                         </div>
                                     </div>
-                                </TriggerWrapper>
-                                <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
-                                    {!wasCompletedToday && !isManualMission && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                            <GitMerge className="h-5 w-5" />
-                                        </Button>
-                                    )}
+                                   {!isManualMission && (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger className="w-full">
+                                                    <Progress value={missionProgress} className="h-2" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                   )}
                                 </div>
-                               </div>
-                               {!isManualMission && !wasCompletedToday && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger className="w-full">
-                                                <Progress value={missionProgress} className="h-2" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                               )}
-                            </div>
-                            {!wasCompletedToday && (
                                 <AccordionContent className="px-4 pb-4 space-y-4">
                                     {renderActiveMissionContent(mission)}
                                 </AccordionContent>
+                            </div>
+                            {wasCompletedToday && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
+                                    <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
+                                    <p className="text-lg font-bold text-foreground">Nova Missão em</p>
+                                    <p className="text-4xl font-mono text-cyan-400 font-bold tracking-wider">{timeUntilMidnight}</p>
+                                    <p className="text-xs text-muted-foreground mt-2">Missão concluída hoje!</p>
+                                </div>
                             )}
                         </AccordionItem>
                     )
