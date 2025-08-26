@@ -4,24 +4,35 @@
 import { useMemo, memo } from 'react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { LoaderCircle, User, Mountain, Castle, Shield } from 'lucide-react';
+import { LoaderCircle, User, Mountain, Castle, Shield, Skull, Tent, TowerControl } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+
+// Path points defined as percentages { top, left }
 const pathPoints = [
-  { top: '85%', left: '5%' }, { top: '80%', left: '15%' },
-  { top: '70%', left: '20%' }, { top: '65%', left: '30%' },
-  { top: '75%', left: '40%' }, { top: '80%', left: '50%' },
-  { top: '70%', left: '60%' }, { top: '60%', left: '65%' },
-  { top: '50%', left: '75%' }, { top: '40%', left: '85%' },
-  { top: '30%', left: '80%' }, { top: '20%', left: '70%' },
-  { top: '10%', left: '60%' }, { top: '5%', left: '50%' },
+  { top: '88%', left: '8%' },    // 0: Start at Volcano
+  { top: '80%', left: '15%' },   // 1
+  { top: '75%', left: '25%' },   // 2
+  { top: '68%', left: '35%' },   // 3: Near Hand
+  { top: '60%', left: '45%' },   // 4
+  { top: '65%', left: '55%' },   // 5
+  { top: '73%', left: '62%' },   // 6
+  { top: '65%', left: '70%' },   // 7
+  { top: '55%', left: '78%' },   // 8: Near blue trench
+  { top: '45%', left: '85%' },   // 9
+  { top: '35%', left: '80%' },   // 10
+  { top: '25%', left: '73%' },   // 11
+  { top: '15%', left: '65%' },   // 12
+  { top: '8%', left: '55%' },    // 13: End near top fortress
 ];
 
+
 const landmarks = [
-    { name: 'Vila Inicial', position: 0, icon: User },
-    { name: 'Montanhas da Dificuldade', position: 3, icon: Mountain },
-    { name: 'Forte da Disciplina', position: 7, icon: Shield },
+    { name: 'Cratera da Iniciação', position: 0, icon: Skull },
+    { name: 'Acampamento da Perseverança', position: 4, icon: Tent },
+    { name: 'Abismo do Conhecimento', position: 8, icon: TowerControl },
     { name: 'Cidadela da Maestria', position: 13, icon: Castle },
 ];
 
@@ -85,42 +96,54 @@ const ChronoQuestViewComponent = () => {
                     </div>
 
                     <div className="w-full flex-grow bg-secondary/30 rounded-lg relative border border-border overflow-hidden">
-                        {/* Background Elements */}
-                        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-green-500/5 rounded-full blur-2xl"></div>
-                        <div className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl"></div>
-
-                        {/* Path */}
+                       <div 
+                         className="absolute inset-0 bg-cover bg-center"
+                         style={{ backgroundImage: 'url(https://storage.googleapis.com/gen-prod-public-images/user/6216a655-a2d0-4467-8547-92572b83b194/a3d024b3-d2bc-4c3e-b7e6-764f693246a4.png)' }}
+                       ></div>
                         <svg className="absolute inset-0 w-full h-full" width="100%" height="100%" preserveAspectRatio="none">
                             <path 
                                 d={pathPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.left} ${p.top}`).join(' ')}
-                                stroke="hsl(var(--primary) / 0.3)" 
+                                stroke="hsl(var(--primary) / 0.5)" 
                                 strokeWidth="2" 
                                 fill="none" 
                                 strokeDasharray="5 5"
                             />
                         </svg>
-
-                        {/* Landmarks */}
+                        
+                        <TooltipProvider>
                         {landmarks.map(landmark => {
                              const point = pathPoints[landmark.position];
                              const LandmarkIcon = landmark.icon;
                              return (
-                                <div key={landmark.name} className="absolute text-center" style={{ top: point.top, left: point.left, transform: 'translate(-50%, -50%)' }}>
-                                    <LandmarkIcon className="h-8 w-8 text-muted-foreground/50" />
-                                    <p className="text-xs text-muted-foreground/70 mt-1">{landmark.name}</p>
-                                </div>
+                                <Tooltip key={landmark.name}>
+                                    <TooltipTrigger asChild>
+                                        <div className="absolute text-center" style={{ top: point.top, left: point.left, transform: 'translate(-50%, -50%)' }}>
+                                            <LandmarkIcon className="h-10 w-10 text-background/80" strokeWidth={1.5} />
+                                        </div>
+                                    </TooltipTrigger>
+                                     <TooltipContent>
+                                        <p>{landmark.name}</p>
+                                    </TooltipContent>
+                                </Tooltip>
                              )
                         })}
 
-                        {/* Player */}
-                        <div 
-                            className="absolute flex flex-col items-center justify-center transition-all duration-1000 ease-out" 
-                            style={{ top: playerPosition.top, left: playerPosition.left, transform: 'translate(-50%, -50%)' }}
-                        >
-                            <div className="w-8 h-8 rounded-full bg-primary border-2 border-primary-foreground shadow-lg flex items-center justify-center animate-pulse">
-                                <User className="h-5 w-5 text-primary-foreground" />
-                            </div>
-                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                 <div 
+                                    className="absolute flex flex-col items-center justify-center transition-all duration-1000 ease-out" 
+                                    style={{ top: playerPosition.top, left: playerPosition.left, transform: 'translate(-50%, -50%)' }}
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-primary border-2 border-primary-foreground shadow-lg flex items-center justify-center animate-pulse">
+                                        <User className="h-5 w-5 text-primary-foreground" />
+                                    </div>
+                                </div>
+                            </TooltipTrigger>
+                             <TooltipContent>
+                                <p>Você está aqui</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        </TooltipProvider>
                     </div>
                 </CardContent>
             </Card>
@@ -129,5 +152,3 @@ const ChronoQuestViewComponent = () => {
 };
 
 export const ChronoQuestView = memo(ChronoQuestViewComponent);
-
-    
