@@ -474,7 +474,7 @@ const MissionsViewComponent = () => {
         try {
             const result = await generateMissionSuggestion({
                 missionName: mission.nome,
-                missionDescription: mission.subTasks.map(st => st.name).join(', '),
+                missionDescription: mission.subTasks ? mission.subTasks.map(st => st.name).join(', ') : '',
                 feedbackType,
                 userText: userText,
             });
@@ -501,6 +501,11 @@ const MissionsViewComponent = () => {
     
     const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
         const { rankedMissionId, dailyMissionId, subTask, amount } = missionCompletionFeedbackState;
+        
+        // If we are in popup mode, close the details dialog now
+        if (profile?.user_settings?.mission_view_style === 'popup') {
+            setDialogState({ open: false, mission: null, isManual: false });
+        }
         
         let feedbackText = null;
         
@@ -850,6 +855,12 @@ const MissionsViewComponent = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
+                             {generatePendingDailyMissions && (
+                                <Button onClick={generatePendingDailyMissions} variant="outline" className="text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300">
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Gerar Missões Pendentes (Teste)
+                                </Button>
+                            )}
                         </div>
                     </CollapsibleContent>
                 </Collapsible>

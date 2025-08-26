@@ -117,12 +117,10 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   const handleContribute = async () => {
     if (!contributionState.subTask || !mission) return;
     
-    // The main logic is now in MissionsView, just pass the data up
     onContribute(contributionState.subTask, contributionState.amount, mission);
 
-    // Close both dialogs
+    // Only close the contribution dialog, not the main one
     setContributionState({ open: false, subTask: null, amount: 1 });
-    onClose(); 
   }
 
   const handleSave = () => {
