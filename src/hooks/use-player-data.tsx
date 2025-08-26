@@ -111,7 +111,7 @@ interface UserSettings {
     privacy_settings: {
         profile_visibility: 'public' | 'private';
         analytics_opt_in: boolean;
-    };
+        };
     gamification: {
         progress_feedback_intensity: 'subtle' | 'default' | 'celebratory';
     }
@@ -616,7 +616,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 goalDeadline: meta?.prazo,
                 history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`,
                 userLevel: updatedProfile.nivel,
-                feedback: feedbackForNextMission
+                feedback: feedbackForNextMission ?? ''
             });
 
             newDailyMission = {
@@ -968,3 +968,5 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
