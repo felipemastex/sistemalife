@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Award, Gem, Star, Zap } from "lucide-react";
+import { Award, Gem, Star, Zap, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MissionCompletionAnimationProps {
