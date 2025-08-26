@@ -454,6 +454,24 @@ const MissionsViewComponent = () => {
         return () => clearInterval(timerId);
     }, [generatePendingDailyMissions]);
 
+     useEffect(() => {
+        // This effect ensures the dialog state is updated when the global state changes.
+        if (dialogState.open && dialogState.mission) {
+            let latestMissionData: RankedMission | DailyMission | undefined;
+            if (dialogState.isManual) {
+                latestMissionData = profile.manual_missions?.find(m => m.id === dialogState.mission?.id);
+            } else {
+                const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === dialogState.mission?.id));
+                latestMissionData = rankedMission?.missoes_diarias.find(dm => dm.id === dialogState.mission?.id);
+            }
+            
+            if (latestMissionData) {
+                setDialogState(prev => ({...prev, mission: latestMissionData as DailyMission | RankedMission}));
+            }
+        }
+    }, [missions, profile.manual_missions, dialogState.open]);
+
+
     const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
@@ -502,7 +520,6 @@ const MissionsViewComponent = () => {
     const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
         const { rankedMissionId, dailyMissionId, subTask, amount } = missionCompletionFeedbackState;
         
-        // If we are in popup mode, close the details dialog now
         if (profile?.user_settings?.mission_view_style === 'popup') {
             setDialogState({ open: false, mission: null, isManual: false });
         }
