@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -19,6 +19,7 @@ import { AchievementsView } from '@/components/views/player/AchievementsView';
 import { ShopView } from '@/components/views/player/ShopView';
 import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
+import { ClassView } from '@/components/views/player/ClassView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -112,8 +113,9 @@ export default function App() {
               <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
               <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
-              <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
+              <NavItem icon={UserSquare} label="Classe" page="class" inSheet={inSheet}/>
+              <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
               <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
               <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
               <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
@@ -144,6 +146,7 @@ export default function App() {
       'metas': <MetasView />,
       'missions': <MissionsView />,
       'skills': <SkillsView />,
+      'class': <ClassView />,
       'routine': <RoutineView />,
       'achievements': <AchievementsView />,
       'guilds': <GuildsView />,

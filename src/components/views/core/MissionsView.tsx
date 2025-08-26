@@ -492,7 +492,7 @@ const MissionsViewComponent = () => {
         try {
             const result = await generateMissionSuggestion({
                 missionName: mission.nome,
-                missionDescription: mission.subTasks ? mission.subTasks.map(st => st.name).join(', ') : '',
+                missionDescription: Array.isArray(mission.subTasks) ? mission.subTasks.map(st => st.name).join(', ') : '',
                 feedbackType,
                 userText: userText,
             });
