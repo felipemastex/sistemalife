@@ -95,11 +95,17 @@ export default {
         'pulse-slow': {
           '50%': { opacity: '0.7' },
         },
+        'check-circle': {
+            '0%': { transform: 'scale(0)', opacity: '0' },
+            '50%': { transform: 'scale(1.2)', opacity: '1' },
+            '100%': { transform: 'scale(1)', opacity: '1' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-slow': 'pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'check-circle': 'check-circle 0.6s ease-out'
       },
     },
   },
