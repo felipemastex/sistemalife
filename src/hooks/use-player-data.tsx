@@ -691,7 +691,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     goalDeadline: meta?.prazo,
                     history: history || `O utilizador completou missões anteriores.`,
                     userLevel: state.profile?.nivel || 1,
-                    feedback: feedbackForAI
+                    feedback: feedbackForAI ?? ''
                 });
                 
                 const newDailyMission = {

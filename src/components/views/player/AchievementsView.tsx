@@ -1,27 +1,49 @@
 
 "use client";
 
-import { achievements } from '@/lib/achievements';
+import { achievements as staticAchievements } from '@/lib/achievements';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 
-export const AchievementsView = ({ profile }) => {
+export const AchievementsView = () => {
+    const { profile, skills, metas, missions } = usePlayerDataContext();
+
     if (!profile) {
         return <div>A carregar perfil...</div>;
     }
+
+    const allAchievements = [
+        ...staticAchievements,
+        ...(profile.generated_achievements || [])
+    ];
     
     const getProgress = (achievement) => {
-        const { type, value } = achievement.criteria;
+        const { type, value, category } = achievement.criteria;
+        
         switch (type) {
             case 'missions_completed':
                 return { current: profile.missoes_concluidas_total || 0, target: value };
             case 'level_reached':
                 return { current: profile.nivel || 1, target: value };
-            // Adicionar mais casos para outros tipos de critérios no futuro
+            case 'goals_completed':
+                return { current: metas.filter(m => m.concluida).length, target: value };
+            case 'skill_level_reached':
+                 const skill = skills.find(s => s.categoria === category);
+                 return { current: skill ? skill.nivel_atual : 0, target: value };
+            case 'streak_maintained':
+                return { current: profile.streak_atual || 0, target: value };
+            case 'missions_in_category_completed':
+                const categoryGoals = metas.filter(m => m.categoria === category).map(m => m.nome);
+                const count = missions
+                    .filter(m => categoryGoals.includes(m.meta_associada))
+                    .flatMap(m => m.missoes_diarias || [])
+                    .filter(dm => dm.concluido).length;
+                return { current: count, target: value };
             default:
                 return { current: 0, target: value };
         }
@@ -37,9 +59,10 @@ export const AchievementsView = ({ profile }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {achievements.map(achievement => {
-                    const userAchievement = profile.achievements?.find(a => a.achievementId === achievement.id);
-                    const isUnlocked = !!userAchievement;
+                {allAchievements.map(achievement => {
+                    const isUnlocked = achievement.unlocked;
+                    const unlockedDate = achievement.unlockedAt;
+
                     const { current, target } = getProgress(achievement);
                     const progressPercentage = target > 0 ? (current / target) * 100 : 0;
                     
@@ -64,16 +87,16 @@ export const AchievementsView = ({ profile }) => {
                                     <CardTitle className={cn("text-base", isUnlocked ? 'text-yellow-400' : 'text-foreground')}>
                                         {achievement.name}
                                     </CardTitle>
-                                     {isUnlocked && userAchievement.date && (
+                                     {isUnlocked && unlockedDate && (
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <p className="text-xs text-muted-foreground text-left">
-                                                        Desbloqueado em {format(parseISO(userAchievement.date), 'dd/MM/yyyy')}
+                                                        Desbloqueado em {format(parseISO(unlockedDate), 'dd/MM/yyyy')}
                                                     </p>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                    <p>{format(parseISO(userAchievement.date), 'dd/MM/yyyy HH:mm')}</p>
+                                                    <p>{format(parseISO(unlockedDate), 'dd/MM/yyyy HH:mm')}</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
