@@ -148,7 +148,7 @@ export default function App() {
       'skills': <SkillsView />,
       'class': <ClassView />,
       'routine': <RoutineView />,
-      'achievements': <AchievementsView />,
+      'achievements': <AchievementsView profile={profile} />,
       'guilds': <GuildsView />,
       'shop': <ShopView />,
       'inventory': <InventoryView />,
