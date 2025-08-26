@@ -8,7 +8,7 @@ import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw }
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { generateShopItems } from '@/ai/flows/generate-shop-items';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { isToday, parseISO } from 'date-fns';
@@ -167,7 +167,7 @@ const ShopViewComponent = () => {
 
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {shopItems.map(item => {
+                {shopItems.map((item: any) => {
                     const itemDetails = allShopItems.find(i => i.id === item.id);
                     if (!itemDetails) return null;
 

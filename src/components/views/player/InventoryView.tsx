@@ -3,13 +3,21 @@
 import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Backpack, Gem } from 'lucide-react';
-import { shopItems } from '@/lib/shopItems';
+import { Backpack, Gem, Zap, Shield, BookOpen, Repeat } from 'lucide-react';
+import { allShopItems as shopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
+
+// Define iconMap similar to ShopView
+const iconMap: { [key: string]: React.ElementType } = {
+    Zap,
+    Shield,
+    BookOpen,
+    Repeat
+};
 
 const InventoryViewComponent = () => {
     const { profile, persistData } = usePlayerDataContext();
@@ -19,18 +27,18 @@ const InventoryViewComponent = () => {
         return <div>A carregar perfil...</div>;
     }
 
-    const inventoryItems = (profile.inventory || []).map(invItem => {
+    const inventoryItems = (profile.inventory || []).map((invItem: any) => {
         const details = shopItems.find(shopItem => shopItem.id === invItem.itemId);
         return { ...invItem, ...details };
     });
 
-    const handleUseItem = (item) => {
+    const handleUseItem = (item: any) => {
         if (!item || !item.effect) return;
 
         let updatedProfile = { ...profile };
         const now = new Date();
 
-        updatedProfile.active_effects = (updatedProfile.active_effects || []).filter(eff => 
+        updatedProfile.active_effects = (updatedProfile.active_effects || []).filter((eff: any) => 
             new Date(eff.expires_at).getTime() > now.getTime()
         );
 
@@ -64,7 +72,7 @@ const InventoryViewComponent = () => {
                 return;
         }
 
-        updatedProfile.inventory = (updatedProfile.inventory || []).filter(invItem => invItem.instanceId !== item.instanceId);
+        updatedProfile.inventory = (updatedProfile.inventory || []).filter((invItem: any) => invItem.instanceId !== item.instanceId);
         
         persistData('profile', updatedProfile);
     };
@@ -81,11 +89,12 @@ const InventoryViewComponent = () => {
 
             {inventoryItems.length > 0 ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {inventoryItems.map(item => {
-                        const Icon = item.icon;
+                    {inventoryItems.map((item: any) => {
+                        // Use iconMap to get the correct icon component
+                        const Icon = iconMap[item.icon] || Backpack;
                         const purchaseDate = new Date(item.purchaseDate);
                         const timeAgo = formatDistanceToNowStrict(purchaseDate, { addSuffix: true, locale: ptBR });
-                        const isEffectActive = profile.active_effects?.some(eff => eff.itemId === item.id);
+                        const isEffectActive = profile.active_effects?.some((eff: any) => eff.itemId === item.id);
 
                         return (
                             <Card 
