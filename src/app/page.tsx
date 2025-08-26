@@ -125,7 +125,7 @@ export default function App() {
               <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
               <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
               <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
-              <NavItem icon={Trophy} label="Torre" page="tower" inSheet={inSheet} />
+
               <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
           </nav>
           <div className="mt-auto">
