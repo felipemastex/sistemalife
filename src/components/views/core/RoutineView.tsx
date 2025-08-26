@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, memo, useMemo } from 'react';
@@ -19,6 +20,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 const timeToMinutes = (time) => {
+    if (!time || !/^\d{2}:\d{2}$/.test(time)) return 0;
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 };
@@ -124,6 +126,95 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
         </div>
     )
 }
+
+const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, onDeleteItem }) => (
+    <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
+        {/* Unscheduled Missions Column */}
+        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
+            <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
+            <ScrollArea className="h-full pr-4 -mr-4">
+                <div className="space-y-3">
+                    {missions.length > 0 ? (
+                        missions.map(mission => (
+                            <Collapsible key={mission.id} className="bg-card/60 border border-border rounded-lg">
+                                <CollapsibleTrigger className="w-full p-3 text-left">
+                                    <div className="flex justify-between items-center gap-4">
+                                        <CardTitle className="text-base flex-1">{mission.nome}</CardTitle>
+                                        <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="px-3 pb-3">
+                                    <div className="border-t border-border pt-3 mt-3 space-y-4">
+                                        <p className="text-sm text-muted-foreground">{mission.descricao}</p>
+                                        
+                                        {suggestions[mission.id] && (
+                                            <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
+                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
+                                                <AlertDescription className="text-card-foreground">
+                                                    {suggestions[mission.id].suggestionText}
+                                                    <div className="flex gap-2 mt-3">
+                                                        <Button size="sm" onClick={() => onImplementSuggestion(mission)}>Implementar</Button>
+                                                        <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                    </div>
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+
+                                        <div className="flex flex-col sm:flex-row gap-2">
+                                            <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full">Adicionar Manualmente</Button>
+                                            <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id} size="sm" className="w-full">
+                                                {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
+                                                <BrainCircuit className="ml-2 h-4 w-4"/>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        ))
+                    ) : (
+                        <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
+                            <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
+                            <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
+                        </div>
+                    )}
+                </div>
+            </ScrollArea>
+        </div>
+        
+        {/* Agenda List View */}
+        <div className="flex flex-col flex-1 min-w-0">
+             <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de Hoje</h2>
+            <ScrollArea className="h-full pr-4 -mr-4">
+                <div className="relative pl-6">
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
+                    <div className="space-y-3">
+                        {routineItems.map(item => (
+                            <div key={item.id} className="relative pl-6">
+                                <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
+                                <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                                        <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
+                                        <p className="text-base text-card-foreground break-all">{item.activity}</p>
+                                    </div>
+                                    <div className="flex space-x-1 self-end sm:self-center">
+                                        <Button onClick={() => onEditItem(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
+                                        <Button onClick={() => onDeleteItem(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {routineItems.length === 0 && (
+                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
+                                <p className="text-muted-foreground">Nenhuma atividade agendada.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </ScrollArea>
+        </div>
+    </div>
+);
 
 
 const RoutineViewComponent = () => {
@@ -400,7 +491,7 @@ const RoutineViewComponent = () => {
     }
 
     const getUnscheduledMissions = () => {
-        const currentDayActivities = (routine[selectedDay] || []).map(r => r.activity);
+        const allRoutineActivities = Object.values(routine).flat().map(r => r.activity);
 
         const visibleEpicMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
@@ -424,11 +515,24 @@ const RoutineViewComponent = () => {
         const activeDailyMissions = visibleEpicMissions.map(epicMission => {
             return epicMission.missoes_diarias.find(dm => !dm.concluido);
         }).filter(Boolean);
+        
+        const unscheduled = activeDailyMissions.filter(dailyMission => {
+            const missionActivity = `[Missão] ${dailyMission.nome}`;
+            const isScheduledToday = (routine[selectedDay] || []).some(r => r.activity === missionActivity);
+            const isScheduledAnyDay = allRoutineActivities.some(activity => activity === missionActivity);
 
-        const unscheduled = activeDailyMissions.filter(dailyMission => 
-            !currentDayActivities.some(routineActivity => routineActivity.includes(`[Missão] ${dailyMission.nome}`))
-        );
-
+            // If it's scheduled today, it's NOT unscheduled.
+            if (isScheduledToday) {
+                return false;
+            }
+            // If it's not scheduled today, but it is scheduled on another day, it IS unscheduled for today.
+            if(isScheduledAnyDay) {
+                return true;
+            }
+            // If it's not scheduled on any day, it IS unscheduled.
+            return true;
+        });
+        
         return unscheduled;
     };
 
@@ -518,89 +622,18 @@ const RoutineViewComponent = () => {
                                 <TabsTrigger value="agenda"><Calendar className="mr-2 h-4 w-4"/>Agenda</TabsTrigger>
                             </TabsList>
                             <TabsContent value="lista" className="flex-grow">
-                                <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
-                                        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
-                                        <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
-                                        <ScrollArea className="h-full pr-4 -mr-4">
-                                            <div className="space-y-3">
-                                                {unscheduledMissions.length > 0 ? (
-                                                    unscheduledMissions.map(mission => (
-                                                        <Collapsible key={mission.id} className="bg-card/60 border border-border rounded-lg">
-                                                            <CollapsibleTrigger className="w-full p-3 text-left">
-                                                                <div className="flex justify-between items-center gap-4">
-                                                                    <CardTitle className="text-base flex-1">{mission.nome}</CardTitle>
-                                                                    <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                                                </div>
-                                                            </CollapsibleTrigger>
-                                                            <CollapsibleContent className="px-3 pb-3">
-                                                                <div className="border-t border-border pt-3 mt-3 space-y-4">
-                                                                    <p className="text-sm text-muted-foreground">{mission.descricao}</p>
-                                                                    
-                                                                    {suggestions[mission.id] && (
-                                                                        <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
-                                                                            <Sparkles className="h-4 w-4 text-primary" />
-                                                                            <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
-                                                                            <AlertDescription className="text-card-foreground">
-                                                                                {suggestions[mission.id].suggestionText}
-                                                                                <div className="flex gap-2 mt-3">
-                                                                                    <Button size="sm" onClick={() => handleImplementSuggestion(mission)}>Implementar</Button>
-                                                                                    <Button size="sm" variant="ghost" onClick={() => handleDiscardSuggestion(mission.id)}>Descartar</Button>
-                                                                                </div>
-                                                                            </AlertDescription>
-                                                                        </Alert>
-                                                                    )}
-
-                                                                    <div className="flex flex-col sm:flex-row gap-2">
-                                                                        <Button onClick={() => handleOpenManualAdd(mission)} size="sm" variant="secondary" className="w-full">Adicionar Manualmente</Button>
-                                                                        <Button onClick={() => handleGetSuggestion(mission)} disabled={isLoadingSuggestion === mission.id} size="sm" className="w-full">
-                                                                            {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                                            <BrainCircuit className="ml-2 h-4 w-4"/>
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            </CollapsibleContent>
-                                                        </Collapsible>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
-                                                        <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
-                                                        <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de {selectedDay}</h2>
-                                        <ScrollArea className="h-full pr-4 -mr-4">
-                                            <div className="relative pl-6">
-                                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
-                                                <div className="space-y-3">
-                                                    {sortedRoutineForDay.map(item => (
-                                                        <div key={item.id} className="relative pl-6">
-                                                            <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
-                                                            <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                                                                    <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
-                                                                    <p className="text-base text-card-foreground break-all">{item.activity}</p>
-                                                                </div>
-                                                                <div className="flex space-x-1 self-end sm:self-center">
-                                                                    <Button onClick={() => handleOpenDialog(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
-                                                                    <Button onClick={() => handleDelete(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {sortedRoutineForDay.length === 0 && (
-                                                        <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
-                                                            <p className="text-muted-foreground">Nenhuma atividade agendada.</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
-                                </div>
+                                <ListView 
+                                    routineItems={sortedRoutineForDay}
+                                    onEditItem={handleOpenDialog}
+                                    onDeleteItem={handleDelete}
+                                    missions={unscheduledMissions}
+                                    onSuggestTime={handleGetSuggestion}
+                                    onManualAdd={handleOpenManualAdd}
+                                    isLoadingSuggestion={isLoadingSuggestion}
+                                    suggestions={suggestions}
+                                    onImplementSuggestion={handleImplementSuggestion}
+                                    onDiscardSuggestion={handleDiscardSuggestion}
+                                />
                             </TabsContent>
                             <TabsContent value="agenda" className="flex-grow">
                                 <AgendaView 
