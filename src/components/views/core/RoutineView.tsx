@@ -129,6 +129,37 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
 
 const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, onDeleteItem }) => (
     <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
+        {/* Agenda List View */}
+        <div className="flex flex-col flex-1 min-w-0">
+             <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de Hoje</h2>
+            <ScrollArea className="h-full pr-4 -mr-4">
+                <div className="relative pl-6">
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
+                    <div className="space-y-3">
+                        {routineItems.map(item => (
+                            <div key={item.id} className="relative pl-6">
+                                <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
+                                <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                                        <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
+                                        <p className="text-base text-card-foreground break-all">{item.activity}</p>
+                                    </div>
+                                    <div className="flex space-x-1 self-end sm:self-center">
+                                        <Button onClick={() => onEditItem(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
+                                        <Button onClick={() => onDeleteItem(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {routineItems.length === 0 && (
+                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg ml-[-24px]">
+                                <p className="text-muted-foreground">Nenhuma atividade agendada.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </ScrollArea>
+        </div>
         {/* Unscheduled Missions Column */}
         <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
             <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
@@ -178,38 +209,6 @@ const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualA
                             <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
                         </div>
                     )}
-                </div>
-            </ScrollArea>
-        </div>
-        
-        {/* Agenda List View */}
-        <div className="flex flex-col flex-1 min-w-0">
-             <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de Hoje</h2>
-            <ScrollArea className="h-full pr-4 -mr-4">
-                <div className="relative pl-6">
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
-                    <div className="space-y-3">
-                        {routineItems.map(item => (
-                            <div key={item.id} className="relative pl-6">
-                                <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
-                                <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                                        <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
-                                        <p className="text-base text-card-foreground break-all">{item.activity}</p>
-                                    </div>
-                                    <div className="flex space-x-1 self-end sm:self-center">
-                                        <Button onClick={() => onEditItem(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
-                                        <Button onClick={() => onDeleteItem(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {routineItems.length === 0 && (
-                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg">
-                                <p className="text-muted-foreground">Nenhuma atividade agendada.</p>
-                            </div>
-                        )}
-                    </div>
                 </div>
             </ScrollArea>
         </div>
@@ -491,8 +490,10 @@ const RoutineViewComponent = () => {
     }
 
     const getUnscheduledMissions = () => {
-        const allRoutineActivities = Object.values(routine).flat().map(r => r.activity);
-
+        // First, get a list of all activities scheduled across the entire week.
+        const allScheduledActivities = Object.values(routine).flat().map(r => r.activity);
+    
+        // Then, find the active daily missions.
         const visibleEpicMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
@@ -501,36 +502,25 @@ const RoutineViewComponent = () => {
             acc[mission.meta_associada].push(mission);
             return acc;
         }, {});
-
+    
         for (const goalName in missionsByGoal) {
             const goalMissions = missionsByGoal[goalName]
                 .filter(m => !m.concluido)
                 .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
-
+    
             if (goalMissions.length > 0) {
                 visibleEpicMissions.push(goalMissions[0]);
             }
         }
-
+    
         const activeDailyMissions = visibleEpicMissions.map(epicMission => {
             return epicMission.missoes_diarias.find(dm => !dm.concluido);
         }).filter(Boolean);
         
+        // A mission is unscheduled if its corresponding activity name isn't in the all-week list.
         const unscheduled = activeDailyMissions.filter(dailyMission => {
             const missionActivity = `[Missão] ${dailyMission.nome}`;
-            const isScheduledToday = (routine[selectedDay] || []).some(r => r.activity === missionActivity);
-            const isScheduledAnyDay = allRoutineActivities.some(activity => activity === missionActivity);
-
-            // If it's scheduled today, it's NOT unscheduled.
-            if (isScheduledToday) {
-                return false;
-            }
-            // If it's not scheduled today, but it is scheduled on another day, it IS unscheduled for today.
-            if(isScheduledAnyDay) {
-                return true;
-            }
-            // If it's not scheduled on any day, it IS unscheduled.
-            return true;
+            return !allScheduledActivities.some(activity => activity === missionActivity);
         });
         
         return unscheduled;
