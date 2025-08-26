@@ -26,7 +26,7 @@ const timeToMinutes = (time) => {
 };
 
 
-const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion }) => {
+const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, isPastDay }) => {
     const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
     const getPositionAndHeight = (item) => {
@@ -67,7 +67,7 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
                                                     <AlertDescription className="text-card-foreground">
                                                         {suggestions[mission.id].suggestionText}
                                                         <div className="flex gap-2 mt-3">
-                                                            <Button size="sm" onClick={() => onImplementSuggestion(mission)}>Implementar</Button>
+                                                            <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay}>Implementar</Button>
                                                             <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)}>Descartar</Button>
                                                         </div>
                                                     </AlertDescription>
@@ -75,8 +75,8 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
                                             )}
 
                                             <div className="flex flex-col sm:flex-row gap-2">
-                                                <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full">Adicionar Manualmente</Button>
-                                                <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id} size="sm" className="w-full">
+                                                <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full" disabled={isPastDay}>Adicionar Manualmente</Button>
+                                                <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className="w-full">
                                                     {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
                                                     <BrainCircuit className="ml-2 h-4 w-4"/>
                                                 </Button>
@@ -127,7 +127,7 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
     )
 }
 
-const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, onDeleteItem }) => (
+const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, onDeleteItem, isPastDay }) => (
     <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
         {/* Agenda List View */}
         <div className="flex flex-col flex-1 min-w-0">
@@ -185,7 +185,7 @@ const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualA
                                                 <AlertDescription className="text-card-foreground">
                                                     {suggestions[mission.id].suggestionText}
                                                     <div className="flex gap-2 mt-3">
-                                                        <Button size="sm" onClick={() => onImplementSuggestion(mission)}>Implementar</Button>
+                                                        <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay}>Implementar</Button>
                                                         <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)}>Descartar</Button>
                                                     </div>
                                                 </AlertDescription>
@@ -193,8 +193,8 @@ const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualA
                                         )}
 
                                         <div className="flex flex-col sm:flex-row gap-2">
-                                            <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full">Adicionar Manualmente</Button>
-                                            <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id} size="sm" className="w-full">
+                                            <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full" disabled={isPastDay}>Adicionar Manualmente</Button>
+                                            <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className="w-full">
                                                 {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
                                                 <BrainCircuit className="ml-2 h-4 w-4"/>
                                             </Button>
@@ -245,6 +245,7 @@ const RoutineViewComponent = () => {
 
     const getWeekDays = () => {
         const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0); // Normalize today's date
         const week = [];
         const dayOfWeek = todayDate.getDay(); 
 
@@ -255,6 +256,7 @@ const RoutineViewComponent = () => {
                 name: dayNames[date.getDay()],
                 date: date.getDate(),
                 isToday: date.toDateString() === todayDate.toDateString(),
+                isPast: date < todayDate,
             });
         }
         return week;
@@ -490,10 +492,8 @@ const RoutineViewComponent = () => {
     }
 
     const getUnscheduledMissions = () => {
-        // First, get a list of all activities scheduled across the entire week.
-        const allScheduledActivities = Object.values(routine).flat().map(r => r.activity);
+        const allScheduledActivities = Object.values(routine).flat().map((r: any) => r.activity);
     
-        // Then, find the active daily missions.
         const visibleEpicMissions = [];
         const missionsByGoal = missions.reduce((acc, mission) => {
             if (!acc[mission.meta_associada]) {
@@ -513,11 +513,10 @@ const RoutineViewComponent = () => {
             }
         }
     
-        const activeDailyMissions = visibleEpicMissions.map(epicMission => {
-            return epicMission.missoes_diarias.find(dm => !dm.concluido);
-        }).filter(Boolean);
+        const activeDailyMissions = visibleEpicMissions.flatMap(epicMission => 
+            epicMission.missoes_diarias.find(dm => !dm.concluido) || []
+        );
         
-        // A mission is unscheduled if its corresponding activity name isn't in the all-week list.
         const unscheduled = activeDailyMissions.filter(dailyMission => {
             const missionActivity = `[Missão] ${dailyMission.nome}`;
             return !allScheduledActivities.some(activity => activity === missionActivity);
@@ -529,6 +528,7 @@ const RoutineViewComponent = () => {
 
     const sortedRoutineForDay = (routine[selectedDay] || []).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const unscheduledMissions = getUnscheduledMissions();
+    const isCurrentDayPast = weekDays.find(d => d.name === selectedDay)?.isPast || false;
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
@@ -578,7 +578,7 @@ const RoutineViewComponent = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
+                        <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto" disabled={isCurrentDayPast}>
                             <PlusCircle className="h-5 w-5 mr-2" />
                             Adicionar Atividade
                         </Button>
@@ -595,7 +595,8 @@ const RoutineViewComponent = () => {
                                 value={day.name} 
                                 className={cn(
                                     "flex-col p-2 h-auto capitalize data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-md w-24 text-muted-foreground",
-                                    day.isToday && "border-b-2 border-primary"
+                                    day.isToday && "border-b-2 border-primary",
+                                    day.isPast && "opacity-60"
                                 )}
                             >
                                 <span>{day.name.substring(0,3)}</span>
@@ -623,6 +624,7 @@ const RoutineViewComponent = () => {
                                     suggestions={suggestions}
                                     onImplementSuggestion={handleImplementSuggestion}
                                     onDiscardSuggestion={handleDiscardSuggestion}
+                                    isPastDay={isCurrentDayPast}
                                 />
                             </TabsContent>
                             <TabsContent value="agenda" className="flex-grow">
@@ -636,6 +638,7 @@ const RoutineViewComponent = () => {
                                     suggestions={suggestions}
                                     onImplementSuggestion={handleImplementSuggestion}
                                     onDiscardSuggestion={handleDiscardSuggestion}
+                                    isPastDay={isCurrentDayPast}
                                 />
                             </TabsContent>
                         </Tabs>
