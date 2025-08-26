@@ -285,13 +285,22 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return { ...state, missions: newMissions };
         }
         case 'COMPLETE_DAILY_MISSION': {
-             const { rankedMissionId, dailyMissionId } = action.payload;
-             const updatedMissions = state.missions.map((rm: RankedMission) => {
+            const { rankedMissionId, dailyMissionId, newDailyMission } = action.payload;
+            const updatedMissions = state.missions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    const newDailyMissionsList = rm.missoes_diarias.map((dm: DailyMission) => 
+                    const newDailyMissionsList = rm.missoes_diarias.map(dm => 
                         dm.id === dailyMissionId ? { ...dm, concluido: true, completed_at: new Date().toISOString() } : dm
                     );
-                    return { ...rm, missoes_diarias: newDailyMissionsList, ultima_missao_concluida_em: new Date().toISOString() };
+                    
+                    if (newDailyMission) {
+                        newDailyMissionsList.push(newDailyMission);
+                    }
+                    
+                    return { 
+                        ...rm, 
+                        missoes_diarias: newDailyMissionsList, 
+                        ultima_missao_concluida_em: new Date().toISOString() 
+                    };
                 }
                 return rm;
             });
@@ -301,12 +310,10 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             const { rankedMissionId, newDailyMission } = action.payload;
             const updatedMissions = state.missions.map((rm) => {
                 if (rm.id === rankedMissionId) {
-                    // Create a new array for daily missions to ensure re-render
                     const newDailyMissions = [...rm.missoes_diarias, newDailyMission];
                     return {
                         ...rm,
                         missoes_diarias: newDailyMissions,
-                        // Reset the completion timestamp for the epic mission to allow new daily missions
                         ultima_missao_concluida_em: null 
                     };
                 }
@@ -531,8 +538,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
     };
 
-    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback }: CompleteMissionParams) => {
-        
+    const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback: feedbackForNextMission }: CompleteMissionParams) => {
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
         const tempState = playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
@@ -599,13 +605,45 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        if (feedback) {
-            dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId: rankedMissionId, feedback } });
+        dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
+        
+        let newDailyMission = null;
+        try {
+            const history = tempRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
+            const result = await generateNextDailyMission({
+                rankedMissionName: tempRankedMission.nome,
+                metaName: meta?.nome || "Objetivo geral",
+                goalDeadline: meta?.prazo,
+                history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`,
+                userLevel: updatedProfile.nivel,
+                feedback: feedbackForNextMission
+            });
+
+            newDailyMission = {
+                id: Date.now(),
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp,
+                fragmentos_conclusao: result.fragments,
+                concluido: false,
+                tipo: 'diaria',
+                learningResources: result.learningResources || [],
+                subTasks: result.subTasks.map(st => ({...st, current: 0}))
+            };
+        } catch (err) {
+            console.error(err);
+            toast({
+                variant: 'destructive',
+                title: 'Erro de IA',
+                description: 'Não foi possível gerar a próxima missão diária. Por favor, tente novamente mais tarde.'
+            });
+        } finally {
+            dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
         }
 
-        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission: null } });
-        
-        const finalStateAfterCompletion = playerDataReducer(state, { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId } });
+        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+
+        const finalStateAfterCompletion = playerDataReducer(playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } }), { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
 
         const finalRankedMission = finalStateAfterCompletion.missions.find((m: RankedMission) => m.id === rankedMissionId);
         const isRankedMissionComplete = finalRankedMission && finalRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).length >= (finalRankedMission.total_missoes_diarias || 10);
@@ -625,7 +663,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             }
         }
-
+        
         await persistData('profile', updatedProfile);
         await persistData('missions', finalStateAfterCompletion.missions);
         await persistData('skills', finalStateAfterCompletion.skills);
@@ -636,8 +674,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
             if (mission.concluido) return false;
             const hasActiveDaily = mission.missoes_diarias?.some(dm => !dm.concluido);
-            // Only generate if there's no active mission and it has been completed before
-            return !hasActiveDaily && mission.ultima_missao_concluida_em;
+            const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+            return !hasActiveDaily && !wasCompletedToday;
         });
 
         for (const mission of missionsNeedingNewDaily) {
@@ -686,29 +724,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
             }
         }
-        // After iterating and dispatching, persist the final state
-        // Use a temporary state variable to get the most up-to-date state after all dispatches
-        const finalMissions = missionsNeedingNewDaily.reduce((currentMissions, missionToUpdate) => {
-            const missionIndex = currentMissions.findIndex(m => m.id === missionToUpdate.id);
-            if (missionIndex === -1) return currentMissions;
-            
-            // This is a simplified reduction. A more robust solution might need to re-run the reducer logic
-            // But for adding a mission, this should suffice to get the latest state.
-            const updatedMission = state.missions.find(m => m.id === missionToUpdate.id);
-            if(updatedMission) {
-               currentMissions[missionIndex] = updatedMission;
-            }
-            return currentMissions;
+        
+        setTimeout(() => persistData('missions', state.missions), 500);
 
-        }, [...state.missions]);
-
-        if (missionsNeedingNewDaily.length > 0) {
-           // This part is tricky because state updates are async.
-           // A better approach would be to collect all new missions and dispatch a single action.
-           // For now, we'll persist the state as it is after the loop.
-           // This might not be perfect but is an improvement.
-            setTimeout(() => persistData('missions', state.missions), 500);
-        }
     }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
     
     const resetUserSubCollections = async (userRef: DocumentReference<DocumentData>) => {

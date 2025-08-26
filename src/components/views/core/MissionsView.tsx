@@ -734,6 +734,7 @@ const MissionsViewComponent = () => {
     
     const renderActiveMissionContent = (mission: RankedMission) => {
         const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
+        const sortedDailyMissions = mission.isManual ? null : [...mission.missoes_diarias].sort((a, b) => (a.concluido ? 1 : -1) - (b.concluido ? 1 : -1) || 0);
         
         if (generatingMission === mission.id) {
             return (
@@ -798,6 +799,21 @@ const MissionsViewComponent = () => {
                             )
                         })}
                     </div>
+                    {sortedDailyMissions && sortedDailyMissions.length > 1 && (
+                         <Collapsible className="mt-4">
+                            <CollapsibleTrigger asChild>
+                                <Button variant="ghost" className="text-xs text-muted-foreground w-full">Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})</Button>
+                            </CollapsibleTrigger>
+                             <CollapsibleContent className="space-y-2 mt-2">
+                                 {sortedDailyMissions.filter(dm => dm.concluido).map((dm: DailyMission) => (
+                                    <div key={dm.id} className="p-2 bg-secondary/30 rounded-md text-sm text-muted-foreground flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                        <span className="line-through">{dm.nome}</span>
+                                    </div>
+                                 ))}
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )}
                     {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((link: string, index: number) => (
                         <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md mt-3">
                             <Link className="h-4 w-4"/>
@@ -922,7 +938,7 @@ const MissionsViewComponent = () => {
                     
                     return (
                         <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
-                            <div className={cn("p-4 transition-all duration-300", wasCompletedToday && 'blur-sm pointer-events-none')}>
+                            <div className={cn("p-4 transition-all duration-300", generatingMission === mission.id ? 'opacity-50' : '')}>
                                 <div className="flex flex-col p-4 gap-4">
                                     <div className="flex items-center gap-4">
                                         <TriggerWrapper>
@@ -971,14 +987,19 @@ const MissionsViewComponent = () => {
                                     {renderActiveMissionContent(mission)}
                                 </AccordionContent>
                             </div>
-                            {wasCompletedToday && !isManualMission && (
+                            {generatingMission === mission.id ? (
+                                <div className="absolute inset-0 bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+                                    <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
+                                    <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                </div>
+                            ) : wasCompletedToday ? (
                                 <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
                                     <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
                                     <p className="text-lg font-bold text-foreground">Nova Missão em</p>
                                     <p className="text-4xl font-mono text-cyan-400 font-bold tracking-wider">{timeUntilMidnight}</p>
                                     <p className="text-xs text-muted-foreground mt-2">Missão concluída hoje!</p>
                                 </div>
-                            )}
+                            ) : null}
                         </AccordionItem>
                     )
                 })}
