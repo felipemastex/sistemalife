@@ -3,12 +3,25 @@
 
 import { achievements as staticAchievements } from '@/lib/achievements';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Award, Book, BarChart, Gem, Shield, Flame, Trophy, BrainCircuit, Star, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+
+const iconMap = {
+    Award,
+    Book,
+    BarChart,
+    Gem,
+    Shield,
+    Flame,
+    Trophy,
+    BrainCircuit,
+    Star,
+    Swords
+};
 
 export const AchievementsView = () => {
     const { profile, skills, metas, missions } = usePlayerDataContext();
@@ -66,7 +79,8 @@ export const AchievementsView = () => {
                     const { current, target } = getProgress(achievement);
                     const progressPercentage = target > 0 ? (current / target) * 100 : 0;
                     
-                    const Icon = achievement.icon;
+                    const Icon = typeof achievement.icon === 'string' ? iconMap[achievement.icon] || Award : achievement.icon;
+
 
                     return (
                         <Card 
