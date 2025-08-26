@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -21,9 +21,8 @@ import { InventoryView } from '@/components/views/player/InventoryView';
 import { GuildsView } from '@/components/views/social/GuildsView';
 import { ClassView } from '@/components/views/player/ClassView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 
 export default function App() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -83,7 +82,13 @@ export default function App() {
   };
   
 
-  const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }) => {
+  const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }: { 
+    icon: React.ComponentType<{ className?: string }>, 
+    label: string, 
+    page: string, 
+    inSheet?: boolean, 
+    className?: string 
+  }) => {
     const handleNav = () => {
         setCurrentPage(page);
         if (inSheet) {
@@ -120,6 +125,7 @@ export default function App() {
               <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
               <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
               <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
+              <NavItem icon={Trophy} label="Torre" page="tower" inSheet={inSheet} />
               <NavItem icon={Bot} label="Arquiteto" page="ai-chat" inSheet={inSheet} className="font-cinzel font-bold tracking-wider" />
           </nav>
           <div className="mt-auto">
@@ -141,7 +147,7 @@ export default function App() {
       return null
     }
     
-    const views = {
+    const views: Record<string, React.ReactNode> = {
       'dashboard': <DashboardView />,
       'metas': <MetasView />,
       'missions': <MissionsView />,

@@ -10,7 +10,7 @@ import * as mockData from '@/lib/data';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
-import { differenceInCalendarDays, isToday, endOfDay } from 'date-fns';
+import { differenceInCalendarDays, isToday, endOfDay, parseISO } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
 
@@ -155,6 +155,7 @@ interface Profile {
   manual_missions?: RankedMission[];
   recommended_shop_items?: any[];
   shop_last_generated_at?: string;
+
 }
 
 interface Guild {
@@ -356,7 +357,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         handleShowSkillUpNotification,
         handleShowNewEpicMissionNotification,
         handleShowGoalCompletedNotification
-    } = usePlayerNotifications(state.profile || null);
+    } = usePlayerNotifications({ profile: state.profile || null, user });
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 

@@ -1,33 +1,24 @@
-
-import type {Metadata} from 'next';
-import { Inter, Cinzel_Decorative } from 'next/font/google'
-import './globals.css';
-import { Toaster as ToasterContainer } from 'react-hot-toast';
-import { AuthProvider } from '@/hooks/use-auth';
-import { PlayerDataProvider } from '@/hooks/use-player-data';
-import { PlayerDataSync } from '@/hooks/use-player-data-sync';
-import { cn } from '@/lib/utils';
+import type { Metadata } from "next";
+import { Inter, Roboto_Mono } from "next/font/google";
+import "./globals.css";
+import { PlayerDataProvider } from "@/hooks/use-player-data";
+import { AuthProvider } from "@/hooks/use-auth";
+import { Toaster } from "@/components/ui/toaster";
+import { PushNotificationPrompt } from "@/components/custom/PushNotificationPrompt";
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
-const cinzel = Cinzel_Decorative({
-  subsets: ['latin'],
-  weight: ['400', '700', '900'],
-  display: 'swap',
-  variable: '--font-cinzel',
-})
+const robotoMono = Roboto_Mono({
+  subsets: ["latin"],
+  variable: "--font-roboto-mono",
+});
 
 export const metadata: Metadata = {
-  title: 'SISTEMA DE VIDA',
-  description: 'Inicializando interface...',
-  manifest: '/manifest.json',
-  icons: {
-    apple: "/apple-touch-icon.png",
-  },
+  title: "SystemLife",
+  description: "A sua vida, gamificada",
 };
 
 export default function RootLayout({
@@ -36,35 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-       <head>
-        <meta name="application-name" content="SISTEMA DE VIDA" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="SISTEMA" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#0d1117" />
-        <link rel="manifest" href="/manifest.json" />
-      </head>
-      <body className={cn("antialiased font-sans bg-background text-foreground", inter.variable, cinzel.variable)}>
+    <html lang="pt">
+      <body
+        className={`${inter.variable} ${robotoMono.variable} antialiased min-h-screen bg-background font-sans`}
+      >
         <AuthProvider>
-            <PlayerDataProvider>
-              <PlayerDataSync />
-              {children}
-            </PlayerDataProvider>
+          <PlayerDataProvider>
+            {children}
+            <Toaster />
+            <PushNotificationPrompt />
+          </PlayerDataProvider>
         </AuthProvider>
-        <ToasterContainer 
-          position="bottom-right"
-          toastOptions={{
-            className: '',
-            style: {
-              background: 'hsl(var(--card))',
-              color: 'hsl(var(--card-foreground))',
-              border: '1px solid hsl(var(--border))',
-            },
-          }}
-        />
       </body>
     </html>
   );

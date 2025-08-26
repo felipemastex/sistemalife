@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -10,10 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { usePlayerNotifications } from '@/hooks/use-player-notifications';
 import { useEffect, useState } from 'react';
 import { LoaderCircle, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Bell, BellOff } from 'lucide-react';
 
 const notificationsFormSchema = z.object({
     daily_briefing: z.boolean(),
@@ -28,8 +30,15 @@ const notificationsFormSchema = z.object({
 
 export default function NotificationsSettingsTab() {
     const { profile, persistData } = usePlayerDataContext();
+    const { 
+        pushNotificationSupported, 
+        pushNotificationEnabled, 
+        enablePushNotifications, 
+        disablePushNotifications 
+    } = usePlayerNotifications(profile);
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
+    const [enablingPush, setEnablingPush] = useState(false);
     const { toast } = useToast();
 
     const form = useForm<z.infer<typeof notificationsFormSchema>>({
@@ -68,165 +77,312 @@ export default function NotificationsSettingsTab() {
                 ...profile,
                 user_settings: {
                     ...profile.user_settings,
-                    notifications: {
-                        ...profile.user_settings?.notifications,
-                        ...data,
-                    }
+                    notifications: data
                 }
             };
+            
             await persistData('profile', updatedProfile);
-            toast({
-                title: "Notificações Atualizadas!",
-                description: "As suas preferências de notificação foram salvas.",
-            });
-            form.reset(data);
+            
             setJustSaved(true);
             setTimeout(() => setJustSaved(false), 2000);
+            
+            toast({
+                title: "Configurações atualizadas",
+                description: "As suas preferências de notificação foram guardadas.",
+            });
         } catch (error) {
-            console.error("Erro ao salvar notificações:", error);
             toast({
                 variant: "destructive",
-                title: "Erro ao Salvar",
-                description: "Não foi possível atualizar as suas preferências.",
+                title: "Erro",
+                description: "Não foi possível guardar as configurações. Por favor, tente novamente.",
             });
         } finally {
             setIsSaving(false);
         }
     };
-    
-    const watchQuietHoursEnabled = form.watch('quiet_hours.enabled');
+
+    const handleEnablePushNotifications = async () => {
+        setEnablingPush(true);
+        try {
+            const success = await enablePushNotifications();
+            if (success) {
+                toast({
+                    title: "Notificações ativadas",
+                    description: "As notificações push foram ativadas com sucesso.",
+                });
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Erro",
+                    description: "Não foi possível ativar as notificações push. Por favor, verifique as permissões do seu navegador.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Erro",
+                description: "Ocorreu um erro ao ativar as notificações push.",
+            });
+        } finally {
+            setEnablingPush(false);
+        }
+    };
+
+    const handleDisablePushNotifications = async () => {
+        try {
+            const success = await disablePushNotifications();
+            if (success) {
+                toast({
+                    title: "Notificações desativadas",
+                    description: "As notificações push foram desativadas.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Erro",
+                description: "Ocorreu um erro ao desativar as notificações push.",
+            });
+        }
+    };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Preferências de Notificação</CardTitle>
-                        <CardDescription>Controle quais alertas do Sistema você deseja receber e quando os recebe.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="daily_briefing"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Briefing Diário</FormLabel>
-                                        <FormDescription>
-                                            Receber um resumo das suas missões prioritárias no início do dia.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="goal_completed"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Meta Concluída</FormLabel>
-                                        <FormDescription>
-                                            Receber um alerta especial quando uma meta de longo prazo for concluída.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="level_up"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Nível Aumentado</FormLabel>
-                                        <FormDescription>
-                                            Receber um alerta de celebração quando subir de nível.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        
-                        <Separator />
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notificações Push</CardTitle>
+                    <CardDescription>
+                        Receba notificações mesmo quando o aplicativo estiver fechado ou em segundo plano.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {!pushNotificationSupported ? (
+                        <Alert variant="destructive">
+                            <AlertTitle>Notificações não suportadas</AlertTitle>
+                            <AlertDescription>
+                                O seu navegador ou dispositivo não suporta notificações push. 
+                                Atualize o seu navegador ou utilize um dispositivo compatível.
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
+                            <div className="space-y-1">
+                                <h4 className="font-medium">Notificações Push</h4>
+                                <p className="text-sm text-muted-foreground">
+                                    {pushNotificationEnabled 
+                                        ? "Notificações ativadas" 
+                                        : "Ative para receber notificações mesmo com o app fechado"}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {pushNotificationEnabled ? (
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={handleDisablePushNotifications}
+                                        disabled={enablingPush}
+                                    >
+                                        <BellOff className="mr-2 h-4 w-4" />
+                                        Desativar
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        onClick={handleEnablePushNotifications}
+                                        disabled={enablingPush}
+                                    >
+                                        {enablingPush ? (
+                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Bell className="mr-2 h-4 w-4" />
+                                        )}
+                                        Ativar Notificações
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {pushNotificationEnabled && (
+                        <Alert>
+                            <Bell className="h-4 w-4" />
+                            <AlertTitle>Notificações Ativadas</AlertTitle>
+                            <AlertDescription>
+                                Você receberá notificações push para eventos importantes como:
+                                <ul className="list-disc list-inside mt-2 space-y-1">
+                                    <li>Conclusão de missões</li>
+                                    <li>Aumento de nível</li>
+                                    <li>Desbloqueio de conquistas</li>
+                                    <li>Alertas de habilidades em risco</li>
+                                    <li>Bônus de sequência</li>
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
 
-                        <FormField
-                            control={form.control}
-                            name="quiet_hours.enabled"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Modo "Não Perturbar"</FormLabel>
-                                        <FormDescription>
-                                            Silenciar todas as notificações durante um período específico.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        {watchQuietHoursEnabled && (
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-4 border-l-2 ml-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Preferências de Notificação</CardTitle>
+                    <CardDescription>
+                        Escolha quais tipos de notificações deseja receber.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField
+                                control={form.control}
+                                name="daily_briefing"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">
+                                                Briefing Diário
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Receber notificações com as suas missões diárias.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <FormField
+                                control={form.control}
+                                name="goal_completed"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">
+                                                Meta Concluída
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Notificação quando completar uma meta.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <FormField
+                                control={form.control}
+                                name="level_up"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">
+                                                Aumento de Nível
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Notificação quando subir de nível.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <Separator />
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-lg font-medium">Horário Silencioso</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Defina um período em que não deseja receber notificações.
+                                    </p>
+                                </div>
+                                
                                 <FormField
                                     control={form.control}
-                                    name="quiet_hours.start"
+                                    name="quiet_hours.enabled"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Início do Silêncio</FormLabel>
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base">
+                                                    Ativar Horário Silencioso
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Silenciar todas as notificações durante um período específico.
+                                                </FormDescription>
+                                            </div>
                                             <FormControl>
-                                                <Input type="time" {...field} />
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
                                             </FormControl>
                                         </FormItem>
                                     )}
                                 />
-                                 <FormField
-                                    control={form.control}
-                                    name="quiet_hours.end"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Fim do Silêncio</FormLabel>
-                                            <FormControl>
-                                                <Input type="time" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
+                                
+                                {form.watch("quiet_hours.enabled") && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="quiet_hours.start"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Início</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="time" {...field} />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="quiet_hours.end"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Fim</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="time" {...field} />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </div>
-                        )}
-
-
-                    </CardContent>
-                </Card>
-
-                <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
-                         {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check /> : "Salvar Preferências"}
-                    </Button>
-                </div>
-            </form>
-        </Form>
+                            
+                            <div className="flex justify-end">
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? (
+                                        <>
+                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                            Guardando...
+                                        </>
+                                    ) : justSaved ? (
+                                        <>
+                                            <Check className="mr-2 h-4 w-4" />
+                                            Guardado!
+                                        </>
+                                    ) : (
+                                        "Guardar Preferências"
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
