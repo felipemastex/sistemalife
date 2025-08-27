@@ -42,9 +42,9 @@ Este documento foca-se especificamente nas melhorias e novas funcionalidades pla
 ### Fase 4: Competição e Prestígio (A Fazer)
 **Objetivo:** Expandir as funcionalidades para incluir competição entre guildas e formas de exibir o prestígio.
 
-- **[ ] Desafios de Guilda vs. Guilda (GvG):**
+- **[ ]** Desafios de Guilda vs. Guilda (GvG):
     - [ ] Sistema de eventos onde duas ou mais guildas competem para ver quem completa mais missões ou sobe mais andares na Torre dos Desafios num determinado período.
-- **[ ] Leaderboards Globais de Guildas:**
+- **[ ]** Leaderboards Globais de Guildas:
     - [ ] Criar rankings globais para "Guilda de Maior Nível", "Guilda com Maior Contribuição", etc.
-- **[ ] Perfil Público da Guilda:**
+- **[ ]** Perfil Público da Guilda:
     - [ ] Uma página que mostra as conquistas, membros de destaque e estatísticas de uma guilda para outros jogadores.
