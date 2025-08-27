@@ -1,6 +1,6 @@
 
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { PlayerDataProvider } from "@/hooks/use-player-data";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -11,11 +11,6 @@ import { PlayerDataSync } from "@/hooks/use-player-data-sync";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-});
-
-const robotoMono = Roboto_Mono({
-  subsets: ["latin"],
-  variable: "--font-roboto-mono",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body
-        className={`${inter.variable} ${robotoMono.variable} antialiased min-h-screen bg-background font-sans`}
+        className={`${inter.variable} font-sans antialiased min-h-screen bg-background`}
       >
         <AuthProvider>
           <PlayerDataProvider>

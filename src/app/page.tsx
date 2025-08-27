@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -27,6 +28,9 @@ import TowerView from '@/components/views/gamification/TowerView';
 import TasksView from '@/components/views/gamification/TasksView';
 import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
+
+const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
+
 
 export default function App() {
   const { authState, logout } = useAuth();
@@ -294,5 +298,3 @@ export default function App() {
     </div>
   );
 }
-
-    
