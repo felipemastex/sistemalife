@@ -1123,7 +1123,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             });
             persistData('profile', { ...state.profile, last_known_level: currentLevel });
         }
-    }, [state.profile?.nivel, state.isDataLoaded]);
+    }, [state.profile?.nivel, state.isDataLoaded, state.profile, state.metas, state.routine, state.missions, persistData, setSystemAlert]);
 
 
     const fetchData = useCallback(async (userId: string) => {
