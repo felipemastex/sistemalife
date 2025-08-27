@@ -196,7 +196,8 @@ interface Profile {
   event_contribution?: {
     eventId: string;
     contribution: number;
-  }
+  };
+  last_known_level?: number;
 }
 
 interface Guild {
@@ -402,7 +403,7 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
 
 
 export function PlayerDataProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
+    const { user, authState } = useAuth();
     const [state, dispatch] = useReducer(playerDataReducer, initialState);
     const { toast } = useToast();
     
@@ -490,7 +491,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const newXp = currentProfile.xp - currentProfile.xp_para_proximo_nivel;
         const { rank, title } = getProfileRank(newLevel);
         handleShowLevelUpNotification(newLevel, title, rank);
-        const newProfile = { ...currentProfile, nivel: newLevel, xp: newXp, xp_para_proximo_nivel: newXpToNextLevel };
+        const newProfile = { ...currentProfile, nivel: newLevel, xp: newXp, xp_para_proximo_nivel: newXpToNextLevel, last_known_level: newLevel };
         dispatch({ type: 'SET_PROFILE', payload: newProfile });
         return newProfile;
     };
@@ -1099,8 +1100,34 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(intervalId);
     }, [state.isDataLoaded, state.profile, state.skills, state.worldEvents, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification, toast]);
 
+    // Narrative event trigger
+    useEffect(() => {
+        if (!state.isDataLoaded || !state.profile) return;
+
+        const currentLevel = state.profile.nivel;
+        const lastKnownLevel = state.profile.last_known_level || currentLevel;
+
+        if (currentLevel > lastKnownLevel) {
+            console.log("Narrative Trigger: Level Up");
+            const { rank, title } = getProfileRank(currentLevel);
+            generateSystemAdvice({
+                userName: state.profile.nome_utilizador || 'Caçador',
+                profile: JSON.stringify(state.profile),
+                metas: JSON.stringify(state.metas),
+                routine: JSON.stringify(state.routine),
+                missions: JSON.stringify(state.missions.filter(m => !m.concluido)),
+                query: `O Caçador acabou de atingir o nível ${currentLevel} (Rank: ${rank} - ${title}). Gere uma mensagem curta, épica e narrativa sobre a sua reputação crescente no Sistema.`,
+                personality: state.profile.user_settings?.ai_personality || 'balanced',
+            }).then(result => {
+                setSystemAlert({ message: result.response, position: { top: '10%', left: '50%' } });
+            });
+            persistData('profile', { ...state.profile, last_known_level: currentLevel });
+        }
+    }, [state.profile?.nivel, state.isDataLoaded]);
+
 
     const fetchData = useCallback(async (userId: string) => {
+        dispatch({ type: 'SET_DATA_LOADED', payload: false });
         console.log('📋 Iniciando fetchData para userId:', userId);
         try {
             const userDocRef = doc(db, 'users', userId);
@@ -1199,20 +1226,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     }, [toast, handleFullReset, setShowOnboarding, user]);
     
     useEffect(() => {
-        console.log('🔄 useEffect - user:', user ? 'presente' : 'null', 'isDataLoaded:', state.isDataLoaded);
-        
-        if (user && !state.isDataLoaded) {
-            console.log('🔄 Chamando fetchData...');
+        if (authState === 'authenticated' && user && !state.isDataLoaded) {
             fetchData(user.uid);
-            
-            const dataTimeout = setTimeout(() => {
-                console.warn('🚨 Timeout no carregamento de dados, forçando isDataLoaded = true');
-                dispatch({ type: 'SET_DATA_LOADED', payload: true });
-            }, 15000);
-            
-            return () => clearTimeout(dataTimeout);
         }
-    }, [user, state.isDataLoaded, fetchData]);
+    }, [user, authState, state.isDataLoaded, fetchData]);
 
     const providerValue = {
         ...state,
@@ -1242,3 +1259,5 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
