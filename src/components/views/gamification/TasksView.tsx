@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ListChecks, PlusCircle, Trash2, Save, Edit } from 'lucide-react';
+import { ListChecks, PlusCircle, Trash2, Save, Edit, Calendar as CalendarIcon } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -12,10 +12,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, differenceInDays, parseISO } from 'date-fns';
 
 const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     const [name, setName] = useState(taskToEdit?.name || '');
-    const [days, setDays] = useState(taskToEdit?.days || []);
+    const [type, setType] = useState(taskToEdit?.type || 'weekly');
+    const [days, setDays] = useState(taskToEdit?.type === 'weekly' ? taskToEdit.days : []);
+    const [intervalDays, setIntervalDays] = useState(taskToEdit?.type === 'interval' ? taskToEdit.intervalDays : 3);
+    const [startDate, setStartDate] = useState(taskToEdit?.type === 'interval' ? new Date(taskToEdit.startDate) : new Date());
 
     const weekDays = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
@@ -26,8 +33,14 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     };
 
     const handleSave = () => {
-        if (name.trim()) {
-            onSave({ id: taskToEdit?.id || `task_${Date.now()}`, name, days });
+        if (!name.trim()) return;
+        const taskData = { id: taskToEdit?.id || `task_${Date.now()}`, name, type };
+        if (type === 'weekly') {
+            if (days.length === 0) return;
+            onSave({ ...taskData, days });
+        } else {
+            if (!intervalDays || intervalDays < 1) return;
+            onSave({ ...taskData, intervalDays, startDate: startDate.toISOString().split('T')[0] });
         }
     };
 
@@ -42,26 +55,84 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
                     placeholder="Ex: Levar o lixo"
                 />
             </div>
-            <div>
-                <Label>Dias da Semana</Label>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
-                    {weekDays.map(day => (
-                        <div key={day} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`day-${day}`}
-                                checked={days.includes(day)}
-                                onCheckedChange={() => handleDayToggle(day)}
-                            />
-                            <Label htmlFor={`day-${day}`} className="capitalize text-sm font-normal">
-                                {day}
-                            </Label>
-                        </div>
-                    ))}
-                </div>
+             <div>
+                <Label>Tipo de Repetição</Label>
+                 <RadioGroup value={type} onValueChange={setType} className="grid grid-cols-2 gap-4 mt-2">
+                    <Label htmlFor="type-weekly" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                        <RadioGroupItem value="weekly" id="type-weekly"/>
+                        <span>Dias da Semana</span>
+                    </Label>
+                     <Label htmlFor="type-interval" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                        <RadioGroupItem value="interval" id="type-interval"/>
+                        <span>Intervalo de Dias</span>
+                    </Label>
+                </RadioGroup>
             </div>
+
+            {type === 'weekly' && (
+                <div>
+                    <Label>Dias da Semana</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
+                        {weekDays.map(day => (
+                            <div key={day} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`day-${day}`}
+                                    checked={days.includes(day)}
+                                    onCheckedChange={() => handleDayToggle(day)}
+                                />
+                                <Label htmlFor={`day-${day}`} className="capitalize text-sm font-normal">
+                                    {day}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+             {type === 'interval' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="interval-days">Repetir a cada</Label>
+                         <Input
+                            id="interval-days"
+                            type="number"
+                            value={intervalDays}
+                            onChange={(e) => setIntervalDays(Number(e.target.value))}
+                            min="1"
+                            placeholder="Ex: 3"
+                        />
+                         <p className="text-xs text-muted-foreground mt-1">dias.</p>
+                    </div>
+                     <div>
+                        <Label htmlFor="start-date">A partir de</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !startDate && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, "PPP") : <span>Escolha uma data</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
+            )}
+
              <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-                <Button onClick={handleSave} disabled={!name.trim() || days.length === 0}>
+                <Button onClick={handleSave} disabled={!name.trim() || (type === 'weekly' && days.length === 0) || (type === 'interval' && (!intervalDays || intervalDays < 1))}>
                     <Save className="mr-2 h-4 w-4" />
                     Salvar
                 </Button>
@@ -91,6 +162,13 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
         const updatedTasks = recurringTasks.filter(t => t.id !== taskId);
         onUpdateTasks(updatedTasks);
     };
+    
+    const getTaskDescription = (task) => {
+        if (task.type === 'interval') {
+            return `A cada ${task.intervalDays} dias`;
+        }
+        return task.days.join(', ');
+    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -116,7 +194,7 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
                                 <div key={task.id} className="flex items-center justify-between p-2 bg-secondary rounded-md">
                                     <div>
                                         <p className="font-medium">{task.name}</p>
-                                        <p className="text-xs text-muted-foreground capitalize">{task.days.join(', ')}</p>
+                                        <p className="text-xs text-muted-foreground capitalize">{getTaskDescription(task)}</p>
                                     </div>
                                     <div className="flex gap-1">
                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingTask(task)}><Edit className="h-4 w-4"/></Button>
@@ -140,8 +218,21 @@ const TasksView = () => {
     const recurringTasks = useMemo(() => profile?.recurring_tasks || [], [profile]);
     const completedTasks = useMemo(() => profile?.completed_tasks_today || {}, [profile]);
 
-    const weekDays = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-    const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const weekDaysMap = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dayOfWeek = today.getDay();
+        const map = new Map();
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - dayOfWeek + i);
+            const dayName = date.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            map.set(dayName, date);
+        }
+        return map;
+    }, []);
+
+    const todayDayName = new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     const handleToggleTask = (taskId: number) => {
         const newCompletedTasks = { ...completedTasks, [taskId]: !completedTasks[taskId] };
@@ -170,14 +261,27 @@ const TasksView = () => {
             </div>
 
             <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto">
-                {weekDays.map(day => {
-                    const tasksForDay = recurringTasks.filter(task => task.days.includes(day));
-                    const isToday = today === day;
+                {Array.from(weekDaysMap.entries()).map(([dayName, date]) => {
+                    const tasksForDay = recurringTasks.filter(task => {
+                        if (task.type === 'interval') {
+                            const startDate = parseISO(task.startDate);
+                            const dayDate = new Date(date);
+                            dayDate.setHours(0,0,0,0);
+                            
+                            if (dayDate < startDate) return false;
+
+                            const diff = differenceInDays(dayDate, startDate);
+                            return diff % task.intervalDays === 0;
+                        }
+                        // Default to weekly
+                        return task.days.includes(dayName);
+                    });
+                    const isToday = todayDayName === dayName;
 
                     return (
-                        <Card key={day} className={cn("flex flex-col", isToday ? 'border-primary shadow-lg shadow-primary/10' : 'bg-card/60')}>
+                        <Card key={dayName} className={cn("flex flex-col", isToday ? 'border-primary shadow-lg shadow-primary/10' : 'bg-card/60')}>
                             <CardHeader>
-                                <CardTitle className="capitalize text-lg text-center">{day}</CardTitle>
+                                <CardTitle className="capitalize text-lg text-center">{dayName}</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-grow space-y-3">
                                 {tasksForDay.length > 0 ? (
@@ -220,5 +324,3 @@ const TasksView = () => {
 };
 
 export default TasksView;
-
-    
