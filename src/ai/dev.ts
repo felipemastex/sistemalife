@@ -21,3 +21,5 @@ import './flows/generate-next-daily-mission.js';
 import './flows/generate-user-achievements.js';
 import './flows/generate-shop-items.js';
 import './flows/generate-tower-challenge.js';
+import './flows/generate-analytics-insights.js';
+

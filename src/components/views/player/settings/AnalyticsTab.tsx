@@ -2,13 +2,26 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart3, LoaderCircle, Sparkles } from 'lucide-react';
+import { BarChart3, LoaderCircle, Sparkles, TrendingUp, Target, Activity, ShieldCheck, Zap } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { generateAnalyticsInsights } from '@/ai/flows/generate-analytics-insights';
+import { useToast } from '@/hooks/use-toast';
+
+const iconMap = {
+    TrendingUp,
+    Target,
+    Activity,
+    BarChart,
+    Sparkles,
+    Zap,
+    ShieldCheck,
+};
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
   if (active && payload && payload.length) {
@@ -25,6 +38,9 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 export default function AnalyticsTab() {
     const { metas, missions, isDataLoaded } = usePlayerDataContext();
+    const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+    const [insights, setInsights] = useState([]);
+    const { toast } = useToast();
 
     const goalsByCategory = useMemo(() => {
         if (!metas || metas.length === 0) return [];
@@ -61,6 +77,26 @@ export default function AnalyticsTab() {
         return data;
 
     }, [missions]);
+    
+    const handleGenerateInsights = useCallback(async () => {
+        setIsLoadingInsights(true);
+        setInsights([]);
+        try {
+            const result = await generateAnalyticsInsights({
+                metas: JSON.stringify(metas),
+                missions: JSON.stringify(missions),
+            });
+            setInsights(result.insights);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro na Análise',
+                description: 'Não foi possível gerar os insights. Tente novamente mais tarde.'
+            });
+        } finally {
+            setIsLoadingInsights(false);
+        }
+    }, [metas, missions, toast]);
 
 
     if (!isDataLoaded) {
@@ -103,6 +139,45 @@ export default function AnalyticsTab() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
+                 <Card className="bg-secondary/30">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Análise do Oráculo</CardTitle>
+                        <CardDescription>Peça ao Sistema para analisar os seus dados e fornecer conselhos estratégicos.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         {isLoadingInsights ? (
+                             <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-4">
+                                <LoaderCircle className="h-12 w-12 mb-4 animate-spin text-primary"/>
+                                <p>O Oráculo está a consultar os seus dados...</p>
+                            </div>
+                         ) : insights.length > 0 ? (
+                            <div className="space-y-4">
+                                {insights.map((insight, index) => {
+                                    const Icon = iconMap[insight.icon] || Sparkles;
+                                    return (
+                                        <Alert key={index} className="border-cyan-500/30 bg-cyan-900/10">
+                                            <Icon className="h-5 w-5 text-cyan-400" />
+                                            <AlertTitle className="text-cyan-300">{insight.title}</AlertTitle>
+                                            <AlertDescription className="text-cyan-300/80">
+                                                <p>{insight.description}</p>
+                                                <p className="font-semibold mt-2">{insight.suggestion}</p>
+                                            </AlertDescription>
+                                        </Alert>
+                                    )
+                                })}
+                            </div>
+                         ) : (
+                            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-4 border-2 border-dashed border-border rounded-lg">
+                                <p className="mb-4">Clique no botão para receber uma análise proativa da sua jornada.</p>
+                                 <Button onClick={handleGenerateInsights} disabled={isLoadingInsights}>
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Analisar Padrões
+                                </Button>
+                            </div>
+                         )}
+                    </CardContent>
+                </Card>
+
                  <Card className="bg-secondary/30">
                     <CardHeader>
                         <CardTitle className="text-lg">Produtividade da Última Semana</CardTitle>
@@ -154,14 +229,6 @@ export default function AnalyticsTab() {
                         )}
                     </CardContent>
                 </Card>
-
-                 <Alert className="border-cyan-500/30 bg-cyan-900/10">
-                    <Sparkles className="h-5 w-5 text-cyan-400" />
-                    <AlertTitle className="text-cyan-300">Análise Proativa da IA em Breve</AlertTitle>
-                    <AlertDescription className="text-cyan-300/80">
-                        O Sistema está a aprender com os seus padrões. Em breve, esta secção irá fornecer-lhe insights e sugestões personalizadas para otimizar a sua jornada.
-                    </AlertDescription>
-                </Alert>
             </CardContent>
         </Card>
     );
