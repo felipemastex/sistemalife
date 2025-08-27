@@ -15,7 +15,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays, parseISO, startOfWeek, addDays, isToday as checkIsToday } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     const [name, setName] = useState('');
@@ -131,7 +132,7 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
                                 )}
                                 >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {startDate ? format(startDate, "PPP") : <span>Escolha uma data</span>}
+                                {startDate ? format(startDate, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
@@ -192,7 +193,7 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Gerir Afazeres Recorrentes</DialogTitle>
-                    <DialogDescription>Adicione, edite ou remova os seus afazeres semanais.</DialogDescription>
+                    <DialogDescription>Adicione, edite ou remova os seus afazeres.</DialogDescription>
                 </DialogHeader>
                  <div className="py-4 space-y-4 max-h-[60vh]">
                     <div className="border p-4 rounded-lg">
@@ -235,25 +236,15 @@ const TasksView = () => {
     const recurringTasks = useMemo(() => profile?.recurring_tasks || [], [profile]);
     const completedTasks = useMemo(() => profile?.completed_tasks_today || {}, [profile]);
 
-    const weekDaysMap = useMemo(() => {
+    const weekDays = useMemo(() => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dayOfWeek = today.getDay();
-        const map = new Map();
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - dayOfWeek + i);
-            const dayName = date.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            map.set(dayName, date);
-        }
-        return map;
+        const start = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+        return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
     }, []);
-
-    const todayDayName = new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     const handleToggleTask = (taskUniqueId: string) => {
         const newCompletedTasks = { ...completedTasks, [taskUniqueId]: !completedTasks[taskUniqueId] };
-        persistData('profile', { ...profile, completed_tasks_today: newCompletedTasks });
+        persistData('profile', { ...profile, completed_tasks_today: newCompletedTasks, last_task_completion_date: new Date().toISOString() });
     };
 
     const handleUpdateTasks = (updatedTasks) => {
@@ -278,33 +269,35 @@ const TasksView = () => {
             </div>
 
             <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto">
-                {Array.from(weekDaysMap.entries()).map(([dayName, date]) => {
+                {weekDays.map((dayDate) => {
+                    const dayName = dayDate.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const isToday = checkIsToday(dayDate);
+                    
                     const tasksForDay = recurringTasks.filter(task => {
                         if (task.type === 'interval') {
                             if (!task.startDate) return false;
                             const startDate = parseISO(task.startDate);
-                            const dayDate = new Date(date);
-                            dayDate.setHours(0,0,0,0);
+                            const currentDay = new Date(dayDate);
+                            currentDay.setHours(0,0,0,0);
                             
-                            if (dayDate < startDate) return false;
+                            if (currentDay < startDate) return false;
 
-                            const diff = differenceInDays(dayDate, startDate);
+                            const diff = differenceInDays(currentDay, startDate);
                             return diff % task.intervalDays === 0;
                         }
-                        // Default to weekly
                         return (task.days || []).includes(dayName);
                     });
-                    const isToday = todayDayName === dayName;
 
                     return (
                         <Card key={dayName} className={cn("flex flex-col", isToday ? 'border-primary shadow-lg shadow-primary/10' : 'bg-card/60')}>
                             <CardHeader>
-                                <CardTitle className="capitalize text-lg text-center">{dayName}</CardTitle>
+                                <CardTitle className="capitalize text-lg text-center">{format(dayDate, 'eeee, dd', { locale: ptBR })}</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-grow space-y-3">
                                 {tasksForDay.length > 0 ? (
                                     tasksForDay.map(task => {
-                                        const taskUniqueId = `${task.id}_${dayName}`;
+                                        const taskDateId = format(dayDate, 'yyyy-MM-dd');
+                                        const taskUniqueId = `${task.id}_${taskDateId}`;
                                         const isCompleted = !!completedTasks[taskUniqueId];
                                         return (
                                             <div 
@@ -346,5 +339,3 @@ const TasksView = () => {
 };
 
 export default TasksView;
-
-    
