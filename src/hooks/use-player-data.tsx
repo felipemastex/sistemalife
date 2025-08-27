@@ -141,6 +141,12 @@ interface TowerProgress {
   lastLifeRegeneration: string; // ISO String
 }
 
+interface RecurringTask {
+    id: number;
+    name: string;
+    days: string[]; // e.g., ['segunda', 'quarta', 'sexta']
+}
+
 
 interface Profile {
   id?: string;
@@ -181,7 +187,8 @@ interface Profile {
   manual_missions?: RankedMission[];
   recommended_shop_items?: any[];
   shop_last_generated_at?: string;
-
+  recurring_tasks?: RecurringTask[];
+  completed_tasks_today?: { [taskId: number]: boolean };
 }
 
 interface Guild {
@@ -921,7 +928,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
     };
     
-    // Skill Decay & Tower Lives Logic
+    // Skill Decay & Tower Lives & Task Reset Logic
      useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
 
@@ -988,6 +995,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     });
                 }
             }
+            
+            // Task Reset Logic
+            const lastTaskCompletionDay = updatedProfile.ultimo_dia_de_missao_concluida ? new Date(updatedProfile.ultimo_dia_de_missao_concluida).getDay() : -1;
+            if (now.getDay() !== lastTaskCompletionDay) {
+                if(updatedProfile.completed_tasks_today && Object.keys(updatedProfile.completed_tasks_today).length > 0){
+                    updatedProfile.completed_tasks_today = {};
+                    profileChanged = true;
+                }
+            }
+
              if (profileChanged) {
                 persistData('profile', updatedProfile);
             }
