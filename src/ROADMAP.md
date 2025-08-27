@@ -28,13 +28,14 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Desenvolver a interface principal (`TowerView.tsx`) para visualizar o progresso.
     - **[x]** Implementar o sistema de recompensas progressivas (XP bónus, fragmentos premium, itens exclusivos).
     - **[x]** Adicionar a lógica de verificação (`checkAndApplyTowerRewards`) para validar a conclusão dos desafios e fazer o jogador avançar.
-- **[x] Melhorias no Sistema de Missões:**
-    - **[x]** Permitir a criação manual de missões "one-off" não ligadas a uma meta.
-    - **[x]** Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
+- **[ ] Melhorias no Sistema de Missões:**
+    - [ ] Permitir a criação manual de missões "one-off" não ligadas a uma meta.
+    - [ ] Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
 - **[x] Melhorias no Sistema de Guildas:**
-    - **[x]** Implementar um leaderboard de contribuição dos membros.
-    - **[x]** Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
-    - **[x]** Desenvolver missões de guilda geradas por IA (`generate-guild-tower-challenge`).
+    - [x] Implementar um dashboard de guilda mais completo. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
+    - [ ] Implementar um leaderboard de contribuição dos membros.
+    - [ ] Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
+    - [ ] Desenvolver missões de guilda geradas por IA (`generate-guild-tower-challenge`).
 
 ### Fase 3: Competição e Mundo Vivo (A Fazer)
 **Objetivo:** Expandir as funcionalidades sociais e introduzir eventos dinâmicos que tornem o mundo mais reativo.
@@ -68,6 +69,9 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Desenvolver a interface para as "Masmorras" (`SkillDungeonView.tsx`).
     - **[x]** Criar um flow de IA para gerar desafios práticos e específicos para cada habilidade (`generate-skill-dungeon-challenge.ts`).
     - **[x]** Implementar o sistema de validação e recompensas de XP focado.
+- **[x] Afazeres Recorrentes:**
+    - **[x]** Adicionar um novo sistema para gerir tarefas e hábitos recorrentes que não se encaixam como missões de metas.
+    - **[x]** Criar a interface `TasksView.tsx` com vistas semanal e mensal.
 - **[ ] Torre Infinita:**
     - [ ] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
 - **[ ] Integrações Externas:**

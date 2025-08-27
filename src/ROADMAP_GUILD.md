@@ -30,38 +30,38 @@ O Sistema Life possui um sistema de guildas funcional com os seguintes component
 ### Fase 2: Visualização de Dados e Engajamento
 **Objetivo:** Implementar a lógica para exibir dados e estatísticas, aumentando a visibilidade do progresso.
 
-- **[x] Implementar `GuildOverview` (3.1.2):**
-    - [x] Exibir estatísticas principais da guilda (nível, XP).
-    - [x] Mostrar progresso das missões ativas.
-    - [x] Exibir um resumo dos anúncios recentes.
-- **[x] Implementar `GuildStats` (3.2.1):**
-    - [x] Adicionar gráficos (`recharts`) para mostrar a contribuição da guilda ao longo do tempo.
-    - [x] Implementar o seletor de período (semanal, mensal, total).
-- **[x] Implementar `MemberLeaderboard` (3.3.2):**
-    - [x] Criar a lista de membros classificada por contribuição.
-    - [x] Adicionar indicadores visuais para as primeiras posições (Ouro, Prata, Bronze).
+- **[ ] Implementar `GuildOverview` (3.1.2):**
+    - [ ] Exibir estatísticas principais da guilda (nível, XP).
+    - [ ] Mostrar progresso das missões ativas.
+    - [ ] Exibir um resumo dos anúncios recentes.
+- **[ ] Implementar `GuildStats` (3.2.1):**
+    - [ ] Adicionar gráficos (`recharts`) para mostrar a contribuição da guilda ao longo do tempo.
+    - [ ] Implementar o seletor de período (semanal, mensal, total).
+- **[ ] Implementar `MemberLeaderboard` (3.3.2):**
+    - [ ] Criar a lista de membros classificada por contribuição.
+    - [ ] Adicionar indicadores visuais para as primeiras posições (Ouro, Prata, Bronze).
 
 ### Fase 3: Sistemas de Recompensas e Notificações
 **Objetivo:** Introduzir mecânicas de recompensa e melhorar a comunicação.
 
-- **[x] Implementar `GuildRewards` (3.2.2):**
-    - [x] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
-    - [x] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições (frontend com dados mock).
-- **[x] Implementar `GuildNotifications` (3.4.1):**
-    - [x] Criar a interface para exibir as notificações da guilda (frontend com dados mock).
-    - [x] Implementar a lógica de tempo real para receber e marcar notificações como lidas (frontend com dados mock).
-- **[x] Melhorar o Perfil de Membro (3.3.1):**
-    - [x] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro (frontend com dados mock).
+- **[ ] Implementar `GuildRewards` (3.2.2):**
+    - [ ] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
+    - [ ] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições (frontend com dados mock).
+- **[ ] Implementar `GuildNotifications` (3.4.1):**
+    - [ ] Criar a interface para exibir as notificações da guilda (frontend com dados mock).
+    - [ ] Implementar a lógica de tempo real para receber e marcar notificações como lidas (frontend com dados mock).
+- **[ ] Melhorar o Perfil de Membro (3.3.1):**
+    - [ ] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro (frontend com dados mock).
 
 ### Fase 4: Refinamentos e Melhorias de Qualidade de Vida
 **Objetivo:** Polir a experiência do utilizador com base nas novas funcionalidades.
 
-- **[x] Melhorias no Chat (3.4.2):**
-    - [x] Implementar agrupamento visual de mensagens consecutivas para uma interface mais limpa.
-- **[x] Acessibilidade e Responsividade (6.1, 6.2):**
-    - [x] Garantir que os novos componentes são responsivos e acessíveis.
-- **[x] Testes e Lançamento (7, 8):**
-    - [x] Todas as funcionalidades planeadas para o frontend foram implementadas. Pronto para testes de integração e lançamento.
+- **[ ] Melhorias no Chat (3.4.2):**
+    - [ ] Implementar agrupamento visual de mensagens consecutivas para uma interface mais limpa.
+- **[ ] Acessibilidade e Responsividade (6.1, 6.2):**
+    - [ ] Garantir que os novos componentes são responsivos e acessíveis.
+- **[ ] Testes e Lançamento (7, 8):**
+    - [ ] Todas as funcionalidades planeadas para o frontend foram implementadas. Pronto para testes de integração e lançamento.
 
 ## 3. Funcionalidades Detalhadas (Referência)
 
