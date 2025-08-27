@@ -28,13 +28,13 @@ Este documento foca-se especificamente nas melhorias e novas funcionalidades pla
 - **[x]** **Anúncios da Guilda (`GuildAnnouncements.tsx`):**
     - **[x]** Sistema para a liderança publicar e gerir anúncios para todos os membros.
 
-### Fase 3: Colaboração e Recompensas (A Fazer)
+### Fase 3: Colaboração e Recompensas (Em Progresso)
 **Objetivo:** Introduzir sistemas que incentivem o trabalho em equipa e recompensem o esforço coletivo.
 
 - **[ ] Missões de Guilda (`GuildQuests.tsx`):**
     - **[x]** Implementar a interface para visualizar e interagir com missões cooperativas.
-    - **[x]** Criar um flow de IA (`generate-guild-quest`) para gerar missões de guilda com base num tema (ex: "Foco em fitness esta semana").
-    - **[ ]** Desenvolver a lógica para que as contribuições de múltiplos membros contem para um objetivo comum.
+    - **[x]** Criar um flow de IA (`generate-guild-quest`) para gerar missões de guilda com base num tema.
+    - **[x]** Desenvolver a lógica para que as contribuições de múltiplos membros contem para um objetivo comum.
 - **[ ] Sistema de Recompensas da Guilda (`GuildRewards.tsx`):**
     - **[ ]** Criar um "tesouro" da guilda que acumula uma moeda especial (ex: "Pontos de Contribuição") quando os membros completam missões.
     - **[ ]** Desenvolver uma loja de recompensas de guilda onde a liderança pode gastar esses pontos para ativar bónus para todos os membros (ex: "+10% de XP por 24h", "Item cosmético exclusivo para a guilda").
