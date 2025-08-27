@@ -25,9 +25,10 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TowerView from '@/components/views/gamification/TowerView';
 import TasksView from '@/components/views/gamification/TasksView';
+import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 
 export default function App() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { authState, logout } = useAuth();
   const { 
       isDataLoaded,
       questNotification, systemAlert, showOnboarding,
@@ -41,11 +42,11 @@ export default function App() {
   
   // Redirecionamento para login se não autenticado
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (authState === 'unauthenticated') {
       console.log('🔄 Usuário não autenticado, redirecionando para login...');
       window.location.href = '/login';
     }
-  }, [user, authLoading]);
+  }, [authState]);
   
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
@@ -175,11 +176,11 @@ export default function App() {
     )
   };
   
-  if (authLoading) {
+  if (authState === 'loading') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin h-10 w-10" />
+          <LoaderCircle className="animate-spin h-10 w-10" />
           <span className="text-xl font-cinzel tracking-wider">A VALIDAR SESSÃO...</span>
           <span className="text-sm text-gray-400">Conectando ao Firebase...</span>
         </div>
@@ -187,11 +188,11 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (authState === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-pulse h-10 w-10" />
+          <ShieldBan className="h-10 w-10" />
           <span className="text-xl font-cinzel tracking-wider">REDIRECIONANDO...</span>
           <span className="text-sm text-gray-400">Acesso negado. Redirecionando para login...</span>
         </div>
@@ -203,12 +204,24 @@ export default function App() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin h-10 w-10" />
-          <span className="text-xl font-cinzel tracking-wider">A CARREGAR DADOS...</span>
+          <LoaderCircle className="animate-spin h-10 w-10" />
+          <span className="text-xl font-cinzel tracking-wider">A CARREGAR DADOS DO JOGADOR...</span>
           <span className="text-sm text-gray-400">Sincronizando com o Firestore...</span>
         </div>
       </div>
     );
+  }
+
+  if (profile?._isOfflineMode) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center text-yellow-400">
+            <div className="flex flex-col items-center space-y-4 text-center p-8">
+              <WifiOff className="h-12 w-12" />
+              <h1 className="text-2xl font-cinzel tracking-wider">MODO OFFLINE</h1>
+              <p className="text-yellow-200/80 max-w-md">Não foi possível conectar ao Firebase. A aplicação está a correr com dados de demonstração. As suas alterações não serão guardadas. Verifique a sua conexão com a internet e atualize a página.</p>
+            </div>
+        </div>
+      )
   }
 
   return (

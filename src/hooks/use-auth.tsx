@@ -7,40 +7,40 @@ import { app } from '@/lib/firebase';
 
 const auth = getAuth(app);
 
-const AuthContext = createContext<{ user: User | null; loading: boolean; logout: () => void; }>({
+// Definindo um tipo mais explícito para o estado de autenticação
+type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
+
+const AuthContext = createContext<{ user: User | null; authState: AuthState; logout: () => void; }>({
   user: null,
-  loading: true,
+  authState: 'loading',
   logout: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {
     console.log('🔐 Iniciando listener de autenticação...');
     
-    // Timeout de segurança para evitar travamento indefinido
-    const authTimeout = setTimeout(() => {
-      console.log('⚠️ Timeout de autenticação atingido, forçando parada do loading...');
-      setLoading(false);
-    }, 10000); // 10 segundos
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('🔐 Estado de auth mudou:', user ? 'Usuário logado' : 'Usuário não logado');
-      clearTimeout(authTimeout);
-      setUser(user);
-      setLoading(false);
+      if (user) {
+        console.log('✅ Usuário autenticado:', user.uid);
+        setUser(user);
+        setAuthState('authenticated');
+      } else {
+        console.log('❌ Usuário não autenticado.');
+        setUser(null);
+        setAuthState('unauthenticated');
+      }
     }, (error) => {
       console.error('🚨 Erro na autenticação:', error);
-      clearTimeout(authTimeout);
-      setLoading(false);
+      setUser(null);
+      setAuthState('unauthenticated'); // Tratar erro como não autenticado
     });
 
-    return () => {
-      clearTimeout(authTimeout);
-      unsubscribe();
-    };
+    // Limpeza ao desmontar
+    return () => unsubscribe();
   }, []);
 
   const logout = () => {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, authState, logout }}>
       {children}
     </AuthContext.Provider>
   );
