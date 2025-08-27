@@ -34,7 +34,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[x] Melhorias no Sistema de Guildas:**
     - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
     - **[x]** Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
-    - **[x]** Desenvolver missões de guilda geradas por IA (`generate-guild-tower-challenge`).
+    - **[x]** Desenvolver missões de guilda geradas por IA (`generate-guild-quest`).
 
 ### Fase 3: Competição e Mundo Vivo (Em Progresso)
 **Objetivo:** Expandir as funcionalidades sociais e introduzir eventos dinâmicos que tornem o mundo mais reativo.
