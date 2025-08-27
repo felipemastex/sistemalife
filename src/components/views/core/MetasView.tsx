@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone, Skull } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -13,6 +13,7 @@ import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
 import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
 import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
+import { generateNemesis } from '@/ai/flows/generate-nemesis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -492,56 +493,63 @@ const MetasViewComponent = () => {
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
-                let newSkillId = Date.now();
-                let newSkill;
+                // Creating new goal
                 const goalDescription = Object.values(newOrUpdatedMeta.detalhes_smart).join(' ');
                 
-                try {
-                    const skillResult = await generateSkillFromGoal({
+                // Generate Skill and Nemesis in parallel
+                const [skillResult, nemesisResult] = await Promise.all([
+                    generateSkillFromGoal({
                         goalName: newOrUpdatedMeta.nome,
                         goalDescription: goalDescription,
                         existingCategories: mockData.categoriasMetas
-                    });
+                    }),
+                    generateNemesis({
+                        goalName: newOrUpdatedMeta.nome,
+                        goalDescription: goalDescription
+                    })
+                ]);
 
-                    newSkill = {
-                        id: newSkillId,
-                        nome: skillResult.skillName,
-                        descricao: skillResult.skillDescription,
-                        categoria: skillResult.skillCategory,
-                        nivel_atual: 1,
-                        nivel_maximo: 10,
-                        xp_atual: 0,
-                        xp_para_proximo_nivel: 50,
-                    };
-                } catch (skillError) {
-                    handleToastError(skillError, 'Não foi possível gerar uma habilidade. A usar uma habilidade padrão.');
-                    newSkill = {
-                        id: newSkillId,
-                        nome: `Maestria em ${newOrUpdatedMeta.nome}`,
-                        descricao: `Habilidade relacionada ao objetivo: ${newOrUpdatedMeta.nome}`,
-                        categoria: newOrUpdatedMeta.categoria || 'Crescimento Pessoal',
-                        nivel_atual: 1,
-                        nivel_maximo: 10,
-                        xp_atual: 0,
-                        xp_para_proximo_nivel: 50,
-                    };
-                }
+                const newSkillId = Date.now();
+                const newSkill = {
+                    id: newSkillId,
+                    nome: skillResult.skillName,
+                    descricao: skillResult.skillDescription,
+                    categoria: skillResult.skillCategory,
+                    nivel_atual: 1,
+                    nivel_maximo: 10,
+                    xp_atual: 0,
+                    xp_para_proximo_nivel: 50,
+                };
                 
-                const newMetaWithId = { ...newOrUpdatedMeta, id: Date.now(), concluida: false, user_id: profile.id, habilidade_associada_id: newSkillId };
+                const newNemesis = {
+                    name: nemesisResult.nemesisName,
+                    description: nemesisResult.nemesisDescription,
+                    maxHealth: nemesisResult.maxHealth,
+                    currentHealth: nemesisResult.maxHealth
+                };
+
+                const newMetaWithId = { 
+                    ...newOrUpdatedMeta, 
+                    id: Date.now() + 1, 
+                    concluida: false, 
+                    user_id: profile.id, 
+                    habilidade_associada_id: newSkillId,
+                    nemesis: newNemesis
+                };
                 
                 const relatedHistory = metas
                     .filter(m => m.categoria === newMetaWithId.categoria)
                     .map(m => `- Meta Concluída: ${m.nome}`)
                     .join('\n');
                 
-                const result = await generateInitialEpicMission({
+                const initialMissionResult = await generateInitialEpicMission({
                     goalName: newMetaWithId.nome,
                     goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
                     userLevel: profile.nivel,
                     relatedHistory: relatedHistory,
                 });
 
-                if (result.fallback) {
+                if (initialMissionResult.fallback) {
                     toast({
                         variant: 'destructive',
                         title: 'Sistema Sobrecarregado',
@@ -549,10 +557,10 @@ const MetasViewComponent = () => {
                     });
                 }
                 
-                const newMissions = (result.progression || []).map((epicMission, index) => {
+                const newMissions = (initialMissionResult.progression || []).map((epicMission, index) => {
                     const isFirstMission = index === 0;
                     return {
-                        id: Date.now() + index + 1,
+                        id: Date.now() + index + 2,
                         nome: epicMission.epicMissionName,
                         descricao: epicMission.epicMissionDescription,
                         concluido: false,
@@ -562,15 +570,15 @@ const MetasViewComponent = () => {
                         total_missoes_diarias: 10, 
                         ultima_missao_concluida_em: null,
                         missoes_diarias: isFirstMission ? [{
-                            id: Date.now() + (result.progression?.length || 0) + 2,
-                            nome: result.firstDailyMissionName,
-                            descricao: result.firstDailyMissionDescription,
-                            xp_conclusao: result.firstDailyMissionXp,
-                            fragmentos_conclusao: result.firstDailyMissionFragments,
+                            id: Date.now() + (initialMissionResult.progression?.length || 0) + 3,
+                            nome: initialMissionResult.firstDailyMissionName,
+                            descricao: initialMissionResult.firstDailyMissionDescription,
+                            xp_conclusao: initialMissionResult.firstDailyMissionXp,
+                            fragmentos_conclusao: initialMissionResult.firstDailyMissionFragments,
                             concluido: false,
                             tipo: 'diaria',
-                            learningResources: result.firstDailyMissionLearningResources,
-                            subTasks: result.firstDailyMissionSubTasks,
+                            learningResources: initialMissionResult.firstDailyMissionLearningResources,
+                            subTasks: initialMissionResult.firstDailyMissionSubTasks,
                         }] : [],
                     };
                 });
@@ -607,7 +615,7 @@ const MetasViewComponent = () => {
                 handleGetRoadmap(newMetaWithId);
             }
         } catch (error) {
-            handleToastError(error, 'Não foi possível salvar a meta, gerar a habilidade ou a árvore de progressão.');
+            handleToastError(error, 'Não foi possível salvar a meta. A IA pode estar sobrecarregada.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -780,6 +788,8 @@ const MetasViewComponent = () => {
                     const completedMissionsCount = relatedMissions.filter(m => m.concluido).length;
                     const totalMissionsCount = relatedMissions.length;
                     const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
+                    const nemesis = meta.nemesis;
+                    const nemesisHealthPercentage = nemesis ? (nemesis.currentHealth / nemesis.maxHealth) * 100 : 0;
                     
                     return (
                         <Card key={meta.id} className={cn("bg-card/60 border-border/80 flex flex-col", meta.concluida && "bg-card/30 border-green-500/20")}>
@@ -835,6 +845,29 @@ const MetasViewComponent = () => {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <CalendarIcon className="h-4 w-4" />
                                         <span>Prazo: {format(new Date(meta.prazo), "dd/MM/yyyy")}</span>
+                                    </div>
+                                )}
+                                {nemesis && (
+                                    <div className="pt-4 border-t border-border/50">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger className="w-full">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Skull className="h-5 w-5 text-red-400"/>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold text-sm text-foreground">{nemesis.name}</h4>
+                                                            <p className="text-xs text-muted-foreground">{nemesis.description}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full bg-red-900/50 rounded-full h-2.5">
+                                                        <div className="bg-red-500 h-2.5 rounded-full" style={{ width: `${nemesisHealthPercentage}%` }}></div>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>{nemesis.currentHealth} / {nemesis.maxHealth} HP</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </div>
                                 )}
                             </CardContent>

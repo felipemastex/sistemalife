@@ -48,8 +48,8 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[x] Leaderboards Globais:**
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
 - **[ ] Sistema de Némesis:**
-    - [ ] Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
-    - [ ] Criar a UI para visualizar a "vida" do Némesis e os seus "ataques".
+    - **[x]** Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
+    - **[ ]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques".
 
 ### Fase 4: IA Adaptativa e Personalização Profunda (Em Progresso)
 **Objetivo:** Utilizar a IA para criar uma experiência verdadeiramente única para cada utilizador, que se adapta ao seu comportamento.
@@ -76,3 +76,4 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[ ] Integrações Externas:**
     - [ ] Sincronização de missões com deadlines para o Google Calendar.
     - [ ] Integração com smartwatches para completar automaticamente missões de fitness.
+
