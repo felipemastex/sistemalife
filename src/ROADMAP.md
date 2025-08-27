@@ -23,9 +23,9 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 **Objetivo:** Introduzir novos sistemas que criem um ciclo de engajamento contínuo e ofereçam diferentes tipos de desafios para além das missões diárias.
 
 - **[ ] Torre dos Desafios:**
-    - **[ ]** Implementar a estrutura base da Torre (andares, zonas).
-    - **[ ]** Criar o flow de IA `generate-tower-challenge` para gerar desafios com base no andar e no perfil do utilizador.
-    - **[ ]** Desenvolver a interface principal (`TowerDashboard.tsx`) para visualizar o progresso.
+    - **[x]** Implementar a estrutura base da Torre (andares, zonas).
+    - **[x]** Criar o flow de IA `generate-tower-challenge` para gerar desafios com base no andar e no perfil do utilizador.
+    - **[x]** Desenvolver a interface principal (`TowerView.tsx`) para visualizar o progresso.
     - **[ ]** Implementar o sistema de recompensas progressivas (XP bónus, fragmentos premium, itens exclusivos).
 - **[ ] Melhorias no Sistema de Missões:**
     - **[ ]** Permitir a criação manual de missões "one-off" não ligadas a uma meta.
