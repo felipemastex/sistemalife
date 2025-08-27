@@ -3,7 +3,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -690,7 +690,7 @@ const MissionsViewComponent = () => {
 
         for (const goalName in missionsByGoal) {
             const goalMissions = missionsByGoal[goalName]
-                .filter((m: RankedMission) => !m.concluido)
+                .filter((m: RankedMission) => !m.concluido && profile.nivel >= m.level_requirement)
                 .sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
 
             if (goalMissions.length > 0) {
@@ -729,7 +729,7 @@ const MissionsViewComponent = () => {
             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
 
-    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
+    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions, profile.nivel]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
@@ -826,10 +826,10 @@ const MissionsViewComponent = () => {
         }
 
         return (
-            <div className="bg-secondary/30 border-2 border-dashed border-red-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                <AlertTriangle className="h-10 w-10 text-red-500 mb-4"/>
-                <p className="text-lg font-bold text-foreground">Nenhuma Missão Ativa</p>
-                <p className="text-sm text-muted-foreground">O sistema irá gerar uma nova missão à meia-noite.</p>
+            <div className="bg-secondary/30 border-2 border-dashed border-yellow-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
+                <Lock className="h-10 w-10 text-yellow-500 mb-4"/>
+                <p className="text-lg font-bold text-foreground">Missão Bloqueada</p>
+                <p className="text-sm text-muted-foreground">Aumente o seu nível de Caçador para desbloquear este desafio.</p>
             </div>
         );
     };

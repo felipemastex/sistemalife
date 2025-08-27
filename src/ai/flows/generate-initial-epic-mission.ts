@@ -16,6 +16,7 @@ const EpicMissionSchema = z.object({
     epicMissionName: z.string().describe("O nome temático e inspirador para a Missão Épica (ex: 'A Senda do Maratonista')."),
     epicMissionDescription: z.string().describe("Uma breve descrição da Missão Épica, explicando o seu objetivo principal."),
     rank: z.enum(['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']).describe("O rank sugerido para esta missão específica na progressão."),
+    level_requirement: z.number().describe("O nível mínimo que o Caçador deve ter para esta missão ser desbloqueada.")
 });
 
 const SubTaskSchema = z.object({
@@ -70,7 +71,7 @@ const generateInitialEpicMissionFlow = ai.defineFlow(
         ? `O utilizador já tem experiência nesta área. O seu histórico relevante é: ${input.relatedHistory}. Com base nisto, o Rank da primeira missão deve ser D ou superior, e a primeira tarefa não deve ser para iniciantes absolutos.`
         : 'Este é um campo completamente novo para o utilizador. O Rank da primeira missão deve ser F ou E, e a primeira tarefa deve ser um passo fundamental muito básico.';
 
-        const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa.
+        const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa e equilibrada.
 
 Utilizador: Nível ${input.userLevel}
 Nova Meta: "${input.goalName}"
@@ -78,7 +79,9 @@ Detalhes da Meta (SMART): ${input.goalDetails}
 Contexto Histórico: ${historyPrompt}
 
 A sua tarefa é:
-1.  **Criar Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência. Cada missão deve ser um passo lógico e mais desafiador que a anterior. A progressão de ranks (F, E, D, C, B, A, S...) deve ser coerente.
+1.  **Criar Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência.
+    *   **Calibração de Dificuldade:** A progressão de ranks (F, E, D, C, B, A, S...) deve ser coerente com o nível do utilizador. Um Caçador de nível baixo (1-10) não deve receber uma árvore de missões que chegue a Rank A ou S. O Rank máximo deve ser apropriado para o seu nível atual.
+    *   **Requisitos de Nível:** Para CADA missão épica, defina um 'level_requirement'. O requisito da primeira missão deve ser igual ou ligeiramente superior ao nível atual do Caçador. As missões subsequentes devem ter requisitos de nível crescentes e lógicos.
 2.  **Criar a Primeira Missão Diária:** Com base na *primeira* missão épica que você criou, gere a *primeira* missão diária atómica.
     *   **Nome e Descrição:** Defina um nome e descrição claros para esta missão diária.
     *   **Sub-tarefas:** Crie de 1 a 3 sub-tarefas específicas, mensuráveis e com unidades (se aplicável).
@@ -124,6 +127,7 @@ A sua tarefa é:
             epicMissionName: `Missão Épica: ${input.goalName}`,
             epicMissionDescription: `Uma grande jornada em direção ao seu objetivo: ${input.goalName}.`,
             rank: 'E' as const,
+            level_requirement: input.userLevel,
         }];
 
         const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
@@ -145,5 +149,3 @@ A sua tarefa é:
     }
   }
 );
-
-    
