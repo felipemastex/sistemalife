@@ -210,6 +210,26 @@ const TowerView = () => {
                         </Button>
                     </CardFooter>
                 </Card>
+                
+                <Card className="bg-card/60">
+                    <CardHeader>
+                        <CardTitle>Recompensas da Torre</CardTitle>
+                        <CardDescription>Conquiste andares para desbloquear recompensas permanentes.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <div className="space-y-4">
+                             {[10, 25, 40, 50, 60, 75, 90, 100].map(floor => {
+                                const isUnlocked = towerProgress.highestFloor >= floor;
+                                return (
+                                <div key={floor} className={cn("p-3 rounded-md flex items-center justify-between", isUnlocked ? 'bg-green-500/10' : 'bg-secondary/50 opacity-60')}>
+                                    <p className={cn("font-semibold", isUnlocked ? 'text-green-300' : 'text-foreground')}>Recompensa do Andar {floor}</p>
+                                    {isUnlocked ? <CheckCircle className="h-5 w-5 text-green-400"/> : <span className="text-xs text-muted-foreground">Bloqueado</span>}
+                                </div>
+                                )
+                            })}
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <div className="text-center text-muted-foreground">
                     <p>A torre continua... Mais andares serão revelados à medida que você progride.</p>

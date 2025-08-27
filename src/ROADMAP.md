@@ -36,15 +36,15 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
     - **[x]** Desenvolver missões de guilda geradas por IA (`generate-guild-quest`).
 
-### Fase 3: Competição e Mundo Vivo (Em Progresso)
+### Fase 3: Competição e Mundo Vivo (Concluída)
 **Objetivo:** Expandir as funcionalidades sociais e introduzir eventos dinâmicos que tornem o mundo mais reativo.
 
 - **[x] Eventos Mundiais e Invasões de "Corrupção":**
     - **[x]** Implementar a lógica de backend para agregar o progresso global.
     - **[x]** Criar diferentes tipos de eventos (ex: "Semana da Produtividade", "Festival da Criatividade").
-    - **[ ]** Desenvolver um sistema de recompensas comunitárias.
-- **[ ] Desafios de Guilda vs. Guilda (GvG):**
-    - [ ] Sistema onde guildas competem para ver quem completa mais missões ou sobe mais andares na Torre.
+    - **[x]** Desenvolver um sistema de recompensas comunitárias.
+- **[x] Desafios de Guilda vs. Guilda (GvG):**
+    - **[x]** Sistema onde guildas competem para ver quem completa mais missões ou sobe mais andares na Torre.
 - **[x] Leaderboards Globais:**
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
 - **[ ] Sistema de Némesis:**
