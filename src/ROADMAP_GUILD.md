@@ -1,129 +1,42 @@
-# Melhoria da Aba de Guilda no Sistema Life
+# Roadmap de Melhorias - Módulo de Guildas
 
 ## 1. Visão Geral
+Este roadmap foca-se exclusivamente na evolução do módulo de Guildas, transformando-o de uma simples lista de membros num centro social dinâmico e colaborativo, essencial para a experiência de jogo a longo prazo.
 
-### 1.1 Objetivo
-Melhorar a experiência do usuário na aba de guildas do Sistema Life, otimizando a interface, adicionando novas funcionalidades e aprimorando a usabilidade geral do sistema de guildas, com foco em engajamento e colaboração entre os membros.
+## 2. Fase 1: Fundação do Dashboard (Concluída)
+**Objetivo:** Criar um hub central para todas as atividades da guilda, melhorando a organização e o acesso à informação.
 
-### 1.2 Contexto Atual
-O Sistema Life possui um sistema de guildas funcional com os seguintes componentes principais:
-- Criação e gerenciamento de guildas
-- Sistema de missões colaborativas
-- Chat em tempo real
-- Anúncios da guilda
-- Gerenciamento de membros e solicitações de entrada
-- Hierarquia de papéis (Líder, Oficial, Veterano, Membro, Recruta)
+- **[x]** Desenvolver um novo layout `GuildDashboard.tsx` com um sistema de abas.
+- **[x]** Criar o componente `GuildOverview.tsx` para mostrar estatísticas rápidas.
+- **[x]** Desenvolver o componente `MemberLeaderboard.tsx` para o ranking de membros.
+- **[ ]** Implementar a lógica de cálculo de contribuição de membros.
+- **[ ]** Criar o componente `GuildStats.tsx` para visualização de dados.
+- **[ ]** Melhorar a interface do `GuildChat.tsx`.
 
-## 2. Fases de Implementação
+## 3. Fase 2: Missões e Recompensas de Guilda (A Fazer)
+**Objetivo:** Introduzir sistemas que promovam a colaboração ativa e recompensem o esforço coletivo.
 
-### Fase 1: Fundação da Interface e Estrutura
-**Objetivo:** Estabelecer a nova estrutura visual e os componentes base do dashboard da guilda.
+- **[ ]** Implementar o sistema de Missões de Guilda (`GuildQuests.tsx`).
+    - [ ] Desenvolver o flow de IA `generate-guild-quest.ts` para criar missões cooperativas.
+    - [ ] Permitir que membros contribuam para sub-tarefas partilhadas.
+    - [ ] Calcular o progresso geral da missão com base na contribuição de todos.
+- **[ ]** Criar o sistema de Recompensas de Guilda (`GuildRewards.tsx`).
+    - [ ] Desenvolver uma "loja" de guilda onde os pontos de contribuição podem ser gastos em bónus para todos os membros.
+    - [ ] Implementar diferentes tipos de recompensas (ex: Bónus de XP, itens cosméticos, etc.).
 
-- **[x] Redesign da Interface da Guilda (3.1.1):**
-    - [x] Implementar um layout de dashboard mais moderno com `Card`s bem definidos.
-    - [x] Criar os *placeholders* para os novos componentes no `GuildDashboard.tsx`.
-- **[x] Criação de Componentes:**
-    - [x] Criar os ficheiros e as estruturas básicas para: `GuildOverview.tsx`, `GuildStats.tsx`, `MemberLeaderboard.tsx`, `GuildNotifications.tsx`, e `GuildRewards.tsx`.
-- **[x] Expansão do Modelo de Dados (Backend):**
-    - [x] Adicionar os novos campos ao `erDiagram` e planear a sua integração no Firestore. Campos como `guild_xp`, `MEMBER_CONTRIBUTION`, `GUILD_REWARD`, etc.
+## 4. Fase 3: Competição e Eventos (A Fazer)
+**Objetivo:** Adicionar uma camada de competição saudável e eventos dinâmicos para manter a guilda engajada.
 
-### Fase 2: Visualização de Dados e Engajamento
-**Objetivo:** Implementar a lógica para exibir dados e estatísticas, aumentando a visibilidade do progresso.
+- **[ ]** Desenvolver o sistema de Desafios de Guilda vs. Guilda (GvG).
+    - [ ] Rankings semanais onde as guildas competem por quem completa mais missões ou sobe mais andares na Torre.
+- **[ ]** Integrar as guildas com os Eventos Mundiais.
+    - [ ] Contribuições de membros da guilda contam em dobro para o progresso do evento.
+    - [ ] Recompensas especiais para as guildas mais bem classificadas num evento.
 
-- **[x] Implementar `GuildOverview` (3.1.2):**
-    - [x] Exibir estatísticas principais da guilda (nível, XP).
-    - [x] Mostrar progresso das missões ativas.
-    - [x] Exibir um resumo dos anúncios recentes.
-- **[ ] Implementar `GuildStats` (3.2.1):**
-    - [ ] Adicionar gráficos (`recharts`) para mostrar a contribuição da guilda ao longo do tempo.
-    - [ ] Implementar o seletor de período (semanal, mensal, total).
-- **[x] Implementar `MemberLeaderboard` (3.3.2):**
-    - [x] Criar a lista de membros classificada por contribuição.
-    - [x] Adicionar indicadores visuais para as primeiras posições (Ouro, Prata, Bronze).
+## 5. Fase 4: Personalização e Legado (A Fazer)
+**Objetivo:** Permitir que as guildas desenvolvam uma identidade única e um legado duradouro.
 
-### Fase 3: Sistemas de Recompensas e Notificações
-**Objetivo:** Introduzir mecânicas de recompensa e melhorar a comunicação.
-
-- **[ ] Implementar `GuildRewards` (3.2.2):**
-    - [ ] Desenvolver a interface para visualizar as recompensas disponíveis na guilda.
-    - [ ] Implementar a lógica para os utilizadores reclamarem recompensas com base nas suas contribuições (frontend com dados mock).
-- **[ ] Implementar `GuildNotifications` (3.4.1):**
-    - [ ] Criar a interface para exibir as notificações da guilda (frontend com dados mock).
-    - [ ] Implementar a lógica de tempo real para receber e marcar notificações como lidas (frontend com dados mock).
-- **[ ] Melhorar o Perfil de Membro (3.3.1):**
-    - [ ] Adicionar as estatísticas de contribuição e conquistas da guilda ao perfil de cada membro (frontend com dados mock).
-
-### Fase 4: Refinamentos e Melhorias de Qualidade de Vida
-**Objetivo:** Polir a experiência do utilizador com base nas novas funcionalidades.
-
-- **[ ] Melhorias no Chat (3.4.2):**
-    - [ ] Implementar agrupamento visual de mensagens consecutivas para uma interface mais limpa.
-- **[ ] Acessibilidade e Responsividade (6.1, 6.2):**
-    - [ ] Garantir que os novos componentes são responsivos e acessíveis.
-- **[ ] Testes e Lançamento (7, 8):**
-    - [ ] Todas as funcionalidades planeadas para o frontend foram implementadas. Pronto para testes de integração e lançamento.
-
-## 3. Funcionalidades Detalhadas (Referência)
-
-### 3.1 Interface e Experiência do Usuário
-
-#### 3.1.1 Redesign da Interface da Guilda
-- Implementação de um layout mais moderno e intuitivo com cards bem definidos
-- Melhoria na visualização de informações importantes com destaque visual
-- Otimização para dispositivos móveis com layout responsivo
-- Adição de indicadores visuais para notificações e atividades
-- Implementação de tema dark/light mode
-
-#### 3.1.2 Painel de Visão Geral da Guilda
-- Exibição de estatísticas da guilda (nível, XP, número de membros) com gráficos
-- Destaque para missões em andamento e seu progresso com barras de progresso visuais
-- Resumo de anúncios recentes com preview
-- Indicadores de atividade dos membros com badges
-- Seção de eventos recentes e próximos eventos
-
-### 3.2 Sistema de Missões Aprimorado
-
-#### 3.2.1 Visualização de Progresso Individual
-- Adição de gráficos de progresso por membro (semanal, mensal)
-- Comparação de contribuições entre membros com ranking
-- Histórico de contribuições por período selecionável
-- Indicadores de desempenho em relação à média da guilda
-
-#### 3.2.2 Sistema de Recompensas
-- Implementação de recompensas por participação em missões
-- Sistema de conquistas específicas para missões de guilda
-- Mostradores de recompensas pendentes de coleta
-- Recompensas especiais por marcos de contribuição
-- Sistema de loot por conclusão de missões
-
-### 3.3 Sistema de Membros
-
-#### 3.3.1 Perfil do Membro
-- Expansão do perfil com estatísticas de contribuição
-- Histórico de participação em missões
-- Conquistas específicas da guilda
-- Nível e XP específicos da guilda
-- Atividade recente do membro
-
-#### 3.3.2 Sistema de Classificação
-- Ranking de membros por contribuição (semanal, mensal, total)
-- Categorias de desempenho (Ouro, Prata, Bronze)
-- Recompensas especiais para os membros mais ativos
-- Distintivos visuais para posições no ranking
-- Comparação com o desempenho anterior
-
-### 3.4 Comunicação e Interações
-
-#### 3.4.1 Sistema de Notificações
-- Notificações em tempo real para eventos da guilda
-- Configurações personalizáveis de notificações
-- Histórico de notificações
-- Notificações push para eventos importantes
-- Indicador de notificações não lidas
-
-#### 3.4.2 Melhorias no Chat
-- Sistema de canais de chat (geral, oficiais, social)
-- Menções e destaque de mensagens
-- Histórico de conversas
-- Emojis e formatação de texto
-- Integração com sistema de recompensas por participação
+- **[ ]** Implementar um sistema de melhorias para a guilda (Guild Upgrades).
+    - [ ] Gastar recursos coletivos para desbloquear bónus permanentes (ex: +1% de ganho de XP para todos os membros).
+- **[ ]** Permitir a personalização do perfil da guilda com banners e emblemas desbloqueáveis.
+- **[ ]** Criar um "Salão de Honra" para exibir as maiores conquistas da guilda.
