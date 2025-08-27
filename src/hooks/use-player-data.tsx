@@ -91,6 +91,21 @@ interface Achievement {
   date: string;
 }
 
+interface TowerChallengeRequirement {
+  type: 'mission_completed' | 'skill_level_reached' | 'streak_maintained' | 'guild_activity' | 'level_reached' | 'missions_in_category_completed';
+  value: any;
+  target: number;
+  current?: number;
+}
+
+interface ActiveTowerChallenge {
+  id: string;
+  title: string;
+  startedAt: string;
+  timeLimitHours: number;
+  requirements: TowerChallengeRequirement[];
+}
+
 interface UserSettings {
     mission_view_style: 'inline' | 'popup';
     ai_personality: 'balanced' | 'mentor' | 'strategist' | 'friendly';
@@ -131,6 +146,7 @@ interface Profile {
   fragmentos: number;
   inventory: any[];
   active_effects: ActiveEffect[];
+  active_tower_challenges?: ActiveTowerChallenge[];
   estatisticas: {
     forca: number;
     inteligencia: number;
@@ -541,6 +557,52 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
     };
 
+    const checkTowerChallenges = useCallback((eventType: string, eventData: any, currentProfile: Profile): Profile => {
+        let profileChanged = false;
+        let updatedProfile = { ...currentProfile };
+
+        const activeChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
+            const startTime = new Date(challenge.startedAt).getTime();
+            const timeLimitMillis = challenge.timeLimitHours * 60 * 60 * 1000;
+            return new Date().getTime() - startTime < timeLimitMillis;
+        });
+
+        if (activeChallenges.length !== (updatedProfile.active_tower_challenges || []).length) {
+            updatedProfile.active_tower_challenges = activeChallenges;
+            profileChanged = true;
+        }
+
+        activeChallenges.forEach(challenge => {
+            let challengeCompleted = true;
+            challenge.requirements.forEach(req => {
+                let progressMade = false;
+                if(req.type === 'missions_in_category_completed' && eventType === 'mission_completed' && eventData.category === req.value){
+                    req.current = (req.current || 0) + 1;
+                    progressMade = true;
+                }
+                // Adicionar mais lógicas de verificação aqui para outros tipos de desafios
+                
+                if (progressMade) {
+                    profileChanged = true;
+                }
+                if ((req.current || 0) < req.target) {
+                    challengeCompleted = false;
+                }
+            });
+
+            if (challengeCompleted) {
+                // TODO: Conceder recompensas e notificar o utilizador
+                toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title}` });
+                // Remover desafio da lista ativa
+                updatedProfile.active_tower_challenges = updatedProfile.active_tower_challenges?.filter(c => c.id !== challenge.id);
+                profileChanged = true;
+            }
+        });
+
+        return profileChanged ? updatedProfile : currentProfile;
+    }, [toast]);
+
+
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback: feedbackForNextMission }: CompleteMissionParams) => {
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
@@ -648,6 +710,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         }
 
         dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+        
+        const eventData = { category: meta?.categoria };
+        updatedProfile = checkTowerChallenges('mission_completed', eventData, updatedProfile);
+
 
         const finalStateAfterCompletion = playerDataReducer(playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } }), { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
 
@@ -674,7 +740,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('missions', finalStateAfterCompletion.missions);
         await persistData('skills', finalStateAfterCompletion.skills);
 
-    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
+    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder, checkTowerChallenges]);
     
     const generatePendingDailyMissions = useCallback(async () => {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
