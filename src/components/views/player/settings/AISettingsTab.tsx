@@ -65,11 +65,11 @@ export default function AISettingsTab() {
     
     useEffect(() => {
         const subscription = form.watch((value, { name, type }) => {
-            if (name === 'theme_accent_color') {
+            if (name === 'theme_accent_color' && value.theme_accent_color) {
                 document.documentElement.style.setProperty('--theme-accent-color', value.theme_accent_color);
             }
              if (name === 'reduce_motion') {
-                document.body.classList.toggle('reduce-motion', value.reduce_motion);
+                document.body.classList.toggle('reduce-motion', !!value.reduce_motion);
             }
         });
         return () => subscription.unsubscribe();

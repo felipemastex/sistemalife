@@ -23,7 +23,7 @@ const SettingsViewComponent = () => {
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-6">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 mb-6">
                     <TabsTrigger value="profile">
                         <User className="mr-2 h-4 w-4" />
                         Perfil
@@ -39,6 +39,10 @@ const SettingsViewComponent = () => {
                     <TabsTrigger value="notifications">
                          <Bell className="mr-2 h-4 w-4" />
                         Notificações
+                    </TabsTrigger>
+                    <TabsTrigger value="data_backup">
+                         <Database className="mr-2 h-4 w-4" />
+                        Dados
                     </TabsTrigger>
                      <TabsTrigger value="analytics">
                          <PieChart className="mr-2 h-4 w-4" />
@@ -66,6 +70,10 @@ const SettingsViewComponent = () => {
                     <NotificationsSettingsTab />
                 </TabsContent>
 
+                <TabsContent value="data_backup">
+                    <DataBackupTab />
+                </TabsContent>
+                
                 <TabsContent value="analytics">
                     <AnalyticsTab />
                 </TabsContent>
