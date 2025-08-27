@@ -69,6 +69,7 @@ interface Meta {
 interface Skill {
   id: string | number;
   nome: string;
+  descricao: string;
   categoria: string;
   nivel_atual: number;
   nivel_maximo: number;
@@ -77,6 +78,12 @@ interface Skill {
   pre_requisito?: string | number | null;
   nivel_minimo_para_desbloqueio?: number | null;
   ultima_atividade_em: string;
+  dungeon?: {
+    current_room: number;
+    highest_room: number;
+    active_challenge: any;
+    completed_challenges: any[];
+  }
 }
 
 interface ActiveEffect {
@@ -607,7 +614,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         if (!state.isDataLoaded || !state.profile?.active_tower_challenges) return;
     
         let profileChanged = false;
-        let updatedProfile = { ...state.profile };
+        let updatedProfile = { ...state.profile! };
         let challengesToRemove: string[] = [];
         const completedChallengesThisRun: any[] = [];
     
@@ -1040,6 +1047,56 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
     }, [user, resetUserSubCollections, toast]);
     
+    const completeDungeonChallenge = useCallback(async (skillId: string | number) => {
+        const skill = state.skills.find(s => s.id === skillId);
+        if (!skill || !skill.dungeon?.active_challenge) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Desafio da masmorra não encontrado.'});
+            return;
+        }
+
+        const challenge = skill.dungeon.active_challenge;
+        let updatedSkill = { ...skill };
+
+        // 1. Grant XP
+        updatedSkill.xp_atual = (updatedSkill.xp_atual || 0) + challenge.xpReward;
+
+        // 2. Check for level up
+        if (updatedSkill.xp_atual >= updatedSkill.xp_para_proximo_nivel) {
+            updatedSkill.nivel_atual += 1;
+            updatedSkill.xp_atual -= updatedSkill.xp_para_proximo_nivel;
+            updatedSkill.xp_para_proximo_nivel = Math.floor(updatedSkill.xp_para_proximo_nivel * 1.5);
+            
+            // Grant stat bonus
+            const statsToUpgrade = (statCategoryMapping as StatMapping)[updatedSkill.categoria] || [];
+            let updatedProfile = { ...state.profile! };
+            if (statsToUpgrade.length > 0 && updatedProfile.estatisticas) {
+                statsToUpgrade.forEach((stat: string) => { 
+                    const statKey = stat as keyof typeof updatedProfile.estatisticas;
+                    updatedProfile.estatisticas[statKey] = (updatedProfile.estatisticas[statKey] || 0) + 1; 
+                });
+                await persistData('profile', updatedProfile);
+            }
+            handleShowSkillUpNotification(updatedSkill.nome, updatedSkill.nivel_atual, statsToUpgrade.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)));
+        }
+
+        // 3. Update dungeon progress
+        const completedChallenge = { ...challenge, completedAt: new Date().toISOString() };
+        updatedSkill.dungeon = {
+            ...(updatedSkill.dungeon!),
+            active_challenge: null,
+            completed_challenges: [...(updatedSkill.dungeon!.completed_challenges || []), completedChallenge],
+            current_room: updatedSkill.dungeon!.current_room + 1,
+            highest_room: Math.max(updatedSkill.dungeon!.highest_room, updatedSkill.dungeon!.current_room + 1),
+        };
+
+        // 4. Persist data
+        const updatedSkills = state.skills.map(s => s.id === skillId ? updatedSkill : s);
+        await persistData('skills', updatedSkills);
+        
+        toast({ title: `Desafio "${challenge.challengeName}" Concluído!`, description: `Você ganhou ${challenge.xpReward} XP para ${skill.nome} e avançou para a sala ${updatedSkill.dungeon.current_room}.` });
+
+    }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
+
     // Skill Decay & Tower Lives & Task Reset Logic
      useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
@@ -1170,7 +1227,23 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             if (userDoc.exists()) {
                 let profileData = userDoc.data() as Profile;
                 let profileNeedsUpdate = false;
-                console.log('📋 Dados do perfil carregados:', profileData?.nome_utilizador || 'sem nome');
+                
+                 const skillsData = skillsSnapshot.docs.map(d => {
+                    const skill = d.data();
+                    if (!skill.dungeon) {
+                        profileNeedsUpdate = true;
+                        return { 
+                            ...skill, 
+                            dungeon: {
+                                current_room: 1,
+                                highest_room: 1,
+                                active_challenge: null,
+                                completed_challenges: [],
+                            }
+                        };
+                    }
+                    return skill;
+                });
 
                 if (!profileData.tower_progress) {
                     profileData.tower_progress = { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 };
@@ -1186,7 +1259,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (profileNeedsUpdate) {
-                    await setDoc(userDocRef, profileData, { merge: true });
+                    await persistData('profile', profileData);
+                    if (skillsData.some(s => !s.dungeon)) {
+                        await persistData('skills', skillsData);
+                    }
                 }
 
                 dispatch({
@@ -1195,7 +1271,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         profile: profileData,
                         metas: metasSnapshot.docs.map(d => d.data()),
                         missions: missionsSnapshot.docs.map(d => d.data()),
-                        skills: skillsSnapshot.docs.map(d => d.data()),
+                        skills: skillsData,
                         routine: routineDoc.exists() ? routineDoc.data() : {},
                         routineTemplates: routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {},
                         allUsers: allUsersSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
@@ -1254,7 +1330,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 description: "Usando dados locais. Algumas funcionalidades podem estar limitadas." 
             });
         }
-    }, [user, toast, handleFullReset, setShowOnboarding, resetUserSubCollections]);
+    }, [user, toast, handleFullReset, setShowOnboarding, resetUserSubCollections, persistData]);
     
     useEffect(() => {
         if (authState === 'authenticated' && user && !state.isDataLoaded) {
@@ -1266,6 +1342,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         ...state,
         persistData,
         completeMission,
+        completeDungeonChallenge,
         handleFullReset,
         handleImportData,
         questNotification, setQuestNotification,
@@ -1296,4 +1373,5 @@ export const usePlayerDataContext = () => {
     
 
     
+
 

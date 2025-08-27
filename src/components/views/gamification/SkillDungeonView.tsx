@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const SkillDungeonView = ({ skillId, onExit }) => {
-    const { skills, persistData } = usePlayerDataContext();
+    const { skills, persistData, completeDungeonChallenge } = usePlayerDataContext();
     const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
+    const [submission, setSubmission] = useState('');
     const { toast } = useToast();
 
     const skill = useMemo(() => skills.find(s => s.id === skillId), [skills, skillId]);
@@ -51,6 +52,15 @@ const SkillDungeonView = ({ skillId, onExit }) => {
         }
     };
     
+    const handleCompleteChallenge = async () => {
+        if (!submission.trim()) {
+            toast({ variant: 'destructive', title: 'Submissão Vazia', description: 'Você precisa de fornecer uma prova de conclusão.' });
+            return;
+        }
+        await completeDungeonChallenge(skillId);
+        setSubmission('');
+    }
+
     if (!skill) {
         return (
             <div className="p-4 md:p-6 h-full flex flex-col items-center justify-center text-center">
@@ -115,11 +125,13 @@ const SkillDungeonView = ({ skillId, onExit }) => {
                                 id="challenge-submission"
                                 placeholder={activeChallenge.successCriteria}
                                 className="mt-2 min-h-[150px] font-mono text-sm"
+                                value={submission}
+                                onChange={(e) => setSubmission(e.target.value)}
                             />
                         </CardContent>
                         <CardFooter className="flex-col sm:flex-row gap-2">
                              <Button variant="outline" className="w-full sm:w-auto">Desistir (Perde 1 Vida)</Button>
-                             <Button className="w-full sm:w-auto">Completar Desafio</Button>
+                             <Button className="w-full sm:w-auto" onClick={handleCompleteChallenge} disabled={!submission.trim()}>Completar Desafio</Button>
                         </CardFooter>
                     </Card>
                 ) : (
