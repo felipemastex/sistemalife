@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -200,6 +193,10 @@ interface Profile {
   shop_last_generated_at?: string;
   recurring_tasks?: RecurringTask[];
   completed_tasks_today?: { [taskId: string]: boolean };
+  event_contribution?: {
+    eventId: string;
+    contribution: number;
+  }
 }
 
 interface Guild {
@@ -211,6 +208,20 @@ interface Guild {
   created_at: string;
 }
 
+interface WorldEvent {
+  id: string;
+  name: string;
+  description: string;
+  type: 'CORRUPTION_INVASION';
+  effects: { type: string; value: number }[];
+  goal: { type: string; category: string; target: number };
+  progress: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  rewards: { type: string; multiplier?: number; duration_hours?: number; amount?: number }[];
+}
+
 interface PlayerState {
   profile: Profile | null;
   metas: Meta[];
@@ -220,6 +231,7 @@ interface PlayerState {
   routineTemplates: Record<string, any>;
   allUsers: any[];
   guilds: Guild[];
+  worldEvents: WorldEvent[];
   isDataLoaded: boolean;
   missionFeedback: Record<string | number, string>;
   generatingMission: string | number | null;
@@ -230,7 +242,7 @@ interface PlayerAction {
   payload?: any;
 }
 
-type DataKey = 'profile' | 'metas' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'guilds' | 'allUsers';
+type DataKey = 'profile' | 'metas' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'guilds' | 'allUsers' | 'worldEvents';
 
 interface CompleteMissionParams {
   rankedMissionId: string | number;
@@ -272,6 +284,7 @@ const initialState: PlayerState = {
     routineTemplates: {},
     allUsers: [],
     guilds: [],
+    worldEvents: [],
     isDataLoaded: false,
     missionFeedback: {}, 
     generatingMission: null,
@@ -303,6 +316,8 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return { ...state, allUsers: action.payload };
         case 'SET_GUILDS':
             return { ...state, guilds: action.payload };
+        case 'SET_WORLD_EVENTS':
+            return { ...state, worldEvents: action.payload };
         case 'SET_GENERATING_MISSION':
             return { ...state, generatingMission: action.payload };
         case 'SET_MISSION_FEEDBACK':
@@ -425,6 +440,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             routineTemplates: 'SET_ROUTINE_TEMPLATES',
             guilds: 'SET_GUILDS',
             allUsers: 'SET_ALL_USERS',
+            worldEvents: 'SET_WORLD_EVENTS'
         };
 
         const actionType = typeMap[key];
@@ -444,11 +460,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             skills: 'skills',
             guilds: 'guilds',
             allUsers: 'users',
+            worldEvents: 'world_events'
         };
 
         if (multiDocCollections[key]) {
              const collectionName = multiDocCollections[key];
-             const isGlobalCollection = key === 'guilds' || key === 'allUsers';
+             const isGlobalCollection = ['guilds', 'allUsers', 'worldEvents'].includes(key);
              const ref = collection(db, isGlobalCollection ? collectionName : `users/${user.uid}/${collectionName}`);
              
              const batch = writeBatch(db);
@@ -734,6 +751,18 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
+        // Handle World Event Contribution
+        const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
+        if (activeEvent && activeEvent.goal.type === 'COMPLETE_MISSIONS_IN_CATEGORY' && meta?.categoria === activeEvent.goal.category) {
+            let userContribution = updatedProfile.event_contribution?.eventId === activeEvent.id ? (updatedProfile.event_contribution.contribution || 0) : 0;
+            userContribution++;
+            
+            updatedProfile.event_contribution = { eventId: activeEvent.id, contribution: userContribution };
+            
+            const updatedEvent = { ...activeEvent, progress: (activeEvent.progress || 0) + 1 };
+            await persistData('worldEvents', state.worldEvents.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+        }
+
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
         
         let newDailyMission = null;
@@ -1045,7 +1074,17 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         try {
             const userDocRef = doc(db, 'users', userId);
             console.log('📋 Fazendo queries ao Firestore...');
-            const [userDoc, metasSnapshot, missionsSnapshot, skillsSnapshot, routineDoc, routineTemplatesDoc, allUsersSnapshot, guildsSnapshot] = await Promise.all([
+            const [
+                userDoc, 
+                metasSnapshot, 
+                missionsSnapshot, 
+                skillsSnapshot, 
+                routineDoc, 
+                routineTemplatesDoc, 
+                allUsersSnapshot, 
+                guildsSnapshot,
+                worldEventsSnapshot
+            ] = await Promise.all([
                 getDoc(userDocRef),
                 getDocs(collection(userDocRef, 'metas')),
                 getDocs(collection(userDocRef, 'missions')),
@@ -1053,7 +1092,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 getDoc(doc(db, 'users', userId, 'routine', 'main')),
                 getDoc(doc(db, 'users', userId, 'routine', 'templates')),
                 getDocs(collection(db, 'users')),
-                getDocs(collection(db, 'guilds'))
+                getDocs(collection(db, 'guilds')),
+                getDocs(collection(db, 'world_events'))
             ]);
 
             console.log('📋 Queries completadas. UserDoc exists:', userDoc.exists());
@@ -1071,6 +1111,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         routineTemplates: routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {},
                         allUsers: allUsersSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
                         guilds: guildsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
+                        worldEvents: worldEventsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
                     }
                 });
                 console.log('📋 Dados carregados com sucesso!');
@@ -1113,6 +1154,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     routineTemplates: mockData.rotinaTemplates,
                     allUsers: [],
                     guilds: [],
+                    worldEvents: mockData.worldEvents,
                 }
             });
             
@@ -1169,8 +1211,3 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
-
-    
-
-    
-

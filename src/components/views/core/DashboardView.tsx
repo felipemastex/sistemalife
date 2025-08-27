@@ -1,11 +1,16 @@
+
 "use client";
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Flame, Gem } from 'lucide-react';
+import { Flame, Gem, ShieldAlert, Zap, Clock, Users } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -29,9 +34,65 @@ const StatItem = ({ label, value, icon: Icon = null }) => (
     </div>
 );
 
+const WorldEventCard = ({ event, userContribution }) => {
+    if (!event || !event.isActive) return null;
+
+    const progressPercentage = (event.progress / event.goal.target) * 100;
+    const endDate = parseISO(event.endDate);
+    const timeLeft = formatDistanceToNow(endDate, { locale: ptBR, addSuffix: true });
+
+    return (
+        <Card className="bg-gradient-to-br from-purple-900/30 to-red-900/30 border-purple-500/50 mt-6 animate-in fade-in-50 duration-500">
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                    <ShieldAlert className="h-8 w-8 text-purple-400" />
+                    <div>
+                        <CardTitle className="text-purple-300">{event.name}</CardTitle>
+                        <CardDescription>{event.description}</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div>
+                    <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                        <span>Progresso Global</span>
+                        <span>{event.progress.toLocaleString()} / {event.goal.target.toLocaleString()}</span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-3 bg-purple-400/20 [&>div]:bg-purple-500"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="bg-background/30 p-2 rounded-md">
+                        <p className="text-xs text-muted-foreground">Sua Contribuição</p>
+                        <p className="text-lg font-bold flex items-center justify-center gap-2">
+                            <Zap className="h-4 w-4 text-yellow-400"/>
+                            {userContribution}
+                        </p>
+                    </div>
+                    <div className="bg-background/30 p-2 rounded-md">
+                        <p className="text-xs text-muted-foreground">Tempo Restante</p>
+                        <p className="text-lg font-bold flex items-center justify-center gap-2">
+                           <Clock className="h-4 w-4"/>
+                           {timeLeft.replace('em ','')}
+                        </p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 const DashboardViewComponent = () => {
-  const { profile } = usePlayerDataContext();
+  const { profile, worldEvents } = usePlayerDataContext();
   
+  const activeEvent = useMemo(() => {
+    return (worldEvents || []).find(e => e.isActive && new Date(e.endDate) > new Date());
+  }, [worldEvents]);
+
+  const userContribution = useMemo(() => {
+    if (!profile?.event_contribution || !activeEvent) return 0;
+    return profile.event_contribution.eventId === activeEvent.id ? profile.event_contribution.contribution : 0;
+  }, [profile, activeEvent]);
+
   if (!profile || !profile.estatisticas) {
     return (
       <div className="p-6 h-full flex items-center justify-center">
@@ -54,13 +115,13 @@ const DashboardViewComponent = () => {
 
   return (
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
-      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
-        <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
-         <div className="text-left sm:text-right">
-            <p className="font-bold text-xl text-foreground">{profile.nome_utilizador}</p>
-            <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
+            <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
+            <div className="text-left sm:text-right">
+                <p className="font-bold text-xl text-foreground">{profile.nome_utilizador}</p>
+                <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
+            </div>
         </div>
-      </div>
 
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -90,6 +151,8 @@ const DashboardViewComponent = () => {
                  </div>
             </div>
             
+             <WorldEventCard event={activeEvent} userContribution={userContribution} />
+
             <hr className="border-border/50" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">

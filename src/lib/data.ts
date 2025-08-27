@@ -380,3 +380,29 @@ export const rotinaTemplates = {
         { id: 13, start_time: '15:00', end_time: '18:00', activity: 'Tempo livre / Social' },
     ]
 };
+
+export const worldEvents = [
+    {
+        id: 'event_procrastination_plague_1',
+        name: 'A Praga da Procrastinação',
+        description: 'Uma onda de letargia ameaça o progresso de todos os Caçadores. Apenas um esforço focado e conjunto pode repeli-la.',
+        type: 'CORRUPTION_INVASION',
+        effects: [
+            { type: 'XP_NERF', value: 0.9 }, // XP ganho é 90% do normal
+            { type: 'CORRUPTION_ACCELERATION', value: 1.5 } // Corrupção é 50% mais rápida
+        ],
+        goal: {
+            type: 'COMPLETE_MISSIONS_IN_CATEGORY',
+            category: 'Crescimento Pessoal', // Categoria de exemplo
+            target: 1000,
+        },
+        progress: 452,
+        startDate: '2024-07-20T00:00:00Z',
+        endDate: '2024-07-27T23:59:59Z',
+        isActive: true,
+        rewards: [
+            { type: 'GLOBAL_XP_BOOST', multiplier: 1.5, duration_hours: 48 },
+            { type: 'GLOBAL_FRAGMENT_BONUS', amount: 100 }
+        ]
+    }
+];
