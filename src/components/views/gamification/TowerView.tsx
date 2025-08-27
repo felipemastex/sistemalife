@@ -104,15 +104,15 @@ const TowerView = () => {
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
             <div className="flex-shrink-0">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                     <div className="flex-1">
                         <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Torre dos Desafios</h1>
                         <p className="text-muted-foreground mt-2 max-w-3xl">
                             Suba andares ao completar desafios de dificuldade crescente e ganhe recompensas exclusivas.
                         </p>
                     </div>
-                    <Card className="bg-card/80 p-3">
-                        <div className="flex items-center gap-2">
+                     <div className="flex-shrink-0 bg-card/80 p-3 rounded-lg border border-border w-full md:w-auto">
+                        <div className="flex items-center justify-between md:justify-start gap-2">
                              <div className="flex items-center gap-1 text-red-400">
                                 {Array.from({ length: towerProgress.maxLives }).map((_, i) => (
                                     <Heart key={i} className={cn("h-6 w-6", i < towerProgress.lives ? 'fill-current' : '')} />
@@ -123,7 +123,7 @@ const TowerView = () => {
                                 <p className="text-xs text-muted-foreground">Vidas</p>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             </div>
 
