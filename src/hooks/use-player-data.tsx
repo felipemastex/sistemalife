@@ -979,7 +979,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [], available_tower_challenges: [] };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [], available_tower_challenges: [], recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
@@ -1375,3 +1375,6 @@ export const usePlayerDataContext = () => {
     
 
 
+
+
+    
