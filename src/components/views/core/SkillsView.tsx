@@ -129,15 +129,15 @@ const SkillsViewComponent = () => {
     const metasWithoutSkills = metas.filter(meta => !skills.some(skill => skill.id === meta.habilidade_associada_id));
 
     return (
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 h-full overflow-y-auto">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h1 className="text-3xl font-bold text-cyan-400">Árvore de Habilidades</h1>
-                <Button onClick={() => setShowAddDialog(true)} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto">
+                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Árvore de Habilidades</h1>
+                <Button onClick={() => setShowAddDialog(true)} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                     <PlusCircle className="h-5 w-5 mr-2" />
                     Adicionar Habilidade
                 </Button>
             </div>
-            <p className="text-gray-400 mb-6">As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Cada missão contribui com XP para a habilidade correspondente.</p>
+            <p className="text-muted-foreground mb-8 max-w-4xl">As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Mas cuidado, a inatividade prolongada pode levar à Corrupção, causando a perda de XP.</p>
             <div className="space-y-4">
                 {skills.map(skill => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
@@ -151,7 +151,7 @@ const SkillsViewComponent = () => {
 
                     return(
                     <div key={skill.id} className={cn(
-                        "bg-gray-800/50 border border-l-4 rounded-lg p-4 transition-all",
+                        "bg-card/60 border border-l-4 rounded-lg p-4 transition-all",
                         isDecaying ? "border-purple-600 animate-pulse-slow" : getSkillColor(skill.categoria),
                         isAtRisk && "border-yellow-500"
                     )}>
@@ -171,11 +171,11 @@ const SkillsViewComponent = () => {
                                                 </Tooltip>
                                             </TooltipProvider>
                                         )}
-                                        <p className="text-lg font-bold text-gray-200 break-words">{skill.nome}</p>
+                                        <p className="text-lg font-bold text-foreground break-words">{skill.nome}</p>
                                     </div>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 h-8 w-8 -mt-1 -mr-1" aria-label={`Excluir habilidade ${skill.nome}`}>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8 -mt-1 -mr-1" aria-label={`Excluir habilidade ${skill.nome}`}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </AlertDialogTrigger>
@@ -193,21 +193,21 @@ const SkillsViewComponent = () => {
                                         </AlertDialogContent>
                                     </AlertDialog>
                                 </div>
-                                <p className="text-sm text-gray-400 mt-1 break-words">{skill.descricao}</p>
+                                <p className="text-sm text-muted-foreground mt-1 break-words">{skill.descricao}</p>
                                 
                                 {associatedMeta && (
-                                    <div className="flex items-center gap-2 mt-2 text-sm text-cyan-400/80 bg-cyan-900/30 px-2 py-1 rounded-md max-w-max">
+                                    <div className="flex items-center gap-2 mt-2 text-sm text-primary/80 bg-primary/20 px-2 py-1 rounded-md max-w-max">
                                         <Link2 className="h-4 w-4" />
                                         <span>Vinculado a: {associatedMeta.nome}</span>
                                     </div>
                                 )}
 
                                 {stats.length > 0 && (
-                                     <div className="flex items-center gap-4 pt-2 mt-2 border-t border-gray-700/50">
-                                        <strong className="text-xs text-gray-400">Aumenta:</strong>
+                                     <div className="flex items-center gap-4 pt-2 mt-2 border-t border-border/50">
+                                        <strong className="text-xs text-muted-foreground">Aumenta:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
                                         {stats.map(stat => (
-                                            <div key={stat} className="flex items-center gap-1.5 text-gray-300">
+                                            <div key={stat} className="flex items-center gap-1.5 text-foreground">
                                                 {statIcons[stat]}
                                                 <span className="capitalize text-xs">{stat}</span>
                                             </div>
@@ -216,22 +216,22 @@ const SkillsViewComponent = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="text-center w-full sm:w-28 flex-shrink-0 bg-gray-900/30 p-2 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none">
-                                <p className="text-sm text-gray-400">Nível</p>
-                                <p className="text-2xl font-bold text-cyan-400">{skill.nivel_atual}</p>
-                                <p className="text-xs text-gray-500">Máx {skill.nivel_maximo}</p>
+                            <div className="text-center w-full sm:w-28 flex-shrink-0 bg-secondary/30 p-2 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none">
+                                <p className="text-sm text-muted-foreground">Nível</p>
+                                <p className="text-2xl font-bold text-primary">{skill.nivel_atual}</p>
+                                <p className="text-xs text-muted-foreground">Máx {skill.nivel_maximo}</p>
                             </div>
                         </div>
                         {skill.nivel_atual > 0 && (
                              <div className="mt-3">
-                                <div className="flex justify-between text-xs text-gray-300 mb-1">
+                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                     <span>XP da Habilidade</span>
                                     <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel}</span>
                                 </div>
-                                <div className="w-full bg-gray-700 rounded-full h-2.5">
+                                <div className="w-full bg-secondary rounded-full h-2.5">
                                     <div className={cn(
                                         "h-2.5 rounded-full transition-all duration-500",
-                                        isDecaying ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-purple-500 to-blue-500"
+                                        isDecaying ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-primary to-cyan-400"
                                      )} style={{ width: `${skillProgress}%` }}></div>
                                 </div>
                             </div>
@@ -243,7 +243,7 @@ const SkillsViewComponent = () => {
             <Dialog open={showAddDialog} onOpenChange={(isOpen) => { if(!isOpen) { setShowAddDialog(false); setSelectedMetaId(null); } else { setShowAddDialog(true); }}}>
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-cyan-400 text-xl">
+                        <DialogTitle className="flex items-center gap-2 text-primary text-xl">
                             <PlusCircle/>
                             Adicionar Nova Habilidade
                         </DialogTitle>

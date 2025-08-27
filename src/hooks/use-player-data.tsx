@@ -356,7 +356,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         handleShowStreakBonusNotification,
         handleShowSkillUpNotification,
         handleShowNewEpicMissionNotification,
-        handleShowGoalCompletedNotification
+        handleShowGoalCompletedNotification,
+        handleShowSkillDecayNotification,
+        handleShowSkillAtRiskNotification
     } = usePlayerNotifications({ profile: state.profile || null, user });
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
@@ -583,26 +585,29 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         const meta = state.metas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
-            const skillToUpdate = state.skills.find((s: Skill) => s.id === meta.habilidade_associada_id);
-            if (skillToUpdate && skillToUpdate.nivel_atual !== undefined && skillToUpdate.nivel_maximo !== undefined && 
-                skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
-                const updatedSkill = { ...skillToUpdate };
-                updatedSkill.xp_atual = (updatedSkill.xp_atual || 0) + missionSkillXp;
-                updatedSkill.ultima_atividade_em = new Date().toISOString();
-                 if (updatedSkill.xp_atual >= (updatedSkill.xp_para_proximo_nivel || 0)) {
-                    const statsToUpgrade = (statCategoryMapping as StatMapping)[updatedSkill.categoria] || [];
-                    handleShowSkillUpNotification(updatedSkill.nome, (updatedSkill.nivel_atual || 0) + 1, statsToUpgrade.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)));
-                    if (statsToUpgrade.length > 0 && updatedProfile.estatisticas) {
-                        statsToUpgrade.forEach((stat: string) => { 
-                            const statKey = stat as keyof typeof updatedProfile.estatisticas;
-                            updatedProfile.estatisticas[statKey] = (updatedProfile.estatisticas[statKey] || 0) + 1; 
-                        });
+            let skillToUpdate = state.skills.find((s: Skill) => s.id === meta.habilidade_associada_id);
+            if (skillToUpdate) {
+                 skillToUpdate = { ...skillToUpdate, ultima_atividade_em: new Date().toISOString() };
+                 if (skillToUpdate.nivel_atual !== undefined && skillToUpdate.nivel_maximo !== undefined && 
+                    skillToUpdate.nivel_atual < skillToUpdate.nivel_maximo) {
+                    
+                    skillToUpdate.xp_atual = (skillToUpdate.xp_atual || 0) + missionSkillXp;
+                    
+                     if (skillToUpdate.xp_atual >= (skillToUpdate.xp_para_proximo_nivel || 0)) {
+                        const statsToUpgrade = (statCategoryMapping as StatMapping)[skillToUpdate.categoria] || [];
+                        handleShowSkillUpNotification(skillToUpdate.nome, (skillToUpdate.nivel_atual || 0) + 1, statsToUpgrade.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)));
+                        if (statsToUpgrade.length > 0 && updatedProfile.estatisticas) {
+                            statsToUpgrade.forEach((stat: string) => { 
+                                const statKey = stat as keyof typeof updatedProfile.estatisticas;
+                                updatedProfile.estatisticas[statKey] = (updatedProfile.estatisticas[statKey] || 0) + 1; 
+                            });
+                        }
+                        skillToUpdate.nivel_atual = (skillToUpdate.nivel_atual || 0) + 1;
+                        skillToUpdate.xp_atual = (skillToUpdate.xp_atual || 0) - (skillToUpdate.xp_para_proximo_nivel || 0);
+                        skillToUpdate.xp_para_proximo_nivel = Math.floor((skillToUpdate.xp_para_proximo_nivel || 0) * 1.5);
                     }
-                    updatedSkill.nivel_atual = (updatedSkill.nivel_atual || 0) + 1;
-                    updatedSkill.xp_atual = (updatedSkill.xp_atual || 0) - (updatedSkill.xp_para_proximo_nivel || 0);
-                    updatedSkill.xp_para_proximo_nivel = Math.floor((updatedSkill.xp_para_proximo_nivel || 0) * 1.5);
                 }
-                dispatch({ type: 'UPDATE_SKILL', payload: { skillId: meta.habilidade_associada_id, updates: updatedSkill } });
+                dispatch({ type: 'UPDATE_SKILL', payload: { skillId: meta.habilidade_associada_id, updates: skillToUpdate } });
             }
         }
         
@@ -839,6 +844,51 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             reader.readAsText(file);
         });
     };
+    
+    // Skill Decay Logic
+     useEffect(() => {
+        if (!state.isDataLoaded || !state.skills.length) return;
+
+        const checkSkillDecay = () => {
+            const now = new Date();
+            let skillsToUpdate: Skill[] = [];
+            let atRiskSkills: { name: string; daysInactive: number }[] = [];
+            let decayedSkills: { name: string; xpLost: number }[] = [];
+
+            state.skills.forEach(skill => {
+                const lastActivity = new Date(skill.ultima_atividade_em || now);
+                const daysInactive = differenceInCalendarDays(now, lastActivity);
+
+                if (daysInactive > 14) { // Corrupted
+                    const xpToLose = 5; // Lose 5 XP per decay event
+                    if (skill.xp_atual > 0) {
+                        const newXp = Math.max(0, skill.xp_atual - xpToLose);
+                        skillsToUpdate.push({ ...skill, xp_atual: newXp });
+                        decayedSkills.push({ name: skill.nome, xpLost: xpToLose });
+                    }
+                } else if (daysInactive > 7) { // At risk
+                    atRiskSkills.push({ name: skill.nome, daysInactive });
+                }
+            });
+
+            if (skillsToUpdate.length > 0) {
+                const updatedSkills = state.skills.map(s => {
+                    const update = skillsToUpdate.find(u => u.id === s.id);
+                    return update ? update : s;
+                });
+                persistData('skills', updatedSkills);
+                handleShowSkillDecayNotification(decayedSkills);
+            }
+            if (atRiskSkills.length > 0) {
+                 handleShowSkillAtRiskNotification(atRiskSkills);
+            }
+        };
+
+        const intervalId = setInterval(checkSkillDecay, 1000 * 60 * 60 * 24); // Check once a day
+        checkSkillDecay(); // Also check on load
+
+        return () => clearInterval(intervalId);
+    }, [state.isDataLoaded, state.skills, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
 
 
     const fetchData = useCallback(async (userId: string) => {
