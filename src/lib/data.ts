@@ -381,6 +381,13 @@ export const rotinaTemplates = {
     ]
 };
 
+// Function to get a future date dynamically
+const getFutureDate = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date.toISOString();
+}
+
 export const worldEvents = [
     {
         id: 'event_procrastination_plague_1',
@@ -398,7 +405,7 @@ export const worldEvents = [
         },
         progress: 452,
         startDate: new Date().toISOString(),
-        endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), // Set to 7 days from now
+        endDate: getFutureDate(7), // Event ends 7 days from now
         isActive: true,
         rewards: [
             { type: 'GLOBAL_XP_BOOST', multiplier: 1.5, duration_hours: 48 },

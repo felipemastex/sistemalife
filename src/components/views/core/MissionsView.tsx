@@ -877,8 +877,8 @@ const MissionsViewComponent = () => {
 
 
     return (
-        <div className={cn("p-4 md:p-6", accordionSpacing)}>
-            <div className="mb-6">
+        <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
+            <div className="flex-shrink-0 mb-6">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
                     <div className="flex items-center justify-center gap-2">
@@ -939,123 +939,125 @@ const MissionsViewComponent = () => {
                 </Collapsible>
             </div>
             
-            <Accordion 
-                type="single" 
-                collapsible 
-                className={cn("w-full", accordionSpacing)}
-                value={activeAccordionItem || undefined}
-                onValueChange={(value: string) => {
-                     if (missionViewStyle === 'inline') {
-                        setActiveAccordionItem(value || null);
-                     }
-                }}
-            >
-                {visibleMissions.map(mission => {
-                    const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
-                    const isManualMission = mission.isManual;
-                    const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
-                    
-                    let missionProgress;
-                    if (isManualMission) {
-                         const totalSubs = mission.subTasks?.length || 0;
-                         const completedSubs = mission.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0;
-                         missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
-                    } else {
-                        missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
-                    }
-                    
-                    const associatedMeta = !isManualMission ? metas.find((m: Meta) => m.nome === mission.meta_associada) : null;
-                    const daysRemaining = associatedMeta && associatedMeta.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
-                    
-                    const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
-
-                    const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
-                        if (missionViewStyle === 'inline' || isManualMission) {
-                            return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
+            <div className="flex-grow overflow-y-auto -mx-4 px-4">
+                <Accordion 
+                    type="single" 
+                    collapsible 
+                    className={cn("w-full", accordionSpacing)}
+                    value={activeAccordionItem || undefined}
+                    onValueChange={(value: string) => {
+                         if (missionViewStyle === 'inline') {
+                            setActiveAccordionItem(value || null);
+                         }
+                    }}
+                >
+                    {visibleMissions.map(mission => {
+                        const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
+                        const isManualMission = mission.isManual;
+                        const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
+                        
+                        let missionProgress;
+                        if (isManualMission) {
+                             const totalSubs = mission.subTasks?.length || 0;
+                             const completedSubs = mission.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0;
+                             missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
+                        } else {
+                            missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                         }
-                        return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
-                    };
-                    
-                    return (
-                        <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
-                            <div className={cn("p-4 transition-all duration-300", generatingMission === mission.id ? 'opacity-50' : '')}>
-                                <div className="flex flex-col p-4 gap-4">
-                                    <div className="flex items-center gap-4">
-                                        <TriggerWrapper>
-                                            <div className="flex-1 text-left min-w-0 flex items-center gap-4">
-                                                <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
-                                                    {mission.rank}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
-                                                            {mission.nome}
-                                                        </p>
+                        
+                        const associatedMeta = !isManualMission ? metas.find((m: Meta) => m.nome === mission.meta_associada) : null;
+                        const daysRemaining = associatedMeta && associatedMeta.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
+                        
+                        const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
+
+                        const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
+                            if (missionViewStyle === 'inline' || isManualMission) {
+                                return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
+                            }
+                            return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
+                        };
+                        
+                        return (
+                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
+                                <div className={cn("p-4 transition-all duration-300", generatingMission === mission.id ? 'opacity-50' : '')}>
+                                    <div className="flex flex-col p-4 gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <TriggerWrapper>
+                                                <div className="flex-1 text-left min-w-0 flex items-center gap-4">
+                                                    <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
+                                                        {mission.rank}
                                                     </div>
-                                                    {associatedMeta && !isManualMission && (
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                            <Link className="h-3 w-3" />
-                                                            <span>{associatedMeta.nome}</span>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-center">
+                                                            <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
+                                                                {mission.nome}
+                                                            </p>
                                                         </div>
-                                                    )}
-                                                     <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                                        {associatedMeta && !isManualMission && (
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                                <Link className="h-3 w-3" />
+                                                                <span>{associatedMeta.nome}</span>
+                                                            </div>
+                                                        )}
+                                                         <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                                    </div>
                                                 </div>
+                                            </TriggerWrapper>
+                                            <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
+                                                {isManualMission && 
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
+                                                        <Edit className="h-5 w-5" />
+                                                    </Button>
+                                                }
+                                                {!isManualMission && (
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                        <GitMerge className="h-5 w-5" />
+                                                    </Button>
+                                                )}
                                             </div>
-                                        </TriggerWrapper>
-                                        <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
-                                            {isManualMission && 
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
-                                                    <Edit className="h-5 w-5" />
-                                                </Button>
-                                            }
-                                            {!isManualMission && (
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                                    <GitMerge className="h-5 w-5" />
-                                                </Button>
-                                            )}
                                         </div>
+                                       {!isManualMission && (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger className="w-full">
+                                                        <Progress value={missionProgress} className="h-2" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                       )}
                                     </div>
-                                   {!isManualMission && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger className="w-full">
-                                                    <Progress value={missionProgress} className="h-2" />
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                   )}
+                                    <AccordionContent className="px-4 pb-4 space-y-4">
+                                        {renderActiveMissionContent(mission)}
+                                    </AccordionContent>
                                 </div>
-                                <AccordionContent className="px-4 pb-4 space-y-4">
-                                    {renderActiveMissionContent(mission)}
-                                </AccordionContent>
-                            </div>
-                            {generatingMission === mission.id ? (
-                                <div className="absolute inset-0 bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
-                                    <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
-                                    <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
-                                </div>
-                            ) : wasCompletedToday ? (
-                                <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
-                                    <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
-                                    <p className="text-lg font-bold text-foreground">Nova Missão em</p>
-                                    <p className="text-4xl font-mono text-cyan-400 font-bold tracking-wider">{timeUntilMidnight}</p>
-                                    <p className="text-xs text-muted-foreground mt-2">Missão concluída hoje!</p>
-                                </div>
-                            ) : null}
-                        </AccordionItem>
-                    )
-                })}
-                 {visibleMissions.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
-                        <Search className="h-16 w-16 mb-4" />
-                        <p className="font-semibold text-lg">Nenhuma Missão Encontrada</p>
-                        <p className="text-sm mt-1">Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
-                    </div>
-                )}
-            </Accordion>
+                                {generatingMission === mission.id ? (
+                                    <div className="absolute inset-0 bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
+                                        <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
+                                        <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                    </div>
+                                ) : wasCompletedToday ? (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
+                                        <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
+                                        <p className="text-lg font-bold text-foreground">Nova Missão em</p>
+                                        <p className="text-4xl font-mono text-cyan-400 font-bold tracking-wider">{timeUntilMidnight}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">Missão concluída hoje!</p>
+                                    </div>
+                                ) : null}
+                            </AccordionItem>
+                        )
+                    })}
+                     {visibleMissions.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
+                            <Search className="h-16 w-16 mb-4" />
+                            <p className="font-semibold text-lg">Nenhuma Missão Encontrada</p>
+                            <p className="text-sm mt-1">Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
+                        </div>
+                    )}
+                </Accordion>
+            </div>
             
             <MissionCompletionAnimation
                 isOpen={animationState.showAnimation}
@@ -1139,6 +1141,3 @@ const MissionsViewComponent = () => {
 };
 
 export const MissionsView = memo(MissionsViewComponent);
-
-    
-
