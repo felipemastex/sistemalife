@@ -3,6 +3,7 @@
 
 
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -196,7 +197,7 @@ interface Profile {
   recommended_shop_items?: any[];
   shop_last_generated_at?: string;
   recurring_tasks?: RecurringTask[];
-  completed_tasks_today?: { [taskId: number]: boolean };
+  completed_tasks_today?: { [taskId: string]: boolean };
 }
 
 interface Guild {
@@ -1167,3 +1168,4 @@ export const usePlayerDataContext = () => {
     
 
     
+
