@@ -1,9 +1,9 @@
 
 "use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Zap, Gem } from "lucide-react";
+import { Gift, Zap, Gem, Shield, Crown } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "../ui/tooltip";
 
@@ -23,35 +23,51 @@ const mockRewards = [
         cost: 1500,
         icon: Gem,
     },
+     {
+        id: 'reward_streak_protection',
+        name: 'Proteção Coletiva',
+        description: 'Concede a cada membro um amuleto que impede a quebra da sua próxima sequência.',
+        cost: 2500,
+        icon: Shield,
+    },
     {
         id: 'reward_special_item',
         name: 'Emblema do Cooperador',
-        description: 'Um item cosmético raro para o perfil, mostrando a sua dedicação.',
-        cost: 3000,
-        icon: Gift,
+        description: 'Um item cosmético raro para o perfil, mostrando a sua dedicação à guilda.',
+        cost: 5000,
+        icon: Crown,
     },
 ];
 
 export const GuildRewards = () => {
     // Mock user contribution points for UI display
-    const userContributionPoints = 750;
+    const guildContributionPoints = 2750;
 
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Gift className="h-5 w-5" />
-                    Recompensas da Guilda
+                    Tesouro da Guilda
                 </CardTitle>
+                 <CardDescription>Use os pontos de contribuição da guilda para desbloquear bônus para todos os membros.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col p-0">
                 <div className="p-6 pt-0">
-                    <p className="text-muted-foreground text-sm">Use os pontos de contribuição da guilda para desbloquear bônus para todos os membros.</p>
+                    <Card className="bg-secondary/50 p-4">
+                        <div className="flex justify-between items-center">
+                            <p className="text-muted-foreground">Pontos de Contribuição da Guilda</p>
+                            <p className="text-2xl font-bold text-primary flex items-center gap-2">
+                                <Gem className="h-5 w-5"/>
+                                {guildContributionPoints.toLocaleString()}
+                            </p>
+                        </div>
+                    </Card>
                 </div>
                 <ScrollArea className="flex-grow px-6">
                     <div className="space-y-4">
                         {mockRewards.map(reward => {
-                            const canAfford = userContributionPoints >= reward.cost;
+                            const canAfford = guildContributionPoints >= reward.cost;
                             const Icon = reward.icon;
                             return (
                                 <Card key={reward.id} className="bg-secondary/50">
@@ -68,13 +84,15 @@ export const GuildRewards = () => {
                                                 <TooltipTrigger asChild>
                                                      <div className="flex-shrink-0">
                                                         <Button disabled={!canAfford} size="sm">
-                                                            <span className="hidden sm:inline">Resgatar</span> ({reward.cost})
+                                                            <span className="hidden sm:inline">Desbloquear por </span>
+                                                            <Gem className="h-3 w-3 mx-1.5"/> 
+                                                            {reward.cost}
                                                         </Button>
                                                     </div>
                                                 </TooltipTrigger>
                                                  {!canAfford && (
                                                     <TooltipContent>
-                                                        <p>Contribuição insuficiente. Faltam {reward.cost - userContributionPoints} pontos.</p>
+                                                        <p>Contribuição insuficiente. Faltam {reward.cost - guildContributionPoints} pontos.</p>
                                                     </TooltipContent>
                                                 )}
                                             </Tooltip>
@@ -85,9 +103,6 @@ export const GuildRewards = () => {
                         })}
                     </div>
                 </ScrollArea>
-                 <div className="p-6 pb-4 mt-auto">
-                    <p className="text-center text-sm text-muted-foreground">Sua Contribuição: <span className="font-bold text-primary">{userContributionPoints} Pontos</span></p>
-                </div>
             </CardContent>
         </Card>
     );

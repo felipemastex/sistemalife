@@ -15,7 +15,7 @@ import { MemberLeaderboard } from './MemberLeaderboard';
 import { GuildNotifications } from './GuildNotifications';
 import { GuildRewards } from './GuildRewards';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LayoutDashboard, Users, MessageSquare, Shield, Swords } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Shield, Swords, Gift } from 'lucide-react';
 
 
 export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeaveGuild, onEdit, allUsers, setAllUsers }) => {
@@ -58,10 +58,11 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
             <GuildHeader guild={guild} onEdit={onEdit} onLeave={onLeaveGuild} isLeader={isLeader} />
             
              <Tabs defaultValue="overview" className="mt-6 flex-grow">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4"/>Visão Geral</TabsTrigger>
                     <TabsTrigger value="members"><Users className="mr-2 h-4 w-4"/>Membros</TabsTrigger>
                     <TabsTrigger value="chat"><MessageSquare className="mr-2 h-4 w-4"/>Chat</TabsTrigger>
+                    <TabsTrigger value="rewards"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
                     {canManage && <TabsTrigger value="management"><Shield className="mr-2 h-4 w-4"/>Gestão</TabsTrigger>}
                 </TabsList>
                 
@@ -111,6 +112,11 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                        <GuildChat guildId={guild.id} userProfile={profile} />
                     </Card>
                 </TabsContent>
+                
+                <TabsContent value="rewards" className="mt-6">
+                    <GuildRewards />
+                </TabsContent>
+
 
                  {canManage && (
                     <TabsContent value="management" className="mt-6">
@@ -121,8 +127,7 @@ export const GuildDashboard = ({ guild, profile, members, onGuildUpdate, onLeave
                                 onAccept={handleAcceptRequest}
                                 onDecline={handleDeclineRequest}
                             />
-                             <GuildRewards />
-                            <GuildNotifications />
+                             <GuildNotifications />
                         </div>
                     </TabsContent>
                 )}
