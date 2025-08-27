@@ -604,16 +604,19 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     };
 
     const checkAndApplyTowerRewards = useCallback(() => {
-        if (!state.profile?.active_tower_challenges) return;
+        if (!state.isDataLoaded || !state.profile?.active_tower_challenges) return;
     
         let profileChanged = false;
-        let updatedProfile = { ...state.profile! };
+        let updatedProfile = { ...state.profile };
         let challengesToRemove: string[] = [];
+        const completedChallengesThisRun: any[] = [];
     
-        const activeChallenges = updatedProfile.active_tower_challenges.filter(challenge => {
+        const stillActiveChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
+            if (!challenge.startedAt) return true;
             const startTime = new Date(challenge.startedAt).getTime();
             const timeLimitMillis = challenge.timeLimit * 60 * 60 * 1000;
             const isExpired = new Date().getTime() - startTime > timeLimitMillis;
+    
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
                     updatedProfile.tower_progress.lives = Math.max(0, updatedProfile.tower_progress.lives - 1);
@@ -626,52 +629,61 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             return true;
         });
     
-        activeChallenges.forEach(challenge => {
-            let challengeCompleted = true;
+        stillActiveChallenges.forEach(challenge => {
+            let allRequirementsMet = true;
+            
             challenge.requirements.forEach(req => {
                 let currentProgress = req.current || 0;
                 switch (req.type) {
-                    case 'missions_in_category_completed': {
+                    case 'missions_in_category_completed':
                         const categoryGoals = state.metas.filter(m => m.categoria === req.value).map(m => m.nome);
                         currentProgress = state.missions.filter(m => categoryGoals.includes(m.meta_associada)).flatMap(m => m.missoes_diarias || []).filter(dm => dm.concluido).length;
                         break;
-                    }
                     case 'streak_maintained':
                         currentProgress = updatedProfile.streak_atual;
                         break;
-                    // TODO: Implement other requirement types
+                    case 'missions_completed':
+                         currentProgress = updatedProfile.missoes_concluidas_total;
+                         break;
+                    case 'level_reached':
+                        currentProgress = updatedProfile.nivel;
+                        break;
                 }
-    
                 req.current = currentProgress;
                 if (currentProgress < req.target) {
-                    challengeCompleted = false;
+                    allRequirementsMet = false;
                 }
             });
     
-            if (challengeCompleted) {
-                updatedProfile.xp += challenge.rewards.xp;
-                updatedProfile.fragmentos += challenge.rewards.fragments;
-                if (challenge.rewards.premiumFragments) {
-                    if (!updatedProfile.tower_progress) {
-                        updatedProfile.tower_progress = { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 };
-                    }
-                }
-                
-                toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title} e ganhou ${challenge.rewards.xp} XP!` });
+            if (allRequirementsMet) {
+                completedChallengesThisRun.push(challenge);
                 challengesToRemove.push(challenge.id);
                 profileChanged = true;
             }
         });
+
+        if (completedChallengesThisRun.length > 0) {
+            completedChallengesThisRun.forEach(challenge => {
+                updatedProfile.xp += challenge.rewards.xp;
+                updatedProfile.fragmentos += challenge.rewards.fragments;
+                if (challenge.rewards.premiumFragments && updatedProfile.tower_progress) {
+                    // Placeholder for premium currency
+                }
+                toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title} e ganhou ${challenge.rewards.xp} XP!` });
+            });
+        }
     
         if (profileChanged) {
-            updatedProfile.active_tower_challenges = [...activeChallenges, ...(updatedProfile.active_tower_challenges || [])]
-                .filter(c => !challengesToRemove.includes(c.id))
-                .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i); // remove duplicates
+            updatedProfile.active_tower_challenges = (updatedProfile.active_tower_challenges || []).filter(c => !challengesToRemove.includes(c.id));
             
-            const completedChallengesOnFloor = (updatedProfile.active_tower_challenges || []).filter(c => c.floor === updatedProfile.tower_progress?.currentFloor).length === 0;
+            const activeChallengesOnCurrentFloor = (state.profile?.active_tower_challenges || []).filter(c => c.floor === state.profile?.tower_progress?.currentFloor).length;
+            const remainingChallengesOnFloor = activeChallengesOnCurrentFloor - completedChallengesThisRun.filter(c => c.floor === state.profile?.tower_progress?.currentFloor).length;
 
-            if (updatedProfile.tower_progress && completedChallengesOnFloor && (state.profile?.active_tower_challenges || []).length > 0) {
+            if (updatedProfile.tower_progress && remainingChallengesOnFloor === 0 && activeChallengesOnCurrentFloor > 0) {
                  updatedProfile.tower_progress.currentFloor += 1;
+                 if (updatedProfile.tower_progress.currentFloor > updatedProfile.tower_progress.highestFloor) {
+                    updatedProfile.tower_progress.highestFloor = updatedProfile.tower_progress.currentFloor;
+                 }
                  updatedProfile.tower_progress.dailyChallengesAvailable = 3;
                  toast({title: "Andar da Torre Concluído!", description: `Você avançou para o andar ${updatedProfile.tower_progress.currentFloor}!`});
             }
@@ -1102,7 +1114,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     // Narrative event trigger
     useEffect(() => {
-        if (!state.isDataLoaded || !state.profile) return;
+        if (!state.isDataLoaded || !state.profile || !state.profile.last_known_level) return;
 
         const currentLevel = state.profile.nivel;
         const lastKnownLevel = state.profile.last_known_level || currentLevel;
@@ -1242,7 +1254,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 description: "Usando dados locais. Algumas funcionalidades podem estar limitadas." 
             });
         }
-    }, [user, toast, handleFullReset, setShowOnboarding]);
+    }, [user, toast, handleFullReset, setShowOnboarding, resetUserSubCollections]);
     
     useEffect(() => {
         if (authState === 'authenticated' && user && !state.isDataLoaded) {
@@ -1284,3 +1296,4 @@ export const usePlayerDataContext = () => {
     
 
     
+
