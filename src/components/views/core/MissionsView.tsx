@@ -3,7 +3,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Skull } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -46,6 +46,7 @@ interface DailyMission {
   subTasks: SubTask[];
   learningResources?: string[];
   completed_at?: string;
+  isNemesisChallenge?: boolean;
 }
 
 interface RankedMission {
@@ -709,7 +710,8 @@ const MissionsViewComponent = () => {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0}))
+                subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                isNemesisChallenge: result.isNemesisChallenge,
             };
             
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });
@@ -786,10 +788,18 @@ const MissionsViewComponent = () => {
         }
         
         if (activeDailyMission) {
+            const isNemesisChallenge = 'isNemesisChallenge' in activeDailyMission && activeDailyMission.isNemesisChallenge;
             return (
-                <div className="bg-secondary/50 border-l-4 border-primary rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500">
+                <div className={cn("rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500", 
+                    isNemesisChallenge ? 'bg-red-900/20 border-l-4 border-red-500' : 'bg-secondary/50 border-l-4 border-primary'
+                )}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div className="flex-grow">
+                             {isNemesisChallenge && (
+                                <p className="text-sm font-bold text-red-400 flex items-center gap-2 mb-2">
+                                    <Skull className="h-4 w-4" /> Desafio do Némesis
+                                </p>
+                            )}
                             <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
                             <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
                         </div>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -33,6 +34,7 @@ interface DailyMission {
   subTasks: SubTask[];
   learningResources?: string[];
   completed_at?: string;
+  isNemesisChallenge?: boolean;
 }
 
 interface RankedMission {
@@ -793,6 +795,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const damage = finalXPGained;
             const newHealth = Math.max(0, meta.nemesis.currentHealth - damage);
             meta.nemesis.currentHealth = newHealth;
+            if (newHealth === 0) {
+                 toast({ title: 'Némesis Derrotado!', description: `Você superou ${meta.nemesis.name}!` });
+            }
             currentMetas = currentMetas.map(m => m.id === meta.id ? meta : m);
             dispatch({ type: 'SET_METAS', payload: currentMetas });
         }
@@ -854,7 +859,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0}))
+                subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                isNemesisChallenge: result.isNemesisChallenge,
             };
         } catch (err) {
             console.error(err);
@@ -930,7 +936,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     concluido: false,
                     tipo: 'diaria',
                     learningResources: result.learningResources || [],
-                    subTasks: result.subTasks.map(st => ({...st, current: 0}))
+                    subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                    isNemesisChallenge: result.isNemesisChallenge,
                 };
                 
                 dispatch({ type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } });
@@ -1374,6 +1381,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         setMissionFeedback,
         generatePendingDailyMissions,
         checkAndApplyTowerRewards,
+        addDailyMission: (payload: { rankedMissionId: string | number; newDailyMission: DailyMission; }) => dispatch({ type: 'ADD_DAILY_MISSION', payload }),
+        setGeneratingMission: (id: string | number | null) => dispatch({ type: 'SET_GENERATING_MISSION', payload: id }),
     };
 
     return (

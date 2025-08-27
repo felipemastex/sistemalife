@@ -37,6 +37,7 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
     learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
     subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
+    isNemesisChallenge: z.boolean().optional().describe("Indica se esta missão é um desafio especial lançado pelo 'Némesis' da meta, sendo mais difícil que o normal."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
 
@@ -81,16 +82,19 @@ const generateNextDailyMissionFlow = ai.defineFlow(
     const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
 Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de objetivos claros e mensuráveis.
 
-**REGRAS:**
-1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária (ex: "Sessão de Treino Matinal", "Foco Profundo em Código").
+**ATAQUE DO NÉMESIS (Regra Especial):**
+Existe uma pequena chance (cerca de 15%) de que o "Némesis" da meta interfira. Se isso acontecer, a missão gerada deve ser um **Desafio do Némesis**.
+- **Se for um Desafio do Némesis:** Defina 'isNemesisChallenge' como true. O nome e a descrição da missão devem ser mais ameaçadores e temáticos (ex: "Emboscada da Dúvida", "A Muralha da Preguiça"). O desafio deve ser visivelmente mais difícil do que uma missão normal, exigindo mais esforço, mas ainda alcançável num dia.
+- **Se for uma missão normal:** Defina 'isNemesisChallenge' como false (ou omita-o).
+
+**REGRAS GERAIS:**
+1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária.
 2.  **Descrição da Missão:** Escreva uma breve descrição (1-2 frases) que explique o propósito da missão diária.
 3.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
-    *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste", "Ler artigo técnico").
+    *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
     *   Defina um **'target'** numérico claro para cada sub-tarefa.
     *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-    *   **Exemplo Bom:** { name: "Fazer flexões", target: 20, unit: "repetições" }
-    *   **Exemplo Ruim:** { name: "Exercitar" } (Não é específico nem mensurável).
-4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de aprendizagem de alta qualidade.
+4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de alta qualidade.
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
 `;
@@ -100,6 +104,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
         nextMissionDescription: z.string(),
         learningResources: z.array(z.string().url()).optional(),
         subTasks: z.array(SubTaskSchema),
+        isNemesisChallenge: z.boolean().optional(),
     });
 
     const {output} = await ai.generate({
@@ -113,16 +118,22 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       missionText: missionTextForRewards,
       userLevel: input.userLevel,
     });
+    
+    // Aumentar a recompensa se for um desafio do Némesis
+    const finalXp = output?.isNemesisChallenge ? Math.round(rewards.xp * 1.5) : rewards.xp;
+    const finalFragments = output?.isNemesisChallenge ? Math.round(rewards.fragments * 1.5) : rewards.fragments;
+
 
     const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
 
     return {
       nextMissionName: output!.nextMissionName,
       nextMissionDescription: output!.nextMissionDescription,
-      xp: rewards.xp,
-      fragments: rewards.fragments,
+      xp: finalXp,
+      fragments: finalFragments,
       learningResources: output!.learningResources,
       subTasks: subTasksWithProgress,
+      isNemesisChallenge: output!.isNemesisChallenge || false,
     };
   }
 );

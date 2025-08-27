@@ -30,9 +30,9 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Adicionar a lógica de verificação (`checkAndApplyTowerRewards`) para validar a conclusão dos desafios e fazer o jogador avançar.
 - **[x] Melhorias no Sistema de Missões:**
     - **[x]** Permitir a criação manual de missões "one-off" não ligadas a uma meta.
-    - **[x]** Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
+    - **[x]** Desenvolver templates de rotinas reutilizáveis para agilizar o planeamento.
 - **[x] Melhorias no Sistema de Guildas:**
-    - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
+    - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros.
     - **[x]** Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
     - **[x]** Desenvolver missões de guilda geradas por IA (`generate-guild-quest`).
 
@@ -49,7 +49,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
 - **[x] Sistema de Némesis:**
     - **[x]** Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
-    - **[ ]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques".
+    - **[x]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques" (desafios especiais).
 
 ### Fase 4: IA Adaptativa e Personalização Profunda (Em Progresso)
 **Objetivo:** Utilizar a IA para criar uma experiência verdadeiramente única para cada utilizador, que se adapta ao seu comportamento.
