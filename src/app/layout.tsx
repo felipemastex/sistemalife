@@ -5,6 +5,7 @@ import { PlayerDataProvider } from "@/hooks/use-player-data";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/toaster";
 import { PushNotificationPrompt } from "@/components/custom/PushNotificationPrompt";
+import { PlayerDataSync } from "@/hooks/use-player-data-sync";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <PlayerDataProvider>
+            <PlayerDataSync />
             {children}
             <Toaster />
             <PushNotificationPrompt />

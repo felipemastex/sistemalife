@@ -23,7 +23,7 @@
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: hsl(var(--theme-accent-color, 198 90% 48%));
+    --accent: var(--theme-accent-color, 198 90% 48%);
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
@@ -31,7 +31,7 @@
 
     --border: 217 33% 25%;
     --input: 217 33% 17%;
-    --ring: hsl(var(--theme-accent-color, 198 90% 58%));
+    --ring: var(--theme-accent-color, 198 90% 58%);
 
     --radius: 0.5rem;
     
@@ -52,13 +52,13 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: hsl(var(--theme-accent-color, 198 90% 48%));
+    --accent: var(--theme-accent-color, 198 90% 48%);
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 25%;
     --input: 217 33% 17%;
-    --ring: hsl(var(--theme-accent-color, 198 90% 58%));
+    --ring: var(--theme-accent-color, 198 90% 58%);
     
     /* Adding Cinzel Decorative font variable to dark theme */
     --font-cinzel: 'Cinzel Decorative', cursive;
