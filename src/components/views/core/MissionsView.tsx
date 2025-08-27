@@ -25,6 +25,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
 
 // Type definitions
 interface SubTask {
@@ -380,16 +381,18 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
 
 
 const MissionsViewComponent = () => {
-    const { profile, missions, metas, completeMission, generatingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions } = usePlayerDataContext() as {
+    const { profile, missions, metas, completeMission, generatingMission, setGeneratingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions, addDailyMission } = usePlayerDataContext() as {
         profile: Profile;
         missions: RankedMission[];
         metas: Meta[];
         completeMission: (params: { rankedMissionId: string | number; dailyMissionId: string | number; subTask: SubTask; amount: number; feedback: string | null }) => Promise<void>;
         generatingMission: string | number | null;
+        setGeneratingMission: (id: string | number | null) => void;
         missionFeedback: Record<string | number, string>;
         setMissionFeedback: (missionId: string | number, feedback: string) => void;
         persistData: (key: string, data: any) => Promise<void>;
         generatePendingDailyMissions?: () => Promise<void>;
+        addDailyMission: (payload: { rankedMissionId: string | number; newDailyMission: DailyMission }) => void;
     };
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState<RankedMission[]>([]);
@@ -677,24 +680,57 @@ const MissionsViewComponent = () => {
         const updatedMissions = (profile.manual_missions || []).filter((m: RankedMission) => m.id !== missionId);
         persistData('profile', { ...profile, manual_missions: updatedMissions });
     }
+
+    const handleUnlockMission = async (mission: RankedMission) => {
+        if (!mission) return;
+        setGeneratingMission(mission.id);
+        try {
+            const meta = metas.find(m => m.nome === mission.meta_associada);
+            const history = mission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
+            const feedbackForAI = missionFeedback[mission.id] ?? `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
+
+            const result = await generateNextDailyMission({
+                rankedMissionName: mission.nome,
+                metaName: meta?.nome || "Objetivo geral",
+                goalDeadline: meta?.prazo,
+                history: history || `O utilizador está a tentar uma missão de rank superior.`,
+                userLevel: profile.nivel,
+                feedback: feedbackForAI,
+            });
+            
+            const newDailyMission = {
+                id: Date.now(),
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp,
+                fragmentos_conclusao: result.fragments,
+                concluido: false,
+                tipo: 'diaria',
+                learningResources: result.learningResources || [],
+                subTasks: result.subTasks.map(st => ({...st, current: 0}))
+            };
+            
+            addDailyMission({ rankedMissionId: mission.id, newDailyMission });
+            toast({ title: "Desafio Aceite!", description: `A sua missão de qualificação "${newDailyMission.nome}" está pronta.` });
+        } catch (error) {
+            handleToastError(error, 'Não foi possível gerar a missão de qualificação.');
+        } finally {
+            setGeneratingMission(null);
+        }
+    };
     
     const visibleMissions = useMemo(() => {
-        const activeEpicMissions = [];
-        const missionsByGoal = missions.reduce((acc: Record<string, RankedMission[]>, mission: RankedMission) => {
-            if (!acc[mission.meta_associada]) {
-                acc[mission.meta_associada] = [];
-            }
-            acc[mission.meta_associada].push(mission);
-            return acc;
-        }, {});
+        const activeEpicMissions = new Map<string, RankedMission>();
 
-        for (const goalName in missionsByGoal) {
-            const goalMissions = missionsByGoal[goalName]
-                .filter((m: RankedMission) => !m.concluido && profile.nivel >= m.level_requirement)
-                .sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
-
-            if (goalMissions.length > 0) {
-                activeEpicMissions.push(goalMissions[0]);
+        for (const mission of missions) {
+            if (mission.concluido) continue;
+            
+            const existingMissionForGoal = activeEpicMissions.get(mission.meta_associada);
+            const currentRankIndex = existingMissionForGoal ? rankOrder.indexOf(existingMissionForGoal.rank) : -1;
+            const newRankIndex = rankOrder.indexOf(mission.rank);
+            
+            if (!existingMissionForGoal || newRankIndex < currentRankIndex) {
+                 activeEpicMissions.set(mission.meta_associada, mission);
             }
         }
         
@@ -703,11 +739,11 @@ const MissionsViewComponent = () => {
 
         let missionsToDisplay = [];
         if (statusFilter === 'active') {
-            missionsToDisplay = [...activeEpicMissions, ...manualMissions.filter((m: RankedMission) => !m.concluido)];
+            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...manualMissions.filter((m: RankedMission) => !m.concluido)];
         } else if (statusFilter === 'completed') {
             missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter((m: RankedMission) => m.concluido)];
         } else {
-            missionsToDisplay = [...activeEpicMissions, ...completedEpicMissions, ...manualMissions];
+            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...completedEpicMissions, ...manualMissions];
         }
 
         if (rankFilter !== 'all') {
@@ -729,7 +765,7 @@ const MissionsViewComponent = () => {
             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
 
-    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions, profile.nivel]);
+    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
@@ -829,7 +865,10 @@ const MissionsViewComponent = () => {
             <div className="bg-secondary/30 border-2 border-dashed border-yellow-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
                 <Lock className="h-10 w-10 text-yellow-500 mb-4"/>
                 <p className="text-lg font-bold text-foreground">Missão Bloqueada</p>
-                <p className="text-sm text-muted-foreground">Aumente o seu nível de Caçador para desbloquear este desafio.</p>
+                <p className="text-sm text-muted-foreground">O seu nível de Caçador (Nível {profile.nivel}) é muito baixo para esta missão de Rank {mission.rank} (Requer Nível {mission.level_requirement}).</p>
+                <Button variant="secondary" className="mt-4" onClick={() => handleUnlockMission(mission)} disabled={generatingMission === mission.id}>
+                    {generatingMission === mission.id ? <LoaderCircle className="animate-spin" /> : "Tentar a Sorte (Missão de Qualificação)"}
+                </Button>
             </div>
         );
     };
@@ -1095,3 +1134,5 @@ const MissionsViewComponent = () => {
 };
 
 export const MissionsView = memo(MissionsViewComponent);
+
+    
