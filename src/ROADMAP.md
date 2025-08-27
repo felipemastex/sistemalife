@@ -61,11 +61,22 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[x] Narrativa Adaptativa:**
     - **[x]** Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
-### Fase 5: Expansão de Conteúdo (A Fazer)
+### Fase 5: Expansão de Conteúdo (Parcialmente Concluída)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.
 
-- **[ ] Torre Infinita:**
-    - [ ] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
+- **[x] Torre Infinita:**
+    - [x] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
+- **[ ] Masmorras de Habilidade:**
+    - [ ] Sistema focado no desenvolvimento intensivo de uma única habilidade com desafios práticos.
+- **[ ] Afazeres Recorrentes:**
+    - [ ] Sistema simples para gerir hábitos e tarefas que não se encaixam como missões de metas.
+
+### Fase 6: Expansão Contínua (Futuro)
+**Objetivo:** Expandir o sistema com integrações complexas e conteúdo gerado pela comunidade.
+
 - **[ ] Integrações Externas:**
     - [ ] Sincronização de missões com deadlines para o Google Calendar.
     - [ ] Integração com smartwatches para completar automaticamente missões de fitness.
+- **[ ] Conteúdo Gerado pelo Utilizador:**
+    - [ ] Permitir que os jogadores criem e partilhem templates de metas ou missões.
+    - [ ] Guildas poderem criar os seus próprios desafios internos.
