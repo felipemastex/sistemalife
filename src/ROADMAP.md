@@ -31,7 +31,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[ ] Melhorias no Sistema de Missões:**
     - [ ] Permitir a criação manual de missões "one-off" não ligadas a uma meta.
     - [ ] Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
-- **[ ] Melhorias no Sistema de Guildas:**
+- **[x] Melhorias no Sistema de Guildas:**
     - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
     - [ ] Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
     - [ ] Desenvolver missões de guilda geradas por IA (`generate-guild-tower-challenge`).
@@ -54,14 +54,14 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 ### Fase 4: IA Adaptativa e Personalização Profunda (A Fazer)
 **Objetivo:** Utilizar a IA para criar uma experiência verdadeiramente única para cada utilizador, que se adapta ao seu comportamento.
 
-- **[ ] Análise de Padrões pela IA (O Mentor do Sistema):**
+- **[x] Análise de Padrões pela IA (O Mentor do Sistema):**
     - **[x]** Implementar a lógica para a IA analisar dados e gerar insights textuais (`generate-analytics-insights`).
     - [ ] O "Arquiteto" analisará os seus horários de produtividade e sugerirá os melhores momentos para focar.
     - [ ] Deteção de sinais de burnout com sugestão de missões mais leves ou pausas.
 - **[ ] Narrativa Adaptativa:**
     - [ ] Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
-### Fase 5: Expansão de Conteúdo (Em Progresso)
+### Fase 5: Expansão de Conteúdo (Concluída)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.
 
 - **[x] Masmorras de Habilidade:**
