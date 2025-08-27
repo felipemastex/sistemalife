@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -831,9 +832,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const emailUsername = user.email!.split('@')[0];
             
             const defaultUserSettings = {
-                mission_view_style: 'inline',
-                ai_personality: 'balanced',
-                theme_accent_color: '198 90% 55%',
+                mission_view_style: 'inline', // 'inline' or 'popup'
+                ai_personality: 'balanced', // 'balanced', 'mentor', 'strategist', 'friendly'
+                theme_accent_color: '198 90% 55%', // HSL string
                 reduce_motion: false,
                 layout_density: 'default',
                 suggestion_frequency: 'medium',

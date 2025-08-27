@@ -877,29 +877,27 @@ const MissionsViewComponent = () => {
     return (
         <div className={cn("h-full overflow-y-auto p-4 md:p-6", accordionSpacing)}>
             <div className="mb-6">
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsPanelVisible(!isPanelVisible)}
-                                    className="text-muted-foreground hover:text-foreground flex-shrink-0 self-center md:self-auto"
-                                >
-                                    {isPanelVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Mostrar/Ocultar painel de filtros e estatísticas</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center justify-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsPanelVisible(!isPanelVisible)}
+                            className="text-muted-foreground hover:text-foreground"
+                        >
+                            {isPanelVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                            {isPanelVisible ? 'Ocultar Painel' : 'Mostrar Painel'}
+                        </Button>
+                        <Button size="sm" onClick={() => setDialogState({open: true, mission: null, isManual: true})}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Criar Missão Manual
+                        </Button>
+                    </div>
                 </div>
 
                 <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4">
-                    <CollapsibleContent className="space-y-6">
+                    <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300">
                         <MissionStatsPanel />
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-grow min-w-[200px]">
