@@ -1156,8 +1156,27 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
             console.log('📋 Queries completadas. UserDoc exists:', userDoc.exists());
             if (userDoc.exists()) {
-                const profileData = userDoc.data();
+                let profileData = userDoc.data() as Profile;
+                let profileNeedsUpdate = false;
                 console.log('📋 Dados do perfil carregados:', profileData?.nome_utilizador || 'sem nome');
+
+                if (!profileData.tower_progress) {
+                    profileData.tower_progress = { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 };
+                    profileNeedsUpdate = true;
+                }
+                if (!profileData.active_tower_challenges) {
+                    profileData.active_tower_challenges = [];
+                    profileNeedsUpdate = true;
+                }
+                 if (!profileData.available_tower_challenges) {
+                    profileData.available_tower_challenges = [];
+                    profileNeedsUpdate = true;
+                }
+
+                if (profileNeedsUpdate) {
+                    await setDoc(userDocRef, profileData, { merge: true });
+                }
+
                 dispatch({
                     type: 'SET_INITIAL_DATA',
                     payload: {
@@ -1259,6 +1278,8 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
 
     
 
