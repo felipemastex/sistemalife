@@ -11,7 +11,7 @@ import { MissionsView } from '@/components/views/core/MissionsView';
 import { SkillsView } from '@/components/views/core/SkillsView';
 import { RoutineView } from '@/components/views/core/RoutineView';
 import { AIChatView } from '@/components/views/ai/AIChatView';
-import { SettingsView } from '@/components/views/player/SettingsView';
+import { SettingsView } from '@/components/views/player/settings/SettingsView';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
