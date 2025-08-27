@@ -9,6 +9,7 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 const SkillDungeonView = ({ skillId, onExit }) => {
     const { skills, persistData } = usePlayerDataContext();
@@ -138,4 +139,3 @@ const SkillDungeonView = ({ skillId, onExit }) => {
 };
 
 export default SkillDungeonView;
-```

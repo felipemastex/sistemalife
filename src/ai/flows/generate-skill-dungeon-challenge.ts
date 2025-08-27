@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const DungeonChallengeSchema = z.object({
   roomLevel: z.number().describe("O nível da sala para o qual este desafio foi gerado."),
   challengeName: z.string().describe("Um nome curto e temático para o desafio (ex: 'O Teste das Variáveis', 'A Forja dos Componentes')."),
-  challengeDescription: z.string().describe("Uma descrição clara e concisa do que o Caçador precisa fazer. Deve ser uma tarefa prática e verificável."),
+  challengeDescription: z.string().describe("Uma descrição clara e concisa do que o Caçador precisa de fazer. Deve ser uma tarefa prática e verificável."),
   successCriteria: z.string().describe("O critério de sucesso que o Caçador deve confirmar para provar que completou o desafio (ex: 'Cole o código da sua função aqui', 'Faça upload de um screenshot do seu componente renderizado')."),
   xpReward: z.number().describe("A quantidade de XP de HABILIDADE (não de perfil) que este desafio concede."),
 });
@@ -75,4 +75,3 @@ const generateSkillDungeonChallengeFlow = ai.defineFlow(
     return output!;
   }
 );
-```
