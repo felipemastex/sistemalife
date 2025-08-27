@@ -251,8 +251,8 @@ const TasksView = () => {
 
     const todayDayName = new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    const handleToggleTask = (taskId: number) => {
-        const newCompletedTasks = { ...completedTasks, [taskId]: !completedTasks[taskId] };
+    const handleToggleTask = (taskUniqueId: string) => {
+        const newCompletedTasks = { ...completedTasks, [taskUniqueId]: !completedTasks[taskUniqueId] };
         persistData('profile', { ...profile, completed_tasks_today: newCompletedTasks });
     };
 
@@ -303,24 +303,28 @@ const TasksView = () => {
                             </CardHeader>
                             <CardContent className="flex-grow space-y-3">
                                 {tasksForDay.length > 0 ? (
-                                    tasksForDay.map(task => (
-                                        <div 
-                                            key={task.id} 
-                                            onClick={() => handleToggleTask(task.id)}
-                                            className={cn(
-                                                "p-3 rounded-md flex items-center gap-3 cursor-pointer transition-colors",
-                                                completedTasks[task.id] ? 'bg-green-500/10 text-muted-foreground line-through' : 'bg-secondary hover:bg-secondary/80'
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-5 h-5 rounded-sm border-2 flex items-center justify-center flex-shrink-0",
-                                                completedTasks[task.id] ? 'bg-green-500 border-green-500' : 'border-primary'
-                                            )}>
-                                                {completedTasks[task.id] && <ListChecks className="h-4 w-4 text-white"/>}
+                                    tasksForDay.map(task => {
+                                        const taskUniqueId = `${task.id}_${dayName}`;
+                                        const isCompleted = !!completedTasks[taskUniqueId];
+                                        return (
+                                            <div 
+                                                key={taskUniqueId} 
+                                                onClick={() => handleToggleTask(taskUniqueId)}
+                                                className={cn(
+                                                    "p-3 rounded-md flex items-center gap-3 cursor-pointer transition-colors",
+                                                    isCompleted ? 'bg-green-500/10 text-muted-foreground line-through' : 'bg-secondary hover:bg-secondary/80'
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-5 h-5 rounded-sm border-2 flex items-center justify-center flex-shrink-0",
+                                                    isCompleted ? 'bg-green-500 border-green-500' : 'border-primary'
+                                                )}>
+                                                    {isCompleted && <ListChecks className="h-4 w-4 text-white"/>}
+                                                </div>
+                                                <span>{task.name}</span>
                                             </div>
-                                            <span>{task.name}</span>
-                                        </div>
-                                    ))
+                                        )
+                                    })
                                 ) : (
                                     <div className="text-center text-sm text-muted-foreground h-full flex items-center justify-center p-4">
                                         <p>Dia de descanso.</p>
@@ -342,3 +346,5 @@ const TasksView = () => {
 };
 
 export default TasksView;
+
+    
