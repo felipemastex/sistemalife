@@ -19,7 +19,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[x]** Configurações de Personalização (Tema, IA)
 - **[x]** Sistema de Feedback e Penalidades (Corrupção)
 
-### Fase 2: Engajamento e Desafios (Concluída)
+### Fase 2: Engajamento e Desafios (Em Progresso)
 **Objetivo:** Introduzir novos sistemas que criem um ciclo de engajamento contínuo e ofereçam diferentes tipos de desafios para além das missões diárias.
 
 - **[x] Torre dos Desafios:**
@@ -31,9 +31,8 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[ ] Melhorias no Sistema de Missões:**
     - [ ] Permitir a criação manual de missões "one-off" não ligadas a uma meta.
     - [ ] Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
-- **[x] Melhorias no Sistema de Guildas:**
-    - **[x]** Implementar um dashboard de guilda mais completo. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
-    - **[x]** Implementar um leaderboard de contribuição dos membros.
+- **[ ] Melhorias no Sistema de Guildas:**
+    - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
     - [ ] Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
     - [ ] Desenvolver missões de guilda geradas por IA (`generate-guild-tower-challenge`).
 
