@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ListChecks, PlusCircle, Trash2, Save, Edit, Calendar as CalendarIcon } from 'lucide-react';
@@ -18,11 +18,28 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, differenceInDays, parseISO } from 'date-fns';
 
 const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
-    const [name, setName] = useState(taskToEdit?.name || '');
-    const [type, setType] = useState(taskToEdit?.type || 'weekly');
-    const [days, setDays] = useState(taskToEdit?.type === 'weekly' ? taskToEdit.days : []);
-    const [intervalDays, setIntervalDays] = useState(taskToEdit?.type === 'interval' ? taskToEdit.intervalDays : 3);
-    const [startDate, setStartDate] = useState(taskToEdit?.type === 'interval' ? new Date(taskToEdit.startDate) : new Date());
+    const [name, setName] = useState('');
+    const [type, setType] = useState('weekly');
+    const [days, setDays] = useState([]);
+    const [intervalDays, setIntervalDays] = useState(3);
+    const [startDate, setStartDate] = useState(new Date());
+
+     useEffect(() => {
+        if (taskToEdit) {
+            setName(taskToEdit.name || '');
+            setType(taskToEdit.type || 'weekly');
+            setDays(taskToEdit.type === 'weekly' ? (taskToEdit.days || []) : []);
+            setIntervalDays(taskToEdit.type === 'interval' ? taskToEdit.intervalDays : 3);
+            setStartDate(taskToEdit.type === 'interval' && taskToEdit.startDate ? new Date(taskToEdit.startDate) : new Date());
+        } else {
+             // Reset form when creating a new task
+            setName('');
+            setType('weekly');
+            setDays([]);
+            setIntervalDays(3);
+            setStartDate(new Date());
+        }
+    }, [taskToEdit]);
 
     const weekDays = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
@@ -264,6 +281,7 @@ const TasksView = () => {
                 {Array.from(weekDaysMap.entries()).map(([dayName, date]) => {
                     const tasksForDay = recurringTasks.filter(task => {
                         if (task.type === 'interval') {
+                            if (!task.startDate) return false;
                             const startDate = parseISO(task.startDate);
                             const dayDate = new Date(date);
                             dayDate.setHours(0,0,0,0);
@@ -274,7 +292,7 @@ const TasksView = () => {
                             return diff % task.intervalDays === 0;
                         }
                         // Default to weekly
-                        return task.days.includes(dayName);
+                        return (task.days || []).includes(dayName);
                     });
                     const isToday = todayDayName === dayName;
 
