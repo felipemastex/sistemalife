@@ -39,7 +39,7 @@ export const SystemAlert = ({ message, position, onDismiss }: SystemAlertProps) 
         "fixed z-50 transition-all duration-300",
         isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
       )}
-      style={{ top: position.top, left: position.left }}
+      style={{ top: position.top, left: position.left, transform: 'translateX(-50%)' }}
     >
       <Card className="max-w-xs bg-gray-900/80 backdrop-blur-md border-2 border-cyan-400/30 text-white shadow-2xl shadow-cyan-500/10">
         <CardContent className="p-3 relative">
@@ -58,5 +58,3 @@ export const SystemAlert = ({ message, position, onDismiss }: SystemAlertProps) 
     </div>
   );
 };
-
-    

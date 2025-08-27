@@ -51,26 +51,19 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
     - **[x]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques" (desafios especiais).
 
-### Fase 4: IA Adaptativa e Personalização Profunda (Em Progresso)
+### Fase 4: IA Adaptativa e Personalização Profunda (Concluída)
 **Objetivo:** Utilizar a IA para criar uma experiência verdadeiramente única para cada utilizador, que se adapta ao seu comportamento.
 
 - **[x] Análise de Padrões pela IA (O Mentor do Sistema):**
     - **[x]** Implementar a lógica para a IA analisar dados e gerar insights textuais (`generate-analytics-insights`).
-    - **[ ]** O "Arquiteto" analisará os seus horários de produtividade e sugerirá os melhores momentos para focar.
-    - **[ ]** Deteção de sinais de burnout com sugestão de missões mais leves ou pausas.
-- **[ ] Narrativa Adaptativa:**
-    - [ ] Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
+    - **[x]** O "Arquiteto" analisará os seus horários de produtividade e sugerirá os melhores momentos para focar.
+    - **[x]** Deteção de sinais de burnout com sugestão de missões mais leves ou pausas.
+- **[x] Narrativa Adaptativa:**
+    - **[x]** Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
-### Fase 5: Expansão de Conteúdo (Concluída)
+### Fase 5: Expansão de Conteúdo (A Fazer)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.
 
-- **[x] Masmorras de Habilidade:**
-    - **[x]** Desenvolver a interface para as "Masmorras" (`SkillDungeonView.tsx`).
-    - **[x]** Criar um flow de IA para gerar desafios práticos e específicos para cada habilidade (`generate-skill-dungeon-challenge.ts`).
-    - **[x]** Implementar o sistema de validação e recompensas de XP focado.
-- **[x] Afazeres Recorrentes:**
-    - **[x]** Adicionar um novo sistema para gerir tarefas e hábitos recorrentes que não se encaixam como missões de metas.
-    - **[x]** Criar a interface `TasksView.tsx` com vistas semanal e mensal.
 - **[ ] Torre Infinita:**
     - [ ] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
 - **[ ] Integrações Externas:**

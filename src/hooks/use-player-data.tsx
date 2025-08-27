@@ -1287,6 +1287,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 if (!profileData.routineTemplates) {
                     profileData.routineTemplates = {}; // Adicionado para evitar undefined
                 }
+                if (!profileData.last_known_level) {
+                     profileData.last_known_level = profileData.nivel;
+                     profileNeedsUpdate = true;
+                }
 
                 if (profileNeedsUpdate) {
                     await persistData('profile', profileData);
