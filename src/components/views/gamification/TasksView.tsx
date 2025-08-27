@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ListChecks, PlusCircle, Trash2, Save, Edit, Calendar as CalendarIcon } from 'lucide-react';
+import { ListChecks, PlusCircle, Trash2, Save, Edit, Calendar as CalendarIcon, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -15,8 +14,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, differenceInDays, parseISO, startOfWeek, addDays, isToday as checkIsToday } from 'date-fns';
+import { format, differenceInDays, parseISO, startOfWeek, addDays, isToday as checkIsToday, startOfMonth, endOfMonth, getDay, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 
 const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     const [name, setName] = useState('');
@@ -232,6 +233,8 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
 const TasksView = () => {
     const { profile, persistData } = usePlayerDataContext();
     const [showManageDialog, setShowManageDialog] = useState(false);
+    const [view, setView] = useState('weekly');
+    const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const recurringTasks = useMemo(() => profile?.recurring_tasks || [], [profile]);
     const completedTasks = useMemo(() => profile?.completed_tasks_today || {}, [profile]);
@@ -242,7 +245,41 @@ const TasksView = () => {
         return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
     }, []);
 
-    const handleToggleTask = (taskUniqueId: string) => {
+    const calendarDays = useMemo(() => {
+        const start = startOfMonth(currentMonth);
+        const end = endOfMonth(currentMonth);
+        const startDate = startOfWeek(start, { weekStartsOn: 0 });
+        const days = [];
+        let currentDate = startDate;
+        while (days.length < 42) { // 6 weeks to be safe
+            days.push(currentDate);
+            currentDate = addDays(currentDate, 1);
+        }
+        return days;
+    }, [currentMonth]);
+    
+    const getTasksForDay = useCallback((dayDate: Date) => {
+        const dayName = dayDate.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        return recurringTasks.filter(task => {
+            if (task.type === 'interval') {
+                if (!task.startDate) return false;
+                const startDate = parseISO(task.startDate);
+                const currentDay = new Date(dayDate);
+                currentDay.setHours(0,0,0,0);
+                
+                if (currentDay < startDate) return false;
+
+                const diff = differenceInDays(currentDay, startDate);
+                return diff % task.intervalDays === 0;
+            }
+            return (task.days || []).includes(dayName);
+        });
+    }, [recurringTasks]);
+
+    const handleToggleTask = (taskId: string, dayDate: Date) => {
+        const taskDateId = format(dayDate, 'yyyy-MM-dd');
+        const taskUniqueId = `${taskId}_${taskDateId}`;
         const newCompletedTasks = { ...completedTasks, [taskUniqueId]: !completedTasks[taskUniqueId] };
         persistData('profile', { ...profile, completed_tasks_today: newCompletedTasks, last_task_completion_date: new Date().toISOString() });
     };
@@ -261,73 +298,111 @@ const TasksView = () => {
                             Acompanhe os seus hábitos e tarefas recorrentes. A consistência é a chave para forjar um Caçador lendário.
                         </p>
                     </div>
-                    <Button onClick={() => setShowManageDialog(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Gerir Afazeres
-                    </Button>
+                    <div className="flex items-center gap-2">
+                         <Tabs defaultValue={view} onValueChange={setView} className="w-auto">
+                            <TabsList>
+                                <TabsTrigger value="weekly"><List className="mr-2 h-4 w-4"/> Semanal</TabsTrigger>
+                                <TabsTrigger value="monthly"><LayoutGrid className="mr-2 h-4 w-4"/> Mensal</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                        <Button onClick={() => setShowManageDialog(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Gerir Afazeres
+                        </Button>
+                    </div>
                 </div>
             </div>
+            
+            <Tabs value={view} className="flex-grow flex flex-col">
+                <TabsContent value="weekly" className="flex-grow">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {weekDays.map((dayDate) => {
+                            const isToday = checkIsToday(dayDate);
+                            const tasksForDay = getTasksForDay(dayDate);
 
-            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto">
-                {weekDays.map((dayDate) => {
-                    const dayName = dayDate.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    const isToday = checkIsToday(dayDate);
-                    
-                    const tasksForDay = recurringTasks.filter(task => {
-                        if (task.type === 'interval') {
-                            if (!task.startDate) return false;
-                            const startDate = parseISO(task.startDate);
-                            const currentDay = new Date(dayDate);
-                            currentDay.setHours(0,0,0,0);
-                            
-                            if (currentDay < startDate) return false;
-
-                            const diff = differenceInDays(currentDay, startDate);
-                            return diff % task.intervalDays === 0;
-                        }
-                        return (task.days || []).includes(dayName);
-                    });
-
-                    return (
-                        <Card key={dayName} className={cn("flex flex-col", isToday ? 'border-primary shadow-lg shadow-primary/10' : 'bg-card/60')}>
-                            <CardHeader>
-                                <CardTitle className="capitalize text-lg text-center">{format(dayDate, 'eeee, dd', { locale: ptBR })}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex-grow space-y-3">
-                                {tasksForDay.length > 0 ? (
-                                    tasksForDay.map(task => {
-                                        const taskDateId = format(dayDate, 'yyyy-MM-dd');
-                                        const taskUniqueId = `${task.id}_${taskDateId}`;
-                                        const isCompleted = !!completedTasks[taskUniqueId];
-                                        return (
-                                            <div 
-                                                key={taskUniqueId} 
-                                                onClick={() => handleToggleTask(taskUniqueId)}
-                                                className={cn(
-                                                    "p-3 rounded-md flex items-center gap-3 cursor-pointer transition-colors",
-                                                    isCompleted ? 'bg-green-500/10 text-muted-foreground line-through' : 'bg-secondary hover:bg-secondary/80'
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-5 h-5 rounded-sm border-2 flex items-center justify-center flex-shrink-0",
-                                                    isCompleted ? 'bg-green-500 border-green-500' : 'border-primary'
-                                                )}>
-                                                    {isCompleted && <ListChecks className="h-4 w-4 text-white"/>}
-                                                </div>
-                                                <span>{task.name}</span>
+                            return (
+                                <Card key={format(dayDate, 'yyyy-MM-dd')} className={cn("flex flex-col", isToday ? 'border-primary shadow-lg shadow-primary/10' : 'bg-card/60')}>
+                                    <CardHeader>
+                                        <CardTitle className="capitalize text-lg text-center">{format(dayDate, 'eeee, dd', { locale: ptBR })}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow space-y-3">
+                                        {tasksForDay.length > 0 ? (
+                                            tasksForDay.map(task => {
+                                                const taskDateId = format(dayDate, 'yyyy-MM-dd');
+                                                const taskUniqueId = `${task.id}_${taskDateId}`;
+                                                const isCompleted = !!completedTasks[taskUniqueId];
+                                                return (
+                                                    <div 
+                                                        key={taskUniqueId} 
+                                                        onClick={() => handleToggleTask(task.id, dayDate)}
+                                                        className={cn(
+                                                            "p-3 rounded-md flex items-center gap-3 cursor-pointer transition-colors",
+                                                            isCompleted ? 'bg-green-500/10 text-muted-foreground line-through' : 'bg-secondary hover:bg-secondary/80'
+                                                        )}
+                                                    >
+                                                        <div className={cn(
+                                                            "w-5 h-5 rounded-sm border-2 flex items-center justify-center flex-shrink-0",
+                                                            isCompleted ? 'bg-green-500 border-green-500' : 'border-primary'
+                                                        )}>
+                                                            {isCompleted && <ListChecks className="h-4 w-4 text-white"/>}
+                                                        </div>
+                                                        <span>{task.name}</span>
+                                                    </div>
+                                                )
+                                            })
+                                        ) : (
+                                            <div className="text-center text-sm text-muted-foreground h-full flex items-center justify-center p-4">
+                                                <p>Dia de descanso.</p>
                                             </div>
-                                        )
-                                    })
-                                ) : (
-                                    <div className="text-center text-sm text-muted-foreground h-full flex items-center justify-center p-4">
-                                        <p>Dia de descanso.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </TabsContent>
+                <TabsContent value="monthly" className="flex-grow flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                            <ChevronLeft className="h-4 w-4"/>
+                        </Button>
+                        <h2 className="text-xl font-bold text-center capitalize">
+                            {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+                        </h2>
+                        <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                            <ChevronRight className="h-4 w-4"/>
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-7 flex-grow">
+                        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                            <div key={day} className="text-center font-bold text-muted-foreground text-sm py-2 border-b">{day}</div>
+                        ))}
+                         {calendarDays.map((dayDate, index) => {
+                            const isCurrentMonth = isSameMonth(dayDate, currentMonth);
+                            const isToday = checkIsToday(dayDate);
+                            const tasksForDay = isCurrentMonth ? getTasksForDay(dayDate) : [];
+                            return(
+                                <div key={index} className={cn("border-r border-b p-2 flex flex-col", isCurrentMonth ? 'bg-card/30' : 'bg-secondary/10 text-muted-foreground opacity-50')}>
+                                    <span className={cn("font-bold", isToday && "text-primary")}>{format(dayDate, 'd')}</span>
+                                    <div className="flex-grow space-y-1 mt-1 overflow-y-auto text-xs">
+                                        {tasksForDay.map(task => {
+                                            const taskDateId = format(dayDate, 'yyyy-MM-dd');
+                                            const taskUniqueId = `${task.id}_${taskDateId}`;
+                                            const isCompleted = !!completedTasks[taskUniqueId];
+                                            return (
+                                                <div key={taskUniqueId} onClick={() => handleToggleTask(task.id, dayDate)} className={cn("p-1 rounded flex items-center gap-1.5 cursor-pointer", isCompleted ? 'line-through text-muted-foreground' : 'hover:bg-primary/10')}>
+                                                     <div className={cn("w-3 h-3 rounded-sm border flex-shrink-0", isCompleted ? 'bg-green-500 border-green-500' : 'border-primary/50')}></div>
+                                                    <span className="truncate">{task.name}</span>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </div>
+                                </div>
+                            )
+                         })}
+                    </div>
+                </TabsContent>
+            </Tabs>
              <ManageTasksDialog
                 open={showManageDialog}
                 onOpenChange={setShowManageDialog}
