@@ -57,13 +57,14 @@ const TowerView = () => {
                 recentChallenges: recentChallengeTitles,
             });
 
-            const newAvailableChallenges = [...availableChallenges, { ...result, status: 'available' }];
+            // New logic: replace the existing available challenge
+            const newAvailableChallenges = [{ ...result, status: 'available' }];
             const updatedProgress = { ...towerProgress, dailyChallengesAvailable: towerProgress.dailyChallengesAvailable - 1 };
             
             await persistData('profile', { 
                 ...profile, 
                 tower_progress: updatedProgress,
-                available_tower_challenges: newAvailableChallenges,
+                available_tower_challenges: newAvailableChallenges, // Overwrite with the new challenge
             });
 
             toast({ title: 'Novo Desafio Gerado!', description: `O desafio "${result.title}" está disponível.` });
@@ -97,6 +98,7 @@ const TowerView = () => {
     };
     
     const allChallengesForFloor = [...activeChallenges, ...availableChallenges].filter(c => c.floor === towerProgress.currentFloor);
+    const hasActiveChallenge = activeChallenges.length > 0;
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
@@ -200,11 +202,11 @@ const TowerView = () => {
                     <CardFooter>
                         <Button 
                             onClick={handleGenerateChallenge} 
-                            disabled={isLoadingChallenge || towerProgress.dailyChallengesAvailable <= 0}
+                            disabled={isLoadingChallenge || towerProgress.dailyChallengesAvailable <= 0 || hasActiveChallenge}
                             className="w-full"
                         >
                             {isLoadingChallenge ? <LoaderCircle className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                            Gerar Desafio Diário ({towerProgress.dailyChallengesAvailable} restantes)
+                            {hasActiveChallenge ? "Conclua o desafio ativo" : `Gerar Desafio Diário (${towerProgress.dailyChallengesAvailable} restantes)`}
                         </Button>
                     </CardFooter>
                 </Card>
