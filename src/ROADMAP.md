@@ -22,11 +22,12 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 ### Fase 2: Engajamento e Desafios (Em Andamento)
 **Objetivo:** Introduzir novos sistemas que criem um ciclo de engajamento contínuo e ofereçam diferentes tipos de desafios para além das missões diárias.
 
-- **[ ] Torre dos Desafios:**
+- **[x] Torre dos Desafios:**
     - **[x]** Implementar a estrutura base da Torre (andares, zonas).
     - **[x]** Criar o flow de IA `generate-tower-challenge` para gerar desafios com base no andar e no perfil do utilizador.
     - **[x]** Desenvolver a interface principal (`TowerView.tsx`) para visualizar o progresso.
-    - **[ ]** Implementar o sistema de recompensas progressivas (XP bónus, fragmentos premium, itens exclusivos).
+    - **[x]** Implementar o sistema de recompensas progressivas (XP bónus, fragmentos premium, itens exclusivos).
+    - **[x]** Adicionar a lógica de verificação (`checkAndApplyTowerRewards`) para validar a conclusão dos desafios e fazer o jogador avançar.
 - **[ ] Melhorias no Sistema de Missões:**
     - **[ ]** Permitir a criação manual de missões "one-off" não ligadas a uma meta.
     - **[ ]** Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
