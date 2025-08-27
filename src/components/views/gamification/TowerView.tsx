@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, Calendar, Shield, Users, Trophy, ChevronUp, ChevronDown, CheckCircle, Gem, Zap } from 'lucide-react';
+import { Flame, Calendar, Shield, Users, Trophy, ChevronUp, ChevronDown, CheckCircle, Gem, Zap, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -36,6 +36,7 @@ const mockTowerData = [
         title: 'Foco Absoluto',
         description: 'Mantenha 2 horas de foco ininterrupto usando uma técnica como a Pomodoro.',
         rewards: { xp: 50, fragments: 10 },
+        timeLimit: 24, // em horas
         completed: false,
       },
       {
@@ -44,6 +45,7 @@ const mockTowerData = [
         title: 'Conquistador de Missões',
         description: 'Complete todas as suas missões diárias de uma única meta.',
         rewards: { xp: 40, fragments: 8 },
+        timeLimit: 24,
         completed: true,
       },
       {
@@ -52,6 +54,7 @@ const mockTowerData = [
         title: 'Mestre de Habilidades',
         description: 'Ganhe XP em 3 habilidades diferentes hoje.',
         rewards: { xp: 30, fragments: 5 },
+        timeLimit: 24,
         completed: false,
       },
     ],
@@ -71,6 +74,7 @@ const mockTowerData = [
         title: 'Maratona de Consistência',
         description: 'Mantenha uma sequência de 5 dias de missões concluídas.',
         rewards: { xp: 250, fragments: 50 },
+        timeLimit: 168, // 7 dias
         completed: false,
       },
     ],
@@ -192,9 +196,17 @@ const TowerView = () => {
                                                            <div className="flex items-center gap-1 text-sm text-primary"><Zap className="h-4 w-4"/> {challenge.rewards.xp} XP</div>
                                                             <div className="flex items-center gap-1 text-sm text-amber-400"><Gem className="h-4 w-4"/> {challenge.rewards.fragments}</div>
                                                         </div>
-                                                        <Button size="sm" variant="outline" disabled={challenge.completed}>
-                                                            {challenge.completed ? "Concluído" : "Aceitar"}
-                                                        </Button>
+                                                        <div className='flex items-center gap-2'>
+                                                            {challenge.timeLimit && (
+                                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    {challenge.timeLimit}h restantes
+                                                                </div>
+                                                            )}
+                                                            <Button size="sm" variant="outline" disabled={challenge.completed}>
+                                                                {challenge.completed ? "Concluído" : "Aceitar"}
+                                                            </Button>
+                                                        </div>
                                                     </CardFooter>
                                                 </Card>
                                             )

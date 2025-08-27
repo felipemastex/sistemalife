@@ -270,6 +270,7 @@ interface RewardRequirement {
   type: 'floor_reached' | 'challenges_completed' | 'zones_cleared' | 'guild_rank';
   value: number;
 }
+```
 
 ## 10. Funcionalidades Futuras
 
