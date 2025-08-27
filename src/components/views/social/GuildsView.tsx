@@ -12,20 +12,20 @@ import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 
 
 const GuildsViewComponent = () => {
-    const { profile, guilds, metas, allUsers, persistData } = usePlayerDataContext();
+    const { profile, guilds, metas, allUsers, persistData, isDataLoaded } = usePlayerDataContext();
     const [view, setView] = useState('no-guild'); 
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     
     const currentGuild = useMemo(() => {
-        if (profile?.guild_id) {
+        if (profile?.guild_id && guilds) {
             return guilds.find(g => g.id === profile.guild_id) || null;
         }
         return null;
     }, [profile?.guild_id, guilds]);
 
     useEffect(() => {
-        if (profile) {
+        if (isDataLoaded) {
             setIsLoading(false);
             if (currentGuild) {
                 setView('dashboard');
@@ -33,11 +33,11 @@ const GuildsViewComponent = () => {
                 setView('no-guild');
             }
         }
-    }, [profile, currentGuild]);
+    }, [isDataLoaded, currentGuild]);
 
     const handleGuildCreated = (newGuildData) => {
         const newGuildWithId = { ...newGuildData, id: `guild_${Date.now()}`, membros: [{user_id: profile.id, role: 'Líder'}] };
-        const updatedGuilds = [...guilds, newGuildWithId];
+        const updatedGuilds = [...(guilds || []), newGuildWithId];
         persistData('guilds', updatedGuilds);
         
         const updatedProfile = { ...profile, guild_id: newGuildWithId.id, guild_role: 'Líder' };
@@ -47,7 +47,7 @@ const GuildsViewComponent = () => {
     };
     
     const handleJoinRequestSent = (guildId) => {
-        const updatedGuilds = guilds.map(g => {
+        const updatedGuilds = (guilds || []).map(g => {
             if (g.id === guildId) {
                 const newRequest = { user_id: profile.id, nome_utilizador: profile.nome_utilizador, status: 'Pendente'};
                 return { ...g, join_requests: [...(g.join_requests || []), newRequest] };
@@ -61,12 +61,12 @@ const GuildsViewComponent = () => {
     const handleLeaveGuild = () => {
         const updatedProfile = {...profile, guild_id: null, guild_role: null};
         
-        const guildToLeave = guilds.find(g => g.id === profile.guild_id);
+        const guildToLeave = (guilds || []).find(g => g.id === profile.guild_id);
         if (guildToLeave) {
             const updatedMembers = guildToLeave.membros.filter(m => m.user_id !== profile.id);
             
             if (updatedMembers.length === 0) {
-                 const updatedGuilds = guilds.filter(g => g.id !== profile.guild_id);
+                 const updatedGuilds = (guilds || []).filter(g => g.id !== profile.guild_id);
                  persistData('guilds', updatedGuilds);
                  toast({ title: "Guilda Desfeita", description: "Você era o último membro e a guilda foi desfeita." });
             } else {
@@ -88,7 +88,7 @@ const GuildsViewComponent = () => {
                         }
                     }
                 }
-                const updatedGuilds = guilds.map(g => g.id === updatedGuild.id ? updatedGuild : g);
+                const updatedGuilds = (guilds || []).map(g => g.id === updatedGuild.id ? updatedGuild : g);
                 persistData('guilds', updatedGuilds);
             }
         }
@@ -99,7 +99,7 @@ const GuildsViewComponent = () => {
     };
 
      const handleGuildUpdate = (updatedGuildData) => {
-        const updatedGuilds = guilds.map(g => g.id === updatedGuildData.id ? updatedGuildData : g);
+        const updatedGuilds = (guilds || []).map(g => g.id === updatedGuildData.id ? updatedGuildData : g);
         persistData('guilds', updatedGuilds);
         toast({ title: "Guilda Atualizada!", description: `Os dados da guilda "${updatedGuildData.nome}" foram salvos.` });
         setView('dashboard');
@@ -111,7 +111,7 @@ const GuildsViewComponent = () => {
 
     const renderContent = () => {
         if (view === 'dashboard' && currentGuild) {
-            const members = allUsers.filter(u => u.guild_id === currentGuild.id);
+            const members = (allUsers || []).filter(u => u.guild_id === currentGuild.id);
             return <GuildDashboard 
                         guild={currentGuild}
                         profile={profile}
@@ -119,14 +119,14 @@ const GuildsViewComponent = () => {
                         onGuildUpdate={handleGuildUpdate}
                         onLeaveGuild={handleLeaveGuild}
                         onEdit={() => setView('edit')}
-                        allUsers={allUsers}
+                        allUsers={allUsers || []}
                         setAllUsers={(updatedUsers) => persistData('allUsers', updatedUsers)}
                     />;
         }
         if (view === 'create') {
             return <GuildForm 
                         onSave={handleGuildCreated} 
-                        userMetas={metas} 
+                        userMetas={metas || []} 
                         onCancel={() => setView('no-guild')} 
                     />;
         }
@@ -134,13 +134,13 @@ const GuildsViewComponent = () => {
              return <GuildForm 
                         guildToEdit={currentGuild}
                         onSave={handleGuildUpdate} 
-                        userMetas={metas} 
+                        userMetas={metas || []} 
                         onCancel={() => setView('dashboard')} 
                     />;
         }
         if (view === 'search') {
             return <SearchGuildView 
-                        guilds={guilds.filter(g => g.id !== profile.guild_id)}
+                        guilds={(guilds || []).filter(g => g.id !== profile.guild_id)}
                         profile={profile}
                         onJoinRequest={handleJoinRequestSent}
                         onBack={() => setView('no-guild')}
