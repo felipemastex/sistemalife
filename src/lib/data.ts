@@ -397,8 +397,8 @@ export const worldEvents = [
             target: 1000,
         },
         progress: 452,
-        startDate: '2024-07-20T00:00:00Z',
-        endDate: '2024-07-27T23:59:59Z',
+        startDate: new Date().toISOString(),
+        endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), // Set to 7 days from now
         isActive: true,
         rewards: [
             { type: 'GLOBAL_XP_BOOST', multiplier: 1.5, duration_hours: 48 },
