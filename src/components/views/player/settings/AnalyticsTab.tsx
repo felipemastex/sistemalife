@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background/80 backdrop-blur-sm border border-border p-2 rounded-md shadow-lg">
@@ -28,7 +29,7 @@ export default function AnalyticsTab() {
     const goalsByCategory = useMemo(() => {
         if (!metas || metas.length === 0) return [];
         
-        const categoryCount = metas.reduce((acc, meta) => {
+        const categoryCount = metas.reduce((acc: { [key: string]: number }, meta: { categoria: string }) => {
             const category = meta.categoria || "Sem Categoria";
             acc[category] = (acc[category] || 0) + 1;
             return acc;
@@ -46,8 +47,8 @@ export default function AnalyticsTab() {
         const data = last7Days.map(date => {
             const dateString = date.toISOString().split('T')[0];
             const count = missions
-                .flatMap(m => m.missoes_diarias || [])
-                .filter(dm => dm.concluido && dm.completed_at?.startsWith(dateString))
+                .flatMap((m: { missoes_diarias: any[]; }) => m.missoes_diarias || [])
+                .filter((dm: { concluido: any; completed_at: string | number | Date; }) => dm.concluido && dm.completed_at?.toString().startsWith(dateString))
                 .length;
             
             return {
@@ -80,7 +81,7 @@ export default function AnalyticsTab() {
         )
     }
 
-    const ProductivityTooltip = ({ active, payload, label }) => {
+    const ProductivityTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
         if (active && payload && payload.length) {
             const fullDateLabel = weeklyProductivity.find(d => d.name === label)?.fullName;
             return (

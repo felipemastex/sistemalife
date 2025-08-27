@@ -100,7 +100,7 @@ export default function GamificationSettingsTab() {
                                     >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'subtle' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'subtle' ? 'checked' : 'unchecked'} onClick={() => field.onChange('subtle')}>
                                                     <RadioGroupItem value="subtle" id="intensity-subtle" className="sr-only"/>
                                                     <FormLabel htmlFor="intensity-subtle" className="font-normal cursor-pointer w-full text-center">
                                                         Subtil
@@ -110,7 +110,7 @@ export default function GamificationSettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                              <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'} onClick={() => field.onChange('default')}>
                                                     <RadioGroupItem value="default" id="intensity-default" className="sr-only"/>
                                                     <FormLabel htmlFor="intensity-default" className="font-normal cursor-pointer w-full text-center">
                                                         Padrão
@@ -120,7 +120,7 @@ export default function GamificationSettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'celebratory' ? 'checked' : 'unchecked'}>
+                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'celebratory' ? 'checked' : 'unchecked'} onClick={() => field.onChange('celebratory')}>
                                                     <RadioGroupItem value="celebratory" id="intensity-celebratory" className="sr-only"/>
                                                     <FormLabel htmlFor="intensity-celebratory" className="font-normal cursor-pointer w-full text-center">
                                                         Celebratório

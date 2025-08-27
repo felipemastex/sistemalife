@@ -4,6 +4,7 @@
 
 
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -737,10 +738,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         let newDailyMission = null;
         try {
             const history = tempRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
+            
+            const deadline = meta?.prazo;
+
             const result = await generateNextDailyMission({
                 rankedMissionName: tempRankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
+                goalDeadline: deadline,
                 history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`,
                 userLevel: updatedProfile.nivel,
                 feedback: feedbackForNextMission ?? ''

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 
 export default function DataBackupTab() {
-    const { profile, handleImportData, isDataLoaded } = usePlayerDataContext();
+    const { profile, metas, missions, skills, routine, routineTemplates, handleImportData, isDataLoaded } = usePlayerDataContext();
     const { toast } = useToast();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isImporting, setIsImporting] = useState(false);
@@ -21,12 +21,12 @@ export default function DataBackupTab() {
     const handleExportData = () => {
         try {
             const allData = (isDataLoaded && profile) ? {
-                profile: profile,
-                metas: profile.metas,
-                missions: profile.missions,
-                skills: profile.skills,
-                routine: profile.routine,
-                routineTemplates: profile.routineTemplates,
+                profile,
+                metas,
+                missions,
+                skills,
+                routine,
+                routineTemplates,
                 export_date: new Date().toISOString(),
             } : null;
 
@@ -83,7 +83,7 @@ export default function DataBackupTab() {
         try {
             await handleImportData(selectedFile);
             // A página deve recarregar automaticamente após a importação bem-sucedida.
-        } catch (error) {
+        } catch (error: any) {
             toast({ variant: 'destructive', title: 'Erro na Importação', description: error.message });
             setIsImporting(false);
         }

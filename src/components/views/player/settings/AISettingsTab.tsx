@@ -32,7 +32,6 @@ const aiSettingsFormSchema = z.object({
     theme_accent_color: z.string(),
     reduce_motion: z.boolean(),
     layout_density: z.enum(['compact', 'default', 'comfortable']),
-    suggestion_frequency: z.enum(['low', 'medium', 'high']),
 });
 
 export default function AISettingsTab() {
@@ -49,7 +48,6 @@ export default function AISettingsTab() {
             theme_accent_color: '198 90% 55%',
             reduce_motion: false,
             layout_density: 'default',
-            suggestion_frequency: 'medium',
         },
     });
 
@@ -61,10 +59,21 @@ export default function AISettingsTab() {
                 theme_accent_color: profile.user_settings.theme_accent_color || '198 90% 55%',
                 reduce_motion: profile.user_settings.reduce_motion || false,
                 layout_density: profile.user_settings.layout_density || 'default',
-                suggestion_frequency: profile.user_settings.suggestion_frequency || 'medium',
             });
         }
     }, [profile, form, isDataLoaded]);
+    
+    useEffect(() => {
+        const subscription = form.watch((value, { name, type }) => {
+            if (name === 'theme_accent_color') {
+                document.documentElement.style.setProperty('--theme-accent-color', value.theme_accent_color);
+            }
+             if (name === 'reduce_motion') {
+                document.body.classList.toggle('reduce-motion', value.reduce_motion);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [form]);
 
     const onSubmit = async (data: z.infer<typeof aiSettingsFormSchema>) => {
         setIsSaving(true);
@@ -214,32 +223,6 @@ export default function AISettingsTab() {
                                     </Select>
                                     <FormDescription>
                                         Escolha como o "Arquiteto" (IA) deve comunicar consigo.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        
-                         <FormField
-                            control={form.control}
-                            name="suggestion_frequency"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Frequência de Sugestões</FormLabel>
-                                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione uma frequência" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="low">Baixa</SelectItem>
-                                            <SelectItem value="medium">Média (Padrão)</SelectItem>
-                                            <SelectItem value="high">Alta</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                       Defina com que frequência o Sistema deve oferecer sugestões proativas.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
