@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -26,6 +25,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import TowerView from '@/components/views/gamification/TowerView';
 import TasksView from '@/components/views/gamification/TasksView';
 import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
+import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
 
 export default function App() {
   const { authState, logout } = useAuth();
@@ -36,6 +36,8 @@ export default function App() {
    } = usePlayerDataContext();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [dungeonSkillId, setDungeonSkillId] = useState(null);
+
   const isMobile = useIsMobile();
     
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -83,6 +85,17 @@ export default function App() {
     touchStartRef.current = null;
     touchEndRef.current = null;
   };
+
+  const handleNavigate = (page) => {
+    setDungeonSkillId(null);
+    setCurrentPage(page);
+    if(isMobile) setIsSheetOpen(false);
+  }
+
+  const handleEnterDungeon = (skillId) => {
+    setDungeonSkillId(skillId);
+    setCurrentPage('dungeon');
+  }
   
 
   const NavItem = ({ icon: Icon, label, page, inSheet = false, className = "" }: { 
@@ -93,10 +106,7 @@ export default function App() {
     className?: string 
   }) => {
     const handleNav = () => {
-        setCurrentPage(page);
-        if (inSheet) {
-            setIsSheetOpen(false);
-        }
+        handleNavigate(page);
     };
     
     return (
@@ -152,11 +162,15 @@ export default function App() {
       return null
     }
     
+    if (currentPage === 'dungeon' && dungeonSkillId) {
+        return <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('skills')} />;
+    }
+
     const views: Record<string, React.ReactNode> = {
       'dashboard': <DashboardView />,
       'metas': <MetasView />,
       'missions': <MissionsView />,
-      'skills': <SkillsView />,
+      'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
       'class': <ClassView />,
       'routine': <RoutineView />,
       'achievements': <AchievementsView />,

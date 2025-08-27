@@ -61,15 +61,16 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[ ] Narrativa Adaptativa:**
     - [ ] Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
-### Fase 5: Expansão de Conteúdo (A Fazer)
+### Fase 5: Expansão de Conteúdo (Em Progresso)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.
 
 - **[ ] Masmorras de Habilidade:**
-    - [ ] Desenvolver a interface para as "Masmorras".
-    - [ ] Criar um flow de IA para gerar desafios práticos e específicos para cada habilidade.
-    - [ ] Implementar o sistema de recompensas de XP focado.
+    - **[x]** Desenvolver a interface para as "Masmorras" (`SkillDungeonView.tsx`).
+    - **[x]** Criar um flow de IA para gerar desafios práticos e específicos para cada habilidade (`generate-skill-dungeon-challenge.ts`).
+    - **[ ]** Implementar o sistema de validação e recompensas de XP focado.
 - **[ ] Torre Infinita:**
     - [ ] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
 - **[ ] Integrações Externas:**
     - [ ] Sincronização de missões com deadlines para o Google Calendar.
     - [ ] Integração com smartwatches para completar automaticamente missões de fitness.
+```

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useCallback, memo } from 'react';
-import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2, AlertTriangle } from 'lucide-react';
+import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2, AlertTriangle, KeySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { Progress } from '@/components/ui/progress';
 
 
 const statIcons = {
@@ -27,7 +28,7 @@ const statIcons = {
 };
 
 
-const SkillsViewComponent = () => {
+const SkillsViewComponent = ({ onEnterDungeon }) => {
     const { skills, metas, persistData } = usePlayerDataContext();
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [selectedMetaId, setSelectedMetaId] = useState(null);
@@ -104,6 +105,11 @@ const SkillsViewComponent = () => {
                 pre_requisito: null, 
                 nivel_minimo_para_desbloqueio: null,
                 ultima_atividade_em: new Date().toISOString(),
+                dungeon: {
+                    current_room: 1,
+                    highest_room: 1,
+                    active_challenge: null,
+                }
             };
 
             await persistData('skills', [...skills, newSkill]);
@@ -173,25 +179,30 @@ const SkillsViewComponent = () => {
                                         )}
                                         <p className="text-lg font-bold text-foreground break-words">{skill.nome}</p>
                                     </div>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8 -mt-1 -mr-1" aria-label={`Excluir habilidade ${skill.nome}`}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Tem a certeza que quer excluir a habilidade "{skill.nome}"? Isto irá apenas desvinculá-la da meta associada.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                     <div className="flex items-center">
+                                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-cyan-400 h-8 w-8" aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => onEnterDungeon(skill.id)}>
+                                            <KeySquare className="h-4 w-4" />
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir habilidade ${skill.nome}`}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Tem a certeza que quer excluir a habilidade "{skill.nome}"? Isto irá apenas desvinculá-la da meta associada.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1 break-words">{skill.descricao}</p>
                                 
