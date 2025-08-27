@@ -877,7 +877,7 @@ const MissionsViewComponent = () => {
 
 
     return (
-        <div className={cn("h-full overflow-y-auto p-4 md:p-6", accordionSpacing)}>
+        <div className={cn("p-4 md:p-6", accordionSpacing)}>
             <div className="mb-6">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
