@@ -213,14 +213,6 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
                 </div>
             </div>
         )}
-        {isManual && (
-            <DialogFooter className="pt-3 px-4">
-                <Button variant="destructive" size="sm" onClick={handleDelete}>
-                  <Trash2 className="mr-1 h-3 w-3"/> 
-                  Excluir
-                </Button>
-            </DialogFooter>
-        )}
         </CardContent>
     </>
   );
