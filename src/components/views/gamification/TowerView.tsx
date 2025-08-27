@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, Calendar, Shield, Users, Trophy, ChevronUp, ChevronDown, CheckCircle, Gem, Zap, Clock } from 'lucide-react';
+import { Flame, Calendar, Shield, Users, Trophy, ChevronUp, ChevronDown, CheckCircle, Gem, Zap, Clock, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -99,17 +99,35 @@ const mockTowerData = [
 
 const TowerView = () => {
     const [currentFloor, setCurrentFloor] = useState(3);
+    const towerProgress = { lives: 4, maxLives: 5 }; // Mock data
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
             <div className="flex-shrink-0">
-                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Torre dos Desafios</h1>
-                <p className="text-muted-foreground mt-2 max-w-3xl">
-                    Suba andares ao completar desafios de dificuldade crescente e ganhe recompensas exclusivas.
-                </p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Torre dos Desafios</h1>
+                        <p className="text-muted-foreground mt-2 max-w-3xl">
+                            Suba andares ao completar desafios de dificuldade crescente e ganhe recompensas exclusivas.
+                        </p>
+                    </div>
+                    <Card className="bg-card/80 p-3">
+                        <div className="flex items-center gap-2">
+                             <div className="flex items-center gap-1 text-red-400">
+                                {Array.from({ length: towerProgress.maxLives }).map((_, i) => (
+                                    <Heart key={i} className={cn("h-6 w-6", i < towerProgress.lives ? 'fill-current' : '')} />
+                                ))}
+                            </div>
+                            <div className="text-right">
+                                <p className="font-bold text-lg leading-none">{towerProgress.lives}/{towerProgress.maxLives}</p>
+                                <p className="text-xs text-muted-foreground">Vidas</p>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
-            <div className="mt-6 flex-grow overflow-y-auto">
+            <div className="mt-6 flex-grow overflow-y-auto pr-2">
                 <div className="space-y-4">
                     {mockTowerData.map((floor) => {
                         const isCurrent = floor.status === 'current';

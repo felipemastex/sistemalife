@@ -132,6 +132,14 @@ interface UserSettings {
     }
 }
 
+interface TowerProgress {
+  currentFloor: number;
+  highestFloor: number;
+  lives: number;
+  maxLives: number;
+  lastLifeRegeneration: string; // ISO String
+}
+
 
 interface Profile {
   id?: string;
@@ -147,6 +155,7 @@ interface Profile {
   inventory: any[];
   active_effects: ActiveEffect[];
   active_tower_challenges?: ActiveTowerChallenge[];
+  tower_progress?: TowerProgress;
   estatisticas: {
     forca: number;
     inteligencia: number;
@@ -911,12 +920,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
     };
     
-    // Skill Decay Logic
+    // Skill Decay & Tower Lives Logic
      useEffect(() => {
-        if (!state.isDataLoaded || !state.skills.length) return;
+        if (!state.isDataLoaded || !state.profile) return;
 
-        const checkSkillDecay = () => {
+        const checkSystems = () => {
+            let profileChanged = false;
+            let updatedProfile = { ...state.profile! };
             const now = new Date();
+
+            // Skill Decay Logic
             let skillsToUpdate: Skill[] = [];
             let atRiskSkills: { name: string; daysInactive: number }[] = [];
             let decayedSkills: { name: string; xpLost: number }[] = [];
@@ -925,36 +938,65 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 const lastActivity = new Date(skill.ultima_atividade_em || now);
                 const daysInactive = differenceInCalendarDays(now, lastActivity);
 
-                if (daysInactive > 14) { // Corrupted
-                    const xpToLose = 5; // Lose 5 XP per decay event
+                if (daysInactive > 14) { 
+                    const xpToLose = 5;
                     if (skill.xp_atual > 0) {
                         const newXp = Math.max(0, skill.xp_atual - xpToLose);
-                        skillsToUpdate.push({ ...skill, xp_atual: newXp });
+                        skillsToUpdate.push({ ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() });
                         decayedSkills.push({ name: skill.nome, xpLost: xpToLose });
                     }
-                } else if (daysInactive > 7) { // At risk
+                } else if (daysInactive > 7) {
                     atRiskSkills.push({ name: skill.nome, daysInactive });
                 }
             });
 
             if (skillsToUpdate.length > 0) {
-                const updatedSkills = state.skills.map(s => {
-                    const update = skillsToUpdate.find(u => u.id === s.id);
-                    return update ? update : s;
-                });
+                const updatedSkills = state.skills.map(s => skillsToUpdate.find(u => u.id === s.id) || s);
                 persistData('skills', updatedSkills);
                 handleShowSkillDecayNotification(decayedSkills);
             }
             if (atRiskSkills.length > 0) {
                  handleShowSkillAtRiskNotification(atRiskSkills);
             }
+
+            // Tower Lives Logic
+            const towerProgress = updatedProfile.tower_progress;
+            if (towerProgress) {
+                const lastRegen = new Date(towerProgress.lastLifeRegeneration);
+                if (!isToday(lastRegen)) {
+                    towerProgress.lives = towerProgress.maxLives;
+                    towerProgress.lastLifeRegeneration = now.toISOString();
+                    profileChanged = true;
+                }
+
+                const expiredChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
+                    const startTime = new Date(challenge.startedAt).getTime();
+                    const timeLimitMillis = challenge.timeLimitHours * 60 * 60 * 1000;
+                    return now.getTime() - startTime >= timeLimitMillis;
+                });
+
+                if (expiredChallenges.length > 0) {
+                    const livesLost = expiredChallenges.length;
+                    towerProgress.lives = Math.max(0, towerProgress.lives - livesLost);
+                    updatedProfile.active_tower_challenges = updatedProfile.active_tower_challenges?.filter(c => !expiredChallenges.find(ec => ec.id === c.id));
+                    profileChanged = true;
+                    toast({
+                        variant: 'destructive',
+                        title: 'Desafio da Torre Falhou!',
+                        description: `Você perdeu ${livesLost} vida por não completar desafios a tempo.`
+                    });
+                }
+            }
+             if (profileChanged) {
+                persistData('profile', updatedProfile);
+            }
         };
 
-        const intervalId = setInterval(checkSkillDecay, 1000 * 60 * 60 * 24); // Check once a day
-        checkSkillDecay(); // Also check on load
+        const intervalId = setInterval(checkSystems, 1000 * 60 * 60); // Check once an hour
+        checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, [state.isDataLoaded, state.skills, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
+    }, [state.isDataLoaded, state.profile, state.skills, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification, toast]);
 
 
     const fetchData = useCallback(async (userId: string) => {
@@ -1085,5 +1127,3 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
-
-    

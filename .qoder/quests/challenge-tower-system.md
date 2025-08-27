@@ -240,7 +240,7 @@ interface TowerProgress {
   currentZone: number;
   lives: number;
   maxLives: number;
-  lastLifeRegeneration: string;
+  lastLifeRegeneration: string; // ISO String
   completedChallenges: string[]; // IDs dos desafios concluídos
   claimedRewards: number[]; // Números dos andares com recompensas coletadas
   dailyChallengesAvailable: number; // Quantos desafios diários ainda podem ser gerados
