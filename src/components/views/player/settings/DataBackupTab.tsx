@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { Download, Upload, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { Download, Upload, AlertTriangle, LoaderCircle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -88,13 +88,20 @@ export default function DataBackupTab() {
             setIsImporting(false);
         }
     };
+    
+    const handleConnectGoogle = () => {
+        toast({
+            title: "Funcionalidade em Breve",
+            description: "A integração com o Google Calendar está a ser preparada e estará disponível em breve!"
+        });
+    }
 
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Dados & Backup</CardTitle>
-                <CardDescription>Faça o download de todos os seus dados do Sistema de Vida ou restaure-os a partir de um backup.</CardDescription>
+                <CardDescription>Faça o download dos seus dados ou restaure-os a partir de um backup. Gira as suas integrações.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-lg border border-border p-4">
@@ -155,6 +162,20 @@ export default function DataBackupTab() {
                         </AlertDialog>
                     </div>
 
+                </div>
+                 <Separator />
+
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-lg border border-border p-4">
+                    <div>
+                        <p className="font-bold text-foreground">Integrações de Serviços</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                           Conecte o Sistema de Vida a outras aplicações para automatizar o seu progresso.
+                        </p>
+                    </div>
+                    <Button onClick={handleConnectGoogle} className="w-full sm:w-auto" variant="outline">
+                       <img src="/google-calendar.svg" alt="Google Calendar" className="h-4 w-4 mr-2" />
+                        Conectar Google Calendar
+                    </Button>
                 </div>
             </CardContent>
         </Card>

@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import { Award, X, Gem, Plus, Link, Trash2, Save } from 'lucide-react';
+import { Award, X, Gem, Plus, Link, Trash2, Save, CalendarPlus } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "../../../ui/button";
 import { Input } from "../../../ui/input";
@@ -11,6 +11,7 @@ import { Label } from "../../../ui/label";
 import { Card, CardContent, CardHeader } from "../../../ui/card";
 import { Progress } from "../../../ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 // Type definitions
 interface SubTask {
@@ -101,6 +102,7 @@ const SubTaskCreator: React.FC<SubTaskCreatorProps> = ({ subTasks, onSubTasksCha
 export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOpen, onClose, mission, isManual, onContribute, onSave, onDelete }) => {
   const [editedMission, setEditedMission] = useState<Mission | null>(null);
   const [contributionState, setContributionState] = useState<ContributionState>({ open: false, subTask: null, amount: 1 });
+  const { toast } = useToast();
 
   useEffect(() => {
     if (mission) {
@@ -145,6 +147,13 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   const handleSubTasksChange = (newSubTasks: SubTask[]) => {
     setEditedMission(prev => prev ? ({ ...prev, subTasks: newSubTasks }) : null);
   };
+  
+  const handleAddToCalendar = () => {
+    toast({
+        title: "Integração Futura",
+        description: "A funcionalidade de sincronizar com o Google Calendar será adicionada em breve!"
+    });
+  }
 
   const renderViewMode = () => (
     <>
@@ -214,6 +223,12 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
             </div>
         )}
         </CardContent>
+        <DialogFooter className="px-4 pb-4">
+             <Button onClick={handleAddToCalendar} variant="outline" className="w-full">
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Adicionar ao Google Calendar
+            </Button>
+        </DialogFooter>
     </>
   );
 

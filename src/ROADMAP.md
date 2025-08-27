@@ -44,7 +44,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Criar diferentes tipos de eventos (ex: "Semana da Produtividade", "Festival da Criatividade").
     - **[x]** Desenvolver um sistema de recompensas comunitárias.
 - **[x] Desafios de Guilda vs. Guilda (GvG):**
-    - **[x]** Sistema onde guildas competem para ver quem completa mais missões ou sobe mais andares na Torre.
+    - **[x]** Sistema onde guildas competem para ver quem completa mais andares na Torre.
 - **[x] Leaderboards Globais:**
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
 - **[x] Sistema de Némesis:**
@@ -61,21 +61,22 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[x] Narrativa Adaptativa:**
     - **[x]** Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
-### Fase 5: Expansão de Conteúdo (Parcialmente Concluída)
+### Fase 5: Expansão de Conteúdo (Concluída)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.
 
 - **[x] Torre Infinita:**
     - [x] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
-- **[ ] Masmorras de Habilidade:**
-    - [ ] Sistema focado no desenvolvimento intensivo de uma única habilidade com desafios práticos.
-- **[ ] Afazeres Recorrentes:**
-    - [ ] Sistema simples para gerir hábitos e tarefas que não se encaixam como missões de metas.
+- **[x] Masmorras de Habilidade:**
+    - [x] Sistema focado no desenvolvimento intensivo de uma única habilidade com desafios práticos.
+- **[x] Afazeres Recorrentes:**
+    - [x] Sistema simples para gerir hábitos e tarefas que não se encaixam como missões de metas.
 
-### Fase 6: Expansão Contínua (Futuro)
+### Fase 6: Expansão Contínua (Em Progresso)
 **Objetivo:** Expandir o sistema com integrações complexas e conteúdo gerado pela comunidade.
 
 - **[ ] Integrações Externas:**
-    - [ ] Sincronização de missões com deadlines para o Google Calendar.
+    - **[x]** Fundação da interface para integração com o Google Calendar.
+    - [ ] Lógica de API e OAuth para Google Calendar.
     - [ ] Integração com smartwatches para completar automaticamente missões de fitness.
 - **[ ] Conteúdo Gerado pelo Utilizador:**
     - [ ] Permitir que os jogadores criem e partilhem templates de metas ou missões.
