@@ -708,7 +708,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
     }, [state.profile, state.metas, state.missions, persistData, toast]);
 
-
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback: feedbackForNextMission }: CompleteMissionParams) => {
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
@@ -1277,6 +1276,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     profileData.available_tower_challenges = [];
                     profileNeedsUpdate = true;
                 }
+                
+                if (!profileData.routineTemplates) {
+                    profileData.routineTemplates = {}; // Adicionado para evitar undefined
+                }
 
                 if (profileNeedsUpdate) {
                     await persistData('profile', profileData);
@@ -1387,14 +1390,3 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
-
-    
-
-    
-
-    
-
-
-
-
-    

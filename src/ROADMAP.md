@@ -30,7 +30,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Adicionar a lógica de verificação (`checkAndApplyTowerRewards`) para validar a conclusão dos desafios e fazer o jogador avançar.
 - **[x] Melhorias no Sistema de Missões:**
     - **[x]** Permitir a criação manual de missões "one-off" não ligadas a uma meta.
-    - **[ ]** Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
+    - **[x]** Desenvolver templates de missões reutilizáveis (ex: "Rotina Matinal Produtiva").
 - **[x] Melhorias no Sistema de Guildas:**
     - **[x]** Implementar um dashboard de guilda mais completo e um leaderboard de contribuição dos membros. Para mais detalhes, ver o [roadmap de guildas](./ROADMAP_GUILD.md).
     - **[x]** Criar um sistema de recompensas de guilda que pode ser desbloqueado com esforço coletivo.
@@ -47,7 +47,7 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Sistema onde guildas competem para ver quem completa mais missões ou sobe mais andares na Torre.
 - **[x] Leaderboards Globais:**
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
-- **[ ] Sistema de Némesis:**
+- **[x] Sistema de Némesis:**
     - **[x]** Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
     - **[ ]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques".
 
@@ -76,4 +76,3 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
 - **[ ] Integrações Externas:**
     - [ ] Sincronização de missões com deadlines para o Google Calendar.
     - [ ] Integração com smartwatches para completar automaticamente missões de fitness.
-
