@@ -918,7 +918,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
     
-    const resetUserSubCollections = async (userRef: DocumentReference<DocumentData>) => {
+    const resetUserSubCollections = useCallback(async (userRef: DocumentReference<DocumentData>) => {
         const batch = writeBatch(db);
         const collectionsToDelete = ['metas', 'missions', 'skills'];
         for (const coll of collectionsToDelete) {
@@ -926,9 +926,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             snapshot.forEach(doc => batch.delete(doc.ref));
         }
         await batch.commit();
-    };
+    }, []);
 
-    const handleFullReset = async () => {
+    const handleFullReset = useCallback(async () => {
         if (!user) return;
         dispatch({ type: 'SET_DATA_LOADED', payload: false });
         try {
@@ -976,9 +976,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             toast({ variant: 'destructive', title: "Erro no Reset", description: `Não foi possível apagar os seus dados. Erro: ${(error as Error).message}` });
              dispatch({ type: 'SET_DATA_LOADED', payload: true });
         }
-    };
+    }, [user, toast, resetUserSubCollections]);
     
-    const handleImportData = async (file: File) => {
+    const handleImportData = useCallback(async (file: File) => {
         if (!user) throw new Error("Utilizador não autenticado.");
         
         return new Promise((resolve, reject) => {
@@ -1026,7 +1026,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             reader.onerror = (e) => reject(new Error("Não foi possível ler o ficheiro."));
             reader.readAsText(file);
         });
-    };
+    }, [user, resetUserSubCollections, toast]);
     
     // Skill Decay & Tower Lives & Task Reset Logic
      useEffect(() => {
@@ -1116,7 +1116,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 metas: JSON.stringify(state.metas),
                 routine: JSON.stringify(state.routine),
                 missions: JSON.stringify(state.missions.filter(m => !m.concluido)),
-                query: `O Caçador acabou de atingir o nível ${currentLevel} (Rank: ${rank} - ${title}). Gere uma mensagem curta, épica e narrativa sobre a sua reputação crescente no Sistema.`,
+                query: `O Caçador acabou de atingir o nível ${currentLevel} (Rank: ${rank} - ${title}). Gere uma mensagem curta, épica e narrativa sobre a sua crescente reputação.`,
                 personality: state.profile.user_settings?.ai_personality || 'balanced',
             }).then(result => {
                 setSystemAlert({ message: result.response, position: { top: '10%', left: '50%' } });
@@ -1223,7 +1223,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 description: "Usando dados locais. Algumas funcionalidades podem estar limitadas." 
             });
         }
-    }, [toast, handleFullReset, setShowOnboarding, user]);
+    }, [user, toast, handleFullReset, setShowOnboarding]);
     
     useEffect(() => {
         if (authState === 'authenticated' && user && !state.isDataLoaded) {
@@ -1259,5 +1259,7 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
 
     
