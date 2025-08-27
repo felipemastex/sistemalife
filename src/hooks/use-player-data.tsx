@@ -704,10 +704,19 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         updatedProfile = profileAfterStreak;
 
         const xpBoostEffect = (updatedProfile.active_effects || []).find((eff: ActiveEffect) => eff.type === 'xp_boost' && new Date(eff.expires_at) > new Date());
-        const xpMultiplier = (xpBoostEffect && xpBoostEffect.multiplier) ? xpBoostEffect.multiplier : 1;
+        let xpMultiplier = (xpBoostEffect && xpBoostEffect.multiplier) ? xpBoostEffect.multiplier : 1;
+
+        // Apply World Event Nerf
+        const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
+        const eventXpNerf = activeEvent?.effects.find(e => e.type === 'XP_NERF');
+        if (eventXpNerf) {
+            xpMultiplier *= eventXpNerf.value;
+            toast({ variant: 'destructive', title: `Efeito de Evento: ${activeEvent.name}`, description: `O ganho de XP está reduzido em ${(1 - eventXpNerf.value) * 100}%.`})
+        }
+        
         const finalXPGained = Math.round(tempDailyMission.xp_conclusao * xpMultiplier);
         
-        if (xpMultiplier > 1) toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!` });
+        if (xpMultiplier !== 1 && !eventXpNerf) toast({ title: 'Bónus de XP Ativo!', description: `Você ganhou ${finalXPGained} XP (${xpMultiplier}x)!` });
         
         updatedProfile.xp += finalXPGained + streakBonus.xp;
         updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (tempDailyMission.fragmentos_conclusao || 0) + streakBonus.fragments;
@@ -752,15 +761,33 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         }
         
         // Handle World Event Contribution
-        const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
         if (activeEvent && activeEvent.goal.type === 'COMPLETE_MISSIONS_IN_CATEGORY' && meta?.categoria === activeEvent.goal.category) {
             let userContribution = updatedProfile.event_contribution?.eventId === activeEvent.id ? (updatedProfile.event_contribution.contribution || 0) : 0;
             userContribution++;
-            
             updatedProfile.event_contribution = { eventId: activeEvent.id, contribution: userContribution };
             
             const updatedEvent = { ...activeEvent, progress: (activeEvent.progress || 0) + 1 };
-            await persistData('worldEvents', state.worldEvents.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+            
+            // Check for event completion
+            if (updatedEvent.progress >= updatedEvent.goal.target) {
+                updatedEvent.isActive = false; // Deactivate event
+                toast({ title: 'Evento Mundial Concluído!', description: `Graças ao seu esforço, "${activeEvent.name}" foi superado! As recompensas serão distribuídas.` });
+                
+                // Add reward effects to world events (or a separate system in a real app)
+                const rewardEvent = {
+                    id: `reward_${activeEvent.id}`,
+                    name: `Recompensa: ${activeEvent.name}`,
+                    description: `Recompensas pela vitória contra ${activeEvent.name}.`,
+                    type: 'REWARD',
+                    effects: activeEvent.rewards.map(r => ({...r, type: r.type, expires_at: new Date(Date.now() + (r.duration_hours || 0) * 3600 * 1000).toISOString() })),
+                    isActive: true,
+                    startDate: new Date().toISOString(),
+                    endDate: new Date(Date.now() + 48 * 3600 * 1000).toISOString() // Example 48h reward period
+                }
+                await persistData('worldEvents', [...state.worldEvents.map(e => e.id === updatedEvent.id ? updatedEvent : e), rewardEvent]);
+            } else {
+                 await persistData('worldEvents', state.worldEvents.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+            }
         }
 
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
@@ -1008,6 +1035,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             let profileChanged = false;
             let updatedProfile = { ...state.profile! };
             const now = new Date();
+            const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
+            const corruptionAccelerationEffect = activeEvent?.effects.find(e => e.type === 'CORRUPTION_ACCELERATION');
+            const decayDays = corruptionAccelerationEffect ? 14 / corruptionAccelerationEffect.value : 14;
+            const atRiskDays = Math.floor(decayDays / 2);
 
             // Skill Decay Logic
             let skillsToUpdate: Skill[] = [];
@@ -1018,14 +1049,14 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 const lastActivity = new Date(skill.ultima_atividade_em || now);
                 const daysInactive = differenceInCalendarDays(now, lastActivity);
 
-                if (daysInactive > 14) { 
+                if (daysInactive > decayDays) { 
                     const xpToLose = 5;
                     if (skill.xp_atual > 0) {
                         const newXp = Math.max(0, skill.xp_atual - xpToLose);
                         skillsToUpdate.push({ ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() });
                         decayedSkills.push({ name: skill.nome, xpLost: xpToLose });
                     }
-                } else if (daysInactive > 7) {
+                } else if (daysInactive > atRiskDays) {
                     atRiskSkills.push({ name: skill.nome, daysInactive });
                 }
             });
@@ -1066,7 +1097,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, [state.isDataLoaded, state.profile, state.skills, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification, toast]);
+    }, [state.isDataLoaded, state.profile, state.skills, state.worldEvents, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification, toast]);
 
 
     const fetchData = useCallback(async (userId: string) => {
