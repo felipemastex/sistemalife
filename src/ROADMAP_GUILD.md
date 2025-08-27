@@ -32,8 +32,8 @@ Este documento foca-se especificamente nas melhorias e novas funcionalidades pla
 **Objetivo:** Introduzir sistemas que incentivem o trabalho em equipa e recompensem o esforço coletivo.
 
 - **[ ] Missões de Guilda (`GuildQuests.tsx`):**
-    - **[ ]** Implementar a interface para visualizar e interagir com missões cooperativas.
-    - **[ ]** Criar um flow de IA (`generate-guild-quest`) para gerar missões de guilda com base num tema (ex: "Foco em fitness esta semana").
+    - **[x]** Implementar a interface para visualizar e interagir com missões cooperativas.
+    - **[x]** Criar um flow de IA (`generate-guild-quest`) para gerar missões de guilda com base num tema (ex: "Foco em fitness esta semana").
     - **[ ]** Desenvolver a lógica para que as contribuições de múltiplos membros contem para um objetivo comum.
 - **[ ] Sistema de Recompensas da Guilda (`GuildRewards.tsx`):**
     - **[ ]** Criar um "tesouro" da guilda que acumula uma moeda especial (ex: "Pontos de Contribuição") quando os membros completam missões.
