@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ChallengeRequirementSchema = z.object({
-  type: z.enum(['mission_completed', 'skill_level_reached', 'streak_maintained', 'guild_activity', 'level_reached', 'missions_in_category_completed'])
+  type: z.enum(['missions_completed', 'skill_level_reached', 'streak_maintained', 'guild_activity', 'level_reached', 'missions_in_category_completed'])
     .describe("O tipo de critério para completar o desafio."),
   value: z.string().or(z.number()).describe("O valor alvo para o critério (ex: 5, 'Saúde & Fitness')."),
   target: z.number().describe("A meta numérica que o critério precisa de atingir."),
@@ -36,6 +36,7 @@ export type GenerateTowerChallengeInput = z.infer<typeof GenerateTowerChallengeI
 
 const GenerateTowerChallengeOutputSchema = z.object({
   id: z.string().describe("Um ID único para o desafio (ex: 'floor50_daily_1')."),
+  floor: z.number().describe("O número do andar a que este desafio pertence."),
   title: z.string().describe("O título épico e temático para o desafio."),
   description: z.string().describe("Uma breve descrição do que é necessário para completar o desafio."),
   type: z.enum(['daily', 'weekly', 'special', 'guild', 'class', 'skill']).describe("O tipo de desafio a ser gerado."),
@@ -75,20 +76,21 @@ const generateTowerChallengeFlow = ai.defineFlow(
 
       **DIRETIVAS PARA A CRIAÇÃO DO DESAFIO:**
       1.  **Escala de Dificuldade:** A dificuldade DEVE ser diretamente proporcional ao número do andar.
-          - Andares 1-20 (Beginner): Desafios simples, focados em consistência básica.
-          - Andares 21-40 (Intermediate): Desafios que exigem mais tempo e foco.
-          - Andares 41-60 (Advanced): Desafios de desenvolvimento de habilidades e disciplina.
+          - Andares 1-20 (Beginner): Desafios simples, focados em consistência básica. Ex: Completar 3 missões diárias no total, manter um streak de 2 dias.
+          - Andares 21-40 (Intermediate): Desafios que exigem mais tempo e foco. Ex: Completar 5 missões de uma categoria específica.
+          - Andares 41-60 (Advanced): Desafios de desenvolvimento de habilidades e disciplina. Ex: Atingir o nível 5 numa habilidade específica.
           - Andares 61-80 (Expert): Desafios complexos e multidisciplinares.
           - Andares 81-100 (Master): Desafios transformacionais que exigem um alto nível de comprometimento.
       2.  **Personalização:** Analise os dados do Caçador para criar um desafio relevante.
           - Se uma habilidade está baixa, crie um desafio para a incentivar.
           - Se o Caçador está a trabalhar numa meta específica, alinhe o desafio com essa meta.
           - Use as estatísticas do perfil para calibrar as metas numéricas. Um Caçador com 'forca' alta pode aguentar um desafio físico mais exigente.
-      3.  **Variedade:** Não repita os desafios recentes. Escolha um tipo de desafio ('type') e um critério ('requirement.type') que ofereça uma nova experiência.
+      3.  **Variedade:** Não repita os desafios recentes. Escolha um tipo de desafio ('type') e um critério ('requirement.type') que ofereça uma nova experiência. Gere principalmente desafios do tipo 'daily'.
       4.  **Requisitos Claros:** Os requisitos devem ser mensuráveis e acionáveis.
           - Exemplo Bom: { type: 'missions_in_category_completed', value: 'Saúde & Fitness', target: 5 }
           - Exemplo Ruim: "Seja mais saudável."
       5.  **Recompensas Equilibradas:** As recompensas (XP, fragmentos) devem escalar com a dificuldade e o esforço exigido. Desafios de andares mais altos recompensam muito mais.
+      6. **ID e Andar:** O id deve ser único (pode usar timestamp). O 'floor' na resposta deve ser o mesmo 'floorNumber' do input.
 
       Gere um único desafio em formato JSON que siga todas estas diretivas.
     `;
@@ -101,3 +103,5 @@ const generateTowerChallengeFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

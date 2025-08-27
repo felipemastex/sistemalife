@@ -1,6 +1,7 @@
 
 
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -94,7 +95,7 @@ interface Achievement {
 }
 
 interface TowerChallengeRequirement {
-  type: 'mission_completed' | 'skill_level_reached' | 'streak_maintained' | 'guild_activity' | 'level_reached' | 'missions_in_category_completed';
+  type: 'missions_completed' | 'skill_level_reached' | 'streak_maintained' | 'guild_activity' | 'level_reached' | 'missions_in_category_completed';
   value: any;
   target: number;
   current?: number;
@@ -104,8 +105,10 @@ interface ActiveTowerChallenge {
   id: string;
   title: string;
   startedAt: string;
-  timeLimitHours: number;
+  timeLimit: number; // in hours
   requirements: TowerChallengeRequirement[];
+  rewards: { xp: number; fragments: number; premiumFragments?: number };
+  floor: number;
 }
 
 interface UserSettings {
@@ -140,6 +143,7 @@ interface TowerProgress {
   lives: number;
   maxLives: number;
   lastLifeRegeneration: string; // ISO String
+  dailyChallengesAvailable: number;
 }
 
 interface RecurringTask {
@@ -576,50 +580,83 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
     };
 
-    const checkTowerChallenges = useCallback((eventType: string, eventData: any, currentProfile: Profile): Profile => {
+    const checkAndApplyTowerRewards = useCallback(() => {
+        if (!state.profile?.active_tower_challenges) return;
+    
         let profileChanged = false;
-        let updatedProfile = { ...currentProfile };
-
-        const activeChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
+        let updatedProfile = { ...state.profile };
+        let challengesToRemove: string[] = [];
+    
+        const activeChallenges = updatedProfile.active_tower_challenges.filter(challenge => {
             const startTime = new Date(challenge.startedAt).getTime();
-            const timeLimitMillis = challenge.timeLimitHours * 60 * 60 * 1000;
-            return new Date().getTime() - startTime < timeLimitMillis;
+            const timeLimitMillis = challenge.timeLimit * 60 * 60 * 1000;
+            const isExpired = new Date().getTime() - startTime > timeLimitMillis;
+            if (isExpired) {
+                if (updatedProfile.tower_progress) {
+                    updatedProfile.tower_progress.lives = Math.max(0, updatedProfile.tower_progress.lives - 1);
+                }
+                toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou.` });
+                challengesToRemove.push(challenge.id);
+                profileChanged = true;
+                return false;
+            }
+            return true;
         });
-
-        if (activeChallenges.length !== (updatedProfile.active_tower_challenges || []).length) {
-            updatedProfile.active_tower_challenges = activeChallenges;
-            profileChanged = true;
-        }
-
+    
         activeChallenges.forEach(challenge => {
             let challengeCompleted = true;
             challenge.requirements.forEach(req => {
-                let progressMade = false;
-                if(req.type === 'missions_in_category_completed' && eventType === 'mission_completed' && eventData.category === req.value){
-                    req.current = (req.current || 0) + 1;
-                    progressMade = true;
+                let currentProgress = req.current || 0;
+                switch (req.type) {
+                    case 'missions_in_category_completed': {
+                        const categoryGoals = state.metas.filter(m => m.categoria === req.value).map(m => m.nome);
+                        currentProgress = state.missions.filter(m => categoryGoals.includes(m.meta_associada)).flatMap(m => m.missoes_diarias || []).filter(dm => dm.concluido).length;
+                        break;
+                    }
+                    case 'streak_maintained':
+                        currentProgress = updatedProfile.streak_atual;
+                        break;
+                    // TODO: Implement other requirement types
                 }
-                // Adicionar mais lógicas de verificação aqui para outros tipos de desafios
-                
-                if (progressMade) {
-                    profileChanged = true;
-                }
-                if ((req.current || 0) < req.target) {
+    
+                req.current = currentProgress;
+                if (currentProgress < req.target) {
                     challengeCompleted = false;
                 }
             });
-
+    
             if (challengeCompleted) {
-                // TODO: Conceder recompensas e notificar o utilizador
-                toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title}` });
-                // Remover desafio da lista ativa
-                updatedProfile.active_tower_challenges = updatedProfile.active_tower_challenges?.filter(c => c.id !== challenge.id);
+                updatedProfile.xp += challenge.rewards.xp;
+                updatedProfile.fragmentos += challenge.rewards.fragments;
+                if (challenge.rewards.premiumFragments) {
+                    if (!updatedProfile.tower_progress) {
+                        updatedProfile.tower_progress = { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 };
+                    }
+                }
+                
+                toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title} e ganhou ${challenge.rewards.xp} XP!` });
+                challengesToRemove.push(challenge.id);
                 profileChanged = true;
             }
         });
+    
+        if (profileChanged) {
+            updatedProfile.active_tower_challenges = [...activeChallenges, ...(updatedProfile.active_tower_challenges || [])]
+                .filter(c => !challengesToRemove.includes(c.id))
+                .filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i); // remove duplicates
+            
+            const completedChallengesOnFloor = (updatedProfile.active_tower_challenges || []).filter(c => c.floor === updatedProfile.tower_progress?.currentFloor).length === 0;
 
-        return profileChanged ? updatedProfile : currentProfile;
-    }, [toast]);
+            if (updatedProfile.tower_progress && completedChallengesOnFloor && (state.profile?.active_tower_challenges || []).length > 0) {
+                 updatedProfile.tower_progress.currentFloor += 1;
+                 updatedProfile.tower_progress.dailyChallengesAvailable = 3;
+                 toast({title: "Andar da Torre Concluído!", description: `Você avançou para o andar ${updatedProfile.tower_progress.currentFloor}!`});
+            }
+            
+            persistData('profile', updatedProfile);
+        }
+    
+    }, [state.profile, state.metas, state.missions, persistData, toast]);
 
 
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback: feedbackForNextMission }: CompleteMissionParams) => {
@@ -730,10 +767,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
         
-        const eventData = { category: meta?.categoria };
-        updatedProfile = checkTowerChallenges('mission_completed', eventData, updatedProfile);
-
-
         const finalStateAfterCompletion = playerDataReducer(playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } }), { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
 
         const finalRankedMission = finalStateAfterCompletion.missions.find((m: RankedMission) => m.id === rankedMissionId);
@@ -759,7 +792,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('missions', finalStateAfterCompletion.missions);
         await persistData('skills', finalStateAfterCompletion.skills);
 
-    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder, checkTowerChallenges]);
+    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
     
     const generatePendingDailyMissions = useCallback(async () => {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
@@ -862,7 +895,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [] };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
@@ -969,32 +1002,15 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                  handleShowSkillAtRiskNotification(atRiskSkills);
             }
 
-            // Tower Lives Logic
+            // Tower Lives & Daily Challenge Reset Logic
             const towerProgress = updatedProfile.tower_progress;
             if (towerProgress) {
                 const lastRegen = new Date(towerProgress.lastLifeRegeneration);
                 if (!isToday(lastRegen)) {
                     towerProgress.lives = towerProgress.maxLives;
                     towerProgress.lastLifeRegeneration = now.toISOString();
+                    towerProgress.dailyChallengesAvailable = 3;
                     profileChanged = true;
-                }
-
-                const expiredChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
-                    const startTime = new Date(challenge.startedAt).getTime();
-                    const timeLimitMillis = challenge.timeLimitHours * 60 * 60 * 1000;
-                    return now.getTime() - startTime >= timeLimitMillis;
-                });
-
-                if (expiredChallenges.length > 0) {
-                    const livesLost = expiredChallenges.length;
-                    towerProgress.lives = Math.max(0, towerProgress.lives - livesLost);
-                    updatedProfile.active_tower_challenges = updatedProfile.active_tower_challenges?.filter(c => !expiredChallenges.find(ec => ec.id === c.id));
-                    profileChanged = true;
-                    toast({
-                        variant: 'destructive',
-                        title: 'Desafio da Torre Falhou!',
-                        description: `Você perdeu ${livesLost} vida por não completar desafios a tempo.`
-                    });
                 }
             }
             
@@ -1128,6 +1144,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         showOnboarding, setShowOnboarding,
         setMissionFeedback,
         generatePendingDailyMissions,
+        checkAndApplyTowerRewards,
     };
 
     return (
@@ -1144,5 +1161,7 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
 
     
