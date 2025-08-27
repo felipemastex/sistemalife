@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -180,6 +181,7 @@ interface Profile {
   streak_atual: number;
   best_streak?: number;
   ultimo_dia_de_missao_concluida: string | null;
+  last_task_completion_date?: string | null;
   guild_id?: string | null;
   guild_role?: string | null;
   onboarding_completed?: boolean;
@@ -997,12 +999,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
             
             // Task Reset Logic
-            const lastTaskCompletionDay = updatedProfile.ultimo_dia_de_missao_concluida ? new Date(updatedProfile.ultimo_dia_de_missao_concluida).getDay() : -1;
-            if (now.getDay() !== lastTaskCompletionDay) {
-                if(updatedProfile.completed_tasks_today && Object.keys(updatedProfile.completed_tasks_today).length > 0){
-                    updatedProfile.completed_tasks_today = {};
-                    profileChanged = true;
-                }
+             if (updatedProfile.last_task_completion_date && !isToday(new Date(updatedProfile.last_task_completion_date))) {
+                updatedProfile.completed_tasks_today = {};
+                profileChanged = true;
             }
 
              if (profileChanged) {
@@ -1145,3 +1144,5 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
+    
