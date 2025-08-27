@@ -50,6 +50,13 @@ interface RankedMission {
   subTasks?: SubTask[];
 }
 
+interface Nemesis {
+    name: string;
+    description: string;
+    maxHealth: number;
+    currentHealth: number;
+}
+
 interface Meta {
   id: string | number;
   nome: string;
@@ -64,6 +71,7 @@ interface Meta {
     relevant: string;
     timeBound: string;
   };
+  nemesis?: Nemesis;
 }
 
 interface Skill {
@@ -752,7 +760,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             missionSkillXp = xp;
         } catch(e) { console.error("Could not get skill xp", e); }
         
-        const meta = state.metas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
+        let currentMetas = [...state.metas];
+        const meta = currentMetas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
         if (meta?.habilidade_associada_id) {
             let skillToUpdate = state.skills.find((s: Skill) => s.id === meta.habilidade_associada_id);
             if (skillToUpdate) {
@@ -780,6 +789,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
+        // Damage Nemesis
+        if (meta && meta.nemesis) {
+            const damage = finalXPGained;
+            const newHealth = Math.max(0, meta.nemesis.currentHealth - damage);
+            meta.nemesis.currentHealth = newHealth;
+            currentMetas = currentMetas.map(m => m.id === meta.id ? meta : m);
+            dispatch({ type: 'SET_METAS', payload: currentMetas });
+        }
+
+
         // Handle World Event Contribution
         if (activeEvent && activeEvent.goal.type === 'COMPLETE_MISSIONS_IN_CATEGORY' && meta?.categoria === activeEvent.goal.category) {
             let userContribution = updatedProfile.event_contribution?.eventId === activeEvent.id ? (updatedProfile.event_contribution.contribution || 0) : 0;
@@ -864,15 +883,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const nextMission = goalMissions[currentIndex + 1];
             if (nextMission) { handleShowNewEpicMissionNotification(nextMission.nome, nextMission.descricao); }
             else {
-                const completedGoal = state.metas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
+                const completedGoal = currentMetas.find((m: Meta) => m.nome === tempRankedMission.meta_associada);
                 if (completedGoal) {
-                    persistData('metas', state.metas.map((m: Meta) => m.id === completedGoal.id ? { ...m, concluida: true } : m));
+                    persistData('metas', currentMetas.map((m: Meta) => m.id === completedGoal.id ? { ...m, concluida: true } : m));
                     handleShowGoalCompletedNotification(completedGoal.nome);
                 }
             }
         }
         
         await persistData('profile', updatedProfile);
+        await persistData('metas', currentMetas);
         await persistData('missions', finalStateAfterCompletion.missions);
         await persistData('skills', finalStateAfterCompletion.skills);
 
