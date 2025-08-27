@@ -2,6 +2,7 @@
 
 
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -167,6 +168,7 @@ interface Profile {
   inventory: any[];
   active_effects: ActiveEffect[];
   active_tower_challenges?: ActiveTowerChallenge[];
+  available_tower_challenges?: any[];
   tower_progress?: TowerProgress;
   estatisticas: {
     forca: number;
@@ -584,7 +586,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         if (!state.profile?.active_tower_challenges) return;
     
         let profileChanged = false;
-        let updatedProfile = { ...state.profile };
+        let updatedProfile = { ...state.profile! };
         let challengesToRemove: string[] = [];
     
         const activeChallenges = updatedProfile.active_tower_challenges.filter(challenge => {
@@ -895,7 +897,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [] };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [], available_tower_challenges: [] };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));

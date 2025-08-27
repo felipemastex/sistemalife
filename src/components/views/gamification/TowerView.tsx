@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Flame, Calendar, Shield, Users, Trophy, CheckCircle, Gem, Zap, Clock, Heart, LoaderCircle, Sparkles } from 'lucide-react';
@@ -26,7 +26,6 @@ const TowerView = () => {
     const { profile, missions, skills, metas, persistData, checkAndApplyTowerRewards } = usePlayerDataContext();
     const { toast } = useToast();
     const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
-    const [availableChallenges, setAvailableChallenges] = useState([]);
     
     const towerProgress = useMemo(() => profile?.tower_progress || {
         currentFloor: 1,
@@ -37,12 +36,8 @@ const TowerView = () => {
         dailyChallengesAvailable: 3,
     }, [profile]);
     
-     useEffect(() => {
-        if (profile?.active_tower_challenges) {
-            checkAndApplyTowerRewards();
-        }
-    }, [missions, skills, metas]); // Re-check when game state changes
-
+    const activeChallenges = useMemo(() => profile?.active_tower_challenges || [], [profile]);
+    const availableChallenges = useMemo(() => profile?.available_tower_challenges || [], [profile]);
 
     const handleGenerateChallenge = async () => {
         if (towerProgress.dailyChallengesAvailable <= 0) {
@@ -51,7 +46,9 @@ const TowerView = () => {
         }
         setIsLoadingChallenge(true);
         try {
-            const recentChallengeTitles = (profile.active_tower_challenges || []).map(c => c.title);
+            const allCurrentChallenges = [...activeChallenges, ...availableChallenges];
+            const recentChallengeTitles = allCurrentChallenges.map(c => c.title);
+
             const result = await generateTowerChallenge({
                 floorNumber: towerProgress.currentFloor,
                 userProfile: JSON.stringify(profile),
@@ -60,13 +57,14 @@ const TowerView = () => {
                 recentChallenges: recentChallengeTitles,
             });
 
-            // Prevent adding duplicate challenges
-            if (!availableChallenges.some(c => c.id === result.id)) {
-                setAvailableChallenges(prev => [...prev, {...result, status: 'available'}]);
-            }
-            
+            const newAvailableChallenges = [...availableChallenges, { ...result, status: 'available' }];
             const updatedProgress = { ...towerProgress, dailyChallengesAvailable: towerProgress.dailyChallengesAvailable - 1 };
-            await persistData('profile', { ...profile, tower_progress: updatedProgress });
+            
+            await persistData('profile', { 
+                ...profile, 
+                tower_progress: updatedProgress,
+                available_tower_challenges: newAvailableChallenges,
+            });
 
             toast({ title: 'Novo Desafio Gerado!', description: `O desafio "${result.title}" está disponível.` });
 
@@ -79,24 +77,26 @@ const TowerView = () => {
     };
     
      const handleAcceptChallenge = async (challengeToAccept) => {
-        const activeChallenges = profile.active_tower_challenges || [];
         const newChallenge = {
             ...challengeToAccept,
             startedAt: new Date().toISOString(),
             requirements: challengeToAccept.requirements.map(r => ({...r, current: 0})),
         };
+        
+        const updatedActiveChallenges = [...activeChallenges, newChallenge];
+        const updatedAvailableChallenges = availableChallenges.filter(c => c.id !== challengeToAccept.id);
+
         const updatedProfile = {
             ...profile,
-            active_tower_challenges: [...activeChallenges, newChallenge]
+            active_tower_challenges: updatedActiveChallenges,
+            available_tower_challenges: updatedAvailableChallenges,
         };
         await persistData('profile', updatedProfile);
         
-        // Remove from available list
-        setAvailableChallenges(prev => prev.filter(c => c.id !== challengeToAccept.id));
         toast({ title: "Desafio Aceite!", description: `"${challengeToAccept.title}" está agora ativo.`});
     };
     
-    const allChallengesForFloor = [...(profile.active_tower_challenges || []), ...availableChallenges].filter(c => c.floor === towerProgress.currentFloor);
+    const allChallengesForFloor = [...activeChallenges, ...availableChallenges].filter(c => c.floor === towerProgress.currentFloor);
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
@@ -218,5 +218,3 @@ const TowerView = () => {
 };
 
 export default TowerView;
-
-    
