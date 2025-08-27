@@ -85,7 +85,7 @@ const DashboardViewComponent = () => {
   const { profile, worldEvents } = usePlayerDataContext();
   
   const activeEvent = useMemo(() => {
-    return (worldEvents || []).find(e => e.isActive && new Date(e.endDate) > new Date());
+    return (worldEvents || []).find(e => e.isActive);
   }, [worldEvents]);
 
   const userContribution = useMemo(() => {
