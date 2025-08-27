@@ -129,6 +129,12 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
     }
   }
 
+  const handleDelete = () => {
+    if (editedMission?.id) {
+        onDelete(editedMission.id);
+    }
+  }
+
   const handleInputChange = (field: keyof Mission, value: string) => {
     setEditedMission(prev => prev ? ({ ...prev, [field]: value }) : null);
   };
@@ -209,7 +215,7 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
         )}
         {isManual && (
             <DialogFooter className="pt-3 px-4">
-                <Button variant="destructive" size="sm" onClick={() => editedMission?.id && onDelete(editedMission.id)}>
+                <Button variant="destructive" size="sm" onClick={handleDelete}>
                   <Trash2 className="mr-1 h-3 w-3"/> 
                   Excluir
                 </Button>
@@ -249,9 +255,15 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
                 <SubTaskCreator subTasks={editedMission.subTasks} onSubTasksChange={handleSubTasksChange} />
              </div>
         </div>
-        <DialogFooter className="px-4 pb-4 gap-2">
-             <Button variant="outline" onClick={onClose} className="flex-1 sm:flex-none">Cancelar</Button>
-            <Button onClick={handleSave} className="flex-1 sm:flex-none"><Save className="mr-2 h-4 w-4"/> Salvar</Button>
+        <DialogFooter className="px-4 pb-4 gap-2 flex-col sm:flex-row">
+            {isEditing && (
+                 <Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto mr-auto">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
+                </Button>
+            )}
+             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancelar</Button>
+            <Button onClick={handleSave} className="w-full sm:w-auto"><Save className="mr-2 h-4 w-4"/> Salvar</Button>
         </DialogFooter>
      </>
   );

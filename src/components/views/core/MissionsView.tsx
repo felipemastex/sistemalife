@@ -679,6 +679,8 @@ const MissionsViewComponent = () => {
     const handleDeleteManualMission = (missionId: string | number) => {
         const updatedMissions = (profile.manual_missions || []).filter((m: RankedMission) => m.id !== missionId);
         persistData('profile', { ...profile, manual_missions: updatedMissions });
+        setDialogState({ open: false, mission: null, isManual: false });
+        toast({ title: 'Missão Manual Removida', description: 'A sua missão personalizada foi excluída com sucesso.'});
     }
 
     const handleUnlockMission = async (mission: RankedMission) => {
