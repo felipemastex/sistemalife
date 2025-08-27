@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -23,6 +23,7 @@ import { ClassView } from '@/components/views/player/ClassView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
+import TowerView from '@/components/views/gamification/TowerView';
 
 export default function App() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -118,6 +119,7 @@ export default function App() {
               <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
               <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
+              <NavItem icon={TowerControl} label="Torre" page="tower" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
               <NavItem icon={UserSquare} label="Classe" page="class" inSheet={inSheet}/>
               <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
@@ -160,6 +162,7 @@ export default function App() {
       'inventory': <InventoryView />,
       'ai-chat': <AIChatView />,
       'settings': <SettingsView />,
+      'tower': <TowerView />,
     };
 
     return (
@@ -260,7 +263,3 @@ export default function App() {
     </div>
   );
 }
-
-    
-
-    
