@@ -3,7 +3,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -1003,6 +1003,11 @@ const MissionsViewComponent = () => {
                                             </div>
                                         </TriggerWrapper>
                                         <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
+                                            {isManualMission && 
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
+                                                    <Edit className="h-5 w-5" />
+                                                </Button>
+                                            }
                                             {!isManualMission && (
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
                                                     <GitMerge className="h-5 w-5" />
@@ -1136,3 +1141,4 @@ const MissionsViewComponent = () => {
 export const MissionsView = memo(MissionsViewComponent);
 
     
+
