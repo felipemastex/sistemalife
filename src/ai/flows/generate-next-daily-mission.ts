@@ -58,8 +58,11 @@ const generateNextDailyMissionFlow = ai.defineFlow(
       : 'Esta é a primeira missão para este objetivo.';
 
     const feedbackPrompt = input.feedback
-        ? `IMPORTANTE: O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isso em consideração para ajustar a dificuldade da nova missão. Se o feedback indica que foi 'muito difícil', torne a próxima missão um passo menor e mais simples. Se foi 'muito fácil', aumente ligeiramente a complexidade. Se o utilizador descreveu um problema específico, use esse contexto para criar o próximo passo.`
-        : '';
+        ? `DIRETIVA DE FEEDBACK (MAIS IMPORTANTE): O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isto em consideração como a principal diretriz para a dificuldade.
+- Se o feedback for 'muito fácil', aumente a complexidade ou a quantidade nas sub-tarefas significativamente. Considere criar uma tarefa que já contribua para a próxima Missão Épica, acelerando a progressão.
+- Se o feedback for 'muito difícil', reduza drasticamente a complexidade. Crie uma missão mais simples ou quebre a tarefa anterior num passo ainda menor.
+- Se o feedback for 'perfeito' ou descritivo, mantenha uma progressão natural e lógica.`
+        : 'Nenhum feedback foi dado. Prossiga com uma progressão natural.';
 
     let deadlinePrompt = '';
     if (input.goalDeadline) {
