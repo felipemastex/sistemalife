@@ -28,7 +28,7 @@ Este documento foca-se especificamente nas melhorias e novas funcionalidades pla
 - **[x]** **Anúncios da Guilda (`GuildAnnouncements.tsx`):**
     - **[x]** Sistema para a liderança publicar e gerir anúncios para todos os membros.
 
-### Fase 3: Colaboração e Recompensas (Em Progresso)
+### Fase 3: Colaboração e Recompensas (Concluída)
 **Objetivo:** Introduzir sistemas que incentivem o trabalho em equipa e recompensem o esforço coletivo.
 
 - **[x] Missões de Guilda (`GuildQuests.tsx`):**
