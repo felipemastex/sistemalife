@@ -128,8 +128,8 @@ const TowerView = () => {
             </div>
 
             <div className="mt-6 flex-grow overflow-y-auto pr-2">
-                <div className="space-y-4">
-                    {mockTowerData.map((floor) => {
+                <div className="flex flex-col-reverse space-y-4 space-y-reverse">
+                    {[...mockTowerData].reverse().map((floor) => {
                         const isCurrent = floor.status === 'current';
                         const isCompleted = floor.status === 'completed';
                         
