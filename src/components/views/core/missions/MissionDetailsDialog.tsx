@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader } from "../../../ui/card";
 import { Progress } from "../../../ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
+
 
 // Type definitions
 interface SubTask {
@@ -149,10 +151,20 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   };
   
   const handleAddToCalendar = () => {
-    toast({
-        title: "Integração Futura",
-        description: "A funcionalidade de sincronizar com o Google Calendar será adicionada em breve!"
-    });
+    // This is a simulation. A real implementation would check for actual OAuth connection.
+    const isConnected = true; // Let's simulate being connected.
+    if (isConnected) {
+        toast({
+            title: "Missão Adicionada ao Calendário!",
+            description: `A missão "${editedMission.nome}" foi sincronizada com o seu Google Calendar. (Simulação)`,
+        });
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Conexão Necessária",
+            description: "Por favor, conecte a sua conta Google nas Configurações > Dados & Backup para usar esta funcionalidade."
+        });
+    }
   }
 
   const renderViewMode = () => (
@@ -225,7 +237,7 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
         </CardContent>
         <DialogFooter className="px-4 pb-4">
              <Button onClick={handleAddToCalendar} variant="outline" className="w-full">
-                <CalendarPlus className="mr-2 h-4 w-4" />
+                <Image src="/google-calendar.svg" alt="Google Calendar" width={16} height={16} className="mr-2" />
                 Adicionar ao Google Calendar
             </Button>
         </DialogFooter>

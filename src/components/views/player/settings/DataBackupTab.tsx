@@ -4,19 +4,21 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { Download, Upload, AlertTriangle, LoaderCircle, Check } from 'lucide-react';
+import { Download, Upload, AlertTriangle, LoaderCircle, Check, Link, Unlink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 export default function DataBackupTab() {
-    const { profile, metas, missions, skills, routine, routineTemplates, handleImportData, isDataLoaded } = usePlayerDataContext();
+    const { profile, persistData, handleImportData, isDataLoaded } = usePlayerDataContext();
     const { toast } = useToast();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isImporting, setIsImporting] = useState(false);
-
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isConnected, setIsConnected] = useState(false); // Simulação
 
     const handleExportData = () => {
         try {
@@ -90,12 +92,28 @@ export default function DataBackupTab() {
     };
     
     const handleConnectGoogle = () => {
+        setIsConnecting(true);
         toast({
-            title: "Funcionalidade em Breve",
-            description: "A integração com o Google Calendar está a ser preparada e estará disponível em breve!"
+            title: "A conectar ao Google Calendar...",
+            description: "Numa aplicação real, uma janela de autenticação seria aberta."
+        });
+        setTimeout(() => {
+            setIsConnecting(false);
+            setIsConnected(true);
+            toast({
+                title: "Conectado com sucesso!",
+                description: "O Sistema agora pode interagir com o seu Google Calendar."
+            });
+        }, 2000);
+    };
+
+    const handleDisconnectGoogle = () => {
+        setIsConnected(false);
+        toast({
+            title: "Desconectado",
+            description: "A integração com o Google Calendar foi removida."
         });
     }
-
 
     return (
         <Card>
@@ -172,10 +190,20 @@ export default function DataBackupTab() {
                            Conecte o Sistema de Vida a outras aplicações para automatizar o seu progresso.
                         </p>
                     </div>
-                    <Button onClick={handleConnectGoogle} className="w-full sm:w-auto" variant="outline">
-                       <img src="/google-calendar.svg" alt="Google Calendar" className="h-4 w-4 mr-2" />
-                        Conectar Google Calendar
-                    </Button>
+                    {isConnected ? (
+                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                            <span className="text-sm text-green-400 flex items-center gap-2"><Check /> Conectado</span>
+                            <Button onClick={handleDisconnectGoogle} className="w-full sm:w-auto" variant="outline">
+                                <Unlink className="h-4 w-4 mr-2" />
+                                Desconectar
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button onClick={handleConnectGoogle} className="w-full sm:w-auto" variant="outline" disabled={isConnecting}>
+                           {isConnecting ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Image src="/google-calendar.svg" alt="Google Calendar" width={16} height={16} className="mr-2" />}
+                            {isConnecting ? "A conectar..." : "Conectar Google Calendar"}
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>

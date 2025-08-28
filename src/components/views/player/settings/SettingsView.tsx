@@ -2,7 +2,7 @@
 "use client";
 
 import { memo } from 'react';
-import { User, Bot, AlertTriangle, Bell, Database, PieChart, Gamepad2 } from 'lucide-react';
+import { User, Bot, AlertTriangle, Bell, Database, PieChart, Gamepad2, Link } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileSettingsTab from './ProfileSettingsTab';
 import AISettingsTab from './AISettingsTab';
@@ -42,7 +42,7 @@ const SettingsViewComponent = () => {
                     </TabsTrigger>
                     <TabsTrigger value="data_backup">
                          <Database className="mr-2 h-4 w-4" />
-                        Dados
+                        Dados & Integrações
                     </TabsTrigger>
                      <TabsTrigger value="analytics">
                          <PieChart className="mr-2 h-4 w-4" />
