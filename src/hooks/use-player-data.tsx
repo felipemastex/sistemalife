@@ -264,6 +264,7 @@ interface PlayerState {
   missionFeedback: Record<string | number, string>;
   generatingMission: string | number | null;
   currentPage: string;
+  dungeonSkillId: string | number | null;
 }
 
 interface PlayerAction {
@@ -318,6 +319,7 @@ const initialState: PlayerState = {
     missionFeedback: {}, 
     generatingMission: null,
     currentPage: 'dashboard',
+    dungeonSkillId: null,
 };
 
 function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerState {
@@ -359,6 +361,8 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
         }
         case 'SET_CURRENT_PAGE':
             return { ...state, currentPage: action.payload };
+        case 'SET_DUNGEON_SKILL_ID':
+            return { ...state, dungeonSkillId: action.payload };
         case 'UPDATE_SUB_TASK_PROGRESS': {
             const { rankedMissionId, dailyMissionId, subTaskName, amount } = action.payload;
             const newMissions = state.missions.map((rm: RankedMission) => 
@@ -437,8 +441,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     const { user, authState } = useAuth();
     const [state, dispatch] = useReducer(playerDataReducer, initialState);
     const { toast } = useToast();
-    const [dungeonSkillId, setDungeonSkillId] = useState<string | number | null>(null);
-
     
     const { 
         questNotification, setQuestNotification,
@@ -1186,6 +1188,25 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
     }, [state.profile, state.skills, persistData, toast]);
 
+    const acceptDungeonEvent = useCallback(async () => {
+        if (!state.profile || !state.profile.active_dungeon_event) return;
+        
+        const { skillId } = state.profile.active_dungeon_event;
+        
+        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
+        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
+
+        const updatedProfile = { ...state.profile, active_dungeon_event: null };
+        await persistData('profile', updatedProfile);
+
+    }, [state.profile, persistData]);
+
+    const declineDungeonEvent = useCallback(async () => {
+        if (!state.profile) return;
+        const updatedProfile = { ...state.profile, active_dungeon_event: null };
+        await persistData('profile', updatedProfile);
+    }, [state.profile, persistData]);
+
     // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
@@ -1474,8 +1495,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const providerValue = {
         ...state,
-        dungeonSkillId,
-        setDungeonSkillId,
+        setDungeonSkillId: (id: string | number | null) => dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: id }),
         setCurrentPage: (page: string) => dispatch({ type: 'SET_CURRENT_PAGE', payload: page }),
         persistData,
         completeMission,
@@ -1483,6 +1503,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         handleFullReset,
         handleImportData,
         triggerDungeonEvent,
+        acceptDungeonEvent,
+        declineDungeonEvent,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
@@ -1510,4 +1532,5 @@ export const usePlayerDataContext = () => {
 
 
     
+
 

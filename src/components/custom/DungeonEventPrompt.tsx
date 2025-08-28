@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Swords, Check, X } from 'lucide-react';
+import { Swords, Check, X, KeySquare } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 
 export const DungeonEventPrompt = () => {
@@ -38,7 +38,7 @@ export const DungeonEventPrompt = () => {
             >
                 <DialogHeader className="text-center items-center">
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 border-4 border-primary/30 animate-pulse">
-                        <Swords className="w-8 h-8 text-primary" />
+                        <KeySquare className="w-8 h-8 text-primary" />
                     </div>
                     <DialogTitle className="text-2xl font-bold font-cinzel text-primary">Get ready for the next battle</DialogTitle>
                     <DialogDescription className="text-muted-foreground pt-2 text-base">

@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, ListChecks } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, ListChecks, KeySquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -138,6 +138,7 @@ export default function App() {
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
               <NavItem icon={ListChecks} label="Afazeres" page="tasks" inSheet={inSheet}/>
               <NavItem icon={TowerControl} label="Torre" page="tower" inSheet={inSheet}/>
+              <NavItem icon={KeySquare} label="Masmorra" page="dungeon" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
               <NavItem icon={UserSquare} label="Classe" page="class" inSheet={inSheet}/>
               <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
@@ -186,6 +187,7 @@ export default function App() {
       'settings': <SettingsView />,
       'tower': <TowerView />,
       'tasks': <TasksView />,
+      'dungeon': dungeonSkillId ? <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('skills')} /> : <SkillsView onEnterDungeon={handleEnterDungeon} />,
     };
 
     return (
