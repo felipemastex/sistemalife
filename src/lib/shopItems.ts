@@ -7,8 +7,8 @@ interface ShopItem {
     description: string;
     price: number;
     icon: string; // Changed from LucideIcon to string
-    category: string;
-    effect: {
+    category: 'Consumíveis' | 'Cosméticos';
+    effect?: {
         type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll';
         multiplier?: number;
         duration_hours?: number;
@@ -53,5 +53,13 @@ export const allShopItems: ShopItem[] = [
     icon: 'Repeat',
     category: 'Consumíveis',
     effect: { type: 'mission_reroll' }
+  },
+   {
+    id: 'cosmetic_leather_armor',
+    name: 'Armadura de Couro do Caçador',
+    description: 'Um conjunto de armadura de couro simples, mas resistente. Um visual clássico para qualquer aventureiro.',
+    price: 500,
+    icon: 'Shirt',
+    category: 'Cosméticos',
   },
 ];

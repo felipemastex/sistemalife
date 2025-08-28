@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Backpack, Gem, Zap, Shield, BookOpen, Repeat } from 'lucide-react';
-import { allShopItems as shopItems } from '@/lib/shopItems';
+import { Backpack, Gem, Zap, Shield, BookOpen, Repeat, Shirt } from 'lucide-react';
+import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -16,7 +17,8 @@ const iconMap: { [key: string]: React.ElementType } = {
     Zap,
     Shield,
     BookOpen,
-    Repeat
+    Repeat,
+    Shirt,
 };
 
 const InventoryViewComponent = () => {
@@ -28,9 +30,32 @@ const InventoryViewComponent = () => {
     }
 
     const inventoryItems = (profile.inventory || []).map((invItem: any) => {
-        const details = shopItems.find(shopItem => shopItem.id === invItem.itemId);
+        const details = allShopItems.find(shopItem => shopItem.id === invItem.itemId);
         return { ...invItem, ...details };
     });
+    
+     const handleEquipItem = (itemToEquip: any) => {
+        if (!itemToEquip || itemToEquip.category !== 'Cosméticos') return;
+
+        const updatedProfile = {
+            ...profile,
+            inventory: (profile.inventory || []).filter((invItem: any) => invItem.instanceId !== itemToEquip.instanceId),
+            equipped_items: [
+                ...(profile.equipped_items || []),
+                {
+                    itemId: itemToEquip.id,
+                    name: itemToEquip.name,
+                    instanceId: itemToEquip.instanceId
+                }
+            ]
+        };
+
+        persistData('profile', updatedProfile);
+        toast({
+            title: "Item Equipado!",
+            description: `Você equipou ${itemToEquip.name}.`,
+        });
+    };
 
     const handleUseItem = (item: any) => {
         if (!item || !item.effect) return;
@@ -95,6 +120,7 @@ const InventoryViewComponent = () => {
                         const purchaseDate = new Date(item.purchaseDate);
                         const timeAgo = formatDistanceToNowStrict(purchaseDate, { addSuffix: true, locale: ptBR });
                         const isEffectActive = profile.active_effects?.some((eff: any) => eff.itemId === item.id);
+                        const isCosmetic = item.category === 'Cosméticos';
 
                         return (
                             <Card 
@@ -118,13 +144,19 @@ const InventoryViewComponent = () => {
                                     </p>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button 
-                                        className="w-full" 
-                                        onClick={() => handleUseItem(item)}
-                                        disabled={isEffectActive}
-                                    >
-                                        {isEffectActive ? "Efeito Ativo" : "Usar Item"}
-                                    </Button>
+                                     {isCosmetic ? (
+                                        <Button className="w-full" onClick={() => handleEquipItem(item)}>
+                                            Equipar
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            className="w-full" 
+                                            onClick={() => handleUseItem(item)}
+                                            disabled={isEffectActive}
+                                        >
+                                            {isEffectActive ? "Efeito Ativo" : "Usar Item"}
+                                        </Button>
+                                    )}
                                 </CardFooter>
                             </Card>
                         );
