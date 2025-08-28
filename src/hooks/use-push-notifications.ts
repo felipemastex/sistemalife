@@ -45,7 +45,14 @@ export function usePushNotifications() {
       return false;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error requesting push notification permission:', errorMessage);
       setError(`Failed to request permission: ${errorMessage}`);
+      
+      // Tratamento específico para AbortError
+      if (errorMessage.includes('AbortError') || errorMessage.includes('Registration failed')) {
+        console.warn('Push notification registration failed. This might be due to browser settings or missing configuration.');
+      }
+      
       return false;
     } finally {
       setIsLoading(false);
@@ -56,15 +63,20 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!isSupported) return;
 
-    const unsubscribe = onForegroundMessage((payload) => {
-      // Handle foreground notifications
-      console.log('Foreground notification received:', payload);
-      // You can show a toast or update UI here
-    });
+    try {
+      const unsubscribe = onForegroundMessage((payload) => {
+        // Handle foreground notifications
+        console.log('Foreground notification received:', payload);
+        // You can show a toast or update UI here
+      });
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    } catch (err) {
+      console.error('Error setting up foreground message listener:', err);
+      return () => {};
+    }
   }, [isSupported]);
 
   return {

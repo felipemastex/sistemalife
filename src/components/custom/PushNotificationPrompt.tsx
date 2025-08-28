@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
-import { Bell, BellOff, Loader2 } from 'lucide-react';
+import { Bell, BellOff, Loader2, AlertTriangle } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 
 export function PushNotificationPrompt() {
-  const { permission, isSupported, requestPermission, isLoading } = usePushNotifications();
+  const { permission, isSupported, requestPermission, isLoading, error } = usePushNotifications();
   const { profile, user, persistData } = usePlayerDataContext();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -29,22 +29,29 @@ export function PushNotificationPrompt() {
   }, [isSupported, permission, profile]);
 
   const handleEnableNotifications = async () => {
-    const granted = await requestPermission();
-    
-    if (granted) {
-      // Save preference to user profile
-      if (profile) {
-        const updatedProfile = {
-          ...profile,
-          user_settings: {
-            ...profile.user_settings,
-            push_notifications_enabled: true
-          }
-        };
-        await persistData('profile', updatedProfile);
-      }
+    try {
+      const granted = await requestPermission();
       
-      // Hide the prompt and remember the user's choice
+      if (granted) {
+        // Save preference to user profile
+        if (profile) {
+          const updatedProfile = {
+            ...profile,
+            user_settings: {
+              ...profile.user_settings,
+              push_notifications_enabled: true
+            }
+          };
+          await persistData('profile', updatedProfile);
+        }
+        
+        // Hide the prompt and remember the user's choice
+        setIsVisible(false);
+        localStorage.setItem('pushNotificationPromptShown', 'true');
+      }
+    } catch (err) {
+      console.error('Error enabling notifications:', err);
+      // Mesmo que haja erro, esconder o prompt para não incomodar o usuário
       setIsVisible(false);
       localStorage.setItem('pushNotificationPromptShown', 'true');
     }
@@ -56,6 +63,11 @@ export function PushNotificationPrompt() {
   };
 
   if (!isVisible) {
+    return null;
+  }
+
+  // Se houver um erro crítico, não mostrar o prompt
+  if (error && (error.includes('not supported') || error.includes('blocked'))) {
     return null;
   }
 
@@ -73,6 +85,12 @@ export function PushNotificationPrompt() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 p-2 bg-yellow-500/20 rounded-md flex items-center gap-2 text-sm">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <span>Problema ao ativar notificações: {error}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Bell className="h-4 w-4" />
             <span>Receba alertas sobre:</span>

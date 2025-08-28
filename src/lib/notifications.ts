@@ -15,6 +15,12 @@ export async function requestNotificationPermission(): Promise<boolean> {
     return false;
   }
 
+  // Verificar se as notificações são suportadas e não estão bloqueadas
+  if (!('Notification' in window)) {
+    console.warn('This browser does not support notifications');
+    return false;
+  }
+
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
@@ -37,6 +43,15 @@ export async function getFCMToken(): Promise<string | null> {
   }
 
   try {
+    // Verificar se o service worker está registrado antes de tentar obter o token
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      if (!registration) {
+        console.warn('Service worker is not ready');
+        return null;
+      }
+    }
+
     // Using Firebase's default VAPID key by not specifying one
     // This avoids encoding issues with custom keys
     const currentToken = await getToken(messaging);
@@ -48,8 +63,19 @@ export async function getFCMToken(): Promise<string | null> {
       console.log('No registration token available. Request permission to generate one.');
       return null;
     }
-  } catch (error) {
-    console.error('An error occurred while retrieving token. ', error);
+  } catch (error: any) {
+    // Tratamento específico para AbortError
+    if (error?.code === 'messaging/token-unsubscribe-failed') {
+      console.warn('Failed to unsubscribe token, but this is not critical:', error);
+      return null;
+    }
+    
+    if (error?.message?.includes('AbortError') || error?.message?.includes('Registration failed')) {
+      console.warn('Push notification registration failed. This might be due to browser settings or missing configuration:', error);
+      return null;
+    }
+    
+    console.error('An error occurred while retrieving token: ', error);
     return null;
   }
 }
@@ -60,12 +86,17 @@ export function onForegroundMessage(callback: (payload: any) => void) {
     return () => {};
   }
 
-  const unsubscribe = onMessage(messaging, (payload) => {
-    console.log('Message received in foreground:', payload);
-    callback(payload);
-  });
+  try {
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log('Message received in foreground:', payload);
+      callback(payload);
+    });
 
-  return unsubscribe;
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error setting up foreground message listener:', error);
+    return () => {};
+  }
 }
 
 // Save FCM token to user profile

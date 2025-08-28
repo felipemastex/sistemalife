@@ -41,7 +41,7 @@ export default function App() {
    } = usePlayerDataContext();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [dungeonSkillId, setDungeonSkillId] = useState(null);
+  const [dungeonSkillId, setDungeonSkillId] = useState<string | number | null>(null);
 
   const isMobile = useIsMobile();
     
@@ -91,13 +91,13 @@ export default function App() {
     touchEndRef.current = null;
   };
 
-  const handleNavigate = (page) => {
+  const handleNavigate = (page: string) => {
     setDungeonSkillId(null);
     setCurrentPage(page);
     if(isMobile) setIsSheetOpen(false);
   }
 
-  const handleEnterDungeon = (skillId) => {
+  const handleEnterDungeon = (skillId: string | number) => {
     setDungeonSkillId(skillId);
     setCurrentPage('dungeon');
   }
@@ -253,7 +253,6 @@ export default function App() {
         
       <main 
         className="flex-1 overflow-y-auto overflow-x-hidden relative" 
-        style={{height: '100vh'}}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={() => onTouchEnd(false)}
