@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -181,6 +182,9 @@ interface Profile {
   active_tower_challenges?: ActiveTowerChallenge[];
   available_tower_challenges?: any[];
   tower_progress?: TowerProgress;
+  dungeon_lives?: number;
+  dungeon_max_lives?: number;
+  dungeon_last_life_regeneration?: string;
   estatisticas: {
     forca: number;
     inteligencia: number;
@@ -1126,13 +1130,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
 
-    // Skill Decay & Tower Lives & Task Reset Logic
+    // Skill Decay & Tower/Dungeon Lives & Task Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
 
         const checkSystems = () => {
             let profileChanged = false;
-            // Criando uma cópia do perfil para verificar mudanças sem causar re-render
             let updatedProfile = JSON.parse(JSON.stringify(state.profile!));
             const now = new Date();
             const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
@@ -1140,7 +1143,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const decayDays = corruptionAccelerationEffect ? 14 / corruptionAccelerationEffect.value : 14;
             const atRiskDays = Math.floor(decayDays / 2);
 
-            // Skill Decay Logic
             let skillsToUpdate: Skill[] = [];
             let atRiskSkills: { name: string; daysInactive: number }[] = [];
             let decayedSkills: { name: string; xpLost: number }[] = [];
@@ -1163,7 +1165,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
             if (skillsToUpdate.length > 0) {
                 const updatedSkills = state.skills.map(s => skillsToUpdate.find(u => u.id === s.id) || s);
-                // Evitando chamar persistData diretamente aqui para prevenir loop infinito
                 dispatch({ type: 'SET_SKILLS', payload: updatedSkills });
                 handleShowSkillDecayNotification(decayedSkills);
             }
@@ -1172,13 +1173,22 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
 
             // Tower Lives & Daily Challenge Reset Logic
-            const towerProgress = updatedProfile.tower_progress;
-            if (towerProgress) {
-                const lastRegen = new Date(towerProgress.lastLifeRegeneration);
-                if (!isToday(lastRegen)) {
-                    towerProgress.lives = towerProgress.maxLives;
-                    towerProgress.lastLifeRegeneration = now.toISOString();
-                    towerProgress.dailyChallengesAvailable = 3;
+            if (updatedProfile.tower_progress) {
+                const lastRegenTower = new Date(updatedProfile.tower_progress.lastLifeRegeneration);
+                if (!isToday(lastRegenTower)) {
+                    updatedProfile.tower_progress.lives = updatedProfile.tower_progress.maxLives;
+                    updatedProfile.tower_progress.lastLifeRegeneration = now.toISOString();
+                    updatedProfile.tower_progress.dailyChallengesAvailable = 3;
+                    profileChanged = true;
+                }
+            }
+
+            // Dungeon Lives Reset Logic
+            if (updatedProfile.dungeon_last_life_regeneration) {
+                const lastRegenDungeon = new Date(updatedProfile.dungeon_last_life_regeneration);
+                if (!isToday(lastRegenDungeon)) {
+                    updatedProfile.dungeon_lives = updatedProfile.dungeon_max_lives;
+                    updatedProfile.dungeon_last_life_regeneration = now.toISOString();
                     profileChanged = true;
                 }
             }
@@ -1189,14 +1199,11 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 profileChanged = true;
             }
 
-            // Apenas atualizar o perfil se houve mudanças reais
             if (profileChanged) {
-                // Comparar o perfil atualizado com o perfil em state antes de disparar a atualização
                 const currentProfileString = JSON.stringify(state.profile);
                 const updatedProfileString = JSON.stringify(updatedProfile);
                 
                 if (currentProfileString !== updatedProfileString) {
-                    // Evitando chamar persistData diretamente aqui para prevenir loop infinito
                     dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
                 }
             }
@@ -1206,7 +1213,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, []); // Removendo dependências para evitar loop infinito
+    }, []); 
 
     // Narrative event trigger
     useEffect(() => {
@@ -1303,6 +1310,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 if (!profileData.last_known_level) {
                      profileData.last_known_level = profileData.nivel;
                      profileNeedsUpdate = true;
+                }
+
+                 if (!profileData.dungeon_lives) {
+                    profileData.dungeon_lives = 5;
+                    profileData.dungeon_max_lives = 5;
+                    profileData.dungeon_last_life_regeneration = new Date().toISOString();
+                    profileNeedsUpdate = true;
                 }
 
                 if (profileNeedsUpdate) {

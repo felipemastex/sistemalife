@@ -4,23 +4,40 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, KeySquare, Sparkles, LoaderCircle, CheckCircle, Trophy, BookCopy } from 'lucide-react';
+import { ArrowLeft, KeySquare, Sparkles, LoaderCircle, CheckCircle, Trophy, BookCopy, Heart } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 
 const SkillDungeonView = ({ skillId, onExit }) => {
-    const { skills, persistData, completeDungeonChallenge } = usePlayerDataContext();
+    const { profile, skills, persistData, completeDungeonChallenge } = usePlayerDataContext();
     const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
     const [submission, setSubmission] = useState('');
     const { toast } = useToast();
 
     const skill = useMemo(() => skills.find(s => s.id === skillId), [skills, skillId]);
     
-    const handleGenerateChallenge = async () => {
-        if (!skill) return;
+    const handleGenerateChallenge = async (isGivingUp = false) => {
+        if (!skill || !profile) return;
+
+        if (isGivingUp) {
+            if ((profile.dungeon_lives || 0) <= 0) {
+                toast({ variant: 'destructive', title: 'Sem Vidas', description: 'Você não tem vidas para desistir deste desafio.' });
+                return;
+            }
+            const updatedProfile = {
+                ...profile,
+                dungeon_lives: (profile.dungeon_lives || 0) - 1,
+            };
+            await persistData('profile', updatedProfile);
+            toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'Uma vida foi perdida. Um novo desafio será gerado.' });
+        }
+
         setIsLoadingChallenge(true);
         try {
             const result = await generateSkillDungeonChallenge({
@@ -42,7 +59,9 @@ const SkillDungeonView = ({ skillId, onExit }) => {
             const updatedSkills = skills.map(s => s.id === skillId ? updatedSkill : s);
             await persistData('skills', updatedSkills);
             
-            toast({ title: "Novo Desafio da Masmorra!", description: `O desafio "${result.challengeName}" está pronto.` });
+            if(!isGivingUp) {
+                toast({ title: "Novo Desafio da Masmorra!", description: `O desafio "${result.challengeName}" está pronto.` });
+            }
 
         } catch (error) {
             console.error("Error generating dungeon challenge:", error);
@@ -61,7 +80,7 @@ const SkillDungeonView = ({ skillId, onExit }) => {
         setSubmission('');
     }
 
-    if (!skill) {
+    if (!skill || !profile) {
         return (
             <div className="p-4 md:p-6 h-full flex flex-col items-center justify-center text-center">
                 <p className="text-destructive text-lg">Erro: Habilidade não encontrada.</p>
@@ -71,6 +90,7 @@ const SkillDungeonView = ({ skillId, onExit }) => {
     }
 
     const { dungeon } = skill;
+    const { dungeon_lives = 5, dungeon_max_lives = 5 } = profile;
     const activeChallenge = dungeon?.active_challenge;
     
     return (
@@ -93,6 +113,19 @@ const SkillDungeonView = ({ skillId, onExit }) => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4 w-full md:w-auto">
+                        <Card className="flex-grow bg-card/80 p-3 rounded-lg border border-border">
+                            <div className="flex items-center justify-between md:justify-start gap-2">
+                                <div className="flex items-center gap-1 text-red-400">
+                                    {Array.from({ length: dungeon_max_lives }).map((_, i) => (
+                                        <Heart key={i} className={cn("h-6 w-6", i < dungeon_lives ? 'fill-current' : '')} />
+                                    ))}
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-lg leading-none">{dungeon_lives}/{dungeon_max_lives}</p>
+                                    <p className="text-xs text-muted-foreground">Vidas</p>
+                                </div>
+                            </div>
+                        </Card>
                          <Card className="flex-grow bg-card/80 p-3 rounded-lg border border-border">
                              <div className="text-center">
                                 <p className="font-bold text-2xl leading-none">{dungeon?.current_room || 1}</p>
@@ -130,7 +163,23 @@ const SkillDungeonView = ({ skillId, onExit }) => {
                             />
                         </CardContent>
                         <CardFooter className="flex-col sm:flex-row gap-2">
-                             <Button variant="outline" className="w-full sm:w-auto">Desistir (Perde 1 Vida)</Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                     <Button variant="outline" className="w-full sm:w-auto" disabled={dungeon_lives <= 0}>Desistir (Perde 1 Vida)</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Desistir do Desafio?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Isto irá consumir uma vida e gerar um novo desafio para esta sala. Tem a certeza?
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleGenerateChallenge(true)}>Sim, Desistir</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                              <Button className="w-full sm:w-auto" onClick={handleCompleteChallenge} disabled={!submission.trim()}>Completar Desafio</Button>
                         </CardFooter>
                     </Card>
@@ -139,7 +188,7 @@ const SkillDungeonView = ({ skillId, onExit }) => {
                         <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
                         <h2 className="text-2xl font-bold">Sala {dungeon?.current_room || 1} Concluída!</h2>
                         <p className="text-muted-foreground mt-2 mb-6">Você está pronto para o próximo desafio.</p>
-                        <Button onClick={handleGenerateChallenge} disabled={isLoadingChallenge}>
+                        <Button onClick={() => handleGenerateChallenge(false)} disabled={isLoadingChallenge}>
                             {isLoadingChallenge ? <LoaderCircle className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4" />}
                             Gerar Desafio
                         </Button>
