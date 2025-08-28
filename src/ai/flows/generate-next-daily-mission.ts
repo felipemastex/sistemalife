@@ -82,6 +82,8 @@ const generateNextDailyMissionFlow = ai.defineFlow(
     const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
 Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de objetivos claros e mensuráveis.
 
+**DIRETIVA DE DIFICULDADE (MUITO IMPORTANTE):** A dificuldade da missão DEVE escalar com o nível do utilizador. Um Caçador de nível ${input.userLevel} precisa de um desafio maior do que um de nível 1. Ajuste a complexidade e a quantidade (target) das sub-tarefas para serem apropriadas para este nível.
+
 **ATAQUE DO NÉMESIS (Regra Especial):**
 Existe uma pequena chance (cerca de 15%) de que o "Némesis" da meta interfira. Se isso acontecer, a missão gerada deve ser um **Desafio do Némesis**.
 - **Se for um Desafio do Némesis:** Defina 'isNemesisChallenge' como true. O nome e a descrição da missão devem ser mais ameaçadores e temáticos (ex: "Emboscada da Dúvida", "A Muralha da Preguiça"). O desafio deve ser visivelmente mais difícil do que uma missão normal, exigindo mais esforço, mas ainda alcançável num dia.

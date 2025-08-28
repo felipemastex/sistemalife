@@ -646,14 +646,15 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
-                    updatedProfile.estatisticas.constituicao = Math.max(0, updatedProfile.estatisticas.constituicao - 20); // Lose 20 HP
+                    const hpLost = Math.round((updatedProfile.estatisticas.constituicao || 100) * 0.20);
+                    updatedProfile.estatisticas.constituicao = Math.max(0, updatedProfile.estatisticas.constituicao - hpLost);
                      if (updatedProfile.estatisticas.constituicao <= 0) {
                         updatedProfile.estatisticas.constituicao = 100; // Reset HP
                         const lockoutEndDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
                         updatedProfile.tower_progress.tower_lockout_until = lockoutEndDate.toISOString();
                         toast({ variant: 'destructive', title: 'Você foi Derrotado!', description: 'A sua vida chegou a zero. A Torre está bloqueada por 24 horas.' });
                     } else {
-                        toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou. Você perdeu 20 de HP.` });
+                        toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou. Você perdeu ${hpLost} de HP.` });
                     }
                 }
                 challengesToRemove.push(challenge.id);
@@ -819,7 +820,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         // Damage Nemesis
         if (meta && meta.nemesis) {
-            const damage = finalXPGained;
+            const damage = finalXPGained + (updatedProfile.nivel * 2);
             const newHealth = Math.max(0, meta.nemesis.currentHealth - damage);
             meta.nemesis.currentHealth = newHealth;
             if (newHealth === 0) {
@@ -1468,3 +1469,5 @@ export const usePlayerDataContext = () => {
     return context;
 };
 
+
+    
