@@ -1161,6 +1161,31 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
 
+    const triggerDungeonEvent = useCallback(async () => {
+        if (!state.profile || !state.skills || state.skills.length === 0) {
+            toast({ variant: 'destructive', title: 'Impossível Iniciar Evento', description: 'Você precisa ter pelo menos uma habilidade para iniciar um evento de masmorra.' });
+            return;
+        }
+
+        if (state.profile.active_dungeon_event) {
+            toast({ title: 'Evento Já Ativo', description: 'Você já tem um convite para uma masmorra pendente.' });
+            return;
+        }
+
+        const randomSkill = state.skills[Math.floor(Math.random() * state.skills.length)];
+        const expires_at = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes to accept
+
+        const updatedProfile = {
+            ...state.profile,
+            active_dungeon_event: {
+                skillId: randomSkill.id,
+                expires_at: expires_at,
+            },
+        };
+        await persistData('profile', updatedProfile);
+        
+    }, [state.profile, state.skills, persistData, toast]);
+
     // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
@@ -1457,6 +1482,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         completeDungeonChallenge,
         handleFullReset,
         handleImportData,
+        triggerDungeonEvent,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
@@ -1484,3 +1510,4 @@ export const usePlayerDataContext = () => {
 
 
     
+
