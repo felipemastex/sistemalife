@@ -102,7 +102,8 @@ const DashboardViewComponent = () => {
   }
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
-  const hpPercentage = (profile.estatisticas.constituicao / 100) * 100;
+  const maxHP = 100; // O valor máximo base para a constituição.
+  const hpPercentage = (profile.estatisticas.constituicao / maxHP) * 100;
   const profileRank = getProfileRank(profile.nivel);
 
   const statsData = [
@@ -145,7 +146,7 @@ const DashboardViewComponent = () => {
                          <div>
                             <div className="flex justify-between text-sm text-muted-foreground mb-1">
                                 <span className="flex items-center gap-1.5"><Heart className="h-4 w-4 text-red-500" /> Vida</span>
-                                <span className="font-mono">{profile.estatisticas.constituicao} / 100 HP</span>
+                                <span className="font-mono">{profile.estatisticas.constituicao} / {maxHP} HP</span>
                             </div>
                             <Progress value={hpPercentage} className="h-4 bg-red-500/20 [&>div]:bg-red-500" />
                         </div>

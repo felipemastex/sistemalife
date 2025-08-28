@@ -157,7 +157,9 @@ interface TowerProgress {
   dailyChallengesAvailable: number;
   tower_tickets: number;
   tower_lockout_until: string | null;
+  lastLifeRegeneration?: string;
 }
+
 
 interface RecurringTask {
     id: number;
@@ -1219,7 +1221,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
 
             // HP Regen Logic
-            if (updatedProfile.last_hp_regen_date && !isToday(new Date(updatedProfile.last_hp_regen_date))) {
+            const lastHPRegen = updatedProfile.last_hp_regen_date ? new Date(updatedProfile.last_hp_regen_date) : new Date(0);
+            if (!isToday(lastHPRegen)) {
                 if (updatedProfile.estatisticas.constituicao < 100) {
                     updatedProfile.estatisticas.constituicao = 100;
                     toast({ title: 'Vida Restaurada!', description: 'A sua constituição foi totalmente restaurada após um bom descanso.' });
@@ -1243,7 +1246,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, []); 
+    }, [state.isDataLoaded, state.profile, state.skills, state.worldEvents, dispatch, toast, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
 
     // Narrative event trigger
     useEffect(() => {
