@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -215,6 +213,7 @@ interface Profile {
     contribution: number;
   };
   last_known_level?: number;
+  routineTemplates?: Record<string, any>; // Adicionando a propriedade routineTemplates ao tipo Profile
 }
 
 interface Guild {
@@ -553,14 +552,18 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
 
         if (madeChanges) {
-            persistData('profile', { ...currentProfile, generated_achievements: updatedAchievements });
+            // Usando uma cópia do perfil atual em vez de currentProfile diretamente
+            const updatedProfile = { ...currentProfile, generated_achievements: updatedAchievements };
+            persistData('profile', updatedProfile);
         }
     }, [state.metas, state.missions, handleShowAchievementUnlockedNotification, persistData]);
 
 
     useEffect(() => {
         if (state.isDataLoaded && state.profile) {
-            checkAndUnlockAchievements(state.profile);
+            // Passando uma cópia do perfil para evitar referências circulares
+            const profileCopy = JSON.parse(JSON.stringify(state.profile));
+            checkAndUnlockAchievements(profileCopy);
         }
     }, [state.profile, state.isDataLoaded, checkAndUnlockAchievements]);
     
@@ -738,7 +741,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         // Apply World Event Nerf
         const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
         const eventXpNerf = activeEvent?.effects.find(e => e.type === 'XP_NERF');
-        if (eventXpNerf) {
+        if (eventXpNerf && activeEvent) {
             xpMultiplier *= eventXpNerf.value;
             toast({ variant: 'destructive', title: `Efeito de Evento: ${activeEvent.name}`, description: `O ganho de XP está reduzido em ${(1 - eventXpNerf.value) * 100}%.`})
         }
@@ -1124,12 +1127,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
 
     // Skill Decay & Tower Lives & Task Reset Logic
-     useEffect(() => {
+    useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
 
         const checkSystems = () => {
             let profileChanged = false;
-            let updatedProfile = { ...state.profile! };
+            // Criando uma cópia do perfil para verificar mudanças sem causar re-render
+            let updatedProfile = JSON.parse(JSON.stringify(state.profile!));
             const now = new Date();
             const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
             const corruptionAccelerationEffect = activeEvent?.effects.find(e => e.type === 'CORRUPTION_ACCELERATION');
@@ -1159,7 +1163,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
             if (skillsToUpdate.length > 0) {
                 const updatedSkills = state.skills.map(s => skillsToUpdate.find(u => u.id === s.id) || s);
-                persistData('skills', updatedSkills);
+                // Evitando chamar persistData diretamente aqui para prevenir loop infinito
+                dispatch({ type: 'SET_SKILLS', payload: updatedSkills });
                 handleShowSkillDecayNotification(decayedSkills);
             }
             if (atRiskSkills.length > 0) {
@@ -1184,8 +1189,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 profileChanged = true;
             }
 
-             if (profileChanged) {
-                persistData('profile', updatedProfile);
+            // Apenas atualizar o perfil se houve mudanças reais
+            if (profileChanged) {
+                // Comparar o perfil atualizado com o perfil em state antes de disparar a atualização
+                const currentProfileString = JSON.stringify(state.profile);
+                const updatedProfileString = JSON.stringify(updatedProfile);
+                
+                if (currentProfileString !== updatedProfileString) {
+                    // Evitando chamar persistData diretamente aqui para prevenir loop infinito
+                    dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
+                }
             }
         };
 
@@ -1193,7 +1206,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, [state.isDataLoaded, state.profile, state.skills, state.worldEvents, persistData, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification, toast]);
+    }, []); // Removendo dependências para evitar loop infinito
 
     // Narrative event trigger
     useEffect(() => {
