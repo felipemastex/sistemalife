@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
@@ -856,19 +857,12 @@ const MetasViewComponent = () => {
                                                 <p className="text-xs text-muted-foreground">{nemesis.description}</p>
                                             </div>
                                         </div>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger className="w-full">
-                                                    <div className="w-full bg-red-900/50 rounded-full h-2.5">
-                                                        <div className="bg-red-500 h-2.5 rounded-full" style={{ width: `${nemesisHealthPercentage}%` }}></div>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>{nemesis.currentHealth} / {nemesis.maxHealth} HP</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                        <p className="text-xs text-center text-muted-foreground mt-1 font-mono">{nemesis.currentHealth} / {nemesis.maxHealth} HP</p>
+                                        <div className="w-full bg-red-900/50 rounded-full h-4 relative overflow-hidden border border-red-500/50">
+                                            <div className="bg-red-500 h-full transition-all duration-500" style={{ width: `${nemesisHealthPercentage}%` }}></div>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span className="text-xs font-bold text-white mix-blend-difference">{nemesis.currentHealth} / {nemesis.maxHealth} HP</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </CardContent>
@@ -1093,3 +1087,4 @@ const MetasViewComponent = () => {
 export const MetasView = memo(MetasViewComponent);
 
     
+
