@@ -117,38 +117,36 @@ const DashboardViewComponent = () => {
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
         <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
             <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
-            <div className="text-left sm:text-right">
-                <p className="font-bold text-xl text-foreground">{profile.nome_utilizador}</p>
-                <p className="text-sm text-muted-foreground">Nível: {profile.nivel}</p>
-            </div>
         </div>
 
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <div className="md:col-span-2 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
-                      <StatItem label="Título" value={profileRank.title}/>
-                      <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
-                      <StatItem label="Fragmentos" value={profile.fragmentos || 0} icon={Gem} />
+            
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+                 <div className="w-full max-w-[150px] sm:max-w-[200px] aspect-[4/5] border-2 border-primary/50 flex items-center justify-center bg-secondary/30 p-1 flex-shrink-0">
+                    <Avatar className="w-full h-full rounded-none">
+                        <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
+                        <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
+                    </Avatar>
+                </div>
+                <div className="flex-1 w-full text-center sm:text-left">
+                    <p className="text-sm font-bold tracking-widest text-muted-foreground">RANK {profileRank.rank}</p>
+                    <p className="text-3xl font-bold text-foreground">{profile.nome_utilizador}</p>
+                    <p className="text-lg text-primary">{profileRank.title}</p>
+                    <div className="mt-4">
+                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                            <span>Nível {profile.nivel}</span>
+                            <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel} XP</span>
+                        </div>
+                        <Progress value={xpPercentage} className="h-4" />
                     </div>
-                    <div className="bg-secondary/50 p-4 rounded-lg border border-border/50">
-                      <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                          <span>XP para o próximo Nível</span>
-                          <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel}</span>
-                      </div>
-                      <Progress value={xpPercentage} className="h-4" />
-                   </div>
-                 </div>
-                 <div className="flex flex-col items-center justify-center bg-secondary/50 p-4 rounded-lg border border-border/50">
-                    <div className="w-full max-w-[200px] aspect-[4/5] border-2 border-primary/50 flex items-center justify-center bg-secondary/30 p-1">
-                        <Avatar className="w-full h-full rounded-none">
-                            <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
-                            <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <p className="mt-2 text-sm font-bold tracking-widest text-muted-foreground">RANK {profileRank.rank}</p>
-                 </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
+                <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
+                <StatItem label="Fragmentos" value={profile.fragmentos || 0} icon={Gem} />
+                <StatItem label="Melhor Streak" value={`${profile.best_streak || 0} Dias`}/>
             </div>
             
              <WorldEventCard event={activeEvent} userContribution={userContribution} />
