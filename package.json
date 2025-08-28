@@ -22,7 +22,6 @@
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
-    "@fontsource/cinzel": "^5.2.6",
     "@genkit-ai/firebase": "^1.17.0",
     "@genkit-ai/googleai": "^1.17.0",
     "@genkit-ai/next": "^1.17.0",
