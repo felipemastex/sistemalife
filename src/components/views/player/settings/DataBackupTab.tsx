@@ -4,21 +4,23 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { Download, Upload, AlertTriangle, LoaderCircle, Check, Link, Unlink } from 'lucide-react';
+import { Download, Upload, AlertTriangle, LoaderCircle, Check, Link, Unlink, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
+import { useSession, signIn, signOut } from "next-auth/react"
 
 export default function DataBackupTab() {
     const { profile, persistData, handleImportData, isDataLoaded } = usePlayerDataContext();
+    const { data: session } = useSession()
     const { toast } = useToast();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isImporting, setIsImporting] = useState(false);
-    const [isConnecting, setIsConnecting] = useState(false);
-    const [isConnected, setIsConnected] = useState(false); // Simulação
+    const [isTestingConnection, setIsTestingConnection] = useState(false);
+
 
     const handleExportData = () => {
         try {
@@ -90,43 +92,34 @@ export default function DataBackupTab() {
             setIsImporting(false);
         }
     };
-    
-    const handleConnectGoogle = () => {
-        setIsConnecting(true);
 
-        const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
-          "scope=https://www.googleapis.com/auth/calendar&" +
-          "access_type=offline&" +
-          "include_granted_scopes=true&" +
-          "response_type=code&" +
-          "state=state_parameter_passthrough_value&" +
-          "redirect_uri=http://localhost:3000&" + // Em um app real, seria a sua URL de callback
-          "client_id=YOUR_CLIENT_ID.apps.googleusercontent.com"; // Em um app real, seria a sua Client ID
-          
-        window.open(googleAuthUrl, '_blank', 'noopener,noreferrer');
-
-        toast({
-            title: "A conectar ao Google Calendar...",
-            description: "Por favor, complete a autenticação na nova aba."
-        });
-
-        setTimeout(() => {
-            setIsConnecting(false);
-            setIsConnected(true);
-            toast({
-                title: "Conectado com sucesso!",
-                description: "O Sistema agora pode interagir com o seu Google Calendar."
+    const handleTestConnection = async () => {
+        setIsTestingConnection(true);
+        try {
+            const response = await fetch('/api/test-google-calendar');
+            const data = await response.json();
+            if (response.ok) {
+                toast({
+                    title: "Sucesso!",
+                    description: data.message,
+                });
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Falha na Conexão",
+                    description: data.error || "Não foi possível conectar à API do Google.",
+                });
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Erro de Rede",
+                description: "Não foi possível comunicar com o servidor de teste.",
             });
-        }, 8000);
+        } finally {
+            setIsTestingConnection(false);
+        }
     };
-
-    const handleDisconnectGoogle = () => {
-        setIsConnected(false);
-        toast({
-            title: "Desconectado",
-            description: "A integração com o Google Calendar foi removida."
-        });
-    }
 
     return (
         <Card>
@@ -203,18 +196,22 @@ export default function DataBackupTab() {
                            Conecte o Sistema de Vida a outras aplicações para automatizar o seu progresso.
                         </p>
                     </div>
-                    {isConnected ? (
+                    {session ? (
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-green-400 flex items-center gap-2"><Check /> Conectado</span>
-                            <Button onClick={handleDisconnectGoogle} className="w-full sm:w-auto" variant="outline">
+                            <span className="text-sm text-green-400 flex items-center gap-2"><Check /> Conectado como {session.user?.email}</span>
+                            <Button onClick={handleTestConnection} className="w-full sm:w-auto" variant="secondary" disabled={isTestingConnection}>
+                                {isTestingConnection ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCw className="h-4 w-4 mr-2" />}
+                                Testar Conexão
+                            </Button>
+                            <Button onClick={() => signOut()} className="w-full sm:w-auto" variant="outline">
                                 <Unlink className="h-4 w-4 mr-2" />
                                 Desconectar
                             </Button>
                         </div>
                     ) : (
-                        <Button onClick={handleConnectGoogle} className="w-full sm:w-auto" variant="outline" disabled={isConnecting}>
-                           {isConnecting ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : <Image src="/google-calendar.svg" alt="Google Calendar" width={16} height={16} className="mr-2" />}
-                            {isConnecting ? "A conectar..." : "Conectar Google Calendar"}
+                        <Button onClick={() => signIn('google')} className="w-full sm:w-auto" variant="outline">
+                            <Image src="/google-calendar.svg" alt="Google Calendar" width={16} height={16} className="mr-2" />
+                            Conectar Google Calendar
                         </Button>
                     )}
                 </div>

@@ -2,23 +2,35 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
+import { signIn, signOut as nextAuthSignOut, useSession } from "next-auth/react";
 
 const auth = getAuth(app);
 
 // Definindo um tipo mais explícito para o estado de autenticação
 type AuthState = 'loading' | 'authenticated' | 'unauthenticated';
 
-const AuthContext = createContext<{ user: User | null; authState: AuthState; logout: () => void; }>({
+const AuthContext = createContext<{ 
+    user: User | null; 
+    authState: AuthState; 
+    logout: () => void;
+    googleSignIn: () => void;
+    googleSignOut: () => void;
+    session: any;
+}>({
   user: null,
   authState: 'loading',
   logout: () => {},
+  googleSignIn: () => {},
+  googleSignOut: () => {},
+  session: null,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [authState, setAuthState] = useState<AuthState>('loading');
+  const { data: session } = useSession();
 
   useEffect(() => {
     console.log('🔐 Iniciando listener de autenticação...');
@@ -44,11 +56,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = () => {
-    signOut(auth);
+    firebaseSignOut(auth);
   };
 
+  const googleSignIn = () => {
+    signIn('google');
+  }
+
+  const googleSignOut = () => {
+    nextAuthSignOut();
+  }
+
   return (
-    <AuthContext.Provider value={{ user, authState, logout }}>
+    <AuthContext.Provider value={{ user, authState, logout, googleSignIn, googleSignOut, session }}>
       {children}
     </AuthContext.Provider>
   );

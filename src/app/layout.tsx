@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/toaster";
 import { PushNotificationPrompt } from "@/components/custom/PushNotificationPrompt";
 import { PlayerDataSync } from "@/hooks/use-player-data-sync";
+import { SessionProvider } from "next-auth/react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,12 +30,14 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased min-h-screen bg-background`}
       >
         <AuthProvider>
-          <PlayerDataProvider>
-            <PlayerDataSync />
-            {children}
-            <Toaster />
-            <PushNotificationPrompt />
-          </PlayerDataProvider>
+          <SessionProvider>
+            <PlayerDataProvider>
+              <PlayerDataSync />
+              {children}
+              <Toaster />
+              <PushNotificationPrompt />
+            </PlayerDataProvider>
+          </SessionProvider>
         </AuthProvider>
       </body>
     </html>
