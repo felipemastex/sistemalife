@@ -658,7 +658,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
-                    const hpLost = Math.round((updatedProfile.estatisticas.constituicao || 100) * 0.20);
+                    const hpLost = Math.round(updatedProfile.estatisticas.constituicao * 0.20);
                     updatedProfile.estatisticas.constituicao = Math.max(0, updatedProfile.estatisticas.constituicao - hpLost);
                      if (updatedProfile.estatisticas.constituicao <= 0) {
                         updatedProfile.estatisticas.constituicao = 100; // Reset HP
@@ -1259,6 +1259,21 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         toast({ title: 'Masmorra Aberta!', description: 'Você usou um cristal para forçar a entrada na masmorra.' });
     }, [state.profile, persistData, toast]);
+    
+    const activateTestWorldEvent = useCallback(async () => {
+        if (!state.worldEvents || state.worldEvents.length === 0) {
+            toast({ variant: 'destructive', title: 'Nenhum Evento', description: 'Não há eventos mundiais configurados.'});
+            return;
+        }
+        const eventToActivate = { ...state.worldEvents[0] };
+        eventToActivate.isActive = true;
+        eventToActivate.startDate = new Date().toISOString();
+        eventToActivate.endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days from now
+        
+        const updatedEvents = state.worldEvents.map(e => e.id === eventToActivate.id ? eventToActivate : e);
+        await persistData('worldEvents', updatedEvents);
+        toast({ title: 'Evento Mundial de Teste Ativado!', description: `"${eventToActivate.name}" começou!`});
+    }, [state.worldEvents, persistData, toast]);
 
     // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
     useEffect(() => {
@@ -1541,6 +1556,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         declineDungeonEvent,
         addDungeonCrystal,
         spendDungeonCrystal,
+        activateTestWorldEvent,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
