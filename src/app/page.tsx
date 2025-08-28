@@ -93,10 +93,12 @@ export default function App() {
   };
 
   const handleNavigate = (page: string) => {
-    setDungeonSkillId(null);
+    if (page !== 'dungeon') {
+        setDungeonSkillId(null);
+    }
     setCurrentPage(page);
-    if(isMobile) setIsSheetOpen(false);
-  }
+    if (isMobile) setIsSheetOpen(false);
+};
 
   const handleEnterDungeon = (skillId: string | number) => {
     setDungeonSkillId(skillId);
