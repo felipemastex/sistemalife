@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Flame, Calendar, Shield, Users, Trophy, CheckCircle, Gem, Zap, Clock, Ticket, LoaderCircle, Sparkles, Lock } from 'lucide-react';
@@ -28,6 +29,12 @@ const TowerView = () => {
     const { toast } = useToast();
     const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
     
+    useEffect(() => {
+        checkAndApplyTowerRewards();
+        const interval = setInterval(checkAndApplyTowerRewards, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, [checkAndApplyTowerRewards]);
+
     const towerProgress = useMemo(() => profile?.tower_progress || {
         currentFloor: 1,
         highestFloor: 1,
@@ -57,7 +64,7 @@ const TowerView = () => {
                 recentChallenges: recentChallengeTitles,
             });
 
-            const newAvailableChallenges = [{ ...result, status: 'available' }];
+            const newAvailableChallenges = [...availableChallenges, { ...result, status: 'available' }];
             const updatedProgress = { ...towerProgress, dailyChallengesAvailable: towerProgress.dailyChallengesAvailable - 1 };
             
             await persistData('profile', { 

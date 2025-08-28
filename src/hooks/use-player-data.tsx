@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -626,15 +627,15 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_MISSION_FEEDBACK', payload: { missionId, feedback } });
     };
 
-    const checkAndApplyTowerRewards = useCallback(() => {
-        if (!state.isDataLoaded || !state.profile?.active_tower_challenges) return;
-    
+    const checkAndApplyTowerRewards = useCallback(async () => {
+        if (!state.isDataLoaded || !state.profile) return;
+        
+        let updatedProfile = JSON.parse(JSON.stringify(state.profile!));
         let profileChanged = false;
-        let updatedProfile = { ...state.profile! };
         let challengesToRemove: string[] = [];
-        const completedChallengesThisRun: any[] = [];
+        const completedChallengesThisRun: ActiveTowerChallenge[] = [];
     
-        const stillActiveChallenges = (updatedProfile.active_tower_challenges || []).filter(challenge => {
+        const stillActiveChallenges = (updatedProfile.active_tower_challenges || []).filter((challenge: ActiveTowerChallenge) => {
             if (!challenge.startedAt) return true;
             const startTime = new Date(challenge.startedAt).getTime();
             const timeLimitMillis = challenge.timeLimit * 60 * 60 * 1000;
@@ -659,7 +660,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             return true;
         });
     
-        stillActiveChallenges.forEach(challenge => {
+        stillActiveChallenges.forEach((challenge: ActiveTowerChallenge) => {
             let allRequirementsMet = true;
             
             challenge.requirements.forEach(req => {
@@ -670,13 +671,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         currentProgress = state.missions.filter(m => categoryGoals.includes(m.meta_associada)).flatMap(m => m.missoes_diarias || []).filter(dm => dm.concluido).length;
                         break;
                     case 'streak_maintained':
-                        currentProgress = updatedProfile.streak_atual;
+                        currentProgress = updatedProfile.streak_atual || 0;
                         break;
                     case 'missions_completed':
-                         currentProgress = updatedProfile.missoes_concluidas_total;
+                         currentProgress = updatedProfile.missoes_concluidas_total || 0;
                          break;
                     case 'level_reached':
-                        currentProgress = updatedProfile.nivel;
+                        currentProgress = updatedProfile.nivel || 1;
                         break;
                 }
                 req.current = currentProgress;
@@ -704,9 +705,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         }
     
         if (profileChanged) {
-            updatedProfile.active_tower_challenges = (updatedProfile.active_tower_challenges || []).filter(c => !challengesToRemove.includes(c.id));
+            updatedProfile.active_tower_challenges = (updatedProfile.active_tower_challenges || []).filter((c: ActiveTowerChallenge) => !challengesToRemove.includes(c.id));
             
-            const activeChallengesOnCurrentFloor = (state.profile?.active_tower_challenges || []).filter(c => c.floor === state.profile?.tower_progress?.currentFloor).length;
+            const activeChallengesOnCurrentFloor = (state.profile?.active_tower_challenges || []).filter((c: ActiveTowerChallenge) => c.floor === state.profile?.tower_progress?.currentFloor).length;
             const remainingChallengesOnFloor = activeChallengesOnCurrentFloor - completedChallengesThisRun.filter(c => c.floor === state.profile?.tower_progress?.currentFloor).length;
 
             if (updatedProfile.tower_progress && remainingChallengesOnFloor === 0 && activeChallengesOnCurrentFloor > 0) {
@@ -718,7 +719,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                  toast({title: "Andar da Torre Concluído!", description: `Você avançou para o andar ${updatedProfile.tower_progress.currentFloor}!`});
             }
             
-            persistData('profile', updatedProfile);
+            await persistData('profile', updatedProfile);
         }
     
     }, [state.profile, state.metas, state.missions, persistData, toast]);
