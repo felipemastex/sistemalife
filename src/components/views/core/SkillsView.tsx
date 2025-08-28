@@ -109,6 +109,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                     current_room: 1,
                     highest_room: 1,
                     active_challenge: null,
+                    completed_challenges: [],
                 }
             };
 
