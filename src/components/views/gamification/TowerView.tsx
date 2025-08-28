@@ -38,7 +38,7 @@ const TowerView = () => {
     const towerProgress = useMemo(() => profile?.tower_progress || {
         currentFloor: 1,
         highestFloor: 1,
-        dailyChallengesAvailable: 3,
+        dailyChallengesAvailable: 1, // Changed from 3 to 1
         tower_tickets: 0,
         tower_lockout_until: null,
     }, [profile]);
@@ -47,8 +47,8 @@ const TowerView = () => {
     const availableChallenges = useMemo(() => profile?.available_tower_challenges || [], [profile]);
 
     const handleGenerateChallenge = async () => {
-        if (towerProgress.dailyChallengesAvailable <= 0) {
-            toast({ variant: 'destructive', title: 'Limite Atingido', description: 'Você já gerou todos os seus desafios diários para este andar.' });
+        if (activeChallenges.length > 0) {
+            toast({ variant: 'destructive', title: 'Desafio Ativo', description: 'Você precisa de completar o seu desafio ativo antes de gerar um novo.' });
             return;
         }
         setIsLoadingChallenge(true);
@@ -64,16 +64,15 @@ const TowerView = () => {
                 recentChallenges: recentChallengeTitles,
             });
 
-            const newAvailableChallenges = [...availableChallenges, { ...result, status: 'available' }];
-            const updatedProgress = { ...towerProgress, dailyChallengesAvailable: towerProgress.dailyChallengesAvailable - 1 };
+            // Replace available challenge instead of adding
+            const newAvailableChallenges = [{ ...result, status: 'available' }];
             
             await persistData('profile', { 
                 ...profile, 
-                tower_progress: updatedProgress,
                 available_tower_challenges: newAvailableChallenges,
             });
 
-            toast({ title: 'Novo Desafio Gerado!', description: `O desafio "${result.title}" está disponível.` });
+            toast({ title: 'Novo Desafio Gerado!', description: `O desafio "${result.title}" está agora disponível.` });
 
         } catch (error) {
             console.error("Error generating tower challenge:", error);
@@ -84,11 +83,6 @@ const TowerView = () => {
     };
     
      const handleAcceptChallenge = async (challengeToAccept) => {
-        const activeChallengeCount = activeChallenges.length;
-        if(activeChallengeCount >= 3){
-             toast({ variant: 'destructive', title: 'Limite de Desafios Ativos', description: 'Você só pode ter 3 desafios ativos ao mesmo tempo.' });
-             return;
-        }
         if ((towerProgress.tower_tickets || 0) <= 0) {
             toast({ variant: 'destructive', title: 'Tickets Insuficientes', description: 'Você precisa de um Ticket da Torre para aceitar este desafio.' });
             return;
@@ -124,7 +118,8 @@ const TowerView = () => {
     const completedChallengesOnFloor = (profile.tower_progress.completed_challenges_floor || []).length;
     const requiredToAdvance = 3;
     const floorProgress = (completedChallengesOnFloor / requiredToAdvance) * 100;
-
+    
+    const canGenerateChallenge = activeChallenges.length === 0;
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col bg-background relative overflow-hidden">
@@ -244,11 +239,11 @@ const TowerView = () => {
                              <CardFooter>
                                 <Button 
                                     onClick={handleGenerateChallenge} 
-                                    disabled={isLoadingChallenge || towerProgress.dailyChallengesAvailable <= 0}
+                                    disabled={isLoadingChallenge || !canGenerateChallenge}
                                     className="w-full"
                                 >
                                     {isLoadingChallenge ? <LoaderCircle className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                    {`Gerar Desafio Diário (${towerProgress.dailyChallengesAvailable} restantes)`}
+                                    {availableChallenges.length > 0 ? 'Substituir Desafio' : 'Gerar Desafio Diário'}
                                 </Button>
                             </CardFooter>
                          )}
@@ -269,5 +264,3 @@ const TowerView = () => {
 };
 
 export default TowerView;
-
-    
