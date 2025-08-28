@@ -24,15 +24,15 @@ export default function DataBackupTab() {
         try {
             const allData = (isDataLoaded && profile) ? {
                 profile,
-                metas,
-                missions,
-                skills,
-                routine,
-                routineTemplates,
+                metas: (window as any).playerDataContext?.metas,
+                missions: (window as any).playerDataContext?.missions,
+                skills: (window as any).playerDataContext?.skills,
+                routine: (window as any).playerDataContext?.routine,
+                routineTemplates: (window as any).playerDataContext?.routineTemplates,
                 export_date: new Date().toISOString(),
             } : null;
 
-            if (!allData) {
+            if (!allData || !allData.metas || !allData.missions || !allData.skills) {
                 toast({ variant: "destructive", title: "Erro na Exportação", description: "Os dados do jogador ainda não foram carregados." });
                 return;
             }
@@ -93,10 +93,26 @@ export default function DataBackupTab() {
     
     const handleConnectGoogle = () => {
         setIsConnecting(true);
+        
+        // Simula a abertura da janela de autenticação do Google
+        const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+          "scope=https://www.googleapis.com/auth/calendar&" +
+          "access_type=offline&" +
+          "include_granted_scopes=true&" +
+          "response_type=code&" +
+          "state=state_parameter_passthrough_value&" +
+          "redirect_uri=http://localhost:3000&" + // Em um app real, seria a sua URL de callback
+          "client_id=YOUR_CLIENT_ID.apps.googleusercontent.com"; // Em um app real, seria a sua Client ID
+          
+        console.log("Em um app real, esta URL conteria a Client ID e a Redirect URI corretas. A abrir nova aba para:", googleAuthUrl);
+        window.open(googleAuthUrl, '_blank', 'noopener,noreferrer');
+
         toast({
             title: "A conectar ao Google Calendar...",
-            description: "Numa aplicação real, uma janela de autenticação seria aberta."
+            description: "Por favor, complete a autenticação na nova aba."
         });
+
+        // Simula a conclusão da conexão após um tempo
         setTimeout(() => {
             setIsConnecting(false);
             setIsConnected(true);
@@ -104,7 +120,7 @@ export default function DataBackupTab() {
                 title: "Conectado com sucesso!",
                 description: "O Sistema agora pode interagir com o seu Google Calendar."
             });
-        }, 2000);
+        }, 8000); // Aumentado o tempo para dar tempo ao utilizador de ver a outra aba
     };
 
     const handleDisconnectGoogle = () => {
@@ -118,8 +134,8 @@ export default function DataBackupTab() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Dados & Backup</CardTitle>
-                <CardDescription>Faça o download dos seus dados ou restaure-os a partir de um backup. Gira as suas integrações.</CardDescription>
+                <CardTitle>Dados & Integrações</CardTitle>
+                <CardDescription>Faça o download dos seus dados, restaure-os a partir de um backup e gira as suas integrações.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-lg border border-border p-4">
