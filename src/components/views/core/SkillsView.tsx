@@ -181,9 +181,6 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                                         <p className="text-lg font-bold text-foreground break-words">{skill.nome}</p>
                                     </div>
                                      <div className="flex items-center">
-                                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-cyan-400 h-8 w-8" aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => onEnterDungeon(skill.id)}>
-                                            <KeySquare className="h-4 w-4" />
-                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir habilidade ${skill.nome}`}>

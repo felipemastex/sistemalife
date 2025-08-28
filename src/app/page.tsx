@@ -28,6 +28,7 @@ import TowerView from '@/components/views/gamification/TowerView';
 import TasksView from '@/components/views/gamification/TasksView';
 import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
+import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
 
 const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
 
@@ -37,11 +38,10 @@ export default function App() {
   const { 
       isDataLoaded,
       questNotification, systemAlert, showOnboarding,
-      setQuestNotification, setSystemAlert, setShowOnboarding, persistData, profile
+      setQuestNotification, setSystemAlert, setShowOnboarding, persistData, profile,
+      activeDungeonEvent, setCurrentPage, currentPage, setDungeonSkillId, dungeonSkillId,
    } = usePlayerDataContext();
 
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [dungeonSkillId, setDungeonSkillId] = useState<string | number | null>(null);
 
   const isMobile = useIsMobile();
     
@@ -293,6 +293,7 @@ export default function App() {
               onDismiss={() => setSystemAlert(null)}
             />
         )}
+        {activeDungeonEvent && <DungeonEventPrompt />}
       </main>
     </div>
   );

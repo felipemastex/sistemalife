@@ -4,13 +4,14 @@
 import { memo, useMemo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Flame, Gem, ShieldAlert, Zap, Clock, Users, Heart } from 'lucide-react';
+import { Flame, Gem, ShieldAlert, Zap, Clock, Users, Heart, KeySquare } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
 
 const getProfileRank = (level) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -82,7 +83,7 @@ const WorldEventCard = ({ event, userContribution }) => {
 }
 
 const DashboardViewComponent = () => {
-  const { profile, worldEvents } = usePlayerDataContext();
+  const { profile, worldEvents, triggerDungeonEvent } = usePlayerDataContext();
   
   const activeEvent = useMemo(() => {
     return (worldEvents || []).find(e => e.isActive);
@@ -102,7 +103,7 @@ const DashboardViewComponent = () => {
   }
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
-  const maxHP = 100; // O valor máximo base para a constituição.
+  const maxHP = profile.estatisticas.constituicao;
   const hpPercentage = (profile.estatisticas.constituicao / maxHP) * 100;
   const profileRank = getProfileRank(profile.nivel);
 
@@ -119,6 +120,7 @@ const DashboardViewComponent = () => {
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
         <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
             <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
+            <Button onClick={triggerDungeonEvent} variant="secondary">Testar Evento de Masmorra</Button>
         </div>
 
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
@@ -158,7 +160,7 @@ const DashboardViewComponent = () => {
                 <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`}/>
                 <StatItem label="Streak Atual" value={`${profile.streak_atual || 0} Dias`} icon={Flame}/>
                 <StatItem label="Fragmentos" value={profile.fragmentos || 0} icon={Gem} />
-                <StatItem label="Melhor Streak" value={`${profile.best_streak || 0} Dias`}/>
+                <StatItem label="Cristais Masmorra" value={profile.dungeon_crystals || 0} icon={KeySquare} />
             </div>
             
              <WorldEventCard event={activeEvent} userContribution={userContribution} />

@@ -79,4 +79,12 @@ export const allShopItems: ShopItem[] = [
     icon: 'Ticket',
     category: 'Especiais',
   },
+  {
+    id: 'dungeon_crystal',
+    name: 'Cristal da Masmorra',
+    description: 'Um cristal raro que lhe permite forçar a abertura de uma Masmorra de Habilidade à sua escolha.',
+    price: 0,
+    icon: 'KeySquare',
+    category: 'Especiais',
+  },
 ];
