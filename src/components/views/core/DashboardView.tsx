@@ -4,7 +4,7 @@
 import { memo, useMemo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Flame, Gem, ShieldAlert, Zap, Clock, Users } from 'lucide-react';
+import { Flame, Gem, ShieldAlert, Zap, Clock, Users, Heart } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -102,6 +102,7 @@ const DashboardViewComponent = () => {
   }
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
+  const hpPercentage = (profile.estatisticas.constituicao / 100) * 100;
   const profileRank = getProfileRank(profile.nivel);
 
   const statsData = [
@@ -132,12 +133,22 @@ const DashboardViewComponent = () => {
                     <p className="text-sm font-bold tracking-widest text-muted-foreground">RANK {profileRank.rank}</p>
                     <p className="text-3xl font-bold text-foreground">{profile.nome_utilizador}</p>
                     <p className="text-lg text-primary">{profileRank.title}</p>
-                    <div className="mt-4">
-                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                            <span>Nível {profile.nivel}</span>
-                            <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel} XP</span>
+                    
+                    <div className="mt-4 space-y-3">
+                        <div>
+                            <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                                <span>Nível {profile.nivel}</span>
+                                <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel} XP</span>
+                            </div>
+                            <Progress value={xpPercentage} className="h-4 bg-primary/20" />
                         </div>
-                        <Progress value={xpPercentage} className="h-4" />
+                         <div>
+                            <div className="flex justify-between text-sm text-muted-foreground mb-1">
+                                <span className="flex items-center gap-1.5"><Heart className="h-4 w-4 text-red-500" /> Vida</span>
+                                <span className="font-mono">{profile.estatisticas.constituicao} / 100 HP</span>
+                            </div>
+                            <Progress value={hpPercentage} className="h-4 bg-red-500/20 [&>div]:bg-red-500" />
+                        </div>
                     </div>
                 </div>
             </div>
