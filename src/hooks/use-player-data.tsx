@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -666,7 +665,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         updatedProfile.tower_progress.tower_lockout_until = lockoutEndDate.toISOString();
                         toast({ variant: 'destructive', title: 'Você foi Derrotado!', description: 'A sua vida chegou a zero. A Torre está bloqueada por 24 horas.' });
                     } else {
-                        toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou. Você perdeu ${hpLost} de HP.` });
+                        toast({ variant: 'destructive', title: 'Desafio da Torre Falhado!', description: `O tempo para "${challenge.title}" esgotou. Você perdeu ${hpLost} de HP.` });
                     }
                 }
                 challengesToRemove.push(challenge.id);
@@ -1285,7 +1284,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             const now = new Date();
             const activeEvent = state.worldEvents.find(e => e.isActive && new Date(e.endDate) > new Date());
             const corruptionAccelerationEffect = activeEvent?.effects.find(e => e.type === 'CORRUPTION_ACCELERATION');
-            const decayDays = corruptionAccelerationEffect ? 14 / corruptionAccelerationEffect.value : 14;
+            const decayDays = corruptionAccelerationEffect ? Math.floor(14 / corruptionAccelerationEffect.value) : 14;
             const atRiskDays = Math.floor(decayDays / 2);
 
             let skillsToUpdate: Skill[] = [];
@@ -1583,4 +1582,5 @@ export const usePlayerDataContext = () => {
 };
 
 
+    
     
