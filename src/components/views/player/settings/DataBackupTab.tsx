@@ -93,8 +93,7 @@ export default function DataBackupTab() {
     
     const handleConnectGoogle = () => {
         setIsConnecting(true);
-        
-        // Simula a abertura da janela de autenticação do Google
+
         const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
           "scope=https://www.googleapis.com/auth/calendar&" +
           "access_type=offline&" +
@@ -104,7 +103,6 @@ export default function DataBackupTab() {
           "redirect_uri=http://localhost:3000&" + // Em um app real, seria a sua URL de callback
           "client_id=YOUR_CLIENT_ID.apps.googleusercontent.com"; // Em um app real, seria a sua Client ID
           
-        console.log("Em um app real, esta URL conteria a Client ID e a Redirect URI corretas. A abrir nova aba para:", googleAuthUrl);
         window.open(googleAuthUrl, '_blank', 'noopener,noreferrer');
 
         toast({
@@ -112,7 +110,6 @@ export default function DataBackupTab() {
             description: "Por favor, complete a autenticação na nova aba."
         });
 
-        // Simula a conclusão da conexão após um tempo
         setTimeout(() => {
             setIsConnecting(false);
             setIsConnected(true);
@@ -120,7 +117,7 @@ export default function DataBackupTab() {
                 title: "Conectado com sucesso!",
                 description: "O Sistema agora pode interagir com o seu Google Calendar."
             });
-        }, 8000); // Aumentado o tempo para dar tempo ao utilizador de ver a outra aba
+        }, 8000);
     };
 
     const handleDisconnectGoogle = () => {
