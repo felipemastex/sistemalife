@@ -4,7 +4,7 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw } from 'lucide-react';
+import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw, Ticket } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,8 @@ const iconMap: { [key: string]: React.ElementType } = {
     Zap,
     Shield,
     BookOpen,
-    Repeat
+    Repeat,
+    Ticket,
 };
 
 const ShopViewComponent = () => {
@@ -104,12 +105,19 @@ const ShopViewComponent = () => {
                 instanceId: `${item.id}_${Date.now()}`
             };
             
-            const updatedProfile = {
-                ...profile,
-                fragmentos: (profile.fragmentos || 0) - item.price,
-                inventory: [...(profile.inventory || []), newInventoryItem]
-            };
+            let updatedProfile = { ...profile };
 
+            if (item.id === 'tower_ticket') {
+                 updatedProfile.tower_progress = {
+                    ...updatedProfile.tower_progress!,
+                    tower_tickets: (updatedProfile.tower_progress?.tower_tickets || 0) + 1
+                };
+            } else {
+                 updatedProfile.inventory = [...(profile.inventory || []), newInventoryItem];
+            }
+
+            updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) - item.price;
+            
             persistData('profile', updatedProfile);
 
             toast({
