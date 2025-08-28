@@ -849,16 +849,16 @@ const MetasViewComponent = () => {
                                 )}
                                 {nemesis && (
                                     <div className="pt-4 border-t border-border/50">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Skull className="h-5 w-5 text-red-400"/>
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-sm text-foreground">{nemesis.name}</h4>
+                                                <p className="text-xs text-muted-foreground">{nemesis.description}</p>
+                                            </div>
+                                        </div>
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger className="w-full">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <Skull className="h-5 w-5 text-red-400"/>
-                                                        <div className="flex-1">
-                                                            <h4 className="font-semibold text-sm text-foreground">{nemesis.name}</h4>
-                                                            <p className="text-xs text-muted-foreground">{nemesis.description}</p>
-                                                        </div>
-                                                    </div>
                                                     <div className="w-full bg-red-900/50 rounded-full h-2.5">
                                                         <div className="bg-red-500 h-2.5 rounded-full" style={{ width: `${nemesisHealthPercentage}%` }}></div>
                                                     </div>
@@ -868,6 +868,7 @@ const MetasViewComponent = () => {
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
+                                        <p className="text-xs text-center text-muted-foreground mt-1 font-mono">{nemesis.currentHealth} / {nemesis.maxHealth} HP</p>
                                     </div>
                                 )}
                             </CardContent>
