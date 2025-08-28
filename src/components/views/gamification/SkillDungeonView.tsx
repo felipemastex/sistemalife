@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, KeySquare, Sparkles, LoaderCircle, CheckCircle, Trophy, BookCopy } from 'lucide-react';
@@ -22,7 +23,13 @@ const SkillDungeonView = ({ skillId, onExit }) => {
 
     const skill = useMemo(() => skills.find(s => s.id === skillId), [skills, skillId]);
     
-    const handleGenerateChallenge = async (isGivingUp = false) => {
+     useEffect(() => {
+        if (skill && !skill.dungeon?.active_challenge) {
+            handleGenerateChallenge(false, true); // Don't show toast on initial load
+        }
+    }, [skill]);
+
+    const handleGenerateChallenge = useCallback(async (isGivingUp = false, silent = false) => {
         if (!skill || !profile) return;
 
         if (isGivingUp) {
@@ -50,7 +57,7 @@ const SkillDungeonView = ({ skillId, onExit }) => {
             const updatedSkills = skills.map(s => s.id === skillId ? updatedSkill : s);
             await persistData('skills', updatedSkills);
             
-            if(!isGivingUp) {
+            if(!silent) {
                 toast({ title: "Novo Desafio da Masmorra!", description: `O desafio "${result.challengeName}" está pronto.` });
             }
 
@@ -60,7 +67,7 @@ const SkillDungeonView = ({ skillId, onExit }) => {
         } finally {
             setIsLoadingChallenge(false);
         }
-    };
+    }, [skill, profile, skills, skillId, persistData, toast]);
     
     const handleCompleteChallenge = async () => {
         if (!submission.trim()) {
@@ -102,7 +109,13 @@ const SkillDungeonView = ({ skillId, onExit }) => {
             </div>
 
             <div className="mt-8 flex-grow flex items-center justify-center">
-                {activeChallenge ? (
+                {isLoadingChallenge && !activeChallenge ? (
+                     <div className="text-center">
+                        <LoaderCircle className="h-16 w-16 text-primary animate-spin mx-auto mb-4"/>
+                        <h2 className="text-2xl font-bold">A Gerar Desafio...</h2>
+                        <p className="text-muted-foreground mt-2">O Mestre da Masmorra está a preparar a próxima sala.</p>
+                    </div>
+                ) : activeChallenge ? (
                     <Card className="w-full max-w-3xl">
                         <CardHeader className="text-center">
                              <CardDescription>Sala {dungeon?.current_room || 1}</CardDescription>

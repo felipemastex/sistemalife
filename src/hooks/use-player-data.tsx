@@ -14,6 +14,8 @@ import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
 import { differenceInCalendarDays, isToday, endOfDay, parseISO } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
+import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
+
 
 // Type definitions
 interface SubTask {
@@ -184,9 +186,6 @@ interface Profile {
   active_tower_challenges?: ActiveTowerChallenge[];
   available_tower_challenges?: any[];
   tower_progress?: TowerProgress;
-  dungeon_lives?: number;
-  dungeon_max_lives?: number;
-  dungeon_last_life_regeneration?: string;
   dungeon_crystals?: number;
   active_dungeon_event?: {
     skillId: string | number;
@@ -1191,16 +1190,41 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const acceptDungeonEvent = useCallback(async () => {
         if (!state.profile || !state.profile.active_dungeon_event) return;
-        
+    
         const { skillId } = state.profile.active_dungeon_event;
         
-        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
-        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
-
+        // Remove o evento pendente
         const updatedProfile = { ...state.profile, active_dungeon_event: null };
         await persistData('profile', updatedProfile);
-
-    }, [state.profile, persistData]);
+    
+        // Define a masmorra e navega
+        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
+        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
+    
+        // Gera o primeiro desafio
+        const skill = state.skills.find(s => s.id === skillId);
+        if (skill) {
+            const challengeResult = await generateSkillDungeonChallenge({
+                skillName: skill.nome,
+                skillDescription: skill.descricao,
+                skillLevel: skill.nivel_atual,
+                dungeonRoomLevel: skill.dungeon?.current_room || 1,
+                previousChallenges: skill.dungeon?.completed_challenges?.map(c => c.challengeName) || [],
+            });
+    
+            const updatedSkill = {
+                ...skill,
+                dungeon: {
+                    ...skill.dungeon!,
+                    active_challenge: challengeResult,
+                }
+            };
+    
+            const updatedSkills = state.skills.map(s => s.id === skillId ? updatedSkill : s);
+            await persistData('skills', updatedSkills);
+        }
+    
+    }, [state.profile, state.skills, persistData]);
 
     const declineDungeonEvent = useCallback(async () => {
         if (!state.profile) return;
@@ -1288,22 +1312,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     }
                     profileChanged = true;
                 }
-            }
-
-            // Dungeon Lives Reset Logic
-            if (updatedProfile.dungeon_last_life_regeneration) {
-                const lastRegenDungeon = new Date(updatedProfile.dungeon_last_life_regeneration);
-                if (!isToday(lastRegenDungeon)) {
-                    updatedProfile.dungeon_lives = updatedProfile.dungeon_max_lives;
-                    updatedProfile.dungeon_last_life_regeneration = now.toISOString();
-                    profileChanged = true;
-                }
-            }
-            
-            // Task Reset Logic
-             if (updatedProfile.last_task_completion_date && !isToday(new Date(updatedProfile.last_task_completion_date))) {
-                updatedProfile.completed_tasks_today = {};
-                profileChanged = true;
             }
 
             // HP Regen Logic
@@ -1429,13 +1437,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 if (!profileData.last_known_level) {
                      profileData.last_known_level = profileData.nivel;
                      profileNeedsUpdate = true;
-                }
-
-                 if (!profileData.dungeon_lives) {
-                    profileData.dungeon_lives = 5;
-                    profileData.dungeon_max_lives = 5;
-                    profileData.dungeon_last_life_regeneration = new Date().toISOString();
-                    profileNeedsUpdate = true;
                 }
                  if (!profileData.dungeon_crystals) {
                     profileData.dungeon_crystals = 0;
