@@ -41,10 +41,10 @@ const generateHunterAvatarFlow = ai.defineFlow(
     const genderTerm = input.gender && input.gender.toLowerCase() !== 'não especificado' ? input.gender : 'figura andrógina';
 
     const prompt = `
-      Crie um retrato de avatar épico para um RPG da vida real.
+      Crie um retrato de personagem em pixel art.
       O personagem é um Caçador de nível ${input.level}, com o rank de "${input.rank}".
       A sua aparência deve refletir uma ${genderTerm} ${statsDescription}.
-      Estilo de arte: Retrato de personagem de fantasia digital, detalhado, com iluminação dramática, estilo de arte de Dungeons and Dragons.
+      Estilo de arte: pixel art, retrato de personagem de RPG 16-bit, vibrante, com um fundo simples e escuro.
     `;
 
     const {media} = await ai.generate({
