@@ -29,16 +29,16 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased min-h-screen bg-background`}
       >
-        <AuthProvider>
-          <SessionProvider>
+        <SessionProvider>
+          <AuthProvider>
             <PlayerDataProvider>
               <PlayerDataSync />
               {children}
               <Toaster />
               <PushNotificationPrompt />
             </PlayerDataProvider>
-          </SessionProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );
