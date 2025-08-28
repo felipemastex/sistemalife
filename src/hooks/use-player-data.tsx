@@ -187,6 +187,10 @@ interface Profile {
   dungeon_lives?: number;
   dungeon_max_lives?: number;
   dungeon_last_life_regeneration?: string;
+  active_dungeon_event?: {
+    skillId: string | number;
+    expires_at: string;
+  } | null;
   estatisticas: {
     forca: number;
     inteligencia: number;
@@ -259,6 +263,7 @@ interface PlayerState {
   isDataLoaded: boolean;
   missionFeedback: Record<string | number, string>;
   generatingMission: string | number | null;
+  currentPage: string;
 }
 
 interface PlayerAction {
@@ -312,6 +317,7 @@ const initialState: PlayerState = {
     isDataLoaded: false,
     missionFeedback: {}, 
     generatingMission: null,
+    currentPage: 'dashboard',
 };
 
 function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerState {
@@ -351,6 +357,8 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             delete newFeedback[action.payload.missionId];
             return { ...state, missionFeedback: newFeedback };
         }
+        case 'SET_CURRENT_PAGE':
+            return { ...state, currentPage: action.payload };
         case 'UPDATE_SUB_TASK_PROGRESS': {
             const { rankedMissionId, dailyMissionId, subTaskName, amount } = action.payload;
             const newMissions = state.missions.map((rm: RankedMission) => 
@@ -429,6 +437,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     const { user, authState } = useAuth();
     const [state, dispatch] = useReducer(playerDataReducer, initialState);
     const { toast } = useToast();
+    const [dungeonSkillId, setDungeonSkillId] = useState<string | number | null>(null);
+
     
     const { 
         questNotification, setQuestNotification,
@@ -1439,6 +1449,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const providerValue = {
         ...state,
+        dungeonSkillId,
+        setDungeonSkillId,
+        setCurrentPage: (page: string) => dispatch({ type: 'SET_CURRENT_PAGE', payload: page }),
         persistData,
         completeMission,
         completeDungeonChallenge,
