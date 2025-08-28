@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Bot, Send, LoaderCircle } from 'lucide-react';
+import { Bot, Send, LoaderCircle, Mic, MicOff } from 'lucide-react';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,50 @@ const AIChatViewComponent = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isListening, setIsListening] = useState(false);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const isInitialMount = useRef(true);
+    const speechRecognitionRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (!('webkitSpeechRecognition' in window)) {
+          // You could show a toast or disable the mic button here
+          console.warn("Speech recognition not supported in this browser.");
+          return;
+        }
+
+        const recognition = new (window as any).webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'pt-BR';
+        recognition.interimResults = false;
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInput(transcript);
+            // Automatically send after successful transcription
+            getSystemResponse(transcript); 
+            setIsListening(false);
+        };
+
+        recognition.onerror = (event: any) => {
+            console.error("Speech recognition error", event.error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro no Reconhecimento de Voz',
+                description: `Não foi possível processar o áudio. Erro: ${event.error}`
+            });
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+        
+        speechRecognitionRef.current = recognition;
+
+    }, [toast]);
 
 
     const scrollToBottom = () => {
@@ -36,6 +76,11 @@ const AIChatViewComponent = () => {
 
     const getSystemResponse = useCallback(async (query) => {
         if (!isDataLoaded) return;
+        
+        const userMessage = { sender: 'user', text: query };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+
         setIsLoading(true);
         try {
           const result = await generateSystemAdvice({
@@ -77,12 +122,25 @@ const AIChatViewComponent = () => {
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
+        await getSystemResponse(input);
+    };
 
-        const userMessage = { sender: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
-        const currentInput = input;
-        setInput('');
-        await getSystemResponse(currentInput);
+    const handleMicClick = () => {
+        if (!speechRecognitionRef.current) {
+             toast({
+                variant: 'destructive',
+                title: 'Não Suportado',
+                description: `O reconhecimento de voz não é suportado neste navegador.`
+            });
+            return;
+        }
+
+        if (isListening) {
+            speechRecognitionRef.current.stop();
+        } else {
+            speechRecognitionRef.current.start();
+            setIsListening(true);
+        }
     };
 
 
@@ -131,10 +189,13 @@ const AIChatViewComponent = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder={isDataLoaded ? "Digite sua diretiva..." : "A aguardar conexão com o Sistema..."}
+                        placeholder={isDataLoaded ? (isListening ? "A escutar..." : "Digite sua diretiva...") : "A aguardar conexão com o Sistema..."}
                         className="flex-1 bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
                         disabled={isLoading || !isDataLoaded}
                     />
+                    <Button onClick={handleMicClick} variant="ghost" size="icon" disabled={!isDataLoaded || isLoading} className={cn(isListening && "text-red-500")}>
+                        {isListening ? <MicOff /> : <Mic />}
+                    </Button>
                     <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
                         {isLoading ? <LoaderCircle className="animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
