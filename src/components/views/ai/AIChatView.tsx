@@ -26,7 +26,6 @@ const AIChatViewComponent = () => {
 
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window)) {
-          // You could show a toast or disable the mic button here
           console.warn("Speech recognition not supported in this browser.");
           return;
         }
@@ -39,17 +38,22 @@ const AIChatViewComponent = () => {
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript;
             setInput(transcript);
-            // Automatically send after successful transcription
             getSystemResponse(transcript); 
             setIsListening(false);
         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error", event.error);
+            let description = `Não foi possível processar o áudio. Erro: ${event.error}`;
+            if (event.error === 'network') {
+                description = "Falha de rede. O reconhecimento de voz pode não funcionar neste ambiente de desenvolvimento. Tente usar a funcionalidade num ambiente local (localhost).";
+            } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                description = "Permissão para o microfone foi negada. Verifique as permissões do seu navegador.";
+            }
             toast({
                 variant: 'destructive',
                 title: 'Erro no Reconhecimento de Voz',
-                description: `Não foi possível processar o áudio. Erro: ${event.error}`
+                description: description
             });
             setIsListening(false);
         };
