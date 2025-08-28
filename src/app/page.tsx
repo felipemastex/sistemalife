@@ -29,6 +29,7 @@ import TasksView from '@/components/views/gamification/TasksView';
 import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
 import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
+import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
 
 const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
 
@@ -167,10 +168,6 @@ export default function App() {
     if (!isDataLoaded) {
       return null
     }
-    
-    if (currentPage === 'dungeon' && dungeonSkillId) {
-        return <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('skills')} />;
-    }
 
     const views: Record<string, React.ReactNode> = {
       'dashboard': <DashboardView />,
@@ -187,7 +184,7 @@ export default function App() {
       'settings': <SettingsView />,
       'tower': <TowerView />,
       'tasks': <TasksView />,
-      'dungeon': dungeonSkillId ? <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('skills')} /> : <SkillsView onEnterDungeon={handleEnterDungeon} />,
+      'dungeon': dungeonSkillId ? <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
     };
 
     return (
