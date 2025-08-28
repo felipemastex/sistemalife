@@ -790,7 +790,7 @@ const MissionsViewComponent = () => {
         if (activeDailyMission) {
             const isNemesisChallenge = 'isNemesisChallenge' in activeDailyMission && activeDailyMission.isNemesisChallenge;
             return (
-                <div className={cn("rounded-r-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500", 
+                <div className={cn("rounded-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500", 
                     isNemesisChallenge ? 'bg-red-900/20 border-l-4 border-red-500' : 'bg-secondary/50 border-l-4 border-primary'
                 )}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -1151,3 +1151,5 @@ const MissionsViewComponent = () => {
 };
 
 export const MissionsView = memo(MissionsViewComponent);
+
+    
