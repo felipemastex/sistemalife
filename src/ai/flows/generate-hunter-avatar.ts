@@ -41,10 +41,10 @@ const generateHunterAvatarFlow = ai.defineFlow(
     const genderTerm = input.gender && input.gender.toLowerCase() !== 'não especificado' ? input.gender : 'figura andrógina';
 
     const prompt = `
-      Crie um retrato de personagem em pixel art.
+      Crie um sprite de personagem de corpo inteiro em pixel art.
       O personagem é um Caçador de nível ${input.level}, com o rank de "${input.rank}".
       A sua aparência deve refletir uma ${genderTerm} ${statsDescription}.
-      Estilo de arte: pixel art, retrato de personagem de RPG 16-bit, vibrante, com um fundo simples e escuro.
+      Estilo de arte: pixel art, sprite de personagem de RPG 16-bit, corpo inteiro, pose de pé, fundo simples e escuro.
     `;
 
     const {media} = await ai.generate({
