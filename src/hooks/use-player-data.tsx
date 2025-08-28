@@ -153,10 +153,9 @@ interface UserSettings {
 interface TowerProgress {
   currentFloor: number;
   highestFloor: number;
-  lives: number;
-  maxLives: number;
-  lastLifeRegeneration: string; // ISO String
   dailyChallengesAvailable: number;
+  tower_tickets: number;
+  tower_lockout_until: string | null;
 }
 
 interface RecurringTask {
@@ -643,9 +642,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
-                    updatedProfile.tower_progress.lives = Math.max(0, updatedProfile.tower_progress.lives - 1);
+                    updatedProfile.estatisticas.constituicao = Math.max(0, updatedProfile.estatisticas.constituicao - 20); // Lose 20 HP
+                     if (updatedProfile.estatisticas.constituicao <= 0) {
+                        updatedProfile.estatisticas.constituicao = 100; // Reset HP
+                        const lockoutEndDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                        updatedProfile.tower_progress.tower_lockout_until = lockoutEndDate.toISOString();
+                        toast({ variant: 'destructive', title: 'Você foi Derrotado!', description: 'A sua vida chegou a zero. A Torre está bloqueada por 24 horas.' });
+                    } else {
+                        toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou. Você perdeu 20 de HP.` });
+                    }
                 }
-                toast({ variant: 'destructive', title: 'Desafio da Torre Falhou!', description: `O tempo para "${challenge.title}" esgotou.` });
                 challengesToRemove.push(challenge.id);
                 profileChanged = true;
                 return false;
@@ -758,6 +764,16 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         updatedProfile.fragmentos = (updatedProfile.fragmentos || 0) + (tempDailyMission.fragmentos_conclusao || 0) + streakBonus.fragments;
         updatedProfile.missoes_concluidas_total = (updatedProfile.missoes_concluidas_total || 0) + 1;
         
+        // Add chance to get a Tower Ticket
+        if (Math.random() < 0.1) { // 10% chance
+            updatedProfile.tower_progress = {
+                ...updatedProfile.tower_progress!,
+                tower_tickets: (updatedProfile.tower_progress?.tower_tickets || 0) + 1
+            };
+            toast({ title: 'Recompensa Rara!', description: 'Você encontrou um Ticket da Torre!' });
+        }
+
+
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
         }
@@ -1012,7 +1028,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 }, active_tower_challenges: [], available_tower_challenges: [], recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null }, active_tower_challenges: [], available_tower_challenges: [], recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
@@ -1172,13 +1188,14 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                  handleShowSkillAtRiskNotification(atRiskSkills);
             }
 
-            // Tower Lives & Daily Challenge Reset Logic
+            // Tower daily challenge reset
             if (updatedProfile.tower_progress) {
-                const lastRegenTower = new Date(updatedProfile.tower_progress.lastLifeRegeneration);
+                const lastRegenTower = new Date(updatedProfile.tower_progress.lastLifeRegeneration || '2000-01-01');
                 if (!isToday(lastRegenTower)) {
-                    updatedProfile.tower_progress.lives = updatedProfile.tower_progress.maxLives;
-                    updatedProfile.tower_progress.lastLifeRegeneration = now.toISOString();
                     updatedProfile.tower_progress.dailyChallengesAvailable = 3;
+                    if (updatedProfile.tower_progress.tower_lockout_until && new Date(updatedProfile.tower_progress.tower_lockout_until) < now) {
+                        updatedProfile.tower_progress.tower_lockout_until = null;
+                    }
                     profileChanged = true;
                 }
             }
@@ -1292,7 +1309,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 });
 
                 if (!profileData.tower_progress) {
-                    profileData.tower_progress = { currentFloor: 1, highestFloor: 1, lives: 5, maxLives: 5, lastLifeRegeneration: new Date().toISOString(), dailyChallengesAvailable: 3 };
+                    profileData.tower_progress = { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null };
                     profileNeedsUpdate = true;
                 }
                 if (!profileData.active_tower_challenges) {

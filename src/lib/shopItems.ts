@@ -7,7 +7,7 @@ interface ShopItem {
     description: string;
     price: number;
     icon: string; // Changed from LucideIcon to string
-    category: 'Consumíveis' | 'Cosméticos';
+    category: 'Consumíveis' | 'Cosméticos' | 'Especiais';
     effect?: {
         type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll';
         multiplier?: number;
@@ -61,5 +61,13 @@ export const allShopItems: ShopItem[] = [
     price: 500,
     icon: 'Shirt',
     category: 'Cosméticos',
+  },
+  {
+    id: 'tower_ticket',
+    name: 'Ticket da Torre',
+    description: 'Concede uma tentativa para enfrentar um desafio na Torre. Pode comprar 1 por dia.',
+    price: 250,
+    icon: 'Ticket',
+    category: 'Especiais',
   },
 ];
