@@ -9,7 +9,7 @@ interface ShopItem {
     icon: string; // Changed from LucideIcon to string
     category: 'Consumíveis' | 'Cosméticos' | 'Especiais';
     effect?: {
-        type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll';
+        type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll' | 'health_potion';
         multiplier?: number;
         duration_hours?: number;
         amount?: number;
@@ -18,6 +18,15 @@ interface ShopItem {
 
 
 export const allShopItems: ShopItem[] = [
+  {
+    id: 'potion_health_small',
+    name: 'Poção de Vida Pequena',
+    description: 'Restaura 25 pontos da sua Constituição (HP) instantaneamente. Essencial para se recuperar após um desafio falhado na Torre.',
+    price: 50,
+    icon: 'Heart',
+    category: 'Consumíveis',
+    effect: { type: 'health_potion', amount: 25 }
+  },
   {
     id: 'potion_double_xp_1h',
     name: 'Poção de Foco Intenso',

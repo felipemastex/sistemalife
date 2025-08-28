@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import { useState, memo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Backpack, Gem, Zap, Shield, BookOpen, Repeat, Shirt } from 'lucide-react';
+import { Backpack, Gem, Zap, Shield, BookOpen, Repeat, Shirt, Heart } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ const iconMap: { [key: string]: React.ElementType } = {
     BookOpen,
     Repeat,
     Shirt,
+    Heart,
 };
 
 const InventoryViewComponent = () => {
@@ -69,12 +71,12 @@ const InventoryViewComponent = () => {
 
         switch (item.effect.type) {
             case 'xp_boost':
-                const expires_at = new Date(now.getTime() + item.effect.duration_hours * 60 * 60 * 1000).toISOString();
+                const expires_at_xp = new Date(now.getTime() + item.effect.duration_hours * 60 * 60 * 1000).toISOString();
                 updatedProfile.active_effects.push({
                     itemId: item.id,
                     type: 'xp_boost',
                     multiplier: item.effect.multiplier,
-                    expires_at,
+                    expires_at: expires_at_xp,
                 });
                 toast({
                     title: `${item.name} Ativado!`,
@@ -90,6 +92,16 @@ const InventoryViewComponent = () => {
                  toast({
                     title: `${item.name} Ativado!`,
                     description: `A sua próxima quebra de sequência será evitada.`,
+                });
+                break;
+            case 'health_potion':
+                const currentHP = updatedProfile.estatisticas.constituicao;
+                const maxHP = 100; // Assuming max HP is 100
+                const restoredHP = Math.min(maxHP, currentHP + item.effect.amount);
+                updatedProfile.estatisticas.constituicao = restoredHP;
+                toast({
+                    title: `${item.name} Usada!`,
+                    description: `Você restaurou ${item.effect.amount} de HP. Sua vida agora é ${restoredHP}/${maxHP}.`,
                 });
                 break;
             default:

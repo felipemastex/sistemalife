@@ -218,6 +218,7 @@ interface Profile {
   };
   last_known_level?: number;
   routineTemplates?: Record<string, any>; // Adicionando a propriedade routineTemplates ao tipo Profile
+  last_hp_regen_date?: string;
 }
 
 interface Guild {
@@ -1147,7 +1148,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
 
-    // Skill Decay & Tower/Dungeon Lives & Task Reset Logic
+    // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
 
@@ -1216,6 +1217,17 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 updatedProfile.completed_tasks_today = {};
                 profileChanged = true;
             }
+
+            // HP Regen Logic
+            if (updatedProfile.last_hp_regen_date && !isToday(new Date(updatedProfile.last_hp_regen_date))) {
+                if (updatedProfile.estatisticas.constituicao < 100) {
+                    updatedProfile.estatisticas.constituicao = 100;
+                    toast({ title: 'Vida Restaurada!', description: 'A sua constituição foi totalmente restaurada após um bom descanso.' });
+                }
+                updatedProfile.last_hp_regen_date = now.toISOString();
+                profileChanged = true;
+            }
+
 
             if (profileChanged) {
                 const currentProfileString = JSON.stringify(state.profile);
@@ -1336,6 +1348,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     profileData.dungeon_last_life_regeneration = new Date().toISOString();
                     profileNeedsUpdate = true;
                 }
+                 if (!profileData.last_hp_regen_date) {
+                    profileData.last_hp_regen_date = new Date().toISOString();
+                    profileNeedsUpdate = true;
+                }
 
                 if (profileNeedsUpdate) {
                     await persistData('profile', profileData);
@@ -1448,3 +1464,4 @@ export const usePlayerDataContext = () => {
     }
     return context;
 };
+
