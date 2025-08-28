@@ -29,7 +29,7 @@ const statIcons = {
 
 
 const SkillsViewComponent = ({ onEnterDungeon }) => {
-    const { skills, metas, persistData } = usePlayerDataContext();
+    const { profile, skills, metas, persistData, spendDungeonCrystal } = usePlayerDataContext();
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [selectedMetaId, setSelectedMetaId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -181,6 +181,18 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                                         <p className="text-lg font-bold text-foreground break-words">{skill.nome}</p>
                                     </div>
                                      <div className="flex items-center">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-8 w-8" aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
+                                                        <KeySquare className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Usar Cristal da Masmorra ({(profile?.dungeon_crystals || 0)})</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir habilidade ${skill.nome}`}>

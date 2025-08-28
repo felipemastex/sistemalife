@@ -83,7 +83,7 @@ const WorldEventCard = ({ event, userContribution }) => {
 }
 
 const DashboardViewComponent = () => {
-  const { profile, worldEvents, triggerDungeonEvent } = usePlayerDataContext();
+  const { profile, worldEvents, triggerDungeonEvent, addDungeonCrystal } = usePlayerDataContext();
   
   const activeEvent = useMemo(() => {
     return (worldEvents || []).find(e => e.isActive);
@@ -103,7 +103,7 @@ const DashboardViewComponent = () => {
   }
 
   const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
-  const maxHP = profile.estatisticas.constituicao;
+  const maxHP = 100; // O HP máximo é sempre 100 por enquanto
   const hpPercentage = (profile.estatisticas.constituicao / maxHP) * 100;
   const profileRank = getProfileRank(profile.nivel);
 
@@ -120,7 +120,10 @@ const DashboardViewComponent = () => {
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
         <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
             <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
-            <Button onClick={triggerDungeonEvent} variant="secondary">Testar Evento de Masmorra</Button>
+            <div className="flex gap-2">
+                <Button onClick={triggerDungeonEvent} variant="secondary">Testar Evento de Masmorra</Button>
+                <Button onClick={addDungeonCrystal} variant="secondary">Adicionar Cristal</Button>
+            </div>
         </div>
 
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">

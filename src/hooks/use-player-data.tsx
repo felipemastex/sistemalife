@@ -187,6 +187,7 @@ interface Profile {
   dungeon_lives?: number;
   dungeon_max_lives?: number;
   dungeon_last_life_regeneration?: string;
+  dungeon_crystals?: number;
   active_dungeon_event?: {
     skillId: string | number;
     expires_at: string;
@@ -1045,7 +1046,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null }, active_tower_challenges: [], available_tower_challenges: [], recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null }, active_tower_challenges: [], available_tower_challenges: [], dungeon_crystals: 0, recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
@@ -1206,6 +1207,34 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         const updatedProfile = { ...state.profile, active_dungeon_event: null };
         await persistData('profile', updatedProfile);
     }, [state.profile, persistData]);
+
+    const addDungeonCrystal = useCallback(async () => {
+        if (!state.profile) return;
+        const updatedProfile = {
+            ...state.profile,
+            dungeon_crystals: (state.profile.dungeon_crystals || 0) + 1,
+        };
+        await persistData('profile', updatedProfile);
+        toast({ title: 'Cristal Adicionado!', description: 'Você recebeu 1 Cristal da Masmorra.' });
+    }, [state.profile, persistData, toast]);
+    
+    const spendDungeonCrystal = useCallback(async (skillId: string | number) => {
+        if (!state.profile || (state.profile.dungeon_crystals || 0) <= 0) {
+            toast({ variant: 'destructive', title: 'Cristais Insuficientes', description: 'Você não tem Cristais da Masmorra para usar.' });
+            return;
+        }
+
+        const updatedProfile = {
+            ...state.profile,
+            dungeon_crystals: (state.profile.dungeon_crystals || 0) - 1,
+        };
+        await persistData('profile', updatedProfile);
+
+        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
+        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
+        
+        toast({ title: 'Masmorra Aberta!', description: 'Você usou um cristal para forçar a entrada na masmorra.' });
+    }, [state.profile, persistData, toast]);
 
     // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
     useEffect(() => {
@@ -1408,6 +1437,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     profileData.dungeon_last_life_regeneration = new Date().toISOString();
                     profileNeedsUpdate = true;
                 }
+                 if (!profileData.dungeon_crystals) {
+                    profileData.dungeon_crystals = 0;
+                    profileNeedsUpdate = true;
+                 }
                  if (!profileData.last_hp_regen_date) {
                     profileData.last_hp_regen_date = new Date().toISOString();
                     profileNeedsUpdate = true;
@@ -1505,6 +1538,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         triggerDungeonEvent,
         acceptDungeonEvent,
         declineDungeonEvent,
+        addDungeonCrystal,
+        spendDungeonCrystal,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
         showOnboarding, setShowOnboarding,
@@ -1532,5 +1567,3 @@ export const usePlayerDataContext = () => {
 
 
     
-
-
