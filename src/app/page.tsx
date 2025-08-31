@@ -94,12 +94,9 @@ export default function App() {
   };
 
   const handleNavigate = (page: string) => {
-    if (page !== 'dungeon' && profile?.dungeon_session) {
-        clearDungeonSession();
-    }
     setCurrentPage(page);
     if (isMobile) setIsSheetOpen(false);
-};
+  };
 
   const handleEnterDungeon = () => {
     setCurrentPage('dungeon');
@@ -299,3 +296,5 @@ export default function App() {
     </div>
   );
 }
+
+    

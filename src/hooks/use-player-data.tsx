@@ -185,6 +185,7 @@ interface Profile {
   xp: number;
   xp_para_proximo_nivel: number;
   fragmentos: number;
+  hp_atual?: number;
   inventory: any[];
   active_effects: ActiveEffect[];
   active_tower_challenges?: ActiveTowerChallenge[];
@@ -659,10 +660,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
-                    const hpLost = Math.round(updatedProfile.estatisticas.constituicao * 0.20);
-                    updatedProfile.estatisticas.constituicao = Math.max(0, updatedProfile.estatisticas.constituicao - hpLost);
-                     if (updatedProfile.estatisticas.constituicao <= 0) {
-                        updatedProfile.estatisticas.constituicao = 100; // Reset HP
+                    const hpLost = Math.round((updatedProfile.hp_atual || 100) * 0.20);
+                    updatedProfile.hp_atual = Math.max(0, (updatedProfile.hp_atual || 100) - hpLost);
+                     if (updatedProfile.hp_atual <= 0) {
+                        updatedProfile.hp_atual = 100; // Reset HP
                         const lockoutEndDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
                         updatedProfile.tower_progress.tower_lockout_until = lockoutEndDate.toISOString();
                         toast({ variant: 'destructive', title: 'Você foi Derrotado!', description: 'A sua vida chegou a zero. A Torre está bloqueada por 24 horas.' });
@@ -1229,6 +1230,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         if (!state.profile) return;
         const updatedProfile = { ...state.profile, dungeon_session: null };
         await persistData('profile', updatedProfile);
+        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dashboard' });
     }, [state.profile, persistData]);
 
     const acceptDungeonEvent = useCallback(async () => {
@@ -1376,9 +1378,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             // HP Regen Logic
             const lastHPRegen = updatedProfile.last_hp_regen_date ? new Date(updatedProfile.last_hp_regen_date) : new Date(0);
             if (!isToday(lastHPRegen)) {
-                if (updatedProfile.estatisticas.constituicao < 100) {
-                    updatedProfile.estatisticas.constituicao = 100;
-                    toast({ title: 'Vida Restaurada!', description: 'A sua constituição foi totalmente restaurada após um bom descanso.' });
+                if (updatedProfile.hp_atual < 100) {
+                    updatedProfile.hp_atual = 100;
+                    toast({ title: 'Vida Restaurada!', description: 'A sua vida foi totalmente restaurada após um bom descanso.' });
                 }
                 updatedProfile.last_hp_regen_date = now.toISOString();
                 profileChanged = true;
@@ -1490,6 +1492,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     profileData.last_hp_regen_date = new Date().toISOString();
                     profileNeedsUpdate = true;
                 }
+                if (profileData.hp_atual === undefined) {
+                    profileData.hp_atual = 100;
+                    profileNeedsUpdate = true;
+                }
 
                 if (profileNeedsUpdate) {
                     await persistData('profile', profileData);
@@ -1535,7 +1541,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 guild_id: null,
                 guild_role: null,
                 onboarding_completed: false,
-                _isOfflineMode: true
+                _isOfflineMode: true,
+                hp_atual: 100,
             };
             
             dispatch({
@@ -1611,4 +1618,6 @@ export const usePlayerDataContext = () => {
 
 
     
+    
+
     
