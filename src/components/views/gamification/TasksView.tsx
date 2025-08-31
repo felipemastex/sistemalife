@@ -162,13 +162,29 @@ const TaskForm = ({ taskToEdit, onSave, onCancel, initialDate }) => {
              {type === 'specific_days' && (
                 <div>
                     <Label>Selecione as Datas</Label>
-                    <Calendar
-                        mode="multiple"
-                        selected={specificDates}
-                        onSelect={setSpecificDates}
-                        className="rounded-md border mt-2"
-                        locale={ptBR}
-                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal mt-2",
+                                    !specificDates.length && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {specificDates.length > 0 ? `${specificDates.length} data(s) selecionada(s)` : <span>Selecionar datas...</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                             <Calendar
+                                mode="multiple"
+                                selected={specificDates}
+                                onSelect={setSpecificDates}
+                                className="rounded-md border"
+                                locale={ptBR}
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
             )}
 
@@ -468,3 +484,5 @@ const TasksView = () => {
 };
 
 export default TasksView;
+
+    
