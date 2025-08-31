@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, memo } from 'react';
@@ -150,7 +151,7 @@ const GuildsViewComponent = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 min-h-screen">
+        <div className="p-4 md:p-6 h-full">
             <div className="animate-in fade-in-50 duration-500">
               {renderContent()}
             </div>
@@ -159,3 +160,4 @@ const GuildsViewComponent = () => {
 };
 
 export const GuildsView = memo(GuildsViewComponent);
+

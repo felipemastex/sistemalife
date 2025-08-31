@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 const SkillDungeonView = ({ onExit }) => {
-    const { profile, skills, generateDungeonChallenge, completeDungeonChallenge } = usePlayerDataContext();
+    const { profile, skills, generateDungeonChallenge, completeDungeonChallenge, clearDungeonSession } = usePlayerDataContext();
     const [isLoading, setIsLoading] = useState(false);
     const [submission, setSubmission] = useState('');
     const { toast } = useToast();
@@ -22,19 +22,12 @@ const SkillDungeonView = ({ onExit }) => {
     const dungeonSession = profile?.dungeon_session;
     const skill = useMemo(() => skills.find(s => s.id === dungeonSession?.skillId), [skills, dungeonSession]);
     
-    const handleGenerateChallenge = useCallback(async (isGivingUp = false) => {
+    const handleGenerateChallenge = useCallback(async () => {
         if (!skill) return;
-        
-        if (isGivingUp) {
-            toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'Um novo desafio será gerado para esta sala.' });
-        }
-
         setIsLoading(true);
         try {
             await generateDungeonChallenge(skill.id);
-            if(!isGivingUp) {
-                toast({ title: "Novo Desafio Gerado!", description: "O seu próximo desafio na masmorra está pronto."});
-            }
+            toast({ title: "Novo Desafio Gerado!", description: "O seu próximo desafio na masmorra está pronto."});
         } catch (error) {
             console.error("Error generating dungeon challenge:", error);
             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar um novo desafio. Tente novamente.' });
@@ -42,6 +35,12 @@ const SkillDungeonView = ({ onExit }) => {
             setIsLoading(false);
         }
     }, [skill, generateDungeonChallenge, toast]);
+
+    const handleGiveUp = async () => {
+        if (!dungeonSession?.challenge) return;
+        toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'Um novo desafio será gerado para esta sala.' });
+        await generateDungeonChallenge(dungeonSession.skillId);
+    }
 
     const handleCompleteChallenge = async () => {
         if (!submission.trim()) {
@@ -68,7 +67,7 @@ const SkillDungeonView = ({ onExit }) => {
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
             <div className="flex-shrink-0">
-                <Button onClick={onExit} variant="ghost" className="mb-4">
+                <Button onClick={clearDungeonSession} variant="ghost" className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Sair da Masmorra
                 </Button>
@@ -125,7 +124,7 @@ const SkillDungeonView = ({ onExit }) => {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleGenerateChallenge(true)}>Sim, Desistir</AlertDialogAction>
+                                        <AlertDialogAction onClick={handleGiveUp}>Sim, Desistir</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -135,9 +134,9 @@ const SkillDungeonView = ({ onExit }) => {
                 ) : (
                     <div className="text-center">
                         <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold">Sala {roomLevel - 1} Concluída!</h2>
+                        <h2 className="text-2xl font-bold">Sala {roomLevel -1} Concluída!</h2>
                         <p className="text-muted-foreground mt-2 mb-6">Você está pronto para o próximo desafio.</p>
-                        <Button onClick={() => handleGenerateChallenge(false)}>
+                        <Button onClick={handleGenerateChallenge}>
                             <Sparkles className="mr-2 h-4 w-4" />
                             Ir para a Sala {roomLevel}
                         </Button>
@@ -149,3 +148,4 @@ const SkillDungeonView = ({ onExit }) => {
 };
 
 export default SkillDungeonView;
+

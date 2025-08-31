@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
@@ -89,13 +90,16 @@ interface Skill {
   pre_requisito?: string | number | null;
   nivel_minimo_para_desbloqueio?: number | null;
   ultima_atividade_em: string;
-  dungeon?: {
-    current_room: number;
-    highest_room: number;
-    active_challenge: any;
-    completed_challenges: any[];
-  }
 }
+
+interface DungeonSession {
+    skillId: string | number;
+    roomLevel: number;
+    highestRoom: number;
+    challenge: any | null; // The active challenge object
+    completed_challenges: any[];
+}
+
 
 interface ActiveEffect {
   itemId: string;
@@ -159,6 +163,7 @@ interface TowerProgress {
   tower_tickets: number;
   tower_lockout_until: string | null;
   lastLifeRegeneration?: string;
+  completed_challenges_floor?: string[];
 }
 
 
@@ -190,6 +195,7 @@ interface Profile {
     skillId: string | number;
     expires_at: string;
   } | null;
+  dungeon_session?: DungeonSession | null;
   estatisticas: {
     forca: number;
     inteligencia: number;
@@ -263,7 +269,6 @@ interface PlayerState {
   missionFeedback: Record<string | number, string>;
   generatingMission: string | number | null;
   currentPage: string;
-  dungeonSkillId: string | number | null;
 }
 
 interface PlayerAction {
@@ -318,7 +323,6 @@ const initialState: PlayerState = {
     missionFeedback: {}, 
     generatingMission: null,
     currentPage: 'dashboard',
-    dungeonSkillId: null,
 };
 
 function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerState {
@@ -360,8 +364,6 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
         }
         case 'SET_CURRENT_PAGE':
             return { ...state, currentPage: action.payload };
-        case 'SET_DUNGEON_SKILL_ID':
-            return { ...state, dungeonSkillId: action.payload };
         case 'UPDATE_SUB_TASK_PROGRESS': {
             const { rankedMissionId, dailyMissionId, subTaskName, amount } = action.payload;
             const newMissions = state.missions.map((rm: RankedMission) => 
@@ -715,25 +717,25 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 if (challenge.rewards.premiumFragments && updatedProfile.tower_progress) {
                     // Placeholder for premium currency
                 }
+                if (!updatedProfile.tower_progress.completed_challenges_floor) {
+                    updatedProfile.tower_progress.completed_challenges_floor = [];
+                }
+                updatedProfile.tower_progress.completed_challenges_floor.push(challenge.id);
                 toast({ title: "Desafio da Torre Concluído!", description: `Você completou: ${challenge.title} e ganhou ${challenge.rewards.xp} XP!` });
             });
-        }
-    
-        if (profileChanged) {
-            updatedProfile.active_tower_challenges = (updatedProfile.active_tower_challenges || []).filter((c: ActiveTowerChallenge) => !challengesToRemove.includes(c.id));
             
-            const activeChallengesOnCurrentFloor = (state.profile?.active_tower_challenges || []).filter((c: ActiveTowerChallenge) => c.floor === state.profile?.tower_progress?.currentFloor).length;
-            const remainingChallengesOnFloor = activeChallengesOnCurrentFloor - completedChallengesThisRun.filter(c => c.floor === state.profile?.tower_progress?.currentFloor).length;
-
-            if (updatedProfile.tower_progress && remainingChallengesOnFloor === 0 && activeChallengesOnCurrentFloor > 0) {
+            if (updatedProfile.tower_progress.completed_challenges_floor.length >= 3) {
                  updatedProfile.tower_progress.currentFloor += 1;
                  if (updatedProfile.tower_progress.currentFloor > updatedProfile.tower_progress.highestFloor) {
                     updatedProfile.tower_progress.highestFloor = updatedProfile.tower_progress.currentFloor;
                  }
-                 updatedProfile.tower_progress.dailyChallengesAvailable = 3;
+                 updatedProfile.tower_progress.completed_challenges_floor = []; // Reset for new floor
                  toast({title: "Andar da Torre Concluído!", description: `Você avançou para o andar ${updatedProfile.tower_progress.currentFloor}!`});
             }
-            
+        }
+    
+        if (profileChanged) {
+            updatedProfile.active_tower_challenges = (updatedProfile.active_tower_challenges || []).filter((c: ActiveTowerChallenge) => !challengesToRemove.includes(c.id));
             await persistData('profile', updatedProfile);
         }
     
@@ -1112,55 +1114,91 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
     }, [user, resetUserSubCollections, toast]);
     
-    const completeDungeonChallenge = useCallback(async (skillId: string | number) => {
+    const generateDungeonChallenge = useCallback(async (skillId: string | number) => {
         const skill = state.skills.find(s => s.id === skillId);
-        if (!skill || !skill.dungeon?.active_challenge) {
-            toast({ variant: 'destructive', title: 'Erro', description: 'Desafio da masmorra não encontrado.'});
+        if (!skill || !state.profile) return;
+
+        if (state.profile.dungeon_session?.challenge) {
+            toast({ variant: 'destructive', title: 'Desafio Ativo', description: 'Complete ou desista do desafio atual antes de gerar um novo.'});
             return;
         }
 
-        const challenge = skill.dungeon.active_challenge;
-        let updatedSkill = { ...skill };
+        const roomLevel = state.profile.dungeon_session?.roomLevel || 1;
 
-        // 1. Grant XP
+        try {
+            const result = await generateSkillDungeonChallenge({
+                skillName: skill.nome,
+                skillDescription: skill.descricao,
+                skillLevel: skill.nivel_atual,
+                dungeonRoomLevel: roomLevel,
+                previousChallenges: state.profile.dungeon_session?.completed_challenges.map(c => c.challengeName) || [],
+            });
+
+            const updatedProfile = {
+                ...state.profile,
+                dungeon_session: {
+                    ...state.profile.dungeon_session!,
+                    challenge: result,
+                },
+            };
+            await persistData('profile', updatedProfile);
+            
+        } catch (error) {
+            console.error("Failed to generate dungeon challenge:", error);
+            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar um novo desafio para a masmorra.'});
+        }
+    }, [state.profile, state.skills, persistData, toast]);
+
+
+    const completeDungeonChallenge = useCallback(async (submission: string) => {
+        if (!state.profile?.dungeon_session || !state.profile.dungeon_session.challenge) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum desafio ativo na masmorra.'});
+            return;
+        }
+
+        const { skillId, challenge } = state.profile.dungeon_session;
+        const skill = state.skills.find(s => s.id === skillId);
+        if (!skill) return;
+        
+        let updatedSkill = { ...skill };
         updatedSkill.xp_atual = (updatedSkill.xp_atual || 0) + challenge.xpReward;
 
-        // 2. Check for level up
         if (updatedSkill.xp_atual >= updatedSkill.xp_para_proximo_nivel) {
             updatedSkill.nivel_atual += 1;
             updatedSkill.xp_atual -= updatedSkill.xp_para_proximo_nivel;
             updatedSkill.xp_para_proximo_nivel = Math.floor(updatedSkill.xp_para_proximo_nivel * 1.5);
             
-            // Grant stat bonus
             const statsToUpgrade = (statCategoryMapping as StatMapping)[updatedSkill.categoria] || [];
-            let updatedProfile = { ...state.profile! };
-            if (statsToUpgrade.length > 0 && updatedProfile.estatisticas) {
+            let updatedProfileForStats = { ...state.profile };
+            if (statsToUpgrade.length > 0 && updatedProfileForStats.estatisticas) {
                 statsToUpgrade.forEach((stat: string) => { 
-                    const statKey = stat as keyof typeof updatedProfile.estatisticas;
-                    updatedProfile.estatisticas[statKey] = (updatedProfile.estatisticas[statKey] || 0) + 1; 
+                    const statKey = stat as keyof typeof updatedProfileForStats.estatisticas;
+                    updatedProfileForStats.estatisticas[statKey] = (updatedProfileForStats.estatisticas[statKey] || 0) + 1; 
                 });
-                await persistData('profile', updatedProfile);
+                await persistData('profile', updatedProfileForStats);
             }
             handleShowSkillUpNotification(updatedSkill.nome, updatedSkill.nivel_atual, statsToUpgrade.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)));
         }
 
-        // 3. Update dungeon progress
-        const completedChallenge = { ...challenge, completedAt: new Date().toISOString() };
-        updatedSkill.dungeon = {
-            ...(updatedSkill.dungeon!),
-            active_challenge: null,
-            completed_challenges: [...(updatedSkill.dungeon!.completed_challenges || []), completedChallenge],
-            current_room: updatedSkill.dungeon!.current_room + 1,
-            highest_room: Math.max(updatedSkill.dungeon!.highest_room, updatedSkill.dungeon!.current_room + 1),
-        };
-
-        // 4. Persist data
         const updatedSkills = state.skills.map(s => s.id === skillId ? updatedSkill : s);
         await persistData('skills', updatedSkills);
         
-        toast({ title: `Desafio "${challenge.challengeName}" Concluído!`, description: `Você ganhou ${challenge.xpReward} XP para ${skill.nome} e avançou para a sala ${updatedSkill.dungeon.current_room}.` });
+        const completedChallengeRecord = { ...challenge, completedAt: new Date().toISOString(), submission };
+        const newDungeonSession: DungeonSession = {
+            ...state.profile.dungeon_session,
+            challenge: null, // Clear active challenge
+            completed_challenges: [...state.profile.dungeon_session.completed_challenges, completedChallengeRecord],
+            roomLevel: state.profile.dungeon_session.roomLevel + 1,
+            highestRoom: Math.max(state.profile.dungeon_session.highestRoom, state.profile.dungeon_session.roomLevel + 1),
+        };
+        
+        const updatedProfile = { ...state.profile, dungeon_session: newDungeonSession };
+        await persistData('profile', updatedProfile);
 
-    }, [state.skills, state.profile, persistData, toast, handleShowSkillUpNotification]);
+        toast({ title: `Desafio "${challenge.challengeName}" Concluído!`, description: `Você ganhou ${challenge.xpReward} XP para ${skill.nome} e avançou para a sala ${newDungeonSession.roomLevel}.` });
+
+    }, [state.profile, state.skills, persistData, toast, handleShowSkillUpNotification]);
+
 
     const triggerDungeonEvent = useCallback(async () => {
         if (!state.profile || !state.skills || state.skills.length === 0) {
@@ -1186,44 +1224,41 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('profile', updatedProfile);
         
     }, [state.profile, state.skills, persistData, toast]);
+    
+    const clearDungeonSession = useCallback(async () => {
+        if (!state.profile) return;
+        const updatedProfile = { ...state.profile, dungeon_session: null };
+        await persistData('profile', updatedProfile);
+    }, [state.profile, persistData]);
 
     const acceptDungeonEvent = useCallback(async () => {
         if (!state.profile || !state.profile.active_dungeon_event) return;
     
         const { skillId } = state.profile.active_dungeon_event;
-        
-        // Remove o evento pendente
-        const updatedProfile = { ...state.profile, active_dungeon_event: null };
-        await persistData('profile', updatedProfile);
-    
-        // Define a masmorra e navega
-        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
-        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
-    
-        // Gera o primeiro desafio
         const skill = state.skills.find(s => s.id === skillId);
-        if (skill) {
-            const challengeResult = await generateSkillDungeonChallenge({
-                skillName: skill.nome,
-                skillDescription: skill.descricao,
-                skillLevel: skill.nivel_atual,
-                dungeonRoomLevel: skill.dungeon?.current_room || 1,
-                previousChallenges: skill.dungeon?.completed_challenges?.map(c => c.challengeName) || [],
-            });
+        if (!skill) return;
+
+        const newDungeonSession: DungeonSession = {
+            skillId: skill.id,
+            roomLevel: 1,
+            highestRoom: 1,
+            challenge: null,
+            completed_challenges: [],
+        };
+        
+        const updatedProfile = { 
+            ...state.profile, 
+            active_dungeon_event: null,
+            dungeon_session: newDungeonSession,
+        };
+        await persistData('profile', updatedProfile);
+
+        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
+        
+        // Immediately generate the first challenge
+        await generateDungeonChallenge(skillId);
     
-            const updatedSkill = {
-                ...skill,
-                dungeon: {
-                    ...skill.dungeon!,
-                    active_challenge: challengeResult,
-                }
-            };
-    
-            const updatedSkills = state.skills.map(s => s.id === skillId ? updatedSkill : s);
-            await persistData('skills', updatedSkills);
-        }
-    
-    }, [state.profile, state.skills, persistData]);
+    }, [state.profile, state.skills, persistData, generateDungeonChallenge]);
 
     const declineDungeonEvent = useCallback(async () => {
         if (!state.profile) return;
@@ -1247,17 +1282,28 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             return;
         }
 
+        const newDungeonSession: DungeonSession = {
+            skillId,
+            roomLevel: 1,
+            highestRoom: 1,
+            challenge: null,
+            completed_challenges: [],
+        };
+
         const updatedProfile = {
             ...state.profile,
             dungeon_crystals: (state.profile.dungeon_crystals || 0) - 1,
+            dungeon_session: newDungeonSession
         };
         await persistData('profile', updatedProfile);
 
-        dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: skillId });
         dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
         
         toast({ title: 'Masmorra Aberta!', description: 'Você usou um cristal para forçar a entrada na masmorra.' });
-    }, [state.profile, persistData, toast]);
+        
+        await generateDungeonChallenge(skillId);
+
+    }, [state.profile, persistData, toast, generateDungeonChallenge]);
     
     const activateTestWorldEvent = useCallback(async () => {
         if (!state.worldEvents || state.worldEvents.length === 0) {
@@ -1320,7 +1366,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             if (updatedProfile.tower_progress) {
                 const lastRegenTower = new Date(updatedProfile.tower_progress.lastLifeRegeneration || '2000-01-01');
                 if (!isToday(lastRegenTower)) {
-                    updatedProfile.tower_progress.dailyChallengesAvailable = 3;
                     if (updatedProfile.tower_progress.tower_lockout_until && new Date(updatedProfile.tower_progress.tower_lockout_until) < now) {
                         updatedProfile.tower_progress.tower_lockout_until = null;
                     }
@@ -1415,25 +1460,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 let profileData = userDoc.data() as Profile;
                 let profileNeedsUpdate = false;
                 
-                 const skillsData = skillsSnapshot.docs.map(d => {
-                    const skill = d.data();
-                    if (!skill.dungeon) {
-                        profileNeedsUpdate = true;
-                        return { 
-                            ...skill, 
-                            dungeon: {
-                                current_room: 1,
-                                highest_room: 1,
-                                active_challenge: null,
-                                completed_challenges: [],
-                            }
-                        };
-                    }
-                    return skill;
-                });
+                 const skillsData = skillsSnapshot.docs.map(d => d.data());
 
                 if (!profileData.tower_progress) {
-                    profileData.tower_progress = { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null };
+                    profileData.tower_progress = { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 1, tower_tickets: 1, tower_lockout_until: null, completed_challenges_floor: [] };
                     profileNeedsUpdate = true;
                 }
                 if (!profileData.active_tower_challenges) {
@@ -1463,9 +1493,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
                 if (profileNeedsUpdate) {
                     await persistData('profile', profileData);
-                    if (skillsData.some(s => !s.dungeon)) {
-                        await persistData('skills', skillsData);
-                    }
                 }
 
                 dispatch({
@@ -1543,7 +1570,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const providerValue = {
         ...state,
-        setDungeonSkillId: (id: string | number | null) => dispatch({ type: 'SET_DUNGEON_SKILL_ID', payload: id }),
         setCurrentPage: (page: string) => dispatch({ type: 'SET_CURRENT_PAGE', payload: page }),
         persistData,
         completeMission,
@@ -1555,6 +1581,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         declineDungeonEvent,
         addDungeonCrystal,
         spendDungeonCrystal,
+        generateDungeonChallenge,
+        clearDungeonSession,
         activateTestWorldEvent,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,
