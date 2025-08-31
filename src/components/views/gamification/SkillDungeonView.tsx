@@ -26,7 +26,7 @@ const SkillDungeonView = ({ onExit }) => {
         if (!skill) return;
         setIsLoading(true);
         try {
-            await generateDungeonChallenge(skill.id);
+            await generateDungeonChallenge();
             toast({ title: "Novo Desafio Gerado!", description: "O seu próximo desafio na masmorra está pronto."});
         } catch (error) {
             console.error("Error generating dungeon challenge:", error);
@@ -38,8 +38,8 @@ const SkillDungeonView = ({ onExit }) => {
 
     const handleGiveUp = async () => {
         if (!dungeonSession?.challenge) return;
-        toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'Um novo desafio será gerado para esta sala.' });
-        await generateDungeonChallenge(dungeonSession.skillId);
+        await clearDungeonSession(false); // Pass false to not exit the view
+        toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'O desafio foi descartado. Você pode gerar um novo para esta sala.' });
     }
 
     const handleCompleteChallenge = async () => {
@@ -67,7 +67,7 @@ const SkillDungeonView = ({ onExit }) => {
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
             <div className="flex-shrink-0">
-                <Button onClick={clearDungeonSession} variant="ghost" className="mb-4">
+                <Button onClick={() => clearDungeonSession(true)} variant="ghost" className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Sair da Masmorra
                 </Button>
@@ -148,6 +148,3 @@ const SkillDungeonView = ({ onExit }) => {
 };
 
 export default SkillDungeonView;
-
-
-    

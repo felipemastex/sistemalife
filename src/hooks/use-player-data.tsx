@@ -1054,8 +1054,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
             mockData.missoes.forEach(mission => batch.set(doc(collection(userRef, 'missions'), String(mission.id)), mission));
             mockData.habilidades.forEach(skill => batch.set(doc(collection(userRef, 'skills'), String(skill.id)), skill));
-            batch.set(doc(collection(userRef, 'routine'), 'main'), mockData.rotina);
-            batch.set(doc(collection(userRef, 'routine'), 'templates'), mockData.rotinaTemplates);
+            batch.set(doc(userRef, 'routine', 'main'), mockData.rotina);
+            batch.set(doc(userRef, 'routine', 'templates'), mockData.rotinaTemplates);
             await batch.commit();
 
             window.location.reload();
@@ -1116,16 +1116,17 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         });
     }, [user, resetUserSubCollections, toast]);
     
-    const generateDungeonChallenge = useCallback(async (skillId: string | number) => {
+    const generateDungeonChallenge = useCallback(async () => {
+        if (!state.profile?.dungeon_session) return;
+        const { skillId, roomLevel, completed_challenges } = state.profile.dungeon_session;
         const skill = state.skills.find(s => s.id === skillId);
-        if (!skill || !state.profile) return;
 
-        if (state.profile.dungeon_session?.challenge) {
+        if (!skill) return;
+
+        if (state.profile.dungeon_session.challenge) {
             toast({ variant: 'destructive', title: 'Desafio Ativo', description: 'Complete ou desista do desafio atual antes de gerar um novo.'});
             return;
         }
-
-        const roomLevel = state.profile.dungeon_session?.roomLevel || 1;
 
         try {
             const result = await generateSkillDungeonChallenge({
@@ -1133,7 +1134,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 skillDescription: skill.descricao,
                 skillLevel: skill.nivel_atual,
                 dungeonRoomLevel: roomLevel,
-                previousChallenges: state.profile.dungeon_session?.completed_challenges.map(c => c.challengeName) || [],
+                previousChallenges: completed_challenges?.map(c => c.challengeName) || [],
             });
 
             const updatedProfile = {
@@ -1147,7 +1148,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             
         } catch (error) {
             console.error("Failed to generate dungeon challenge:", error);
-            toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar um novo desafio para a masmorra.'});
+            throw new Error('Não foi possível gerar um novo desafio para a masmorra.');
         }
     }, [state.profile, state.skills, persistData, toast]);
 
@@ -1227,11 +1228,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
     }, [state.profile, state.skills, persistData, toast]);
     
-    const clearDungeonSession = useCallback(async () => {
+    const clearDungeonSession = useCallback(async (exitView: boolean = true) => {
         if (!state.profile) return;
         const updatedProfile = { ...state.profile, dungeon_session: null };
         await persistData('profile', updatedProfile);
-        dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dashboard' });
+        if (exitView) {
+            dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dashboard' });
+        }
     }, [state.profile, persistData]);
 
     const acceptDungeonEvent = useCallback(async () => {
@@ -1259,7 +1262,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_CURRENT_PAGE', payload: 'dungeon' });
         
         // Immediately generate the first challenge
-        await generateDungeonChallenge(skillId);
+        await generateDungeonChallenge();
     
     }, [state.profile, state.skills, persistData, generateDungeonChallenge]);
 
@@ -1304,7 +1307,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         
         toast({ title: 'Masmorra Aberta!', description: 'Você usou um cristal para forçar a entrada na masmorra.' });
         
-        await generateDungeonChallenge(skillId);
+        await generateDungeonChallenge();
 
     }, [state.profile, persistData, toast, generateDungeonChallenge]);
     
@@ -1624,4 +1627,5 @@ export const usePlayerDataContext = () => {
     
 
     
+
 
