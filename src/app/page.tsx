@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -40,7 +41,7 @@ export default function App() {
       isDataLoaded,
       questNotification, systemAlert, showOnboarding,
       setQuestNotification, setSystemAlert, setShowOnboarding, persistData, profile,
-      activeDungeonEvent, setCurrentPage, currentPage, setDungeonSkillId, dungeonSkillId,
+      activeDungeonEvent, setCurrentPage, currentPage, clearDungeonSession
    } = usePlayerDataContext();
 
 
@@ -93,15 +94,14 @@ export default function App() {
   };
 
   const handleNavigate = (page: string) => {
-    if (page !== 'dungeon') {
-        setDungeonSkillId(null);
+    if (page !== 'dungeon' && profile?.dungeon_session) {
+        clearDungeonSession();
     }
     setCurrentPage(page);
     if (isMobile) setIsSheetOpen(false);
 };
 
-  const handleEnterDungeon = (skillId: string | number) => {
-    setDungeonSkillId(skillId);
+  const handleEnterDungeon = () => {
     setCurrentPage('dungeon');
   }
   
@@ -186,7 +186,7 @@ export default function App() {
       'settings': <SettingsView />,
       'tower': <TowerView />,
       'tasks': <TasksView />,
-      'dungeon': dungeonSkillId ? <SkillDungeonView skillId={dungeonSkillId} onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
+      'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
     };
 
     return (

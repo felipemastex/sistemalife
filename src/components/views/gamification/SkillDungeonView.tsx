@@ -2,94 +2,69 @@
 
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, KeySquare, Sparkles, LoaderCircle, CheckCircle, Trophy, BookCopy } from 'lucide-react';
+import { ArrowLeft, KeySquare, Sparkles, LoaderCircle, CheckCircle, Trophy } from 'lucide-react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
-const SkillDungeonView = ({ skillId, onExit }) => {
-    const { profile, skills, persistData, completeDungeonChallenge } = usePlayerDataContext();
-    const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
+const SkillDungeonView = ({ onExit }) => {
+    const { profile, skills, generateDungeonChallenge, completeDungeonChallenge } = usePlayerDataContext();
+    const [isLoading, setIsLoading] = useState(false);
     const [submission, setSubmission] = useState('');
     const { toast } = useToast();
 
-    const skill = useMemo(() => skills.find(s => s.id === skillId), [skills, skillId]);
+    const dungeonSession = profile?.dungeon_session;
+    const skill = useMemo(() => skills.find(s => s.id === dungeonSession?.skillId), [skills, dungeonSession]);
     
-     useEffect(() => {
-        if (skill && !skill.dungeon?.active_challenge) {
-            handleGenerateChallenge(false, true); // Don't show toast on initial load
-        }
-    }, [skill]);
-
-    const handleGenerateChallenge = useCallback(async (isGivingUp = false, silent = false) => {
-        if (!skill || !profile) return;
-
+    const handleGenerateChallenge = useCallback(async (isGivingUp = false) => {
+        if (!skill) return;
+        
         if (isGivingUp) {
             toast({ variant: 'destructive', title: 'Você Desistiu!', description: 'Um novo desafio será gerado para esta sala.' });
         }
 
-        setIsLoadingChallenge(true);
+        setIsLoading(true);
         try {
-            const result = await generateSkillDungeonChallenge({
-                skillName: skill.nome,
-                skillDescription: skill.descricao,
-                skillLevel: skill.nivel_atual,
-                dungeonRoomLevel: skill.dungeon.current_room,
-                previousChallenges: skill.dungeon.completed_challenges?.map(c => c.challengeName) || [],
-            });
-
-            const updatedSkill = {
-                ...skill,
-                dungeon: {
-                    ...skill.dungeon,
-                    active_challenge: result,
-                }
-            };
-            
-            const updatedSkills = skills.map(s => s.id === skillId ? updatedSkill : s);
-            await persistData('skills', updatedSkills);
-            
-            if(!silent) {
-                toast({ title: "Novo Desafio da Masmorra!", description: `O desafio "${result.challengeName}" está pronto.` });
+            await generateDungeonChallenge(skill.id);
+            if(!isGivingUp) {
+                toast({ title: "Novo Desafio Gerado!", description: "O seu próximo desafio na masmorra está pronto."});
             }
-
         } catch (error) {
             console.error("Error generating dungeon challenge:", error);
             toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar um novo desafio. Tente novamente.' });
         } finally {
-            setIsLoadingChallenge(false);
+            setIsLoading(false);
         }
-    }, [skill, profile, skills, skillId, persistData, toast]);
-    
+    }, [skill, generateDungeonChallenge, toast]);
+
     const handleCompleteChallenge = async () => {
         if (!submission.trim()) {
             toast({ variant: 'destructive', title: 'Submissão Vazia', description: 'Você precisa de fornecer uma prova de conclusão.' });
             return;
         }
-        await completeDungeonChallenge(skillId);
+        setIsLoading(true);
+        await completeDungeonChallenge(submission);
         setSubmission('');
+        setIsLoading(false);
     }
 
-    if (!skill || !profile) {
+    if (!dungeonSession || !skill) {
         return (
             <div className="p-4 md:p-6 h-full flex flex-col items-center justify-center text-center">
-                <p className="text-destructive text-lg">Erro: Habilidade não encontrada.</p>
+                <p className="text-destructive text-lg">Erro: Sessão da masmorra inválida.</p>
                 <Button onClick={onExit} className="mt-4">Voltar</Button>
             </div>
         );
     }
-
-    const { dungeon } = skill;
-    const activeChallenge = dungeon?.active_challenge;
     
+    const { roomLevel, challenge } = dungeonSession;
+
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
             <div className="flex-shrink-0">
@@ -109,28 +84,27 @@ const SkillDungeonView = ({ skillId, onExit }) => {
             </div>
 
             <div className="mt-8 flex-grow flex items-center justify-center">
-                {isLoadingChallenge && !activeChallenge ? (
+                {isLoading ? (
                      <div className="text-center">
                         <LoaderCircle className="h-16 w-16 text-primary animate-spin mx-auto mb-4"/>
-                        <h2 className="text-2xl font-bold">A Gerar Desafio...</h2>
-                        <p className="text-muted-foreground mt-2">O Mestre da Masmorra está a preparar a próxima sala.</p>
+                        <h2 className="text-2xl font-bold">Processando...</h2>
                     </div>
-                ) : activeChallenge ? (
+                ) : challenge ? (
                     <Card className="w-full max-w-3xl">
                         <CardHeader className="text-center">
-                             <CardDescription>Sala {dungeon?.current_room || 1}</CardDescription>
+                             <CardDescription>Sala {roomLevel}</CardDescription>
                             <div className="flex justify-center items-center gap-4">
-                                <CardTitle>{activeChallenge.challengeName}</CardTitle>
+                                <CardTitle>{challenge.challengeName}</CardTitle>
                             </div>
-                             <span className="text-primary font-bold text-sm">+{activeChallenge.xpReward} XP de Habilidade</span>
+                             <span className="text-primary font-bold text-sm">+{challenge.xpReward} XP de Habilidade</span>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-center text-muted-foreground">{activeChallenge.challengeDescription}</p>
+                            <p className="text-center text-muted-foreground">{challenge.challengeDescription}</p>
                              <div className="pt-4">
                                 <Label htmlFor="challenge-submission" className="font-semibold text-muted-foreground">Prova de Conclusão</Label>
                                 <Textarea
                                     id="challenge-submission"
-                                    placeholder={activeChallenge.successCriteria}
+                                    placeholder={challenge.successCriteria}
                                     className="mt-2 min-h-[150px] font-mono text-sm"
                                     value={submission}
                                     onChange={(e) => setSubmission(e.target.value)}
@@ -161,11 +135,11 @@ const SkillDungeonView = ({ skillId, onExit }) => {
                 ) : (
                     <div className="text-center">
                         <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold">Sala {dungeon?.current_room || 1} Concluída!</h2>
+                        <h2 className="text-2xl font-bold">Sala {roomLevel - 1} Concluída!</h2>
                         <p className="text-muted-foreground mt-2 mb-6">Você está pronto para o próximo desafio.</p>
-                        <Button onClick={() => handleGenerateChallenge(false)} disabled={isLoadingChallenge}>
-                            {isLoadingChallenge ? <LoaderCircle className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                            Gerar Próximo Desafio
+                        <Button onClick={() => handleGenerateChallenge(false)}>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Ir para a Sala {roomLevel}
                         </Button>
                     </div>
                 )}

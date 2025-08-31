@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useCallback, memo } from 'react';
@@ -105,12 +106,6 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                 pre_requisito: null, 
                 nivel_minimo_para_desbloqueio: null,
                 ultima_atividade_em: new Date().toISOString(),
-                dungeon: {
-                    current_room: 1,
-                    highest_room: 1,
-                    active_challenge: null,
-                    completed_challenges: [],
-                }
             };
 
             await persistData('skills', [...skills, newSkill]);
