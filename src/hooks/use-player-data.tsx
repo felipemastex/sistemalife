@@ -660,10 +660,11 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
             if (isExpired) {
                 if (updatedProfile.tower_progress) {
-                    const hpLost = Math.round((updatedProfile.hp_atual || 100) * 0.20);
-                    updatedProfile.hp_atual = Math.max(0, (updatedProfile.hp_atual || 100) - hpLost);
+                    const maxHP = Math.floor((updatedProfile.estatisticas.constituicao || 5) / 5) * 100;
+                    const hpLost = Math.round(maxHP * 0.20);
+                    updatedProfile.hp_atual = Math.max(0, (updatedProfile.hp_atual || maxHP) - hpLost);
                      if (updatedProfile.hp_atual <= 0) {
-                        updatedProfile.hp_atual = 100; // Reset HP
+                        updatedProfile.hp_atual = maxHP; // Reset HP
                         const lockoutEndDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
                         updatedProfile.tower_progress.tower_lockout_until = lockoutEndDate.toISOString();
                         toast({ variant: 'destructive', title: 'Você foi Derrotado!', description: 'A sua vida chegou a zero. A Torre está bloqueada por 24 horas.' });
@@ -1378,8 +1379,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             // HP Regen Logic
             const lastHPRegen = updatedProfile.last_hp_regen_date ? new Date(updatedProfile.last_hp_regen_date) : new Date(0);
             if (!isToday(lastHPRegen)) {
-                if (updatedProfile.hp_atual < 100) {
-                    updatedProfile.hp_atual = 100;
+                const maxHP = Math.floor((updatedProfile.estatisticas.constituicao || 5) / 5) * 100;
+                if (updatedProfile.hp_atual < maxHP) {
+                    updatedProfile.hp_atual = maxHP;
                     toast({ title: 'Vida Restaurada!', description: 'A sua vida foi totalmente restaurada após um bom descanso.' });
                 }
                 updatedProfile.last_hp_regen_date = now.toISOString();
@@ -1493,7 +1495,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     profileNeedsUpdate = true;
                 }
                 if (profileData.hp_atual === undefined) {
-                    profileData.hp_atual = 100;
+                    const maxHP = Math.floor((profileData.estatisticas.constituicao || 5) / 5) * 100;
+                    profileData.hp_atual = maxHP;
                     profileNeedsUpdate = true;
                 }
 
@@ -1621,3 +1624,4 @@ export const usePlayerDataContext = () => {
     
 
     
+
