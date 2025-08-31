@@ -20,7 +20,7 @@ import { ptBR } from 'date-fns/locale';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
-const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
+const TaskForm = ({ taskToEdit, onSave, onCancel, initialDate }) => {
     const [name, setName] = useState('');
     const [type, setType] = useState('weekly');
     const [days, setDays] = useState([]);
@@ -38,13 +38,13 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
             setSpecificDates(taskToEdit.type === 'specific_days' ? (taskToEdit.specificDates || []).map(d => new Date(d)) : []);
         } else {
             setName('');
-            setType('weekly');
+            setType(initialDate ? 'specific_days' : 'weekly');
             setDays([]);
             setIntervalDays(3);
             setStartDate(new Date());
-            setSpecificDates([]);
+            setSpecificDates(initialDate ? [initialDate] : []);
         }
-    }, [taskToEdit]);
+    }, [taskToEdit, initialDate]);
 
     const weekDays = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
@@ -184,8 +184,15 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
 };
 
 
-const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }) => {
+const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks, initialDate, clearInitialDate }) => {
     const [editingTask, setEditingTask] = useState(null);
+
+    useEffect(() => {
+        if (!open) {
+            setEditingTask(null);
+            clearInitialDate();
+        }
+    }, [open, clearInitialDate]);
 
     const handleSaveTask = (task) => {
         const existingTaskIndex = recurringTasks.findIndex(t => t.id === task.id);
@@ -229,6 +236,7 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
                             taskToEdit={editingTask}
                             onSave={handleSaveTask}
                             onCancel={() => setEditingTask(null)}
+                            initialDate={initialDate}
                         />
                     </div>
                     
@@ -261,6 +269,7 @@ const TasksView = () => {
     const [showManageDialog, setShowManageDialog] = useState(false);
     const [view, setView] = useState('monthly');
     const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [newTaskInitialDate, setNewTaskInitialDate] = useState<Date | null>(null);
 
     const recurringTasks = useMemo(() => profile?.recurring_tasks || [], [profile]);
     const completedTasks = useMemo(() => profile?.completed_tasks_today || {}, [profile]);
@@ -273,13 +282,12 @@ const TasksView = () => {
 
     const calendarDays = useMemo(() => {
         const start = startOfMonth(currentMonth);
-        const end = endOfMonth(currentMonth);
         const startDate = startOfWeek(start, { weekStartsOn: 0 });
         const days = [];
-        let currentDate = startDate;
+        let dateIterator = startDate;
         while (days.length < 42) { // 6 weeks to be safe
-            days.push(currentDate);
-            currentDate = addDays(currentDate, 1);
+            days.push(dateIterator);
+            dateIterator = addDays(dateIterator, 1);
         }
         return days;
     }, [currentMonth]);
@@ -297,6 +305,7 @@ const TasksView = () => {
                 const startDate = parseISO(task.startDate);
                 const currentDay = new Date(dayDate);
                 currentDay.setHours(0,0,0,0);
+                startDate.setHours(0,0,0,0);
                 
                 if (currentDay < startDate) return false;
 
@@ -319,6 +328,11 @@ const TasksView = () => {
 
     const handleUpdateTasks = (updatedTasks) => {
         persistData('profile', { ...profile, recurring_tasks: updatedTasks });
+    };
+
+    const handleDayClick = (dayDate: Date) => {
+        setNewTaskInitialDate(dayDate);
+        setShowManageDialog(true);
     };
 
     return (
@@ -415,8 +429,13 @@ const TasksView = () => {
                             const isToday = checkIsToday(dayDate);
                             const tasksForDay = isCurrentMonth ? getTasksForDay(dayDate) : [];
                             return(
-                                <div key={index} className={cn("border-r border-b p-2 flex flex-col", isCurrentMonth ? 'bg-card/30' : 'bg-secondary/10 text-muted-foreground opacity-50')}>
-                                    <span className={cn("font-bold", isToday && "text-primary")}>{format(dayDate, 'd')}</span>
+                                <div key={index} className={cn("border-r border-b p-2 flex flex-col group", isCurrentMonth ? 'bg-card/30' : 'bg-secondary/10 text-muted-foreground opacity-50')}>
+                                    <div className="flex justify-between items-center">
+                                        <span className={cn("font-bold text-xs", isToday && "text-primary")}>{format(dayDate, 'd')}</span>
+                                        <Button size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" variant="ghost" onClick={() => handleDayClick(dayDate)}>
+                                            <PlusCircle className="h-3 w-3"/>
+                                        </Button>
+                                    </div>
                                     <div className="flex-grow space-y-1 mt-1 overflow-y-auto text-xs">
                                         {tasksForDay.map(task => {
                                             const taskDateId = format(dayDate, 'yyyy-MM-dd');
@@ -441,10 +460,11 @@ const TasksView = () => {
                 onOpenChange={setShowManageDialog}
                 recurringTasks={recurringTasks}
                 onUpdateTasks={handleUpdateTasks}
+                initialDate={newTaskInitialDate}
+                clearInitialDate={() => setNewTaskInitialDate(null)}
             />
         </div>
     );
 };
 
 export default TasksView;
-
