@@ -96,7 +96,7 @@ Existe uma pequena chance (cerca de 15%) de que o "Némesis" da meta interfira. 
     *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
     *   Defina um **'target'** numérico claro para cada sub-tarefa.
     *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 3 URLs de recursos de alta qualidade.
+4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 2 URLs de alta qualidade e estáveis. Dê preferência absoluta à documentação oficial da tecnologia ou a tutoriais de fontes muito conceituadas (ex: MDN, W3Schools, documentação oficial do Python/React/etc.). Não forneça links para blogues de nicho ou artigos que possam desaparecer.
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
 `;
