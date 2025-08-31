@@ -83,18 +83,18 @@ const TaskForm = ({ taskToEdit, onSave, onCancel, initialDate }) => {
             </div>
              <div>
                 <Label>Tipo de Repetição</Label>
-                 <RadioGroup value={type} onValueChange={setType} className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
-                    <Label htmlFor="type-weekly" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
+                 <RadioGroup value={type} onValueChange={setType} className="flex flex-wrap gap-2 mt-2">
+                    <Label htmlFor="type-weekly" className="flex-1 flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center min-w-[120px]">
                         <RadioGroupItem value="weekly" id="type-weekly"/>
                         <span>Semanal</span>
                     </Label>
-                     <Label htmlFor="type-interval" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
+                     <Label htmlFor="type-interval" className="flex-1 flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center min-w-[120px]">
                         <RadioGroupItem value="interval" id="type-interval"/>
                         <span>Intervalo</span>
                     </Label>
-                    <Label htmlFor="type-specific" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
+                    <Label htmlFor="type-specific" className="flex-1 flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center min-w-[120px]">
                         <RadioGroupItem value="specific_days" id="type-specific"/>
-                        <span>Datas Específicas</span>
+                        <span>Datas</span>
                     </Label>
                 </RadioGroup>
             </div>
@@ -102,7 +102,7 @@ const TaskForm = ({ taskToEdit, onSave, onCancel, initialDate }) => {
             {type === 'weekly' && (
                 <div>
                     <Label>Dias da Semana</Label>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
                         {weekDays.map(day => (
                             <div key={day} className="flex items-center space-x-2">
                                 <Checkbox
@@ -224,7 +224,7 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks, 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Gerir Afazeres Recorrentes</DialogTitle>
                     <DialogDescription>Adicione, edite ou remova os seus afazeres.</DialogDescription>
