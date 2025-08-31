@@ -26,6 +26,7 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     const [days, setDays] = useState([]);
     const [intervalDays, setIntervalDays] = useState(3);
     const [startDate, setStartDate] = useState(new Date());
+    const [specificDates, setSpecificDates] = useState([]);
 
      useEffect(() => {
         if (taskToEdit) {
@@ -34,13 +35,14 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
             setDays(taskToEdit.type === 'weekly' ? (taskToEdit.days || []) : []);
             setIntervalDays(taskToEdit.type === 'interval' ? taskToEdit.intervalDays : 3);
             setStartDate(taskToEdit.type === 'interval' && taskToEdit.startDate ? new Date(taskToEdit.startDate) : new Date());
+            setSpecificDates(taskToEdit.type === 'specific_days' ? (taskToEdit.specificDates || []).map(d => new Date(d)) : []);
         } else {
-             // Reset form when creating a new task
             setName('');
             setType('weekly');
             setDays([]);
             setIntervalDays(3);
             setStartDate(new Date());
+            setSpecificDates([]);
         }
     }, [taskToEdit]);
 
@@ -55,12 +57,16 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
     const handleSave = () => {
         if (!name.trim()) return;
         const taskData = { id: taskToEdit?.id || `task_${Date.now()}`, name, type };
+        
         if (type === 'weekly') {
             if (days.length === 0) return;
             onSave({ ...taskData, days });
-        } else {
+        } else if (type === 'interval') {
             if (!intervalDays || intervalDays < 1) return;
             onSave({ ...taskData, intervalDays, startDate: startDate.toISOString().split('T')[0] });
+        } else { // specific_days
+            if (specificDates.length === 0) return;
+            onSave({ ...taskData, specificDates: specificDates.map(d => d.toISOString().split('T')[0]) });
         }
     };
 
@@ -77,14 +83,18 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
             </div>
              <div>
                 <Label>Tipo de Repetição</Label>
-                 <RadioGroup value={type} onValueChange={setType} className="grid grid-cols-2 gap-4 mt-2">
-                    <Label htmlFor="type-weekly" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                 <RadioGroup value={type} onValueChange={setType} className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    <Label htmlFor="type-weekly" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
                         <RadioGroupItem value="weekly" id="type-weekly"/>
-                        <span>Dias da Semana</span>
+                        <span>Semanal</span>
                     </Label>
-                     <Label htmlFor="type-interval" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                     <Label htmlFor="type-interval" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
                         <RadioGroupItem value="interval" id="type-interval"/>
-                        <span>Intervalo de Dias</span>
+                        <span>Intervalo</span>
+                    </Label>
+                    <Label htmlFor="type-specific" className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 text-center justify-center">
+                        <RadioGroupItem value="specific_days" id="type-specific"/>
+                        <span>Datas Específicas</span>
                     </Label>
                 </RadioGroup>
             </div>
@@ -149,10 +159,22 @@ const TaskForm = ({ taskToEdit, onSave, onCancel }) => {
                     </div>
                 </div>
             )}
+             {type === 'specific_days' && (
+                <div>
+                    <Label>Selecione as Datas</Label>
+                    <Calendar
+                        mode="multiple"
+                        selected={specificDates}
+                        onSelect={setSpecificDates}
+                        className="rounded-md border mt-2"
+                        locale={ptBR}
+                    />
+                </div>
+            )}
 
              <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-                <Button onClick={handleSave} disabled={!name.trim() || (type === 'weekly' && days.length === 0) || (type === 'interval' && (!intervalDays || intervalDays < 1))}>
+                <Button onClick={handleSave} disabled={!name.trim()}>
                     <Save className="mr-2 h-4 w-4" />
                     Salvar
                 </Button>
@@ -186,6 +208,9 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
     const getTaskDescription = (task) => {
         if (task.type === 'interval') {
             return `A cada ${task.intervalDays} dias`;
+        }
+        if (task.type === 'specific_days') {
+            return `${task.specificDates?.length || 0} data(s) específica(s)`;
         }
         return task.days.join(', ');
     }
@@ -234,7 +259,7 @@ const ManageTasksDialog = ({ open, onOpenChange, recurringTasks, onUpdateTasks }
 const TasksView = () => {
     const { profile, persistData } = usePlayerDataContext();
     const [showManageDialog, setShowManageDialog] = useState(false);
-    const [view, setView] = useState('weekly');
+    const [view, setView] = useState('monthly');
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const recurringTasks = useMemo(() => profile?.recurring_tasks || [], [profile]);
@@ -261,8 +286,12 @@ const TasksView = () => {
     
     const getTasksForDay = useCallback((dayDate: Date) => {
         const dayName = dayDate.toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const dateString = format(dayDate, 'yyyy-MM-dd');
 
         return recurringTasks.filter(task => {
+            if (task.type === 'weekly') {
+                 return (task.days || []).includes(dayName);
+            }
             if (task.type === 'interval') {
                 if (!task.startDate) return false;
                 const startDate = parseISO(task.startDate);
@@ -274,7 +303,10 @@ const TasksView = () => {
                 const diff = differenceInDays(currentDay, startDate);
                 return diff % task.intervalDays === 0;
             }
-            return (task.days || []).includes(dayName);
+            if (task.type === 'specific_days') {
+                return (task.specificDates || []).includes(dateString);
+            }
+            return false;
         });
     }, [recurringTasks]);
 
@@ -416,4 +448,3 @@ const TasksView = () => {
 
 export default TasksView;
 
-    
