@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Award, Gem, Star, Zap, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +54,7 @@ export const MissionCompletionAnimation: React.FC<MissionCompletionAnimationProp
         className="bg-transparent border-none shadow-none max-w-md w-full p-0 flex items-center justify-center"
         hideCloseButton={true}
       >
+        <DialogTitle className="sr-only">Missão Concluída</DialogTitle>
         <div 
           className={cn(
             "bg-card/80 backdrop-blur-lg border-2 border-primary/50 rounded-xl p-8 text-center text-white w-full transition-all duration-500 ease-out",

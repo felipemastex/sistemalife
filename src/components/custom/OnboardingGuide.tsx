@@ -60,10 +60,11 @@ export const OnboardingGuide = ({ onFinish }) => {
         <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onFinish()}>
             <DialogContent className="max-w-md w-full bg-card/90 backdrop-blur-md border-primary/30 text-white">
                 <DialogHeader className="text-center items-center">
+                    <DialogTitle className="sr-only">Guia de Boas-Vindas</DialogTitle>
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                         <Icon className="w-8 h-8 text-primary" />
                     </div>
-                    <DialogTitle className="text-2xl font-bold font-cinzel text-primary">{title}</DialogTitle>
+                    <p className="text-2xl font-bold font-cinzel text-primary">{title}</p>
                     <DialogDescription className="text-muted-foreground pt-2 text-base">
                         {description}
                     </DialogDescription>

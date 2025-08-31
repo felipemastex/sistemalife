@@ -37,10 +37,11 @@ export const DungeonEventPrompt = () => {
                 hideCloseButton={true}
             >
                 <DialogHeader className="text-center items-center">
+                    <DialogTitle className="sr-only">Convite para Masmorra de Habilidade</DialogTitle>
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 border-4 border-primary/30 animate-pulse">
                         <KeySquare className="w-8 h-8 text-primary" />
                     </div>
-                    <DialogTitle className="text-2xl font-bold font-cinzel text-primary">Get ready for the next battle</DialogTitle>
+                    <p className="text-2xl font-bold font-cinzel text-primary">Get ready for the next battle</p>
                     <DialogDescription className="text-muted-foreground pt-2 text-base">
                         Uma Masmorra de Habilidade apareceu! O sistema selecionou a habilidade <strong className="text-foreground">{skillName}</strong> para um desafio intensivo.
                     </DialogDescription>
