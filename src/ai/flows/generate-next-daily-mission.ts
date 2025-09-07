@@ -35,7 +35,7 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
-    learningResources: z.array(z.string().url()).optional().describe("Uma lista de até 3 URLs de recursos de aprendizagem (sites, vídeos, documentação) relevantes para a missão, se aplicável."),
+    learningResources: z.array(z.string()).optional().describe("Uma lista de até 3 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
     subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
     isNemesisChallenge: z.boolean().optional().describe("Indica se esta missão é um desafio especial lançado pelo 'Némesis' da meta, sendo mais difícil que o normal."),
 });
@@ -96,7 +96,10 @@ Existe uma pequena chance (cerca de 15%) de que o "Némesis" da meta interfira. 
     *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
     *   Defina um **'target'** numérico claro para cada sub-tarefa.
     *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-4.  **Recursos de Aprendizagem (Opcional):** Se a missão envolver conhecimento técnico, forneça até 2 URLs de alta qualidade e estáveis. Dê preferência absoluta à documentação oficial da tecnologia ou a tutoriais de fontes muito conceituadas (ex: MDN, W3Schools, documentação oficial do Python/React/etc.). Não forneça links para blogues de nicho ou artigos que possam desaparecer.
+4.  **Recursos de Aprendizagem (Opcional e IMPORTANTE):** Se a missão envolver conhecimento técnico, forneça até 2 **TÓPICOS DE PESQUISA**, não URLs diretas. Estes devem ser termos que o utilizador possa pesquisar.
+    *   **EXEMPLO BOM:** "Pesquisar: Documentação oficial de React Hooks"
+    *   **EXEMPLO BOM:** "Vídeo sugerido: Pesquisar 'CSS Flexbox tutorial para iniciantes' no YouTube"
+    *   **EXEMPLO MAU:** "https://some-random-blog.com/react-hooks" (NÃO FAÇA ISTO)
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
 `;
@@ -104,7 +107,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
     const MissionSchema = z.object({
         nextMissionName: z.string(),
         nextMissionDescription: z.string(),
-        learningResources: z.array(z.string().url()).optional(),
+        learningResources: z.array(z.string()).optional(),
         subTasks: z.array(SubTaskSchema),
         isNemesisChallenge: z.boolean().optional(),
     });
@@ -139,5 +142,3 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
     };
   }
 );
-
-    
