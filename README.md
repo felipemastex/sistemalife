@@ -1,4 +1,4 @@
-
+git 
 # Sistema de Vida: A Sua Vida, Gamificada
 
 Bem-vindo ao repositório do **Sistema de Vida**, uma aplicação web progressiva (PWA) e aplicação móvel (via Capacitor) desenhada para transformar a sua vida e os seus objetivos num emocionante RPG. Inspirado nos melhores elementos de gamificação, este sistema ajuda-o a manter-se motivado, organizado e focado em tornar-se a melhor versão de si mesmo.
