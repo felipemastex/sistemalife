@@ -19,9 +19,10 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { user, loading: authLoading } = useAuth();
+    const { user, authState } = useAuth();
     const [typedTitle, setTypedTitle] = useState('');
     const titleText = "SISTEMA";
+    const authLoading = authState === 'loading';
 
     useEffect(() => {
         if (!authLoading && user) {
