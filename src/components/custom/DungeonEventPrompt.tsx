@@ -16,7 +16,7 @@ export const DungeonEventPrompt = () => {
 
     useEffect(() => {
         if (activeEvent && activeEvent.skillId) {
-            const skill = skills.find(s => s.id === activeEvent.skillId);
+            const skill = skills.find((s: { id: string | number; nome: string }) => s.id === activeEvent.skillId);
             if (skill) {
                 setSkillName(skill.nome);
                 setIsVisible(true);
