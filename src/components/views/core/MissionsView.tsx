@@ -487,29 +487,13 @@ const MissionsViewComponent = () => {
         }
     };
     
-    const handleMissionFeedback = async (feedbackType: FeedbackType, userText: string) => {
-        const { mission } = feedbackModalState;
+    const handleMissionFeedback = async (mission: DailyMission, feedbackType: 'too_hard' | 'too_easy') => {
         if (!mission) return;
-
+    
         const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
         if (!rankedMission) return;
-
-        if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
-            await adjustDailyMission(rankedMission.id, mission, feedbackType);
-        } else {
-            // Handle 'hint' separately
-            try {
-                const result = await generateMissionSuggestion({
-                    missionName: mission.nome,
-                    missionDescription: Array.isArray(mission.subTasks) ? mission.subTasks.map(st => st.name).join(', ') : '',
-                    feedbackType,
-                    userText: userText,
-                });
-                toast({ title: "Dica do Sistema", description: result.suggestion });
-            } catch (error) {
-                handleToastError(error);
-            }
-        }
+    
+        await adjustDailyMission(rankedMission.id, mission, feedbackType);
     };
     
     const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
@@ -812,8 +796,8 @@ const MissionsViewComponent = () => {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Está muito difícil</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Está muito fácil</DropdownMenuItem>
+                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Completar como "Muito Difícil"</DropdownMenuItem>
+                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Completar como "Muito Fácil"</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -1068,14 +1052,6 @@ const MissionsViewComponent = () => {
                 newLevel={animationState.newLevel}
             />
 
-            <MissionFeedbackDialog 
-                open={feedbackModalState.open} 
-                onOpenChange={(open) => setFeedbackModalState(prev => ({ ...prev, open }))}
-                onSubmit={handleMissionFeedback}
-                mission={feedbackModalState.mission as DailyMission}
-                feedbackType={feedbackModalState.type as FeedbackType}
-            />
-            
             <MissionCompletionFeedbackDialog
                 isOpen={missionCompletionFeedbackState.open}
                 onClose={() => setMissionCompletionFeedbackState(prev => ({ ...prev, open: false }))}

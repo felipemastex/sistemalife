@@ -420,16 +420,21 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return { ...state, missions: updatedMissions };
         }
         case 'ADJUST_DAILY_MISSION': {
-             const { rankedMissionId, newDailyMission } = action.payload;
+            const { rankedMissionId, dailyMissionId, newDailyMission } = action.payload;
             const updatedMissions = state.missions.map(rm => {
                 if (rm.id === rankedMissionId) {
-                    // Replace the last (active) daily mission with the new adjusted one
-                    const adjustedDailyMissions = rm.missoes_diarias.slice(0, -1);
-                    adjustedDailyMissions.push(newDailyMission);
+                    const newDailyMissionsList = rm.missoes_diarias.map(dm => 
+                        dm.id === dailyMissionId ? { ...dm, concluido: true, completed_at: new Date().toISOString() } : dm
+                    );
+                    
+                    if (newDailyMission) {
+                        newDailyMissionsList.push(newDailyMission);
+                    }
                     
                     return { 
                         ...rm, 
-                        missoes_diarias: adjustedDailyMissions,
+                        missoes_diarias: newDailyMissionsList, 
+                        ultima_missao_concluida_em: new Date().toISOString() 
                     };
                 }
                 return rm;
@@ -963,55 +968,32 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
     
-     const adjustDailyMission = useCallback(async (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => {
+    const adjustDailyMission = useCallback(async (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => {
         if (!state.profile || !state.missions) return;
-
+    
         const rankedMission = state.missions.find(rm => rm.id === rankedMissionId);
         if (!rankedMission) return;
-        
-        dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
-        
-        try {
-            const meta = state.metas.find(m => m.nome === rankedMission.meta_associada);
-            
-            const result = await generateNextDailyMission({
-                rankedMissionName: rankedMission.nome,
-                metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
-                history: `A missão atual é: "${dailyMission.nome}". O utilizador quer ajustá-la.`,
-                userLevel: state.profile.nivel,
-                feedback: feedback,
-            });
-
-            const adjustedDailyMission = {
-                ...dailyMission,
-                nome: result.nextMissionName,
-                descricao: result.nextMissionDescription,
-                xp_conclusao: result.xp,
-                fragmentos_conclusao: result.fragments,
-                learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0})),
-                isNemesisChallenge: result.isNemesisChallenge,
-            };
-            
-            dispatch({ type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, newDailyMission: adjustedDailyMission } });
-
-            toast({
-                title: "Missão Ajustada!",
-                description: `A sua missão foi atualizada para ser ${feedback === 'too_easy' ? 'mais desafiadora' : 'mais acessível'}.`
-            });
-
-        } catch (err) {
-            console.error("Erro ao ajustar missão:", err);
-            toast({
-                variant: 'destructive',
-                title: 'Erro de IA',
-                description: 'Não foi possível ajustar a sua missão. Tente novamente.'
-            });
-        } finally {
-            dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
-        }
-    }, [state.profile, state.missions, state.metas, dispatch, toast]);
+    
+        // Complete the current mission with its original rewards
+        const missionToComplete = { ...dailyMission };
+        const subTaskToComplete = missionToComplete.subTasks.find(st => (st.current || 0) < st.target) || missionToComplete.subTasks[0];
+        const amountToComplete = subTaskToComplete ? subTaskToComplete.target - (subTaskToComplete.current || 0) : 1;
+    
+        // Immediately call completeMission logic
+        await completeMission({
+            rankedMissionId,
+            dailyMissionId: missionToComplete.id,
+            subTask: subTaskToComplete,
+            amount: amountToComplete,
+            feedback: `O utilizador considerou a missão "${missionToComplete.nome}" ${feedback === 'too_easy' ? 'muito fácil' : 'muito difícil'}.`,
+        });
+    
+        toast({
+            title: "Feedback Registado!",
+            description: `A sua próxima missão será ${feedback === 'too_easy' ? 'mais desafiadora' : 'mais acessível'}.`
+        });
+    
+    }, [state.profile, state.missions, toast, completeMission]);
     
     const generatePendingDailyMissions = useCallback(async () => {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
@@ -1695,6 +1677,7 @@ export const usePlayerDataContext = () => {
     
 
     
+
 
 
 
