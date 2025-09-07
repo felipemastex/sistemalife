@@ -24,7 +24,7 @@ import { SkillsView } from '@/components/views/SkillsView';
 import { RoutineView } from '@/components/views/RoutineView';
 import { AIChatView } from '@/components/views/AIChatView';
 import { SettingsView } from '@/components/views/SettingsView';
-import { GuildsView } from '@/components/guilds/GuildsView';
+import { GuildsView } from '@/components/views/GuildsView';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 >>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
@@ -60,6 +60,218 @@ export default function App() {
 
 
   const isMobile = useIsMobile();
+<<<<<<< HEAD
+=======
+  
+  const [profile, setProfile] = useState(null);
+  const [metas, setMetas] = useState([]);
+  const [missions, setMissions] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [routine, setRoutine] = useState({});
+  const [routineTemplates, setRoutineTemplates] = useState({});
+  const [guilds, setGuilds] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const [questNotification, setQuestNotification] = useState<QuestInfoProps | null>(null);
+  
+  const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+
+  // --- PERSISTENCE FUNCTIONS ---
+  const persistProfile = useCallback(async (newProfile) => {
+      if (!user) return;
+      
+      const profileToSave = {
+        ...newProfile,
+        nome_utilizador: newProfile.primeiro_nome || newProfile.nome_utilizador || '',
+      };
+
+      setProfile(profileToSave);
+      await setDoc(doc(db, 'users', user.uid), profileToSave, { merge: true });
+  }, [user]);
+
+  const persistMetas = useCallback(async (newMetas) => {
+      if (!user) return;
+      setMetas(newMetas);
+      const batch = writeBatch(db);
+      const metasRef = collection(db, 'users', user.uid, 'metas');
+      
+      const existingDocsSnapshot = await getDocs(metasRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMetas.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+      
+      idsToDelete.forEach(id => batch.delete(doc(metasRef, id)));
+      newMetas.forEach(meta => {
+          const metaDocRef = doc(metasRef, String(meta.id));
+          const metaToSave = { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false };
+          batch.set(metaDocRef, metaToSave);
+      });
+      await batch.commit();
+  }, [user]);
+
+  const persistMissions = useCallback(async (newMissions) => {
+      if (!user || !Array.isArray(newMissions)) return;
+      setMissions(newMissions);
+      const batch = writeBatch(db);
+      const missionsRef = collection(db, 'users', user.uid, 'missions');
+
+      const existingDocsSnapshot = await getDocs(missionsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newMissions.map(m => String(m.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(missionsRef, id)));
+      newMissions.forEach(mission => {
+          const missionDocRef = doc(missionsRef, String(mission.id));
+          batch.set(missionDocRef, mission);
+      });
+      await batch.commit();
+  }, [user]);
+  
+  const persistSkills = useCallback(async (newSkills) => {
+      if (!user || !Array.isArray(newSkills)) return;
+      setSkills(newSkills);
+      const batch = writeBatch(db);
+      const skillsRef = collection(db, 'users', user.uid, 'skills');
+
+      const existingDocsSnapshot = await getDocs(skillsRef);
+      const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+      const newIds = newSkills.map(s => String(s.id));
+      const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+
+      idsToDelete.forEach(id => batch.delete(doc(skillsRef, id)));
+      newSkills.forEach(skill => {
+          const skillDocRef = doc(skillsRef, String(skill.id));
+          batch.set(skillDocRef, skill);
+      });
+      await batch.commit();
+  }, [user]);
+
+  const persistRoutine = useCallback(async (newRoutine) => {
+      if (!user) return;
+      setRoutine(newRoutine); // Update parent state for other components
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'main'), newRoutine);
+  }, [user]);
+  
+  const persistRoutineTemplates = useCallback(async (newTemplates) => {
+      if (!user) return;
+      setRoutineTemplates(newTemplates);
+      await setDoc(doc(db, 'users', user.uid, 'routine', 'templates'), newTemplates);
+  }, [user]);
+  
+  const persistGuilds = useCallback(async (newGuilds) => {
+    setGuilds(newGuilds);
+    const batch = writeBatch(db);
+    const guildsRef = collection(db, 'guilds');
+
+    // Get all existing guilds to compare
+    const existingDocsSnapshot = await getDocs(guildsRef);
+    const existingIds = existingDocsSnapshot.docs.map(d => d.id);
+    const newIds = newGuilds.map(g => g.id);
+
+    // Find which to delete
+    const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+    idsToDelete.forEach(id => {
+      batch.delete(doc(guildsRef, id));
+    });
+
+    // Find which to add or update
+    newGuilds.forEach(guild => {
+      const guildDocRef = doc(guildsRef, guild.id);
+      // We are saving the whole guild object, simple set is enough
+      batch.set(guildDocRef, guild);
+    });
+
+    await batch.commit();
+  }, []);
+
+
+  // --- NOTIFICATION HANDLERS ---
+  const handleShowLevelUpNotification = (newLevel, newTitle, newRank) => {
+    setQuestNotification({
+      title: 'NÍVEL AUMENTADO!',
+      description: 'O seu esforço foi recompensado. Você alcançou um novo patamar de poder.',
+      goals: [
+        { name: '- NOVO NÍVEL', progress: `[${newLevel}]` },
+        { name: '- NOVO TÍTULO', progress: `[${newTitle}]` },
+        { name: '- NOVO RANK', progress: `[${newRank}]` },
+      ],
+      caution: 'Continue a sua jornada para desbloquear todo o seu potencial.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+
+  const handleShowNewEpicMissionNotification = (newEpicMissionName: string, newEpicMissionDescription: string) => {
+    setQuestNotification({
+      title: 'NOVA MISSÃO ÉPICA',
+      description: 'Você abriu um novo capítulo na sua jornada. Um novo desafio épico o aguarda.',
+      goals: [
+        { name: '- NOME', progress: `[${newEpicMissionName}]` },
+        { name: '- OBJETIVO', progress: `[${newEpicMissionDescription}]` },
+      ],
+      caution: 'Prepare-se para o que vem a seguir. A sua lenda continua a ser escrita.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+
+  const handleShowSkillUpNotification = (skillName, newLevel, statBonuses) => {
+     const goals = [
+        { name: `- HABILIDADE`, progress: `[${skillName}]` },
+        { name: `- NOVO NÍVEL`, progress: `[${newLevel}]` },
+     ];
+
+     if (statBonuses && statBonuses.length > 0) {
+        goals.push({ name: '- BÓNUS DE ATRIBUTO', progress: `[${statBonuses.join(', ')}]` });
+     }
+
+    setQuestNotification({
+      title: 'HABILIDADE AUMENTADA!',
+      description: 'A sua dedicação e prática foram recompensadas. Uma das suas habilidades evoluiu.',
+      goals: goals,
+      caution: 'A maestria é uma jornada sem fim. Continue a aprimorar as suas competências.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+
+  const handleShowSkillDecayNotification = (decayedSkillsInfo: {name: string, xpLost: number}[]) => {
+     const goals = decayedSkillsInfo.map(info => ({
+        name: `- HABILIDADE`,
+        progress: `[${info.name}] (-${info.xpLost} XP)`,
+     }));
+
+    setQuestNotification({
+      title: 'CORRUPÇÃO DETETADA',
+      description: 'A inatividade prolongada corrompeu o seu progresso. Algumas habilidades perderam XP.',
+      goals: goals,
+      caution: 'A prática constante é a chave para a maestria. Use as suas habilidades para recuperar o seu poder.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+
+  const handleShowSkillAtRiskNotification = (atRiskSkills: {name: string, daysInactive: number}[]) => {
+    const goals = atRiskSkills.map(info => ({
+        name: `- HABILIDADE`,
+        progress: `[${info.name}] (${info.daysInactive} dias inativa)`,
+    }));
+
+    setQuestNotification({
+      title: 'ALERTA DO SISTEMA',
+      description: 'Atenção, Caçador. As seguintes habilidades estão em risco de corrupção por falta de uso.',
+      goals: goals,
+      caution: 'Pratique estas habilidades em breve para evitar a perda de progresso.',
+      onClose: () => setQuestNotification(null),
+    });
+  };
+  
+  const handleShowDailyBriefingNotification = (briefingMissions) => {
+    if (!briefingMissions || briefingMissions.length === 0) return;
+
+    const goals = briefingMissions.map(mission => ({
+        name: `- [${mission.epicMissionName}]`,
+        progress: mission.nome,
+    }));
+>>>>>>> 434b14c (I see this error with the app, reported by NextJS, please fix it. The er)
     
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   
@@ -209,8 +421,12 @@ export default function App() {
       'routine': <RoutineView initialRoutine={routine} persistRoutine={persistRoutine} missions={missions} initialTemplates={routineTemplates} persistTemplates={persistRoutineTemplates} />,
       'ai-chat': <AIChatView profile={profile} metas={metas} routine={routine} missions={missions} />,
       'settings': <SettingsView profile={profile} setProfile={persistProfile} onReset={handleFullReset} />,
+<<<<<<< HEAD
       'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={setGuilds} metas={metas} allUsers={allUsers} />,
 >>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
+=======
+      'guild': <GuildsView profile={profile} setProfile={persistProfile} guilds={guilds} setGuilds={persistGuilds} metas={metas} allUsers={allUsers} />,
+>>>>>>> 434b14c (I see this error with the app, reported by NextJS, please fix it. The er)
     };
 
     return (
@@ -325,9 +541,13 @@ export default function App() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     
 =======
     
 
     
 >>>>>>> a826633 (Acha que seria bom dividir as estrutura da aba guilda?)
+=======
+    
+>>>>>>> 434b14c (I see this error with the app, reported by NextJS, please fix it. The er)
