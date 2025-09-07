@@ -419,6 +419,23 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             });
             return { ...state, missions: updatedMissions };
         }
+        case 'ADJUST_DAILY_MISSION': {
+             const { rankedMissionId, newDailyMission } = action.payload;
+            const updatedMissions = state.missions.map(rm => {
+                if (rm.id === rankedMissionId) {
+                    // Replace the last (active) daily mission with the new adjusted one
+                    const adjustedDailyMissions = rm.missoes_diarias.slice(0, -1);
+                    adjustedDailyMissions.push(newDailyMission);
+                    
+                    return { 
+                        ...rm, 
+                        missoes_diarias: adjustedDailyMissions,
+                    };
+                }
+                return rm;
+            });
+            return { ...state, missions: updatedMissions };
+        }
         case 'COMPLETE_EPIC_MISSION': {
             const { rankedMissionId } = action.payload;
             const updatedMissions = state.missions.map((rm: RankedMission) => 
@@ -945,6 +962,56 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('skills', finalStateAfterCompletion.skills);
 
     }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
+    
+     const adjustDailyMission = useCallback(async (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => {
+        if (!state.profile || !state.missions) return;
+
+        const rankedMission = state.missions.find(rm => rm.id === rankedMissionId);
+        if (!rankedMission) return;
+        
+        dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
+        
+        try {
+            const meta = state.metas.find(m => m.nome === rankedMission.meta_associada);
+            
+            const result = await generateNextDailyMission({
+                rankedMissionName: rankedMission.nome,
+                metaName: meta?.nome || "Objetivo geral",
+                goalDeadline: meta?.prazo,
+                history: `A missão atual é: "${dailyMission.nome}". O utilizador quer ajustá-la.`,
+                userLevel: state.profile.nivel,
+                feedback: feedback,
+            });
+
+            const adjustedDailyMission = {
+                ...dailyMission,
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp,
+                fragmentos_conclusao: result.fragments,
+                learningResources: result.learningResources || [],
+                subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                isNemesisChallenge: result.isNemesisChallenge,
+            };
+            
+            dispatch({ type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, newDailyMission: adjustedDailyMission } });
+
+            toast({
+                title: "Missão Ajustada!",
+                description: `A sua missão foi atualizada para ser ${feedback === 'too_easy' ? 'mais desafiadora' : 'mais acessível'}.`
+            });
+
+        } catch (err) {
+            console.error("Erro ao ajustar missão:", err);
+            toast({
+                variant: 'destructive',
+                title: 'Erro de IA',
+                description: 'Não foi possível ajustar a sua missão. Tente novamente.'
+            });
+        } finally {
+            dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+        }
+    }, [state.profile, state.missions, state.metas, dispatch, toast]);
     
     const generatePendingDailyMissions = useCallback(async () => {
         const missionsNeedingNewDaily = state.missions.filter(mission => {
@@ -1586,6 +1653,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         setCurrentPage: (page: string) => dispatch({ type: 'SET_CURRENT_PAGE', payload: page }),
         persistData,
         completeMission,
+        adjustDailyMission,
         completeDungeonChallenge,
         handleFullReset,
         handleImportData,
@@ -1627,5 +1695,6 @@ export const usePlayerDataContext = () => {
     
 
     
+
 
 

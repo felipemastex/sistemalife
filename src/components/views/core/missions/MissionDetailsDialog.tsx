@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
-import { Award, X, Gem, Plus, Link, Trash2, Save, CalendarPlus } from 'lucide-react';
+import { Award, X, Gem, Plus, Link, Trash2, Save, CalendarPlus, Wand2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "../../../ui/button";
 import { Input } from "../../../ui/input";
@@ -55,6 +56,7 @@ interface MissionDetailsDialogProps {
   onContribute: (subTask: SubTask, amount: number, mission: Mission) => void;
   onSave: (mission: Mission) => void;
   onDelete: (missionId: string | number) => void;
+  onAdjustDifficulty: (mission: Mission, feedback: 'too_easy' | 'too_hard') => void;
 }
 
 const SubTaskCreator: React.FC<SubTaskCreatorProps> = ({ subTasks, onSubTasksChange }) => {
@@ -101,7 +103,7 @@ const SubTaskCreator: React.FC<SubTaskCreatorProps> = ({ subTasks, onSubTasksCha
 };
 
 
-export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOpen, onClose, mission, isManual, onContribute, onSave, onDelete }) => {
+export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOpen, onClose, mission, isManual, onContribute, onSave, onDelete, onAdjustDifficulty }) => {
   const [editedMission, setEditedMission] = useState<Mission | null>(null);
   const [contributionState, setContributionState] = useState<ContributionState>({ open: false, subTask: null, amount: 1 });
   const { toast } = useToast();
@@ -235,11 +237,9 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
             </div>
         )}
         </CardContent>
-        <DialogFooter className="px-4 pb-4">
-             <Button onClick={handleAddToCalendar} variant="outline" className="w-full">
-                <Image src="/google-calendar.svg" alt="Google Calendar" width={16} height={16} className="mr-2" />
-                Adicionar ao Google Calendar
-            </Button>
+        <DialogFooter className="flex-col sm:flex-row px-4 pb-4 gap-2">
+             <Button onClick={() => onAdjustDifficulty(mission!, 'too_hard')} variant="outline" className="text-red-400 border-red-400/50 hover:bg-red-400/10 hover:text-red-300 flex-1">Muito Difícil</Button>
+             <Button onClick={() => onAdjustDifficulty(mission!, 'too_easy')} variant="outline" className="text-green-400 border-green-400/50 hover:bg-green-400/10 hover:text-green-300 flex-1">Muito Fácil</Button>
         </DialogFooter>
     </>
   );

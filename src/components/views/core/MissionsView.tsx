@@ -3,7 +3,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Skull } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Skull, Wand2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -382,7 +382,7 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
 
 
 const MissionsViewComponent = () => {
-    const { profile, missions, metas, completeMission, generatingMission, setGeneratingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions, addDailyMission } = usePlayerDataContext() as {
+    const { profile, missions, metas, completeMission, generatingMission, setGeneratingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions, addDailyMission, adjustDailyMission } = usePlayerDataContext() as {
         profile: Profile;
         missions: RankedMission[];
         metas: Meta[];
@@ -394,6 +394,7 @@ const MissionsViewComponent = () => {
         persistData: (key: string, data: any) => Promise<void>;
         generatePendingDailyMissions?: () => Promise<void>;
         addDailyMission: (payload: { rankedMissionId: string | number; newDailyMission: DailyMission }) => void;
+        adjustDailyMission: (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => Promise<void>;
     };
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState<RankedMission[]>([]);
@@ -486,39 +487,28 @@ const MissionsViewComponent = () => {
         }
     };
     
-    const handleOpenFeedbackModal = (mission: DailyMission, type: FeedbackType) => {
-        setFeedbackModalState({ open: true, mission, type });
-    };
-    
     const handleMissionFeedback = async (feedbackType: FeedbackType, userText: string) => {
         const { mission } = feedbackModalState;
         if (!mission) return;
-        
-        try {
-            const result = await generateMissionSuggestion({
-                missionName: mission.nome,
-                missionDescription: Array.isArray(mission.subTasks) ? mission.subTasks.map(st => st.name).join(', ') : '',
-                feedbackType,
-                userText: userText,
-            });
 
-            toast({
-                title: "Feedback do Sistema",
-                description: result.suggestion,
-            });
+        const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
+        if (!rankedMission) return;
 
-            if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
-                const feedbackValue = userText 
-                    ? `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}' com o seguinte comentário: "${userText}"`
-                    : `O utilizador sinalizou que a missão foi '${feedbackType === 'too_hard' ? 'muito difícil' : 'muito fácil'}'`;
-                
-                const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
-                if (rankedMission) {
-                     setMissionFeedback(rankedMission.id, feedbackValue);
-                }
+        if (feedbackType === 'too_hard' || feedbackType === 'too_easy') {
+            await adjustDailyMission(rankedMission.id, mission, feedbackType);
+        } else {
+            // Handle 'hint' separately
+            try {
+                const result = await generateMissionSuggestion({
+                    missionName: mission.nome,
+                    missionDescription: Array.isArray(mission.subTasks) ? mission.subTasks.map(st => st.name).join(', ') : '',
+                    feedbackType,
+                    userText: userText,
+                });
+                toast({ title: "Dica do Sistema", description: result.suggestion });
+            } catch (error) {
+                handleToastError(error);
             }
-        } catch (error) {
-            handleToastError(error);
         }
     };
     
@@ -818,13 +808,12 @@ const MissionsViewComponent = () => {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
-                                        <LifeBuoy className="h-5 w-5" />
+                                        <Wand2 className="h-5 w-5" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'hint')}>Preciso de uma dica</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_hard')}>Está muito difícil</DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => handleOpenFeedbackModal(activeDailyMission as DailyMission, 'too_easy')}>Está muito fácil</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Está muito difícil</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Está muito fácil</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -1116,6 +1105,11 @@ const MissionsViewComponent = () => {
                     }}
                     onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
                     onDelete={(missionId) => handleDeleteManualMission(missionId)}
+                    onAdjustDifficulty={(mission, feedback) => adjustDailyMission(
+                        (missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id) as string | number, 
+                        mission as DailyMission, 
+                        feedback
+                    )}
                 />
             }
 
