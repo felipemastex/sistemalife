@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -44,7 +44,7 @@ export default function LoginPage() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleLogin = async (e) => {
+    const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -53,7 +53,7 @@ export default function LoginPage() {
             await signInWithEmailAndPassword(auth, email, password);
             toast.success("Login bem-sucedido! A redirecionar...");
             router.push('/');
-        } catch (err) {
+        } catch (err: any) {
             let friendlyMessage = "Ocorreu um erro ao fazer login. Verifique as suas credenciais.";
             if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                 friendlyMessage = "Email ou senha inválidos. Por favor, tente novamente.";
