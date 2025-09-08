@@ -53,7 +53,7 @@ const AnnouncementForm = ({ open, onOpenChange, onSave, announcementToEdit = nul
 };
 
 
-export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfile }) => {
+export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfile }: { guild: any, onGuildUpdate: (guild: any) => void, canManage: boolean, userProfile: any }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [announcementToEdit, setAnnouncementToEdit] = useState(null);
 
