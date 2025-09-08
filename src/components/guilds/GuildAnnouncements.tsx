@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
-const AnnouncementForm = ({ open, onOpenChange, onSave, announcementToEdit = null }) => {
+const AnnouncementForm = ({ open, onOpenChange, onSave, announcementToEdit = null }: { open: boolean, onOpenChange: (isOpen: boolean) => void, onSave: (content: string) => void, announcementToEdit: any | null }) => {
     const [content, setContent] = useState(announcementToEdit?.content || '');
 
     const handleSave = () => {
@@ -58,7 +58,7 @@ export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfil
     const [announcementToEdit, setAnnouncementToEdit] = useState(null);
 
     const announcements = guild.announcements || [];
-    const sortedAnnouncements = [...announcements].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sortedAnnouncements = [...announcements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const handleSave = (content) => {
         let updatedAnnouncements;
