@@ -35,7 +35,7 @@ const onboardingSteps = [
     }
 ];
 
-export const OnboardingGuide = ({ onFinish }) => {
+export const OnboardingGuide = ({ onFinish }: { onFinish: () => void; }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const totalSteps = onboardingSteps.length;
     const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
