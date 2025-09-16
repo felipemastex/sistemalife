@@ -54,13 +54,6 @@ interface RankedMission {
   subTasks?: SubTask[];
 }
 
-interface Nemesis {
-    name: string;
-    description: string;
-    maxHealth: number;
-    currentHealth: number;
-}
-
 interface Meta {
   id: string | number;
   nome: string;
@@ -75,7 +68,6 @@ interface Meta {
     relevant: string;
     timeBound: string;
   };
-  nemesis?: Nemesis;
 }
 
 interface Skill {
@@ -166,14 +158,6 @@ interface TowerProgress {
   completed_challenges_floor?: string[];
 }
 
-
-interface RecurringTask {
-    id: number;
-    name: string;
-    days: string[]; // e.g., ['segunda', 'quarta', 'sexta']
-}
-
-
 interface Profile {
   id?: string;
   email?: string;
@@ -214,7 +198,6 @@ interface Profile {
   streak_atual: number;
   best_streak?: number;
   ultimo_dia_de_missao_concluida: string | null;
-  last_task_completion_date?: string | null;
   guild_id?: string | null;
   guild_role?: string | null;
   onboarding_completed?: boolean;
@@ -222,8 +205,6 @@ interface Profile {
   manual_missions?: RankedMission[];
   recommended_shop_items?: any[];
   shop_last_generated_at?: string;
-  recurring_tasks?: RecurringTask[];
-  completed_tasks_today?: { [taskId: string]: boolean };
   event_contribution?: {
     eventId: string;
     contribution: number;
@@ -812,7 +793,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             toast({ title: 'Recompensa Rara!', description: 'Você encontrou um Ticket da Torre!' });
         }
 
-
         if (updatedProfile.xp >= updatedProfile.xp_para_proximo_nivel) {
             updatedProfile = handleLevelUp(updatedProfile);
         }
@@ -852,19 +832,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        // Damage Nemesis
-        if (meta && meta.nemesis) {
-            const damage = finalXPGained + (updatedProfile.nivel * 2);
-            const newHealth = Math.max(0, meta.nemesis.currentHealth - damage);
-            meta.nemesis.currentHealth = newHealth;
-            if (newHealth === 0) {
-                 toast({ title: 'Némesis Derrotado!', description: `Você superou ${meta.nemesis.name}!` });
-            }
-            currentMetas = currentMetas.map(m => m.id === meta.id ? meta : m);
-            dispatch({ type: 'SET_METAS', payload: currentMetas });
-        }
-
-
         // Handle World Event Contribution
         if (activeEvent && activeEvent.goal.type === 'COMPLETE_MISSIONS_IN_CATEGORY' && meta?.categoria === activeEvent.goal.category) {
             let userContribution = updatedProfile.event_contribution?.eventId === activeEvent.id ? (updatedProfile.event_contribution.contribution || 0) : 0;
@@ -922,7 +889,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
-                isNemesisChallenge: result.isNemesisChallenge,
             };
         } catch (err) {
             console.error(err);
@@ -1001,7 +967,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
-                isNemesisChallenge: result.isNemesisChallenge,
             };
     
             dispatch({ type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId: dailyMission.id, newDailyMission } });
@@ -1058,7 +1023,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     tipo: 'diaria',
                     learningResources: result.learningResources || [],
                     subTasks: result.subTasks.map(st => ({...st, current: 0})),
-                    isNemesisChallenge: result.isNemesisChallenge,
                 };
                 
                 dispatch({ type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } });
@@ -1126,7 +1090,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             };
             
-            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null }, active_tower_challenges: [], available_tower_challenges: [], dungeon_crystals: 0, recurring_tasks: [], completed_tasks_today: {}, last_task_completion_date: null };
+            const initialProfile = { ...mockData.perfis[0], id: user.uid, email: user.email, primeiro_nome: emailUsername, apelido: "Caçador", nome_utilizador: emailUsername, avatar_url: `https://placehold.co/100x100.png?text=${emailUsername.substring(0, 2).toUpperCase()}`, ultimo_login_em: new Date().toISOString(), inventory: [], active_effects: [], guild_id: null, guild_role: null, onboarding_completed: false, user_settings: defaultUserSettings, manual_missions: [], achievements: [], generated_achievements: [], recommended_shop_items: [], shop_last_generated_at: null, tower_progress: { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 3, tower_tickets: 1, tower_lockout_until: null }, active_tower_challenges: [], available_tower_challenges: [], dungeon_crystals: 0 };
             batch.set(userRef, initialProfile);
 
             mockData.metas.forEach(meta => batch.set(doc(collection(userRef, 'metas'), String(meta.id)), { ...meta, prazo: meta.prazo || null, concluida: meta.concluida || false }));
@@ -1404,7 +1368,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Evento Mundial de Teste Ativado!', description: `"${eventToActivate.name}" começou!`});
     }, [state.worldEvents, persistData, toast]);
 
-    // Skill Decay & Tower/Dungeon Lives & Task/HP Reset Logic
+    // Skill Decay & Tower/Dungeon Lives & HP Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded || !state.profile) return;
 

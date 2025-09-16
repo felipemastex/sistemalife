@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, ListChecks, KeySquare } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, KeySquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -26,7 +26,6 @@ import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TowerView from '@/components/views/gamification/TowerView';
-import TasksView from '@/components/views/gamification/TasksView';
 import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
 import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
@@ -136,7 +135,6 @@ export default function App() {
               <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
               <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
-              <NavItem icon={ListChecks} label="Afazeres" page="tasks" inSheet={inSheet}/>
               <NavItem icon={TowerControl} label="Torre" page="tower" inSheet={inSheet}/>
               <NavItem icon={KeySquare} label="Masmorra" page="dungeon" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
@@ -182,7 +180,6 @@ export default function App() {
       'ai-chat': <AIChatView />,
       'settings': <SettingsView />,
       'tower': <TowerView />,
-      'tasks': <TasksView />,
       'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
     };
 

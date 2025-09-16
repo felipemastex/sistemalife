@@ -65,8 +65,6 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - [x] Após o andar 100, gerar andares processualmente com desafios cada vez mais difíceis.
 - **[x] Masmorras de Habilidade:**
     - [x] Sistema focado no desenvolvimento intensivo de uma única habilidade com desafios práticos.
-- **[x] Afazeres Recorrentes:**
-    - [x] Sistema simples para gerir hábitos e tarefas que não se encaixam como missões de metas.
 
 ### Fase 6: Expansão Contínua (Em Progresso)
 **Objetivo:** Expandir o sistema com integrações complexas e conteúdo gerado pela comunidade.
