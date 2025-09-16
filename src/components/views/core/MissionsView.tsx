@@ -3,7 +3,7 @@
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Skull, Wand2 } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -14,7 +14,6 @@ import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
 import { MissionCompletionAnimation } from './missions/MissionCompletionAnimation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { MissionStatsPanel } from './missions/MissionStatsPanel';
 import { Input } from '@/components/ui/input';
@@ -46,7 +45,6 @@ interface DailyMission {
   subTasks: SubTask[];
   learningResources?: string[];
   completed_at?: string;
-  isNemesisChallenge?: boolean;
 }
 
 interface RankedMission {
@@ -394,7 +392,7 @@ const MissionsViewComponent = () => {
         persistData: (key: string, data: any) => Promise<void>;
         generatePendingDailyMissions?: () => Promise<void>;
         addDailyMission: (payload: { rankedMissionId: string | number; newDailyMission: DailyMission }) => void;
-        adjustDailyMission: (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => Promise<void>;
+        adjustDailyMission: (rankedMissionId: string | number, dailyMissionId: string | number, feedback: 'too_easy' | 'too_hard') => Promise<void>;
     };
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState<RankedMission[]>([]);
@@ -493,7 +491,7 @@ const MissionsViewComponent = () => {
         const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
         if (!rankedMission) return;
     
-        await adjustDailyMission(rankedMission.id, mission, feedbackType);
+        await adjustDailyMission(rankedMission.id, mission.id, feedbackType);
     };
     
     const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
@@ -685,7 +683,6 @@ const MissionsViewComponent = () => {
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
-                isNemesisChallenge: result.isNemesisChallenge,
             };
             
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });
@@ -762,18 +759,10 @@ const MissionsViewComponent = () => {
         }
         
         if (activeDailyMission) {
-            const isNemesisChallenge = 'isNemesisChallenge' in activeDailyMission && activeDailyMission.isNemesisChallenge;
             return (
-                <div className={cn("rounded-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500", 
-                    isNemesisChallenge ? 'bg-red-900/20 border-l-4 border-red-500' : 'bg-secondary/50 border-l-4 border-primary'
-                )}>
+                <div className="rounded-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-secondary/50 border-l-4 border-primary">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div className="flex-grow">
-                             {isNemesisChallenge && (
-                                <p className="text-sm font-bold text-red-400 flex items-center gap-2 mb-2">
-                                    <Skull className="h-4 w-4" /> Desafio do Némesis
-                                </p>
-                            )}
                             <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
                             <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
                         </div>
@@ -796,8 +785,8 @@ const MissionsViewComponent = () => {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Completar como "Muito Difícil"</DropdownMenuItem>
-                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Completar como "Muito Fácil"</DropdownMenuItem>
+                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Missão muito difícil</DropdownMenuItem>
+                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Missão muito fácil</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -836,11 +825,11 @@ const MissionsViewComponent = () => {
                             </CollapsibleContent>
                         </Collapsible>
                     )}
-                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((link: string, index: number) => (
-                        <a href={link} target="_blank" rel="noopener noreferrer" key={index} className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm bg-secondary p-2 rounded-md mt-3">
+                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((topic: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2 text-primary text-sm bg-secondary p-2 rounded-md mt-3">
                             <Link className="h-4 w-4"/>
-                            <span className="truncate">{link}</span>
-                        </a>
+                            <span className="truncate">Sugestão de pesquisa: {topic}</span>
+                        </div>
                     ))}
                 </div>
             );
@@ -1082,8 +1071,8 @@ const MissionsViewComponent = () => {
                     onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
                     onDelete={(missionId) => handleDeleteManualMission(missionId)}
                     onAdjustDifficulty={(mission, feedback) => adjustDailyMission(
-                        (missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id) as string | number, 
-                        mission as DailyMission, 
+                        (missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id) as string | number,
+                        mission.id!,
                         feedback
                     )}
                 />

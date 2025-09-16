@@ -14,7 +14,6 @@ import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
 import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
 import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
 import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
-import { generateNemesis } from '@/ai/flows/generate-nemesis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -497,18 +496,11 @@ const MetasViewComponent = () => {
                 // Creating new goal
                 const goalDescription = Object.values(newOrUpdatedMeta.detalhes_smart).join(' ');
                 
-                // Generate Skill and Nemesis in parallel
-                const [skillResult, nemesisResult] = await Promise.all([
-                    generateSkillFromGoal({
-                        goalName: newOrUpdatedMeta.nome,
-                        goalDescription: goalDescription,
-                        existingCategories: mockData.categoriasMetas
-                    }),
-                    generateNemesis({
-                        goalName: newOrUpdatedMeta.nome,
-                        goalDescription: goalDescription
-                    })
-                ]);
+                const skillResult = await generateSkillFromGoal({
+                    goalName: newOrUpdatedMeta.nome,
+                    goalDescription: goalDescription,
+                    existingCategories: mockData.categoriasMetas
+                });
 
                 const newSkillId = Date.now();
                 const newSkill = {
@@ -522,20 +514,12 @@ const MetasViewComponent = () => {
                     xp_para_proximo_nivel: 50,
                 };
                 
-                const newNemesis = {
-                    name: nemesisResult.nemesisName,
-                    description: nemesisResult.nemesisDescription,
-                    maxHealth: nemesisResult.maxHealth,
-                    currentHealth: nemesisResult.maxHealth
-                };
-
                 const newMetaWithId = { 
                     ...newOrUpdatedMeta, 
                     id: Date.now() + 1, 
                     concluida: false, 
                     user_id: profile.id, 
-                    habilidade_associada_id: newSkillId,
-                    nemesis: newNemesis
+                    habilidade_associada_id: newSkillId
                 };
                 
                 const relatedHistory = metas
@@ -789,8 +773,6 @@ const MetasViewComponent = () => {
                     const completedMissionsCount = relatedMissions.filter(m => m.concluido).length;
                     const totalMissionsCount = relatedMissions.length;
                     const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
-                    const nemesis = meta.nemesis;
-                    const nemesisHealthPercentage = nemesis ? (nemesis.currentHealth / nemesis.maxHealth) * 100 : 0;
                     
                     return (
                         <Card key={meta.id} className={cn("bg-card/60 border-border/80 flex flex-col", meta.concluida && "bg-card/30 border-green-500/20")}>
@@ -846,23 +828,6 @@ const MetasViewComponent = () => {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <CalendarIcon className="h-4 w-4" />
                                         <span>Prazo: {format(new Date(meta.prazo), "dd/MM/yyyy")}</span>
-                                    </div>
-                                )}
-                                {nemesis && (
-                                    <div className="pt-4 border-t border-border/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Skull className="h-5 w-5 text-red-400"/>
-                                            <div className="flex-1">
-                                                <h4 className="font-semibold text-sm text-foreground">{nemesis.name}</h4>
-                                                <p className="text-xs text-muted-foreground">{nemesis.description}</p>
-                                            </div>
-                                        </div>
-                                        <div className="w-full bg-red-900/50 rounded-full h-4 relative overflow-hidden border border-red-500/50">
-                                            <div className="bg-red-500 h-full transition-all duration-500" style={{ width: `${nemesisHealthPercentage}%` }}></div>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-xs font-bold text-white mix-blend-difference">{nemesis.currentHealth} / {nemesis.maxHealth} HP</span>
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
                             </CardContent>
@@ -1087,4 +1052,5 @@ const MetasViewComponent = () => {
 export const MetasView = memo(MetasViewComponent);
 
     
+
 

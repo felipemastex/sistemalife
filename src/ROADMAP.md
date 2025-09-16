@@ -47,9 +47,6 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Sistema onde guildas competem para ver quem completa mais andares na Torre.
 - **[x] Leaderboards Globais:**
     - **[x]** Rankings para "Andar mais alto na Torre", "Maior Streak", "Maior Nível de Habilidade", etc. (Interface implementada na aba de Analytics).
-- **[x] Sistema de Némesis:**
-    - **[x]** Desenvolver a lógica de IA para gerar um "Némesis" com base numa meta.
-    - **[x]** Criar a UI para visualizar a "vida" do Némesis e os seus "ataques" (desafios especiais).
 
 ### Fase 4: IA Adaptativa e Personalização Profunda (Concluída)
 **Objetivo:** Utilizar a IA para criar uma experiência verdadeiramente única para cada utilizador, que se adapta ao seu comportamento.

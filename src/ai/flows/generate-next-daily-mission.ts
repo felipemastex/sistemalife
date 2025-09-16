@@ -35,9 +35,8 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
-    learningResources: z.array(z.string()).optional().describe("Uma lista de até 3 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
+    learningResources: z.array(z.string()).optional().describe("Uma lista de até 2 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
     subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
-    isNemesisChallenge: z.boolean().optional().describe("Indica se esta missão é um desafio especial lançado pelo 'Némesis' da meta, sendo mais difícil que o normal."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
 
@@ -84,11 +83,6 @@ Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de 
 
 **DIRETIVA DE DIFICULDADE (MUITO IMPORTANTE):** A dificuldade da missão DEVE escalar com o nível do utilizador. Um Caçador de nível ${input.userLevel} precisa de um desafio maior do que um de nível 1. Ajuste a complexidade e a quantidade (target) das sub-tarefas para serem apropriadas para este nível.
 
-**ATAQUE DO NÉMESIS (Regra Especial):**
-Existe uma pequena chance (cerca de 15%) de que o "Némesis" da meta interfira. Se isso acontecer, a missão gerada deve ser um **Desafio do Némesis**.
-- **Se for um Desafio do Némesis:** Defina 'isNemesisChallenge' como true. O nome e a descrição da missão devem ser mais ameaçadores e temáticos (ex: "Emboscada da Dúvida", "A Muralha da Preguiça"). O desafio deve ser visivelmente mais difícil do que uma missão normal, exigindo mais esforço, mas ainda alcançável num dia.
-- **Se for uma missão normal:** Defina 'isNemesisChallenge' como false (ou omita-o).
-
 **REGRAS GERAIS:**
 1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária.
 2.  **Descrição da Missão:** Escreva uma breve descrição (1-2 frases) que explique o propósito da missão diária.
@@ -109,7 +103,6 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
         nextMissionDescription: z.string(),
         learningResources: z.array(z.string()).optional(),
         subTasks: z.array(SubTaskSchema),
-        isNemesisChallenge: z.boolean().optional(),
     });
 
     const {output} = await ai.generate({
@@ -124,10 +117,8 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       userLevel: input.userLevel,
     });
     
-    // Aumentar a recompensa se for um desafio do Némesis
-    const finalXp = output?.isNemesisChallenge ? Math.round(rewards.xp * 1.5) : rewards.xp;
-    const finalFragments = output?.isNemesisChallenge ? Math.round(rewards.fragments * 1.5) : rewards.fragments;
-
+    const finalXp = rewards.xp;
+    const finalFragments = rewards.fragments;
 
     const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
 
@@ -138,7 +129,6 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       fragments: finalFragments,
       learningResources: output!.learningResources,
       subTasks: subTasksWithProgress,
-      isNemesisChallenge: output!.isNemesisChallenge || false,
     };
   }
 );

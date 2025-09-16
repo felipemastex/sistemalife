@@ -29,10 +29,3 @@ O Sistema Life já possui elementos fundamentais de um RPG gamificado com missõ
     *   Sala 5: "Construa uma classe 'Calculadora' com 4 métodos."
     *   Sala 10 (Boss): "Crie um web scraper simples para extrair títulos de uma página."
 *   **Porquê é interessante?** Oferece um caminho de progressão claro e focado para quem quer acelerar o domínio de uma competência específica, com recompensas direcionadas e um sentimento de conquista tangível em cada "sala" concluída.
-
-### 2.4 Sistema de Némesis
-
-*   **A Ideia:** Para cada grande meta que você cria, a IA gera um "Némesis" – uma representação gamificada do maior obstáculo para alcançar esse objetivo.
-*   **Exemplo (Meta: "Correr uma Maratona"):** O seu Némesis poderia ser "O Sedentarismo" ou "A Besta da Preguiça".
-*   **Como Funciona:** O Némesis teria uma "barra de vida" que só pode ser danificada quando você completa missões relacionadas àquela meta. Ocasionalmente, o Némesis pode "atacar", introduzindo um desafio surpresa ou uma penalidade temporária (ex: "Ataque da Preguiça: a sua próxima missão de corrida custará o dobro de energia para ser iniciada").
-*   **Porquê é interessante?** Adiciona um elemento narrativo e um adversário claro à sua jornada. Derrotar o Némesis ao completar a meta daria uma sensação de vitória muito mais gratificante e recompensas únicas.
