@@ -64,7 +64,7 @@ export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfil
         let updatedAnnouncements;
         if (announcementToEdit) {
             // Editing
-            updatedAnnouncements = announcements.map(ann => 
+            updatedAnnouncements = announcements.map((ann: any) => 
                 ann.id === announcementToEdit.id ? { ...ann, content, edited_at: new Date().toISOString() } : ann
             );
         } else {
@@ -82,12 +82,12 @@ export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfil
         onGuildUpdate({...guild, announcements: updatedAnnouncements});
     };
 
-    const handleDelete = (id) => {
-        const updatedAnnouncements = announcements.filter(ann => ann.id !== id);
+    const handleDelete = (id: any) => {
+        const updatedAnnouncements = announcements.filter((ann: any) => ann.id !== id);
         onGuildUpdate({...guild, announcements: updatedAnnouncements});
     };
 
-    const handleOpenEdit = (ann) => {
+    const handleOpenEdit = (ann: any) => {
         setAnnouncementToEdit(ann);
         setIsFormOpen(true);
     };
@@ -112,7 +112,7 @@ export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfil
             </CardHeader>
             <CardContent className="flex-grow p-4 space-y-4 overflow-y-auto">
                 {sortedAnnouncements.length > 0 ? (
-                    sortedAnnouncements.map(ann => {
+                    sortedAnnouncements.map((ann: any) => {
                          const canEditOrDelete = userProfile.id === ann.author_id || userProfile.guild_role === 'Líder';
                          return (
                             <div key={ann.id} className="p-3 bg-secondary/50 rounded-lg">
