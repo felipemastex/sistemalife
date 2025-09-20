@@ -121,11 +121,6 @@ const DashboardViewComponent = () => {
     <div className="p-4 md:p-6 h-full overflow-y-auto font-sans">
         <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-2">
             <h1 className="font-cinzel text-4xl font-bold text-primary tracking-wider">STATUS</h1>
-            <div className="flex gap-2">
-                 <Button onClick={activateTestWorldEvent} variant="secondary">Testar Evento Mundial</Button>
-                <Button onClick={triggerDungeonEvent} variant="secondary">Testar Evento de Masmorra</Button>
-                <Button onClick={addDungeonCrystal} variant="secondary">Adicionar Cristal</Button>
-            </div>
         </div>
 
         <div className="bg-card/50 border border-border rounded-lg p-4 md:p-6 space-y-6 backdrop-blur-sm">
