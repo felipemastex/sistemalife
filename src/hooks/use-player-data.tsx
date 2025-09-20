@@ -438,6 +438,18 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
     }
 }
 
+// Helper to convert Firestore Timestamps to ISO strings
+const convertTimestamps = (data: any) => {
+    for (const key in data) {
+        if (data[key] && typeof data[key].toDate === 'function') {
+            data[key] = data[key].toDate().toISOString();
+        } else if (typeof data[key] === 'object' && data[key] !== null) {
+            convertTimestamps(data[key]);
+        }
+    }
+    return data;
+};
+
 
 export function PlayerDataProvider({ children }: { children: ReactNode }) {
     const { user, authState } = useAuth();
@@ -1506,10 +1518,17 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
             console.log('📋 Queries completadas. UserDoc exists:', userDoc.exists());
             if (userDoc.exists()) {
-                let profileData = userDoc.data() as Profile;
+                let profileData = convertTimestamps(userDoc.data()) as Profile;
                 let profileNeedsUpdate = false;
                 
-                 const skillsData = skillsSnapshot.docs.map(d => d.data());
+                const metasData = metasSnapshot.docs.map(d => convertTimestamps(d.data()));
+                const missionsData = missionsSnapshot.docs.map(d => convertTimestamps(d.data()));
+                const skillsData = skillsSnapshot.docs.map(d => convertTimestamps(d.data()));
+                const routineData = routineDoc.exists() ? convertTimestamps(routineDoc.data()) : {};
+                const routineTemplatesData = routineTemplatesDoc.exists() ? convertTimestamps(routineTemplatesDoc.data()) : {};
+                const allUsersData = allUsersSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
+                const guildsData = guildsSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
+                const worldEventsData = worldEventsSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
 
                 if (!profileData.tower_progress) {
                     profileData.tower_progress = { currentFloor: 1, highestFloor: 1, dailyChallengesAvailable: 1, tower_tickets: 1, tower_lockout_until: null, completed_challenges_floor: [] };
@@ -1553,14 +1572,14 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     type: 'SET_INITIAL_DATA',
                     payload: {
                         profile: profileData,
-                        metas: metasSnapshot.docs.map(d => d.data()),
-                        missions: missionsSnapshot.docs.map(d => d.data()),
+                        metas: metasData,
+                        missions: missionsData,
                         skills: skillsData,
-                        routine: routineDoc.exists() ? routineDoc.data() : {},
-                        routineTemplates: routineTemplatesDoc.exists() ? routineTemplatesDoc.data() : {},
-                        allUsers: allUsersSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
-                        guilds: guildsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
-                        worldEvents: worldEventsSnapshot.docs.map(d => ({ id: d.id, ...d.data() })),
+                        routine: routineData,
+                        routineTemplates: routineTemplatesData,
+                        allUsers: allUsersData,
+                        guilds: guildsData,
+                        worldEvents: worldEventsData,
                     }
                 });
                 console.log('📋 Dados carregados com sucesso!');
@@ -1677,3 +1696,5 @@ export const usePlayerDataContext = () => {
 
 
       
+
+    
