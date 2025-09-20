@@ -60,7 +60,7 @@ export const GuildAnnouncements = ({ guild, onGuildUpdate, canManage, userProfil
     const announcements = guild.announcements || [];
     const sortedAnnouncements = [...announcements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    const handleSave = (content) => {
+    const handleSave = (content: string) => {
         let updatedAnnouncements;
         if (announcementToEdit) {
             // Editing
