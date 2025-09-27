@@ -262,9 +262,6 @@ export default function ProfileSettingsTab() {
                                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
                                         <FormLabel className="text-base">Perfil Público</FormLabel>
-                                        <FormDescription>
-                                            Se desativado, o seu perfil não será visível para outros utilizadores (ex: na procura de guildas).
-                                        </FormDescription>
                                     </div>
                                     <FormControl>
                                         <Switch

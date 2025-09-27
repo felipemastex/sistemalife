@@ -4,7 +4,7 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw, Ticket } from 'lucide-react';
+import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw, Ticket, Heart, Shirt, KeySquare } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,9 @@ const iconMap: { [key: string]: React.ElementType } = {
     BookOpen,
     Repeat,
     Ticket,
+    Heart,
+    Shirt,
+    KeySquare,
 };
 
 const ShopViewComponent = () => {
@@ -255,4 +258,4 @@ const ShopViewComponent = () => {
     );
 };
 
-export const ShopView = memo(ShopViewComponent);
+export default memo(ShopViewComponent);

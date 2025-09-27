@@ -10,11 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 
 const AIChatViewComponent = () => {
     const { profile, metas, routine, missions, isDataLoaded } = usePlayerDataContext();
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isListening, setIsListening] = useState(false);
@@ -78,7 +78,7 @@ const AIChatViewComponent = () => {
 
     useEffect(scrollToBottom, [messages, isLoading]);
 
-    const getSystemResponse = useCallback(async (query) => {
+    const getSystemResponse = useCallback(async (query: string) => {
         if (!isDataLoaded) return;
         
         const userMessage = { sender: 'user', text: query };
@@ -92,7 +92,7 @@ const AIChatViewComponent = () => {
             profile: JSON.stringify(profile),
             metas: JSON.stringify(metas),
             routine: JSON.stringify(routine),
-            missions: JSON.stringify(missions.filter(m => !m.concluido)),
+            missions: JSON.stringify(missions.filter((m: any) => !m.concluido)),
             query: query,
             personality: profile.user_settings?.ai_personality || 'balanced',
           });

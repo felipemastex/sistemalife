@@ -19,7 +19,6 @@ const challengeTypes = {
   daily: { icon: Flame, color: 'text-orange-400', label: 'Diário' },
   weekly: { icon: Calendar, color: 'text-blue-400', label: 'Semanal' },
   special: { icon: Shield, color: 'text-purple-400', label: 'Especial' },
-  guild: { icon: Users, color: 'text-green-400', label: 'Guilda' },
   class: { icon: Trophy, color: 'text-yellow-400', label: 'Classe' },
   skill: { icon: Zap, color: 'text-cyan-400', label: 'Habilidade' },
 };

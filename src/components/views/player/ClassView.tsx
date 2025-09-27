@@ -8,14 +8,25 @@ import { Swords, Brain, User, Paintbrush, Handshake, Heart, LoaderCircle } from 
 import { statCategoryMapping } from '@/lib/mappings';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import type { Meta } from '@/hooks/use-player-data';
 
-const classData = {
+interface ClassDataItem {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    description: string;
+    categories: string[];
+    bonus: string;
+}
+
+const classData: Record<string, ClassDataItem> = {
     'Guerreiro': {
         icon: Swords,
         color: 'text-red-400',
         bgColor: 'bg-red-900/20',
         borderColor: 'border-red-500/30',
-        description: 'Focado na superação de desafios físicos e no fortalecimento do corpo. Ganha bónus em atividades de Força e Constituição.',
+        description: 'Focado na superação desafios físicos e no fortalecimento do corpo. Ganha bónus em atividades de Força e Constituição.',
         categories: ['Saúde & Fitness'],
         bonus: '+5% XP em missões de Saúde & Fitness.'
     },
@@ -43,8 +54,8 @@ const classData = {
         bgColor: 'bg-green-900/20',
         borderColor: 'border-green-500/30',
         description: 'Especialista em construir pontes e fortalecer laços. Ganha bónus em interações sociais e missões de Carisma.',
-        categories: ['Social & Relacionamentos'],
-        bonus: '+5% de reputação em interações de guilda.'
+        categories: ['Relacionamentos'],
+        bonus: 'Ganha +10% de XP em missões de Relacionamentos.'
     },
     'Sábio': {
         icon: Heart,
@@ -55,7 +66,7 @@ const classData = {
         categories: ['Crescimento Pessoal'],
         bonus: 'Reduz a perda de XP por corrupção de habilidades em 25%.'
     },
-     'Explorador': {
+    'Explorador': {
         icon: Heart,
         color: 'text-orange-400',
         bgColor: 'bg-orange-900/20',
@@ -81,10 +92,10 @@ const ClassViewComponent = () => {
     const userClass = useMemo(() => {
         if (!metas || metas.length === 0) return classData['Neófito'];
 
-        const activeGoals = metas.filter(m => !m.concluida);
+        const activeGoals = metas.filter((m: Meta) => !m.concluida);
         if (activeGoals.length === 0) return classData['Neófito'];
         
-        const categoryCounts = activeGoals.reduce((acc, meta) => {
+        const categoryCounts: Record<string, number> = activeGoals.reduce((acc: Record<string, number>, meta: Meta) => {
             const category = meta.categoria || "Crescimento Pessoal";
             acc[category] = (acc[category] || 0) + 1;
             return acc;
@@ -143,8 +154,8 @@ const ClassViewComponent = () => {
                         <h3 className="text-lg font-semibold text-center mb-3">Progresso de Classe</h3>
                         <div className="space-y-4">
                            {Object.keys(statCategoryMapping).map(category => {
-                                const goalsInCategory = metas.filter(m => m.categoria === category && !m.concluida).length;
-                                const totalGoals = metas.filter(m => !m.concluida).length || 1;
+                                const goalsInCategory = metas.filter((m: Meta) => m.categoria === category && !m.concluida).length;
+                                const totalGoals = metas.filter((m: Meta) => !m.concluida).length || 1;
                                 const progress = (goalsInCategory / totalGoals) * 100;
                                 
                                 if(goalsInCategory > 0) {

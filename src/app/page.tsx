@@ -18,9 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
-import { ShopView } from '@/components/views/player/ShopView';
+import ShopView from '@/components/views/player/ShopView';
 import { InventoryView } from '@/components/views/player/InventoryView';
-import { GuildsView } from '@/components/views/social/GuildsView';
 import { ClassView } from '@/components/views/player/ClassView';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
@@ -141,7 +140,6 @@ export default function App() {
               <NavItem icon={UserSquare} label="Classe" page="class" inSheet={inSheet}/>
               <NavItem icon={Clock} label="Rotina" page="routine" inSheet={inSheet}/>
               <NavItem icon={Award} label="Conquistas" page="achievements" inSheet={inSheet} />
-              <NavItem icon={Swords} label="Guildas" page="guilds" inSheet={inSheet} />
               <NavItem icon={Store} label="Loja" page="shop" inSheet={inSheet} />
               <NavItem icon={Backpack} label="Inventário" page="inventory" inSheet={inSheet} />
 
@@ -174,7 +172,6 @@ export default function App() {
       'class': <ClassView />,
       'routine': <RoutineView />,
       'achievements': <AchievementsView />,
-      'guilds': <GuildsView />,
       'shop': <ShopView />,
       'inventory': <InventoryView />,
       'ai-chat': <AIChatView />,

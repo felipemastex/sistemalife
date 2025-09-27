@@ -54,7 +54,7 @@ interface RankedMission {
   subTasks?: SubTask[];
 }
 
-interface Meta {
+export interface Meta {
   id: string | number;
   nome: string;
   categoria?: string;
@@ -106,7 +106,7 @@ interface Achievement {
 }
 
 interface TowerChallengeRequirement {
-  type: 'missions_completed' | 'skill_level_reached' | 'streak_maintained' | 'guild_activity' | 'level_reached' | 'missions_in_category_completed';
+  type: 'missions_completed' | 'skill_level_reached' | 'streak_maintained' | 'level_reached' | 'missions_in_category_completed';
   value: any;
   target: number;
   current?: number;
@@ -198,8 +198,6 @@ interface Profile {
   streak_atual: number;
   best_streak?: number;
   ultimo_dia_de_missao_concluida: string | null;
-  guild_id?: string | null;
-  guild_role?: string | null;
   onboarding_completed?: boolean;
   user_settings: UserSettings;
   manual_missions?: RankedMission[];
@@ -245,7 +243,6 @@ interface PlayerState {
   routine: Record<string, any>;
   routineTemplates: Record<string, any>;
   allUsers: any[];
-  guilds: Guild[];
   worldEvents: WorldEvent[];
   isDataLoaded: boolean;
   missionFeedback: Record<string | number, string>;
@@ -258,7 +255,7 @@ interface PlayerAction {
   payload?: any;
 }
 
-type DataKey = 'profile' | 'metas' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'guilds' | 'allUsers' | 'worldEvents';
+type DataKey = 'profile' | 'metas' | 'metas' | 'missions' | 'skills' | 'routine' | 'routineTemplates' | 'allUsers' | 'worldEvents';
 
 interface CompleteMissionParams {
   rankedMissionId: string | number;
@@ -299,7 +296,6 @@ const initialState: PlayerState = {
     routine: {},
     routineTemplates: {},
     allUsers: [],
-    guilds: [],
     worldEvents: [],
     isDataLoaded: false,
     missionFeedback: {}, 
@@ -331,8 +327,6 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return { ...state, routineTemplates: action.payload };
         case 'SET_ALL_USERS':
             return { ...state, allUsers: action.payload };
-        case 'SET_GUILDS':
-            return { ...state, guilds: action.payload };
         case 'SET_WORLD_EVENTS':
             return { ...state, worldEvents: action.payload };
         case 'SET_GENERATING_MISSION':
@@ -488,7 +482,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             skills: 'SET_SKILLS',
             routine: 'SET_ROUTINE',
             routineTemplates: 'SET_ROUTINE_TEMPLATES',
-            guilds: 'SET_GUILDS',
             allUsers: 'SET_ALL_USERS',
             worldEvents: 'SET_WORLD_EVENTS'
         };
@@ -508,14 +501,13 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             metas: 'metas',
             missions: 'missions',
             skills: 'skills',
-            guilds: 'guilds',
             allUsers: 'users',
             worldEvents: 'world_events'
         };
 
         if (multiDocCollections[key]) {
              const collectionName = multiDocCollections[key];
-             const isGlobalCollection = ['guilds', 'allUsers', 'worldEvents'].includes(key);
+             const isGlobalCollection = ['allUsers', 'worldEvents'].includes(key);
              const ref = collection(db, isGlobalCollection ? collectionName : `users/${user.uid}/${collectionName}`);
              
              const batch = writeBatch(db);
@@ -1502,7 +1494,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 routineDoc, 
                 routineTemplatesDoc, 
                 allUsersSnapshot, 
-                guildsSnapshot,
                 worldEventsSnapshot
             ] = await Promise.all([
                 getDoc(userDocRef),
@@ -1512,7 +1503,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 getDoc(doc(db, 'users', userId, 'routine', 'main')),
                 getDoc(doc(db, 'users', userId, 'routine', 'templates')),
                 getDocs(collection(db, 'users')),
-                getDocs(collection(db, 'guilds')),
                 getDocs(collection(db, 'world_events'))
             ]);
 
@@ -1527,7 +1517,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 const routineData = routineDoc.exists() ? convertTimestamps(routineDoc.data()) : {};
                 const routineTemplatesData = routineTemplatesDoc.exists() ? convertTimestamps(routineTemplatesDoc.data()) : {};
                 const allUsersData = allUsersSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
-                const guildsData = guildsSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
                 const worldEventsData = worldEventsSnapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }));
 
                 if (!profileData.tower_progress) {
@@ -1578,7 +1567,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         routine: routineData,
                         routineTemplates: routineTemplatesData,
                         allUsers: allUsersData,
-                        guilds: guildsData,
                         worldEvents: worldEventsData,
                     }
                 });
@@ -1605,8 +1593,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 ultimo_login_em: new Date().toISOString(),
                 inventory: [],
                 active_effects: [],
-                guild_id: null,
-                guild_role: null,
                 onboarding_completed: false,
                 _isOfflineMode: true,
                 hp_atual: 100,
@@ -1622,7 +1608,6 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     routine: mockData.rotina,
                     routineTemplates: mockData.rotinaTemplates,
                     allUsers: [],
-                    guilds: [],
                     worldEvents: mockData.worldEvents,
                 }
             });

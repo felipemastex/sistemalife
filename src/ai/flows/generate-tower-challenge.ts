@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ChallengeRequirementSchema = z.object({
-  type: z.enum(['missions_completed', 'skill_level_reached', 'streak_maintained', 'guild_activity', 'level_reached', 'missions_in_category_completed'])
+  type: z.enum(['missions_completed', 'skill_level_reached', 'streak_maintained', 'level_reached', 'missions_in_category_completed'])
     .describe("O tipo de critério para completar o desafio."),
   value: z.string().or(z.number()).describe("O valor alvo para o critério (ex: 5, 'Saúde & Fitness')."),
   target: z.number().describe("A meta numérica que o critério precisa de atingir."),
@@ -39,7 +39,7 @@ const GenerateTowerChallengeOutputSchema = z.object({
   floor: z.number().describe("O número do andar a que este desafio pertence."),
   title: z.string().describe("O título épico e temático para o desafio."),
   description: z.string().describe("Uma breve descrição do que é necessário para completar o desafio."),
-  type: z.enum(['daily', 'weekly', 'special', 'guild', 'class', 'skill']).describe("O tipo de desafio a ser gerado."),
+  type: z.enum(['daily', 'weekly', 'special', 'class', 'skill']).describe("O tipo de desafio a ser gerado."),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced', 'expert', 'master', 'infinite']).describe("A dificuldade do desafio, baseada no andar."),
   requirements: z.array(ChallengeRequirementSchema).describe("Os requisitos específicos e mensuráveis para completar o desafio."),
   rewards: ChallengeRewardsSchema.describe("As recompensas a serem concedidas após a conclusão."),
