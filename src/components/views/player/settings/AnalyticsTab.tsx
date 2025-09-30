@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 export default function AnalyticsTab() {
     const { metas, missions, isDataLoaded } = usePlayerDataContext();
     const [isLoadingInsights, setIsLoadingInsights] = useState(false);
-    const [insights, setInsights] = useState([]);
+    const [insights, setInsights] = useState<any[]>([]);
     const { toast } = useToast();
 
     const goalsByCategory = useMemo(() => {
@@ -152,8 +152,8 @@ export default function AnalyticsTab() {
                             </div>
                          ) : insights.length > 0 ? (
                             <div className="space-y-4">
-                                {insights.map((insight, index) => {
-                                    const Icon = iconMap[insight.icon] || Sparkles;
+                                {insights.map((insight: any, index) => {
+                                    const Icon = iconMap[insight.icon as keyof typeof iconMap] || Sparkles;
                                     return (
                                         <Alert key={index} className="border-cyan-500/30 bg-cyan-900/10">
                                             <Icon className="h-5 w-5 text-cyan-400" />

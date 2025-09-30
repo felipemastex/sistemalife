@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useCallback, memo } from 'react';
@@ -15,7 +13,7 @@ import * as mockData from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Progress } from '@/components/ui/progress';
 
 
@@ -29,14 +27,14 @@ const statIcons = {
 };
 
 
-const SkillsViewComponent = ({ onEnterDungeon }) => {
+const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void }) => {
     const { profile, skills, metas, persistData, spendDungeonCrystal } = usePlayerDataContext();
     const [showAddDialog, setShowAddDialog] = useState(false);
-    const [selectedMetaId, setSelectedMetaId] = useState(null);
+    const [selectedMetaId, setSelectedMetaId] = useState<string | number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    const getSkillColor = (category) => {
+    const getSkillColor = (category: string) => {
         switch(category){
             case 'Desenvolvimento de Carreira': return 'border-blue-500';
             case 'Saúde & Fitness': return 'border-green-500';
@@ -45,12 +43,12 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
         }
     };
 
-    const handleDeleteSkill = async (skillId) => {
-        const skillToDelete = skills.find(s => s.id === skillId);
+    const handleDeleteSkill = async (skillId: string | number) => {
+        const skillToDelete = skills.find((s: any) => s.id === skillId);
         if (!skillToDelete) return;
 
         // Remove the link from the associated meta
-        const updatedMetas = metas.map(meta => {
+        const updatedMetas = metas.map((meta: any) => {
             if (meta.habilidade_associada_id === skillId) {
                 return { ...meta, habilidade_associada_id: null };
             }
@@ -59,7 +57,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
         await persistData('metas', updatedMetas);
 
         // Delete the skill
-        const newSkills = skills.filter(s => s.id !== skillId);
+        const newSkills = skills.filter((s: any) => s.id !== skillId);
         await persistData('skills', newSkills);
 
         toast({
@@ -68,7 +66,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
         });
     };
     
-    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+    const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
              toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
@@ -84,7 +82,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
         }
         
         setIsLoading(true);
-        const selectedMeta = metas.find(m => m.id === Number(selectedMetaId));
+        const selectedMeta = metas.find((m: any) => m.id === Number(selectedMetaId));
 
         try {
             const skillResult = await generateSkillFromGoal({
@@ -110,7 +108,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
 
             await persistData('skills', [...skills, newSkill]);
             
-            const updatedMetas = metas.map(meta => 
+            const updatedMetas = metas.map((meta: any) => 
                 meta.id === Number(selectedMetaId)
                 ? { ...meta, habilidade_associada_id: newSkillId }
                 : meta
@@ -128,7 +126,7 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
         }
     };
 
-    const metasWithoutSkills = metas.filter(meta => !skills.some(skill => skill.id === meta.habilidade_associada_id));
+    const metasWithoutSkills = metas.filter((meta: any) => !skills.some((skill: any) => skill.id === meta.habilidade_associada_id));
 
     return (
         <div className="p-4 md:p-6 h-full overflow-y-auto">
@@ -141,10 +139,10 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
             </div>
             <p className="text-muted-foreground mb-8 max-w-4xl">As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Mas cuidado, a inatividade prolongada pode levar à Corrupção, causando a perda de XP.</p>
             <div className="space-y-4">
-                {skills.map(skill => {
+                {skills.map((skill: any) => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
-                    const stats = statCategoryMapping[skill.categoria] || [];
-                    const associatedMeta = metas.find(m => m.habilidade_associada_id === skill.id);
+                    const stats: string[] = statCategoryMapping[skill.categoria as keyof typeof statCategoryMapping] || [];
+                    const associatedMeta = metas.find((m: any) => m.habilidade_associada_id === skill.id);
                     
                     const lastActivity = new Date(skill.ultima_atividade_em || new Date());
                     const daysSinceActivity = (new Date().getTime() - lastActivity.getTime()) / (1000 * 3600 * 24);
@@ -222,9 +220,9 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                                      <div className="flex items-center gap-4 pt-2 mt-2 border-t border-border/50">
                                         <strong className="text-xs text-muted-foreground">Aumenta:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
-                                        {stats.map(stat => (
+                                        {stats.map((stat: string) => (
                                             <div key={stat} className="flex items-center gap-1.5 text-foreground">
-                                                {statIcons[stat]}
+                                                {statIcons[stat as keyof typeof statIcons]}
                                                 <span className="capitalize text-xs">{stat}</span>
                                             </div>
                                         ))}
@@ -269,13 +267,13 @@ const SkillsViewComponent = ({ onEnterDungeon }) => {
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <Label htmlFor="meta-select">Meta a Vincular</Label>
-                        <Select onValueChange={setSelectedMetaId} value={selectedMetaId || ''}>
+                        <Select onValueChange={(value) => setSelectedMetaId(value)} value={selectedMetaId ? String(selectedMetaId) : ''}>
                             <SelectTrigger id="meta-select" className="w-full">
                                 <SelectValue placeholder="Selecione uma meta..." />
                             </SelectTrigger>
                             <SelectContent>
                                 {metasWithoutSkills.length > 0 ? (
-                                    metasWithoutSkills.map(meta => (
+                                    metasWithoutSkills.map((meta: any) => (
                                         <SelectItem key={meta.id} value={String(meta.id)}>{meta.nome}</SelectItem>
                                     ))
                                 ) : (

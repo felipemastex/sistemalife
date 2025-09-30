@@ -17,7 +17,7 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
-const getProfileRank = (level) => {
+const getProfileRank = (level: number) => {
     if (level <= 5) return 'Novato (F)';
     if (level <= 10) return 'Iniciante (E)';
     if (level <= 20) return 'Adepto (D)';
@@ -119,7 +119,7 @@ export default function ProfileSettingsTab() {
         setIsGeneratingAvatar(true);
         try {
             const stats = Object.entries(profile.estatisticas)
-                .sort(([, a], [, b]) => b - a)
+                .sort(([, a], [, b]) => (b as number) - (a as number))
                 .slice(0, 2)
                 .map(([key]) => key);
 

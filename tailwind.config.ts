@@ -1,19 +1,18 @@
-
 import type {Config} from 'tailwindcss';
 
 // Custom radial gradient plugin
 const plugin = require('tailwindcss/plugin');
 const radialGradientPlugin = plugin(
-  function ({ matchUtilities, theme }) {
+  function ({ matchUtilities, theme }: { matchUtilities: any, theme: any }) {
     matchUtilities(
       {
-        'bg-grid': (value) => ({
+        'bg-grid': (value: any) => ({
           backgroundImage: `url("/grid.svg")`,
         }),
-        'bg-grid-small': (value) => ({
+        'bg-grid-small': (value: any) => ({
           backgroundImage: `url("/grid-small.svg")`,
         }),
-        'bg-grid-cyan-400/10': (value) => ({
+        'bg-grid-cyan-400/10': (value: any) => ({
           backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='%2322d3ee' stroke-opacity='0.1'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e")`,
         }),
       },
@@ -112,7 +111,7 @@ export default {
   plugins: [
     require('tailwindcss-animate'),
     radialGradientPlugin,
-    plugin(function ({ addVariant }) {
+    plugin(function ({ addVariant }: { addVariant: any }) {
         addVariant('reduce-motion', '.reduce-motion &')
     })
   ],

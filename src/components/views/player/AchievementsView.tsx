@@ -35,7 +35,7 @@ export const AchievementsView = () => {
         ...(profile.generated_achievements || [])
     ];
     
-    const getProgress = (achievement) => {
+    const getProgress = (achievement: any) => {
         const { type, value, category } = achievement.criteria;
         
         switch (type) {
@@ -44,18 +44,18 @@ export const AchievementsView = () => {
             case 'level_reached':
                 return { current: profile.nivel || 1, target: value };
             case 'goals_completed':
-                return { current: metas.filter(m => m.concluida).length, target: value };
+                return { current: metas.filter((m: any) => m.concluida).length, target: value };
             case 'skill_level_reached':
-                 const skill = skills.find(s => s.categoria === category);
+                 const skill = skills.find((s: any) => s.categoria === category);
                  return { current: skill ? skill.nivel_atual : 0, target: value };
             case 'streak_maintained':
                 return { current: profile.streak_atual || 0, target: value };
             case 'missions_in_category_completed':
-                const categoryGoals = metas.filter(m => m.categoria === category).map(m => m.nome);
+                const categoryGoals = metas.filter((m: any) => m.categoria === category).map((m: any) => m.nome);
                 const count = missions
-                    .filter(m => categoryGoals.includes(m.meta_associada))
-                    .flatMap(m => m.missoes_diarias || [])
-                    .filter(dm => dm.concluido).length;
+                    .filter((m: any) => categoryGoals.includes(m.meta_associada))
+                    .flatMap((m: any) => m.missoes_diarias || [])
+                    .filter((dm: any) => dm.concluido).length;
                 return { current: count, target: value };
             default:
                 return { current: 0, target: value };
@@ -72,14 +72,14 @@ export const AchievementsView = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {allAchievements.map(achievement => {
+                {allAchievements.map((achievement: any) => {
                     const isUnlocked = achievement.unlocked;
                     const unlockedDate = achievement.unlockedAt;
 
                     const { current, target } = getProgress(achievement);
                     const progressPercentage = target > 0 ? (current / target) * 100 : 0;
                     
-                    const Icon = typeof achievement.icon === 'string' ? iconMap[achievement.icon] || Award : achievement.icon;
+                    const Icon = typeof achievement.icon === 'string' ? iconMap[achievement.icon as keyof typeof iconMap] || Award : achievement.icon;
 
 
                     return (
@@ -87,7 +87,7 @@ export const AchievementsView = () => {
                             key={achievement.id}
                             className={cn(
                                 "bg-card/60 border-2 flex flex-col transition-all duration-300",
-                                isUnlocked ? 'border-yellow-400/50 shadow-lg shadow-yellow-500/10' : 'border-border/80 opacity-60 hover:opacity-100'
+                                isUnlocked ? 'border-yellow-400/50 shadow-lg shadow-yellow-500/10' : 'border-border/80 opacity-660 hover:opacity-100'
                             )}
                         >
                             <CardHeader className="flex flex-row items-center gap-4">

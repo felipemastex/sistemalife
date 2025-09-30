@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -35,6 +33,30 @@ interface Mission {
   subTasks: SubTask[];
   learningResources?: string[];
   isManual?: boolean;
+}
+
+interface DailyMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido?: boolean;
+  tipo?: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
+}
+
+interface RankedMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido?: boolean;
+  tipo?: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
 }
 
 interface ContributionState {
@@ -110,7 +132,21 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
 
   useEffect(() => {
     if (mission) {
-      setEditedMission({ ...mission, subTasks: mission.subTasks || [] });
+      // Convert the mission to the Mission type for internal use
+      const convertedMission: Mission = {
+        ...mission,
+        id: mission.id,
+        nome: mission.nome,
+        descricao: mission.descricao,
+        xp_conclusao: 'xp_conclusao' in mission ? mission.xp_conclusao : 0,
+        fragmentos_conclusao: 'fragmentos_conclusao' in mission ? mission.fragmentos_conclusao : 0,
+        concluido: 'concluido' in mission ? mission.concluido : undefined,
+        tipo: 'tipo' in mission ? mission.tipo : ('missoes_diarias' in mission ? 'epica' : 'diaria'),
+        subTasks: mission.subTasks || [],
+        learningResources: 'learningResources' in mission ? mission.learningResources : undefined,
+        isManual: 'isManual' in mission ? mission.isManual : undefined,
+      };
+      setEditedMission(convertedMission);
     } else {
       setEditedMission({ nome: '', descricao: '', xp_conclusao: 20, fragmentos_conclusao: 5, subTasks: [] });
     }

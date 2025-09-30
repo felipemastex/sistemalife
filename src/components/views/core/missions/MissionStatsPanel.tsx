@@ -7,7 +7,15 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Flame, CheckCircle, Percent, Trophy } from 'lucide-react';
 import { subDays, isAfter } from 'date-fns';
 
-const StatCard = memo(({ icon: Icon, title, value, unit, color }) => (
+interface StatCardProps {
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    title: string;
+    value: number;
+    unit?: string;
+    color?: string;
+}
+
+const StatCard = memo(({ icon: Icon, title, value, unit, color }: StatCardProps) => (
     <Card className="bg-card/60 border-border/80">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
@@ -25,8 +33,8 @@ const MissionStatsPanelComponent = () => {
     const weeklyCompletionRate = useMemo(() => {
         const oneWeekAgo = subDays(new Date(), 7);
         const missionsLastWeek = missions
-            .flatMap(m => m.missoes_diarias || [])
-            .filter(dm => dm.completed_at && isAfter(new Date(dm.completed_at), oneWeekAgo));
+            .flatMap((m: any) => m.missoes_diarias || [])
+            .filter((dm: any) => dm.completed_at && isAfter(new Date(dm.completed_at), oneWeekAgo));
             
         // This is a simplification. A more accurate rate would need to know how many missions were *available* in the last 7 days.
         // For now, we'll just count completed ones.
@@ -35,7 +43,8 @@ const MissionStatsPanelComponent = () => {
         // Let's assume an average of 1 mission per day for the rate calculation.
         const totalPossible = 7;
         
-        if (totalPossible === 0) return 0;
+        // Only return a rate if there were possible missions
+        if (totalPossible <= 0) return 0;
         return Math.round((completedCount / totalPossible) * 100);
 
     }, [missions]);

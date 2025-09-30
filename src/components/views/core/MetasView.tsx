@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
@@ -31,22 +29,41 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 
+interface SmartGoalWizardProps {
+    onClose: () => void;
+    onSave: (meta: any) => void;
+    metaToEdit: any;
+    profile: any;
+    initialGoalName?: string;
+}
 
-const statIcons = {
-    forca: <Swords className="h-4 w-4 text-red-400" />,
-    inteligencia: <Brain className="h-4 w-4 text-blue-400" />,
-    destreza: <Zap className="h-4 w-4 text-yellow-400" />,
-    constituicao: <ShieldCheck className="h-4 w-4 text-green-400" />,
-    sabedoria: <BookOpen className="h-4 w-4 text-purple-400" />,
-    carisma: <Star className="h-4 w-4 text-pink-400" />,
-};
+interface GoalState {
+    id: number | null;
+    nome: string;
+    categoria: string;
+    prazo: string | null;
+    concluida: boolean;
+    detalhes_smart: {
+        specific: string;
+        measurable: string;
+        achievable: string;
+        relevant: string;
+        timeBound: string;
+    };
+    habilidade_associada_id?: number;
+}
 
-const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName = '' }) => {
+interface HistoryItem {
+    question: string;
+    answer: string;
+}
+
+const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName = '' }: SmartGoalWizardProps) => {
     const isEditing = !!metaToEdit;
 
-    const getInitialGoalState = useCallback(() => {
+    const getInitialGoalState = useCallback((): GoalState => {
         if (isEditing && metaToEdit) {
              return {
                 id: metaToEdit.id || null,
@@ -80,12 +97,12 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         };
     }, [isEditing, metaToEdit, initialGoalName]);
     
-    const [goalState, setGoalState] = useState(getInitialGoalState);
-    const [currentQuestion, setCurrentQuestion] = useState('');
-    const [exampleAnswers, setExampleAnswers] = useState([]);
-    const [userInput, setUserInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [history, setHistory] = useState([]);
+    const [goalState, setGoalState] = useState<GoalState>(getInitialGoalState);
+    const [currentQuestion, setCurrentQuestion] = useState<string>('');
+    const [exampleAnswers, setExampleAnswers] = useState<string[]>([]);
+    const [userInput, setUserInput] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [history, setHistory] = useState<HistoryItem[]>([]);
     const { toast } = useToast();
     
      useEffect(() => {
@@ -103,7 +120,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         }
     }, [metaToEdit, isEditing, getInitialGoalState, initialGoalName]);
 
-    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+    const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
              toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
@@ -112,7 +129,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         }
     };
 
-    const handleInitialQuestion = useCallback(async (initialGoalName) => {
+    const handleInitialQuestion = useCallback(async (initialGoalName: string) => {
         setIsLoading(true);
         const initialGoal = { name: initialGoalName };
         setGoalState(prev => ({...prev, nome: initialGoalName}));
@@ -125,7 +142,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
             } else if (result.isComplete && result.refinedGoal) {
                 await handleSaveGoal(result.refinedGoal);
             }
-        } catch (error) {
+        } catch (error: any) {
             handleToastError(error, 'Não foi possível iniciar o assistente.');
             onClose();
         } finally {
@@ -143,26 +160,33 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
         setIsLoading(true);
         setExampleAnswers([]);
         
-        let updatedGoal = { ...goalState.detalhes_smart, name: goalState.nome };
+        // Create a new object without the 'name' property to avoid duplication
+        const updatedGoal = { 
+            name: goalState.nome,
+            specific: goalState.detalhes_smart.specific || userInput,
+            measurable: goalState.detalhes_smart.measurable || (goalState.detalhes_smart.specific ? userInput : ''),
+            achievable: goalState.detalhes_smart.achievable || (goalState.detalhes_smart.measurable ? userInput : ''),
+            relevant: goalState.detalhes_smart.relevant || (goalState.detalhes_smart.achievable ? userInput : ''),
+            timeBound: goalState.detalhes_smart.timeBound || (goalState.detalhes_smart.relevant ? userInput : '')
+        };
         
-        if (!updatedGoal.specific) updatedGoal.specific = userInput;
-        else if (!updatedGoal.measurable) updatedGoal.measurable = userInput;
-        else if (!updatedGoal.achievable) updatedGoal.achievable = userInput;
-        else if (!updatedGoal.relevant) updatedGoal.relevant = userInput;
-        else if (!updatedGoal.timeBound) updatedGoal.timeBound = userInput;
+        // Update the appropriate field based on what's been filled
+        if (!goalState.detalhes_smart.specific) {
+            updatedGoal.specific = userInput;
+        } else if (!goalState.detalhes_smart.measurable) {
+            updatedGoal.measurable = userInput;
+        } else if (!goalState.detalhes_smart.achievable) {
+            updatedGoal.achievable = userInput;
+        } else if (!goalState.detalhes_smart.relevant) {
+            updatedGoal.relevant = userInput;
+        } else if (!goalState.detalhes_smart.timeBound) {
+            updatedGoal.timeBound = userInput;
+        }
         
         setUserInput(''); 
-        setGoalState(prev => ({...prev, detalhes_smart: {
-            ...prev.detalhes_smart,
-            specific: updatedGoal.specific,
-            measurable: updatedGoal.measurable,
-            achievable: updatedGoal.achievable,
-            relevant: updatedGoal.relevant,
-            timeBound: updatedGoal.timeBound,
-        }}));
 
         try {
-            const result = await generateSmartGoalQuestion({ goal: { name: goalState.nome, ...updatedGoal }, history: newHistory });
+            const result = await generateSmartGoalQuestion({ goal: updatedGoal, history: newHistory });
 
             if (result.isComplete && result.refinedGoal) {
                 await handleSaveGoal(result.refinedGoal);
@@ -170,14 +194,14 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 setCurrentQuestion(result.nextQuestion);
                 setExampleAnswers(result.exampleAnswers || []);
             }
-        } catch (error) {
+        } catch (error: any) {
             handleToastError(error);
         } finally {
             setIsLoading(false);
         }
     };
     
-    const handleSaveGoal = async (finalGoalDetails) => {
+    const handleSaveGoal = async (finalGoalDetails: any) => {
         setIsLoading(true);
         try {
             const finalName = finalGoalDetails.name || goalState.nome;
@@ -186,35 +210,40 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                 goalName: finalName,
                 categories: mockData.categoriasMetas,
             });
-            const newMeta = {
+            const newMeta: GoalState = {
                 id: metaToEdit ? metaToEdit.id : null, 
                 nome: finalName,
                 categoria: categoryResult.category || 'Desenvolvimento Pessoal',
                 prazo: goalState.prazo,
                 concluida: false,
                 detalhes_smart: {
-                    specific: finalGoalDetails.specific,
-                    measurable: finalGoalDetails.measurable,
-                    achievable: finalGoalDetails.achievable,
-                    relevant: finalGoalDetails.relevant,
-                    timeBound: finalGoalDetails.timeBound,
+                    specific: finalGoalDetails.specific || '',
+                    measurable: finalGoalDetails.measurable || '',
+                    achievable: finalGoalDetails.achievable || '',
+                    relevant: finalGoalDetails.relevant || '',
+                    timeBound: finalGoalDetails.timeBound || '',
                 },
-                 habilidade_associada_id: metaToEdit?.habilidade_associada_id
+                habilidade_associada_id: metaToEdit?.habilidade_associada_id
             };
             onSave(newMeta);
             onClose(); 
-        } catch (error) {
+        } catch (error: any) {
              handleToastError(error, 'Não foi possível sugerir uma categoria. A salvar com categoria padrão.');
              const finalName = finalGoalDetails.name || goalState.nome;
-             const newMeta = {
+             const newMeta: GoalState = {
                 id: metaToEdit ? metaToEdit.id : null,
                 nome: finalName,
                 categoria: 'Desenvolvimento Pessoal',
                 prazo: goalState.prazo,
                 concluida: false,
-                detalhes_smart: finalGoalDetails,
+                detalhes_smart: {
+                    specific: finalGoalDetails.specific || '',
+                    measurable: finalGoalDetails.measurable || '',
+                    achievable: finalGoalDetails.achievable || '',
+                    relevant: finalGoalDetails.relevant || '',
+                    timeBound: finalGoalDetails.timeBound || '',
+                },
                 habilidade_associada_id: metaToEdit?.habilidade_associada_id,
-                user_id: profile.id,
              };
              onSave(newMeta);
              onClose();
@@ -243,21 +272,21 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     );
     
     const renderQuestionScreen = () => (
-         <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
+        <div className="w-full max-w-4xl animate-in fade-in-50 duration-500">
             <p className="text-center text-gray-400 mb-4">Meta: <span className="font-bold text-gray-200">{goalState.nome}</span></p>
             <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-8 text-center shadow-lg">
                 {isLoading && !currentQuestion ? (
-                     <div className="flex items-center justify-center space-x-2 h-48">
+                    <div className="flex items-center justify-center space-x-2 h-48">
                         <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
                         <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
                         <div className="h-3 w-3 bg-cyan-400 rounded-full animate-pulse"></div>
-                     </div>
+                    </div>
                 ) : (
                     <>
                         <h2 className="text-2xl text-cyan-400 mb-6 min-h-[6rem] flex items-center justify-center">{currentQuestion}</h2>
                         
                         {!isEditing && (
-                             <div className="mb-4 text-left">
+                            <div className="mb-4 text-left">
                                 <Label htmlFor="prazo" className="text-primary">Prazo (Opcional)</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -275,8 +304,8 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                                     <PopoverContent className="w-auto p-0">
                                         <Calendar
                                         mode="single"
-                                        selected={goalState.prazo ? new Date(goalState.prazo) : null}
-                                        onSelect={(date) => setGoalState(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                        selected={goalState.prazo ? new Date(goalState.prazo) : undefined}
+                                        onSelect={(date) => setGoalState((prev: any) => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
                                         initialFocus
                                         />
                                     </PopoverContent>
@@ -322,7 +351,7 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
                     </>
                 )}
             </div>
-         </div>
+        </div>
     );
     
     const renderContent = () => {
@@ -350,25 +379,42 @@ const SmartGoalWizard = ({ onClose, onSave, metaToEdit, profile, initialGoalName
     )
 }
 
+interface QuickGoalData {
+    name: string;
+    prazo: string | null;
+}
+
+interface Suggestion {
+    name: string;
+    description: string;
+    category: string;
+}
+
+interface RoadmapPhase {
+    phaseTitle: string;
+    phaseDescription: string;
+    strategicMilestones: string[];
+}
+
 const MetasViewComponent = () => {
     const { profile, metas, missions, skills, persistData } = usePlayerDataContext();
     const [showWizardDialog, setShowWizardDialog] = useState(false);
-    const [wizardMode, setWizardMode] = useState(null); // 'simple' or 'detailed' or 'selection'
-    const [quickGoalData, setQuickGoalData] = useState({ name: '', prazo: null });
+    const [wizardMode, setWizardMode] = useState<string | null>(null); // 'simple' or 'detailed' or 'selection'
+    const [quickGoalData, setQuickGoalData] = useState<QuickGoalData>({ name: '', prazo: null });
     
     const [isEditing, setIsEditing] = useState(false);
-    const [metaToEdit, setMetaToEdit] = useState(null);
-    const [detailedMeta, setDetailedMeta] = useState(null);
+    const [metaToEdit, setMetaToEdit] = useState<any>(null);
+    const [detailedMeta, setDetailedMeta] = useState<any>(null);
 
     const [isLoadingSimpleGoal, setIsLoadingSimpleGoal] = useState(false);
     
     const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
-    const [suggestions, setSuggestions] = useState([]);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     
-    const [roadmap, setRoadmap] = useState(null);
+    const [roadmap, setRoadmap] = useState<RoadmapPhase[] | null>(null);
     const [isLoadingRoadmap, setIsLoadingRoadmap] = useState(false);
-    const [roadmapMeta, setRoadmapMeta] = useState(null);
+    const [roadmapMeta, setRoadmapMeta] = useState<any>(null);
 
     const { toast } = useToast();
     
@@ -376,7 +422,7 @@ const MetasViewComponent = () => {
     const cardPadding = layout === 'compact' ? 'p-3' : layout === 'comfortable' ? 'p-8' : 'p-6';
     const gapSize = layout === 'compact' ? 'gap-4' : layout === 'comfortable' ? 'gap-8' : 'gap-6';
 
-    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+    const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
              toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
@@ -391,15 +437,15 @@ const MetasViewComponent = () => {
         setSuggestions([]);
 
         try {
-            const completedGoals = metas.filter(m => m.concluida);
+            const completedGoals = metas.filter((m: any) => m.concluida);
             const result = await generateGoalSuggestion({
                 profile: JSON.stringify(profile),
                 skills: JSON.stringify(skills),
-                completedGoals: JSON.stringify(completedGoals.map(m => m.nome)),
+                completedGoals: JSON.stringify(completedGoals.map((m: any) => m.nome)),
                 existingCategories: mockData.categoriasMetas,
             });
             setSuggestions(result.suggestions);
-        } catch(error) {
+        } catch(error: any) {
             handleToastError(error, "Não foi possível gerar sugestões de metas.");
             setShowSuggestionDialog(false);
         } finally {
@@ -407,7 +453,7 @@ const MetasViewComponent = () => {
         }
     };
     
-    const handleGetRoadmap = async (meta) => {
+    const handleGetRoadmap = async (meta: any) => {
         setRoadmapMeta(meta);
         setIsLoadingRoadmap(true);
         setRoadmap(null);
@@ -418,7 +464,7 @@ const MetasViewComponent = () => {
                 userLevel: profile.nivel,
             });
             setRoadmap(result.roadmap);
-        } catch(error) {
+        } catch(error: any) {
             handleToastError(error, "Não foi possível gerar a estratégia.");
             setRoadmapMeta(null);
         } finally {
@@ -426,7 +472,7 @@ const MetasViewComponent = () => {
         }
     };
     
-    const handleSelectSuggestion = (suggestionName) => {
+    const handleSelectSuggestion = (suggestionName: string) => {
         setShowSuggestionDialog(false);
         setQuickGoalData({ name: suggestionName, prazo: null });
         setWizardMode('simple');
@@ -444,7 +490,7 @@ const MetasViewComponent = () => {
         setQuickGoalData({ name: '', prazo: null });
     };
     
-    const handleOpenEditDialog = (meta) => {
+    const handleOpenEditDialog = (meta: any) => {
         setMetaToEdit({ ...meta });
         setIsEditing(true);
     };
@@ -461,18 +507,18 @@ const MetasViewComponent = () => {
     };
 
 
-    const handleSave = async (newOrUpdatedMeta) => {
+    const handleSave = async (newOrUpdatedMeta: any) => {
         setIsLoadingSimpleGoal(true);
-        const isEditingGoal = !!(newOrUpdatedMeta.id && metas.some(m => m.id === newOrUpdatedMeta.id));
+        const isEditingGoal = !!(newOrUpdatedMeta.id && metas.some((m: any) => m.id === newOrUpdatedMeta.id));
         
         try {
             if (isEditingGoal) {
-                const metaOriginal = metas.find(m => m.id === newOrUpdatedMeta.id);
-                const updatedMetas = metas.map(m => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
+                const metaOriginal = metas.find((m: any) => m.id === newOrUpdatedMeta.id);
+                const updatedMetas = metas.map((m: any) => m.id === newOrUpdatedMeta.id ? { ...m, ...newOrUpdatedMeta } : m);
                 
                 let updatedMissions = [...missions];
                 if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome) {
-                    updatedMissions = missions.map(mission => 
+                    updatedMissions = missions.map((mission: any) => 
                         mission.meta_associada === metaOriginal.nome 
                         ? { ...mission, meta_associada: newOrUpdatedMeta.nome }
                         : mission
@@ -480,7 +526,7 @@ const MetasViewComponent = () => {
                 }
                 
                 if (metaOriginal && metaOriginal.nome !== newOrUpdatedMeta.nome && newOrUpdatedMeta.habilidade_associada_id) {
-                     const newSkills = skills.map(s => 
+                     const newSkills = skills.map((s: any) => 
                         s.id === newOrUpdatedMeta.habilidade_associada_id 
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
@@ -523,15 +569,14 @@ const MetasViewComponent = () => {
                 };
                 
                 const relatedHistory = metas
-                    .filter(m => m.categoria === newMetaWithId.categoria)
-                    .map(m => `- Meta Concluída: ${m.nome}`)
+                    .filter((m: any) => m.categoria === newMetaWithId.categoria)
+                    .map((m: any) => `- Meta Concluída: ${m.nome}`)
                     .join('\n');
                 
                 const initialMissionResult = await generateInitialEpicMission({
                     goalName: newMetaWithId.nome,
                     goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
                     userLevel: profile.nivel,
-                    relatedHistory: relatedHistory,
                 });
 
                 if (initialMissionResult.fallback) {
@@ -542,7 +587,7 @@ const MetasViewComponent = () => {
                     });
                 }
                 
-                const newMissions = (initialMissionResult.progression || []).map((epicMission, index) => {
+                const newMissions = (initialMissionResult.progression || []).map((epicMission: any, index: number) => {
                     const isFirstMission = index === 0;
                     return {
                         id: Date.now() + index + 2,
@@ -581,11 +626,11 @@ const MetasViewComponent = () => {
                     const achievementResult = await generateUserAchievements({
                         profile: JSON.stringify(profile),
                         skills: JSON.stringify(updatedSkills),
-                        goals: JSON.stringify(updatedMetas.filter(m => !m.concluida)),
-                        existingAchievementIds: profile.generated_achievements?.map(a => a.id) || [],
+                        goals: JSON.stringify(updatedMetas.filter((m: any) => !m.concluida)),
+                        existingAchievementIds: profile.generated_achievements?.map((a: any) => a.id) || [],
                     });
                      if (achievementResult.achievements && achievementResult.achievements.length > 0) {
-                        const newAchievements = achievementResult.achievements.map(ach => ({ ...ach, unlocked: false, unlockedAt: null }));
+                        const newAchievements = achievementResult.achievements.map((ach: any) => ({ ...ach, unlocked: false, unlockedAt: null }));
                         const updatedProfileAchievements = {
                             ...profile,
                             generated_achievements: [...(profile.generated_achievements || []), ...newAchievements]
@@ -593,14 +638,14 @@ const MetasViewComponent = () => {
                          await persistData('profile', updatedProfileAchievements);
                          toast({ title: 'Novas Conquistas Forjadas!', description: 'Verifique a aba de Conquistas para ver os seus novos desafios.' });
                     }
-                } catch(achError) {
+                } catch(achError: any) {
                     handleToastError(achError, "Não foi possível gerar novas conquistas para esta meta.");
                 }
 
                 handleGetRoadmap(newMetaWithId);
             }
-        } catch (error) {
-            handleToastError(error, 'Não foi possível salvar a meta. A IA pode estar sobrecarregada.');
+        } catch (error: any) {
+            handleToastError(error, 'Não foi possível salvar a meta. A IA pode estar sobrecarregado.');
         } finally {
             setIsLoadingSimpleGoal(false);
             handleCloseWizard();
@@ -630,7 +675,7 @@ const MetasViewComponent = () => {
                 detalhes_smart: refinedGoal,
                 user_id: profile.id
             });
-        } catch (error) {
+        } catch (error: any) {
             handleToastError(error, 'Não foi possível criar a meta com a IA. Tente novamente.');
         } finally {
             setIsLoadingSimpleGoal(false);
@@ -639,13 +684,13 @@ const MetasViewComponent = () => {
     };
 
 
-    const handleDelete = async (id) => {
-        const metaToDelete = metas.find(m => m.id === id);
+    const handleDelete = async (id: number) => {
+        const metaToDelete = metas.find((m: any) => m.id === id);
         if (metaToDelete) {
-            persistData('missions', missions.filter(mission => mission.meta_associada !== metaToDelete.nome));
-            persistData('metas', metas.filter(m => m.id !== id));
+            persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
+            persistData('metas', metas.filter((m: any) => m.id !== id));
             if (metaToDelete.habilidade_associada_id) {
-                persistData('skills', skills.filter(s => s.id !== metaToDelete.habilidade_associada_id));
+                persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
             }
             toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" e seus componentes foram removidos.` });
         }
@@ -715,13 +760,14 @@ const MetasViewComponent = () => {
                                     <PopoverContent className="w-auto p-0">
                                         <Calendar
                                         mode="single"
-                                        selected={quickGoalData.prazo ? new Date(quickGoalData.prazo) : null}
+                                        selected={quickGoalData.prazo ? new Date(quickGoalData.prazo) : undefined}
                                         onSelect={(date) => setQuickGoalData(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
                                         initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>
                             </div>
+
                         </div>
                         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2">
                             <Button variant="outline" onClick={handleCloseWizard} disabled={isLoadingSimpleGoal}>Cancelar</Button>
@@ -746,7 +792,7 @@ const MetasViewComponent = () => {
         }
     };
 
-    const sortedMetas = [...metas].sort((a, b) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
+    const sortedMetas = [...metas].sort((a: any, b: any) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
         <div className={cn("h-full overflow-y-auto", cardPadding)}>
@@ -766,11 +812,12 @@ const MetasViewComponent = () => {
             <p className="text-muted-foreground mb-8 max-w-4xl">Estas são as suas metas de longo prazo. Para cada meta, uma árvore de progressão de missões épicas será criada.</p>
             
             <div className={cn("grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3", gapSize)}>
-                {sortedMetas.map(meta => {
-                    const skill = skills.find(s => s.id === meta.habilidade_associada_id);
-                    const stats = skill ? statCategoryMapping[skill.categoria] : [];
-                    const relatedMissions = missions.filter(m => m.meta_associada === meta.nome);
-                    const completedMissionsCount = relatedMissions.filter(m => m.concluido).length;
+                {sortedMetas.map((meta: any) => {
+                    const skill: any = skills.find((s: any) => s.id === meta.habilidade_associada_id);
+                    // Add index signature to statCategoryMapping to avoid TypeScript error
+                    const stats = skill ? (statCategoryMapping as any)[skill.categoria] : [];
+                    const relatedMissions = missions.filter((m: any) => m.meta_associada === meta.nome);
+                    const completedMissionsCount = relatedMissions.filter((m: any) => m.concluido).length;
                     const totalMissionsCount = relatedMissions.length;
                     const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
                     
@@ -844,7 +891,7 @@ const MetasViewComponent = () => {
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full pt-4 border-t border-border">
                                         <strong className="text-sm text-muted-foreground shrink-0">Atributos:</strong>
                                         <div className="flex flex-wrap items-center gap-3">
-                                        {stats.map(stat => (
+                                        {stats.map((stat: any) => (
                                             <div key={stat} className="flex items-center gap-1.5 text-card-foreground">
                                                 {statIcons[stat]}
                                                 <span className="capitalize text-xs">{stat}</span>
@@ -892,8 +939,8 @@ const MetasViewComponent = () => {
                                     <PopoverContent className="w-auto p-0">
                                         <Calendar
                                         mode="single"
-                                        selected={metaToEdit.prazo ? new Date(metaToEdit.prazo) : null}
-                                        onSelect={(date) => setMetaToEdit(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                        selected={metaToEdit.prazo ? new Date(metaToEdit.prazo) : undefined}
+                                        onSelect={(date) => setMetaToEdit((prev: any) => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
                                         initialFocus
                                         />
                                     </PopoverContent>
@@ -901,23 +948,23 @@ const MetasViewComponent = () => {
                             </div>
                             <div>
                                 <Label htmlFor="specific" className="text-primary">Específico</Label>
-                                <Textarea id="specific" value={metaToEdit.detalhes_smart.specific} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[80px]" />
+                                <Textarea id="specific" value={metaToEdit.detalhes_smart.specific} onChange={(e) => setMetaToEdit((prev: any) => ({...prev, detalhes_smart: {...prev.detalhes_smart, specific: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
                                 <Label htmlFor="measurable" className="text-primary">Mensurável</Label>
-                                <Textarea id="measurable" value={metaToEdit.detalhes_smart.measurable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[80px]" />
+                                <Textarea id="measurable" value={metaToEdit.detalhes_smart.measurable} onChange={(e) => setMetaToEdit((prev: any) => ({...prev, detalhes_smart: {...prev.detalhes_smart, measurable: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
                                 <Label htmlFor="achievable" className="text-primary">Atingível</Label>
-                                <Textarea id="achievable" value={metaToEdit.detalhes_smart.achievable} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[80px]" />
+                                <Textarea id="achievable" value={metaToEdit.detalhes_smart.achievable} onChange={(e) => setMetaToEdit((prev: any) => ({...prev, detalhes_smart: {...prev.detalhes_smart, achievable: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
                                 <Label htmlFor="relevant" className="text-primary">Relevante</Label>
-                                <Textarea id="relevant" value={metaToEdit.detalhes_smart.relevant} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[80px]" />
+                                <Textarea id="relevant" value={metaToEdit.detalhes_smart.relevant} onChange={(e) => setMetaToEdit((prev: any) => ({...prev, detalhes_smart: {...prev.detalhes_smart, relevant: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                              <div>
                                 <Label htmlFor="timeBound" className="text-primary">Temporal</Label>
-                                <Textarea id="timeBound" value={metaToEdit.detalhes_smart.timeBound} onChange={(e) => setMetaToEdit(prev => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[80px]" />
+                                <Textarea id="timeBound" value={metaToEdit.detalhes_smart.timeBound} onChange={(e) => setMetaToEdit((prev: any) => ({...prev, detalhes_smart: {...prev.detalhes_smart, timeBound: e.target.value}}))} className="min-h-[80px]" />
                             </div>
                         </div>
                          <DialogFooter>
@@ -1051,6 +1098,11 @@ const MetasViewComponent = () => {
 
 export const MetasView = memo(MetasViewComponent);
 
-    
-
-
+const statIcons: any = {
+    forca: <Swords className="h-4 w-4 text-red-400" />,
+    inteligencia: <Brain className="h-4 w-4 text-blue-400" />,
+    destreza: <Zap className="h-4 w-4 text-yellow-400" />,
+    constituicao: <ShieldCheck className="h-4 w-4 text-green-400" />,
+    sabedoria: <BookOpen className="h-4 w-4 text-purple-400" />,
+    carisma: <Star className="h-4 w-4 text-pink-400" />,
+};

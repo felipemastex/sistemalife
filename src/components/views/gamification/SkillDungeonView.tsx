@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
@@ -13,14 +11,14 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
-const SkillDungeonView = ({ onExit }) => {
+const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
     const { profile, skills, generateDungeonChallenge, completeDungeonChallenge, clearDungeonSession } = usePlayerDataContext();
     const [isLoading, setIsLoading] = useState(false);
     const [submission, setSubmission] = useState('');
     const { toast } = useToast();
 
     const dungeonSession = profile?.dungeon_session;
-    const skill = useMemo(() => skills.find(s => s.id === dungeonSession?.skillId), [skills, dungeonSession]);
+    const skill = useMemo(() => skills.find((s: any) => s.id === dungeonSession?.skillId), [skills, dungeonSession]);
     
     const handleGenerateChallenge = useCallback(async () => {
         if (!skill) return;

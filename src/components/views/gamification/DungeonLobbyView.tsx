@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { usePlayerDataContext } from "@/hooks/use-player-data";
 import { KeySquare, Send } from "lucide-react";
 
-const DungeonLobbyView = ({ onNavigateToSkills }) => {
+const DungeonLobbyView = ({ onNavigateToSkills }: { onNavigateToSkills: () => void }) => {
     const { profile } = usePlayerDataContext();
     const crystalCount = profile?.dungeon_crystals || 0;
 

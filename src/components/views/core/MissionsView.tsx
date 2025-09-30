@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
@@ -32,6 +30,20 @@ interface SubTask {
   target: number;
   unit: string;
   current: number;
+}
+
+// Add the Mission interface that matches the one in MissionDetailsDialog
+interface Mission {
+  id?: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido?: boolean;
+  tipo?: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
+  isManual?: boolean;
 }
 
 interface DailyMission {
@@ -377,8 +389,6 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
   );
 };
 
-
-
 const MissionsViewComponent = () => {
     const { profile, missions, metas, completeMission, generatingMission, setGeneratingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions, addDailyMission, adjustDailyMission } = usePlayerDataContext() as {
         profile: Profile;
@@ -682,7 +692,7 @@ const MissionsViewComponent = () => {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0})),
+                subTasks: result.subTasks.map(st => ({...st, current: 0, unit: st.unit || ''})),
             };
             
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });
@@ -1063,18 +1073,23 @@ const MissionsViewComponent = () => {
                 <MissionDetailsDialog
                     isOpen={dialogState.open} 
                     onClose={() => setDialogState({ open: false, mission: null, isManual: false })}
-                    mission={dialogState.mission}
+                    mission={dialogState.mission as any}
                     isManual={dialogState.isManual}
                     onContribute={(subTask, amount, mission) => {
-                        onContributeToQuest(subTask, amount, mission);
+                        onContributeToQuest(subTask, amount, mission as DailyMission | RankedMission);
                     }}
                     onSave={(missionData) => handleSaveManualMission(missionData as unknown as RankedMission)}
                     onDelete={(missionId) => handleDeleteManualMission(missionId)}
-                    onAdjustDifficulty={(mission, feedback) => adjustDailyMission(
-                        (missions.find(rm => rm.missoes_diarias.some(dm => dm.id === mission.id))?.id) as string | number,
-                        mission.id!,
-                        feedback
-                    )}
+                    onAdjustDifficulty={(mission, feedback) => {
+                        const rankedMission = missions.find(rm => rm.missoes_diarias?.some(dm => dm.id === mission.id));
+                        if (rankedMission) {
+                            adjustDailyMission(
+                                rankedMission.id as string | number,
+                                mission.id!,
+                                feedback
+                            );
+                        }
+                    }}
                 />
             }
 
@@ -1111,4 +1126,25 @@ const MissionsViewComponent = () => {
 
 export const MissionsView = memo(MissionsViewComponent);
 
-    
+// Helper function to convert DailyMission or RankedMission to Mission type
+const convertToMissionType = (mission: DailyMission | RankedMission | null): Mission | null => {
+  if (!mission) return null;
+  
+  if ('xp_conclusao' in mission && 'fragmentos_conclusao' in mission) {
+    // It's a DailyMission
+    return mission as Mission;
+  } else {
+    // It's a RankedMission, provide default values for missing properties
+    return {
+      ...mission as any,
+      id: mission.id,
+      nome: mission.nome,
+      descricao: mission.descricao,
+      xp_conclusao: 0,
+      fragmentos_conclusao: 0,
+      concluido: (mission as RankedMission).concluido,
+      tipo: 'epica',
+      subTasks: (mission as any).subTasks || [],
+    };
+  }
+};

@@ -1,20 +1,19 @@
-
-
 "use client";
 
 import { memo, useMemo } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, Gem, ShieldAlert, Zap, Clock, Users, Heart, KeySquare } from 'lucide-react';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import type { SVGProps } from 'react';
 
-const getProfileRank = (level) => {
+const getProfileRank = (level: number) => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
     if (level <= 10) return { rank: 'E', title: 'Iniciante' };
     if (level <= 20) return { rank: 'D', title: 'Adepto' };
@@ -26,7 +25,7 @@ const getProfileRank = (level) => {
     return { rank: 'SSS', title: 'Lendário' };
 };
   
-const StatItem = ({ label, value, icon: Icon = null }) => (
+const StatItem = ({ label, value, icon: Icon = null }: { label: string; value: string | number; icon?: React.ComponentType<SVGProps<SVGSVGElement>> | null }) => (
     <div className="bg-secondary/50 p-4 rounded-lg border border-border/50 transition-all hover:bg-secondary/80 hover:border-primary/50">
         <span className="text-sm text-muted-foreground flex items-center gap-2">
             {Icon && <Icon className="h-4 w-4" />}
@@ -36,7 +35,7 @@ const StatItem = ({ label, value, icon: Icon = null }) => (
     </div>
 );
 
-const WorldEventCard = ({ event, userContribution }) => {
+const WorldEventCard = ({ event, userContribution }: { event: any; userContribution: number }) => {
     if (!event || !event.isActive) return null;
 
     const progressPercentage = (event.progress / event.goal.target) * 100;
@@ -87,7 +86,7 @@ const DashboardViewComponent = () => {
   const { profile, worldEvents, triggerDungeonEvent, addDungeonCrystal, activateTestWorldEvent } = usePlayerDataContext();
   
   const activeEvent = useMemo(() => {
-    return (worldEvents || []).find(e => e.isActive);
+    return (worldEvents || []).find((e: any) => e.isActive);
   }, [worldEvents]);
 
   const userContribution = useMemo(() => {

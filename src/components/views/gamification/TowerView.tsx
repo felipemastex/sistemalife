@@ -59,7 +59,7 @@ const TowerView = () => {
                 floorNumber: towerProgress.currentFloor,
                 userProfile: JSON.stringify(profile),
                 userSkills: JSON.stringify(skills),
-                activeGoals: JSON.stringify(metas.filter(m => !m.concluida)),
+                activeGoals: JSON.stringify(metas.filter((m: any) => !m.concluida)),
                 recentChallenges: recentChallengeTitles,
             });
 
@@ -81,7 +81,7 @@ const TowerView = () => {
         }
     };
     
-     const handleAcceptChallenge = async (challengeToAccept) => {
+     const handleAcceptChallenge = async (challengeToAccept: any) => {
         if ((towerProgress.tower_tickets || 0) <= 0) {
             toast({ variant: 'destructive', title: 'Tickets Insuficientes', description: 'Você precisa de um Ticket da Torre para aceitar este desafio.' });
             return;
@@ -90,11 +90,11 @@ const TowerView = () => {
         const newChallenge = {
             ...challengeToAccept,
             startedAt: new Date().toISOString(),
-            requirements: challengeToAccept.requirements.map(r => ({...r, current: 0})),
+            requirements: challengeToAccept.requirements.map((r: any) => ({...r, current: 0})),
         };
         
         const updatedActiveChallenges = [...activeChallenges, newChallenge];
-        const updatedAvailableChallenges = availableChallenges.filter(c => c.id !== challengeToAccept.id);
+        const updatedAvailableChallenges = availableChallenges.filter((c: any) => c.id !== challengeToAccept.id);
 
         const updatedProfile = {
             ...profile,
@@ -181,11 +181,11 @@ const TowerView = () => {
                                     <p className="text-md font-bold text-white mt-2">Disponível {lockoutTimeLeft}</p>
                                 </div>
                             ) : challengesForCurrentFloor.length > 0 ? (
-                                challengesForCurrentFloor.map((challenge) => {
-                                     const ChallengeIcon = challengeTypes[challenge.type]?.icon || Trophy;
+                                challengesForCurrentFloor.map((challenge: any) => {
+                                     const ChallengeIcon = challengeTypes[challenge.type as keyof typeof challengeTypes]?.icon || Trophy;
                                      const isAccepted = !!challenge.startedAt;
                                      const progress = challenge.requirements && challenge.requirements.length > 0
-                                        ? (challenge.requirements.reduce((sum, r) => sum + (r.current || 0), 0) / challenge.requirements.reduce((sum, r) => sum + r.target, 0)) * 100
+                                        ? (challenge.requirements.reduce((sum: number, r: any) => sum + (r.current || 0), 0) / challenge.requirements.reduce((sum: number, r: any) => sum + r.target, 0)) * 100
                                         : 0;
                                      return (
                                          <Card key={challenge.id} className={cn("bg-secondary/50", isAccepted && "border-primary/50")}>
@@ -193,7 +193,7 @@ const TowerView = () => {
                                                 <div className="flex flex-col sm:flex-row gap-4">
                                                      <div className="flex-grow">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <ChallengeIcon className={cn("h-5 w-5", challengeTypes[challenge.type]?.color)} />
+                                                            <ChallengeIcon className={cn("h-5 w-5", challengeTypes[challenge.type as keyof typeof challengeTypes]?.color)} />
                                                             <h3 className="font-bold text-base text-foreground">{challenge.title}</h3>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">{challenge.description}</p>

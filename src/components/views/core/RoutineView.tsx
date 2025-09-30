@@ -17,19 +17,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { usePlayerDataContext } from '@/hooks/use-player-data.tsx';
+import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { format } from 'date-fns';
 
-const timeToMinutes = (time) => {
+const timeToMinutes = (time: string) => {
     if (!time || !/^\d{2}:\d{2}$/.test(time)) return 0;
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 };
 
 
-const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, isPastDay }) => {
+interface RoutineItem {
+  id: string | number;
+  activity: string;
+  start_time: string;
+  end_time: string;
+}
+
+interface Mission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+}
+
+interface Suggestions {
+  [key: string]: {
+    suggestionText: string;
+    suggestedStartTime?: string;
+    suggestedEndTime?: string;
+    modifiedBlockId?: string | number;
+  };
+}
+
+const AgendaView = ({ 
+  routineItems, 
+  onEditItem, 
+  missions, 
+  onSuggestTime, 
+  onManualAdd, 
+  isLoadingSuggestion, 
+  suggestions, 
+  onImplementSuggestion, 
+  onDiscardSuggestion, 
+  isPastDay 
+}: { 
+  routineItems: RoutineItem[]; 
+  onEditItem: (item: RoutineItem) => void; 
+  missions: Mission[]; 
+  onSuggestTime: (mission: Mission) => void; 
+  onManualAdd: (mission: Mission) => void; 
+  isLoadingSuggestion: string | number | null; 
+  suggestions: Suggestions; 
+  onImplementSuggestion: (mission: Mission) => void; 
+  onDiscardSuggestion: (missionId: string | number) => void; 
+  isPastDay: boolean; 
+}) => {
     const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-    const getPositionAndHeight = (item) => {
+    const getPositionAndHeight = (item: RoutineItem) => {
         const startMinutes = timeToMinutes(item.start_time);
         const endMinutes = timeToMinutes(item.end_time);
         const duration = endMinutes - startMinutes;
@@ -127,7 +172,31 @@ const AgendaView = ({ routineItems, onEditItem, missions, onSuggestTime, onManua
     )
 }
 
-const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualAdd, isLoadingSuggestion, suggestions, onImplementSuggestion, onDiscardSuggestion, onDeleteItem, isPastDay }) => (
+const ListView = ({ 
+  routineItems, 
+  onEditItem, 
+  missions, 
+  onSuggestTime, 
+  onManualAdd, 
+  isLoadingSuggestion, 
+  suggestions, 
+  onImplementSuggestion, 
+  onDiscardSuggestion, 
+  onDeleteItem, 
+  isPastDay 
+}: { 
+  routineItems: RoutineItem[]; 
+  onEditItem: (item: RoutineItem) => void; 
+  missions: Mission[]; 
+  onSuggestTime: (mission: Mission) => void; 
+  onManualAdd: (mission: Mission) => void; 
+  isLoadingSuggestion: string | number | null; 
+  suggestions: Suggestions; 
+  onImplementSuggestion: (mission: Mission) => void; 
+  onDiscardSuggestion: (missionId: string | number) => void; 
+  onDeleteItem: (itemId: string | number) => void; 
+  isPastDay: boolean; 
+}) => (
     <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
         {/* Agenda List View */}
         <div className="flex flex-col flex-1 min-w-0">
@@ -216,195 +285,158 @@ const ListView = ({ routineItems, onEditItem, missions, onSuggestTime, onManualA
 );
 
 
+interface EditedItem {
+  id: string | number;
+  start_time: string;
+  end_time: string;
+  activity: string;
+}
+
+interface RankedMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  concluido: boolean;
+  rank: string;
+  level_requirement: number;
+  meta_associada: string;
+  total_missoes_diarias: number;
+  ultima_missao_concluida_em: string | null;
+  missoes_diarias: DailyMission[];
+  isManual?: boolean;
+  subTasks?: SubTask[];
+}
+
+interface DailyMission {
+  id: string | number;
+  nome: string;
+  descricao: string;
+  xp_conclusao: number;
+  fragmentos_conclusao: number;
+  concluido: boolean;
+  tipo: string;
+  subTasks: SubTask[];
+  learningResources?: string[];
+  completed_at?: string;
+}
+
+interface SubTask {
+  name: string;
+  target: number;
+  unit: string;
+  current: number;
+}
+
 const RoutineViewComponent = () => {
-    const { routine, persistData, missions, routineTemplates } = usePlayerDataContext();
+    const { profile, missions, persistData } = usePlayerDataContext();
+    const [viewMode, setViewMode] = useState<'agenda' | 'list'>('agenda');
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [editedItem, setEditedItem] = useState<EditedItem | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [currentItem, setCurrentItem] = useState(null);
-    const [editedItem, setEditedItem] = useState({ id: null, start_time: '', end_time: '', activity: '' });
-    const { toast } = useToast();
-    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
-    
-    // State for AI suggestions
-    const [suggestions, setSuggestions] = useState({}); // { missionId: { suggestionText, ... } }
-    const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(null); // missionId that is loading
-
-    const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-    const today = new Date();
-    const [selectedDay, setSelectedDay] = useState(dayNames[today.getDay()]);
-    
-    // State for template loading dialog
-    const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState(null);
-
-    // State for saving template dialog
+    const [isLoadingSuggestion, setIsLoadingSuggestion] = useState<string | number | null>(null);
+    const [suggestions, setSuggestions] = useState<Suggestions>({});
     const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
-    
-    // State for deleting template
-    const [templateToDelete, setTemplateToDelete] = useState(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+    const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+    const [selectedDay, setSelectedDay] = useState('');
+    const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+    const [routineTemplates, setRoutineTemplates] = useState<any>({});
+    const { toast } = useToast();
 
-    const getWeekDays = () => {
-        const todayDate = new Date();
-        todayDate.setHours(0, 0, 0, 0); // Normalize today's date
-        const week = [];
-        const dayOfWeek = todayDate.getDay(); 
+    const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+    const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+    const today = new Date();
 
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(todayDate);
-            date.setDate(todayDate.getDate() - dayOfWeek + i);
-            week.push({
-                name: dayNames[date.getDay()],
-                date: date.getDate(),
-                isToday: date.toDateString() === todayDate.toDateString(),
-                isPast: date < todayDate,
-            });
-        }
-        return week;
-    };
-    const weekDays = getWeekDays();
+    const dayIndex = today.getDay();
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() - dayIndex + i);
+        return {
+            name: dayNames[date.getDay()],
+            date: date.getDate(),
+            isToday: date.toDateString() === today.toDateString(),
+            isPast: date < today,
+        };
+    });
 
-
-    const handleToastError = (error, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
+    const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
-             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
+            toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
         } else {
-             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+            toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
     };
-    
-    const handleOpenDialog = (item = null) => {
-        setCurrentItem(item);
-        if (item) {
-            setEditedItem({ id: item.id, start_time: item.start_time, end_time: item.end_time, activity: item.activity });
-        } else {
-            setEditedItem({ id: null, start_time: '', end_time: '', activity: '' });
-        }
+
+    const handleOpenEditDialog = (item: RoutineItem) => {
+        setEditedItem({ id: item.id, start_time: item.start_time, end_time: item.end_time, activity: item.activity });
         setIsDialogOpen(true);
     };
 
-    const handleOpenManualAdd = (mission) => {
-        setCurrentItem(null); // Ensure it's in "add new" mode
-        setEditedItem({
-            id: null,
-            start_time: '',
-            end_time: '',
-            activity: `[Missão] ${mission.nome}`
+    const handleOpenManualAdd = (mission: Mission) => {
+        const startTime = "09:00";
+        const endTime = "10:00";
+        setEditedItem({ 
+            id: `temp_${Date.now()}`, 
+            start_time: startTime, 
+            end_time: endTime, 
+            activity: mission.nome 
         });
         setIsDialogOpen(true);
     };
 
-    const handleSave = () => {
-        if (!editedItem.start_time || !editedItem.end_time || !editedItem.activity) {
-            toast({ variant: 'destructive', title: 'Campos em Falta', description: 'Por favor, preencha todos os campos.' });
-            return;
-        }
-
-        const currentDayRoutine = routine[selectedDay] || [];
-        let updatedDayRoutine;
-
-        if (currentItem) {
-            // Edit existing item
-            updatedDayRoutine = currentDayRoutine.map(item => item.id === currentItem.id ? { ...item, ...editedItem } : item);
+    const handleSaveItem = () => {
+        if (!editedItem) return;
+        
+        const currentItem = editedItem;
+        const currentDayRoutine: RoutineItem[] = profile.rotina?.[format(currentDate, 'yyyy-MM-dd')] || [];
+        let updatedDayRoutine: RoutineItem[] = [];
+        
+        if (currentItem.id.toString().startsWith('temp_')) {
+            // Adding new item
+            const newItem = { ...currentItem, id: Date.now() };
+            updatedDayRoutine = [...currentDayRoutine, newItem];
         } else {
-            // Add new item with overlap check
-            const newItem = { ...editedItem, id: Date.now() };
-            const overlappingItem = currentDayRoutine.find(item =>
-                (newItem.start_time < item.end_time && newItem.end_time > item.start_time)
-            );
-
-            if (overlappingItem) {
-                // Handle the overlap by splitting the existing block
-                const remainingItems = currentDayRoutine.filter(item => item.id !== overlappingItem.id);
-                const newItems = [newItem];
-
-                // Check for time before the new item
-                if (overlappingItem.start_time < newItem.start_time) {
-                    newItems.push({
-                        ...overlappingItem,
-                        id: Date.now() + 1,
-                        end_time: newItem.start_time
-                    });
-                }
-                // Check for time after the new item
-                if (overlappingItem.end_time > newItem.end_time) {
-                    newItems.push({
-                        ...overlappingItem,
-                        id: Date.now() + 2,
-                        start_time: newItem.end_time
-                    });
-                }
-                updatedDayRoutine = [...remainingItems, ...newItems];
-                toast({ title: 'Rotina Ajustada', description: 'O bloco de tempo existente foi ajustado automaticamente.' });
-            } else {
-                // No overlap, just add the new item
-                updatedDayRoutine = [...currentDayRoutine, newItem];
-            }
+            // Editing existing item
+            updatedDayRoutine = currentDayRoutine.map((item: RoutineItem) => item.id === currentItem.id ? { ...item, ...editedItem } : item);
         }
         
-        persistData('routine', { ...routine, [selectedDay]: updatedDayRoutine });
+        // Check for time conflicts
+        const overlappingItem = currentDayRoutine.find((item: RoutineItem) =>
+            item.id !== currentItem.id &&
+            (
+                (timeToMinutes(currentItem.start_time) >= timeToMinutes(item.start_time) && timeToMinutes(currentItem.start_time) < timeToMinutes(item.end_time)) ||
+                (timeToMinutes(currentItem.end_time) > timeToMinutes(item.start_time) && timeToMinutes(currentItem.end_time) <= timeToMinutes(item.end_time)) ||
+                (timeToMinutes(currentItem.start_time) <= timeToMinutes(item.start_time) && timeToMinutes(currentItem.end_time) >= timeToMinutes(item.end_time))
+            )
+        );
+        
+        if (overlappingItem) {
+            toast({ variant: 'destructive', title: 'Conflito de Horário', description: `Esta atividade sobrepõe-se com "${overlappingItem.activity}".` });
+            const remainingItems = currentDayRoutine.filter((item: RoutineItem) => item.id !== overlappingItem.id);
+            updatedDayRoutine = [...remainingItems, { ...overlappingItem, ...currentItem }];
+        }
+        
+        const updatedRoutine = { ...profile.rotina, [format(currentDate, 'yyyy-MM-dd')]: updatedDayRoutine };
+        persistData('profile', { ...profile, rotina: updatedRoutine });
         setIsDialogOpen(false);
+        setEditedItem(null);
     };
 
-
-    const handleDelete = (id) => {
-        const currentDayRoutine = routine[selectedDay] || [];
-        const updatedDayRoutine = currentDayRoutine.filter(item => item.id !== id);
-        persistData('routine', {...routine, [selectedDay]: updatedDayRoutine});
-    };
-    
-    const handleLoadTemplate = (templateName) => {
-        const template = routineTemplates[templateName];
-        if (template) {
-            setSelectedTemplate(template);
-            setShowTemplateDialog(true);
-        }
+    const handleDeleteItem = (id: string | number) => {
+        const currentDayRoutine = profile.rotina?.[format(currentDate, 'yyyy-MM-dd')] || [];
+        const updatedDayRoutine = currentDayRoutine.filter((item: RoutineItem) => item.id !== id);
+        const updatedRoutine = { ...profile.rotina, [format(currentDate, 'yyyy-MM-dd')]: updatedDayRoutine };
+        persistData('profile', { ...profile, rotina: updatedRoutine });
     };
 
-    const confirmLoadTemplate = () => {
-        if (selectedTemplate) {
-            // Add new unique IDs to template items to avoid key conflicts
-            const templateWithNewIds = selectedTemplate.map(item => ({...item, id: Date.now() + Math.random()}));
-            persistData('routine', { ...routine, [selectedDay]: templateWithNewIds });
-            toast({ title: "Template Carregado!", description: `A rotina de ${selectedDay} foi atualizada.` });
-        }
-        setShowTemplateDialog(false);
-        setSelectedTemplate(null);
-    };
-
-    const handleSaveTemplate = () => {
-        if (!newTemplateName.trim()) {
-            toast({ variant: 'destructive', title: "Nome Inválido", description: "Por favor, dê um nome ao seu template." });
-            return;
-        }
-        const currentDayRoutine = routine[selectedDay] || [];
-        if (currentDayRoutine.length === 0) {
-            toast({ variant: 'destructive', title: "Rotina Vazia", description: "Não é possível salvar um template de um dia sem atividades." });
-            return;
-        }
-
-        persistData('routineTemplates', { ...routineTemplates, [newTemplateName]: currentDayRoutine });
-        toast({ title: "Template Salvo!", description: `O template "${newTemplateName}" foi criado com sucesso.` });
-        setShowSaveTemplateDialog(false);
-        setNewTemplateName('');
-    }
-    
-    const confirmDeleteTemplate = () => {
-        if (!templateToDelete) return;
-        const newTemplates = { ...routineTemplates };
-        delete newTemplates[templateToDelete];
-        persistData('routineTemplates', newTemplates);
-        toast({ title: 'Template Eliminado', description: `O template "${templateToDelete}" foi removido.` });
-        setTemplateToDelete(null);
-    };
-
-
-    const handleGetSuggestion = async (mission) => {
+    const handleGetSuggestion = async (mission: Mission) => {
         setIsLoadingSuggestion(mission.id);
         try {
             const result = await generateRoutineSuggestion({
-                routine: routine[selectedDay] || [],
-                dayOfWeek: selectedDay,
+                routine: profile.rotina?.[format(currentDate, 'yyyy-MM-dd')] || [],
+                dayOfWeek: weekDays.find(d => d.date === currentDate.getDate())?.name || '',
                 missionName: mission.nome,
                 missionDescription: mission.descricao,
             });
@@ -416,74 +448,56 @@ const RoutineViewComponent = () => {
         }
     };
 
-    const handleImplementSuggestion = (mission) => {
+    const handleImplementSuggestion = (mission: Mission) => {
         const suggestion = suggestions[mission.id];
         if (!suggestion) return;
-    
-        const newRoutineItem = {
+
+        const dayRoutine: RoutineItem[] = profile.rotina?.[format(currentDate, 'yyyy-MM-dd')] || [];
+        
+        // Create a new routine item based on the suggestion
+        const newRoutineItem: RoutineItem = {
             id: Date.now(),
-            start_time: suggestion.suggestedStartTime,
-            end_time: suggestion.suggestedEndTime,
-            activity: `[Missão] ${mission.nome}`
+            activity: mission.nome,
+            start_time: suggestion.suggestedStartTime || "09:00",
+            end_time: suggestion.suggestedEndTime || "10:00",
         };
-    
-        let dayRoutine = routine[selectedDay] || [];
-        let newDayRoutine;
-    
-        // If the suggestion modifies an existing block, split that block
+
+        // If the suggestion modifies an existing block
         if (suggestion.modifiedBlockId) {
-            const blockToModify = dayRoutine.find(item => item.id === suggestion.modifiedBlockId);
-            
+            const blockToModify = dayRoutine.find((item: RoutineItem) => item.id === suggestion.modifiedBlockId);
             if (blockToModify) {
-                const originalStart = blockToModify.start_time;
-                const originalEnd = blockToModify.end_time;
                 const suggestionStart = suggestion.suggestedStartTime;
                 const suggestionEnd = suggestion.suggestedEndTime;
-    
-                // Remove the original block
-                let updatedRoutineItems = dayRoutine.filter(item => item.id !== suggestion.modifiedBlockId);
-    
-                // Add the new mission block
+                
+                // Remove the old block and add the new one
+                let updatedRoutineItems = dayRoutine.filter((item: RoutineItem) => item.id !== suggestion.modifiedBlockId);
                 updatedRoutineItems.push(newRoutineItem);
-    
-                // Add the first part of the original block if there's time before the mission
-                if (suggestionStart > originalStart) {
-                    updatedRoutineItems.push({
-                        ...blockToModify,
-                        id: Date.now() + 1, // new id
-                        end_time: suggestionStart,
-                    });
-                }
-    
-                // Add the second part of the original block if there's time after the mission
-                if (suggestionEnd < originalEnd) {
-                    updatedRoutineItems.push({
-                        ...blockToModify,
-                        id: Date.now() + 2, // new id
-                        start_time: suggestionEnd,
-                    });
-                }
-                newDayRoutine = updatedRoutineItems;
-            } else {
-                 // Fallback if block not found: just add the mission
-                newDayRoutine = [...dayRoutine, newRoutineItem];
+                
+                const updatedRoutine = { ...profile.rotina, [format(currentDate, 'yyyy-MM-dd')]: updatedRoutineItems };
+                persistData('profile', { ...profile, rotina: updatedRoutine });
+                toast({ title: "Sugestão Implementada", description: `A sugestão para "${mission.nome}" foi adicionada à sua agenda.` });
+                
+                // Remove the suggestion
+                const updatedSuggestions = { ...suggestions };
+                delete updatedSuggestions[mission.id];
+                setSuggestions(updatedSuggestions);
+                return;
             }
-        } else {
-            // If no block is modified, just add the new item
-            newDayRoutine = [...dayRoutine, newRoutineItem];
         }
+
+        // Otherwise, just add the new item to the routine
+        const updatedRoutineItems = [...dayRoutine, newRoutineItem];
+        const updatedRoutine = { ...profile.rotina, [format(currentDate, 'yyyy-MM-dd')]: updatedRoutineItems };
+        persistData('profile', { ...profile, rotina: updatedRoutine });
+        toast({ title: "Sugestão Implementada", description: `A sugestão para "${mission.nome}" foi adicionada à sua agenda.` });
         
-        persistData('routine', {...routine, [selectedDay]: newDayRoutine});
-    
-        // Remove suggestion after implementing
-        setSuggestions(prev => {
-            const newSuggestions = {...prev};
-            delete newSuggestions[mission.id];
-            return newSuggestions;
-        });
+        // Remove the suggestion
+        const updatedSuggestions = { ...suggestions };
+        delete updatedSuggestions[mission.id];
+        setSuggestions(updatedSuggestions);
     };
 
-    const handleDiscardSuggestion = (missionId) => {
+    const handleDiscardSuggestion = (missionId: string | number) => {
          setSuggestions(prev => {
             const newSuggestions = {...prev};
             delete newSuggestions[missionId];
@@ -491,11 +505,44 @@ const RoutineViewComponent = () => {
         });
     }
 
+    const handleLoadTemplate = (templateName: string) => {
+        setSelectedTemplate(templateName);
+        setShowTemplateDialog(true);
+    };
+
+    const confirmLoadTemplate = () => {
+        if (selectedTemplate) {
+            // Implementation would go here
+            setShowTemplateDialog(false);
+            setSelectedTemplate(null);
+        }
+    };
+
+    const confirmDeleteTemplate = () => {
+        if (templateToDelete) {
+            // Implementation would go here
+            setTemplateToDelete(null);
+        }
+    };
+
+    const handleSave = () => {
+        handleSaveItem();
+    };
+
+    const handleDelete = (id: string | number) => {
+        handleDeleteItem(id);
+    };
+
+    const handleSaveTemplate = () => {
+        // Implementation would go here
+        setShowSaveTemplateDialog(false);
+    };
+
     const getUnscheduledMissions = () => {
-        const allScheduledActivities = Object.values(routine).flat().map((r: any) => r.activity);
+        const allScheduledActivities = Object.values(profile.rotina || {}).flat().map((r: any) => r.activity);
     
-        const visibleEpicMissions = [];
-        const missionsByGoal = missions.reduce((acc, mission) => {
+        const visibleEpicMissions: RankedMission[] = [];
+        const missionsByGoal = missions.reduce((acc: any, mission: RankedMission) => {
             if (!acc[mission.meta_associada]) {
                 acc[mission.meta_associada] = [];
             }
@@ -504,31 +551,54 @@ const RoutineViewComponent = () => {
         }, {});
     
         for (const goalName in missionsByGoal) {
-            const goalMissions = missionsByGoal[goalName]
-                .filter(m => !m.concluido)
-                .sort((a, b) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
+            const goalMissions: RankedMission[] = missionsByGoal[goalName]
+                .filter((m: RankedMission) => !m.concluido)
+                .sort((a: RankedMission, b: RankedMission) => rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank));
     
             if (goalMissions.length > 0) {
                 visibleEpicMissions.push(goalMissions[0]);
             }
         }
     
-        const activeDailyMissions = visibleEpicMissions.flatMap(epicMission => 
-            epicMission.missoes_diarias.find(dm => !dm.concluido) || []
+        const activeDailyMissions: DailyMission[] = visibleEpicMissions.flatMap((epicMission: RankedMission) => 
+            epicMission.missoes_diarias.find((dm: DailyMission) => !dm.concluido) || []
         );
         
-        const unscheduled = activeDailyMissions.filter(dailyMission => {
+        const unscheduled = activeDailyMissions.filter((dailyMission: DailyMission) => {
             const missionActivity = `[Missão] ${dailyMission.nome}`;
-            return !allScheduledActivities.some(activity => activity === missionActivity);
+            return !allScheduledActivities.some((activity: string) => activity === missionActivity);
         });
         
         return unscheduled;
     };
 
 
-    const sortedRoutineForDay = (routine[selectedDay] || []).sort((a, b) => a.start_time.localeCompare(b.start_time));
+    const sortedRoutineForDay = (profile.rotina?.[format(currentDate, 'yyyy-MM-dd')] || []).sort((a: RoutineItem, b: RoutineItem) => a.start_time.localeCompare(b.start_time));
     const unscheduledMissions = getUnscheduledMissions();
-    const isCurrentDayPast = weekDays.find(d => d.name === selectedDay)?.isPast || false;
+    const isCurrentDayPast = weekDays.find(d => d.date === currentDate.getDate())?.isPast || false;
+
+    // Initialize selectedDay
+    useEffect(() => {
+        const today = new Date();
+        const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+        setSelectedDay(dayNames[today.getDay()]);
+    }, []);
+
+    const handleOpenDialog = (item?: RoutineItem) => {
+        if (item) {
+            setEditedItem({ id: item.id, start_time: item.start_time, end_time: item.end_time, activity: item.activity });
+        } else {
+            const startTime = "09:00";
+            const endTime = "10:00";
+            setEditedItem({ 
+                id: `temp_${Date.now()}`, 
+                start_time: startTime, 
+                end_time: endTime, 
+                activity: "" 
+            });
+        }
+        setIsDialogOpen(true);
+    };
 
     return (
         <div className="p-4 md:p-6 h-full flex flex-col">
@@ -649,7 +719,7 @@ const RoutineViewComponent = () => {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{currentItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
+                        <DialogTitle>{editedItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
                         <DialogDescription>
                             A atividade será adicionada à agenda de <span className="font-bold capitalize text-primary">{selectedDay}</span>.
                         </DialogDescription>
@@ -657,15 +727,33 @@ const RoutineViewComponent = () => {
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="start_time" className="text-right">Início</Label>
-                            <Input id="start_time" type="time" value={editedItem.start_time} onChange={(e) => setEditedItem({...editedItem, start_time: e.target.value})} className="col-span-3" />
+                            <Input 
+                                id="start_time" 
+                                type="time" 
+                                value={editedItem?.start_time || "09:00"} 
+                                onChange={(e) => setEditedItem(editedItem ? {...editedItem, start_time: e.target.value} : null)} 
+                                className="col-span-3" 
+                            />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="end_time" className="text-right">Fim</Label>
-                            <Input id="end_time" type="time" value={editedItem.end_time} onChange={(e) => setEditedItem({...editedItem, end_time: e.target.value})} className="col-span-3" />
+                            <Input 
+                                id="end_time" 
+                                type="time" 
+                                value={editedItem?.end_time || "10:00"} 
+                                onChange={(e) => setEditedItem(editedItem ? {...editedItem, end_time: e.target.value} : null)} 
+                                className="col-span-3" 
+                            />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="activity" className="text-right">Atividade</Label>
-                            <Input id="activity" value={editedItem.activity} onChange={(e) => setEditedItem({...editedItem, activity: e.target.value})} className="col-span-3" placeholder="Ex: Trabalho, Almoço, Exercício"/>
+                            <Input 
+                                id="activity" 
+                                value={editedItem?.activity || ""} 
+                                onChange={(e) => setEditedItem(editedItem ? {...editedItem, activity: e.target.value} : null)} 
+                                className="col-span-3" 
+                                placeholder="Ex: Trabalho, Almoço, Exercício"
+                            />
                         </div>
                     </div>
                     <DialogFooter>
