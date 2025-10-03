@@ -951,16 +951,24 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 .filter(d => d.concluido)
                 .map(d => `- ${d.nome}`)
                 .join('\n');
-    
+            
+            // Add specific difficulty adjustment information to the feedback
+            let difficultyAdjustment = "";
+            if (feedback === 'too_easy') {
+                difficultyAdjustment = "Ajuste a dificuldade da próxima missão com um aumento de +1,5% de dificuldade em relação à missão anterior.";
+            } else if (feedback === 'too_hard') {
+                difficultyAdjustment = "Ajuste a dificuldade da próxima missão com uma redução de -0,5% de dificuldade em relação à missão anterior.";
+            }
+
             const result = await generateNextDailyMission({
                 rankedMissionName: rankedMission.nome,
                 metaName: meta?.nome || "Objetivo geral",
                 goalDeadline: meta?.prazo,
                 history: history || `O utilizador está a ajustar a missão: "${dailyMission.nome}".`,
                 userLevel: state.profile.nivel,
-                feedback: `O utilizador considerou a missão anterior ${feedback === 'too_easy' ? 'muito fácil' : 'muito difícil'}. Ajuste drasticamente.`
+                feedback: `O utilizador considerou a missão anterior ${feedback === 'too_easy' ? 'muito fácil' : 'muito difícil'}. ${difficultyAdjustment}`
             });
-    
+
             newDailyMission = {
                 id: Date.now(),
                 nome: result.nextMissionName,
@@ -976,9 +984,17 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId: dailyMission.id, newDailyMission } });
              await persistData('missions', playerDataReducer(state, { type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId: dailyMission.id, newDailyMission } }).missions);
 
+            // Show appropriate toast message based on the adjustment
+            let adjustmentDescription = "";
+            if (feedback === 'too_easy') {
+                adjustmentDescription = "mais desafiadora com um aumento de +1,5% de dificuldade";
+            } else if (feedback === 'too_hard') {
+                adjustmentDescription = "mais acessível com uma redução de -0,5% de dificuldade";
+            }
+    
             toast({
                 title: "Missão Ajustada!",
-                description: `Uma nova missão, "${newDailyMission.nome}", foi gerada com base no seu feedback.`
+                description: `Uma nova missão, "${newDailyMission.nome}", foi gerada com base no seu feedback e será ${adjustmentDescription}.`
             });
     
         } catch (error) {

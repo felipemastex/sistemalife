@@ -300,21 +300,21 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
     {
       value: 'too_easy',
       label: 'Muito Fácil',
-      description: 'A missão foi simples demais, preciso de mais desafio',
+      description: 'A missão foi simples demais, preciso de mais desafio (+1,5% de dificuldade)',
       icon: <TrendingDown className="h-4 w-4 text-green-500" />,
       color: 'border-green-200 hover:border-green-400',
     },
     {
       value: 'perfect',
       label: 'Perfeita',
-      description: 'A dificuldade estava ideal para o meu nível',
+      description: 'A dificuldade estava ideal para o meu nível (+1% de dificuldade)',
       icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
       color: 'border-blue-200 hover:border-blue-400',
     },
     {
       value: 'too_hard',
       label: 'Muito Difícil',
-      description: 'A missão foi desafiadora demais, preciso de passos menores',
+      description: 'A missão foi desafiadora demais, preciso de passos menores (-0,5% de dificuldade)',
       icon: <TrendingUp className="h-4 w-4 text-red-500" />,
       color: 'border-red-200 hover:border-red-400',
     },
@@ -525,6 +525,12 @@ const MissionsViewComponent = () => {
             if (feedbackData.comment) {
                 feedbackText += `. Comentário adicional: "${feedbackData.comment}"`;
             }
+        } else {
+            // For perfect rating, we still want to pass the feedback to adjust difficulty by +1%
+            feedbackText = "O utilizador considerou a missão perfeita. Ajuste a dificuldade da próxima missão com um aumento de +1%.";
+            if (feedbackData.comment) {
+                feedbackText += ` Comentário adicional: "${feedbackData.comment}"`;
+            }
         }
         
         const missionToComplete = missions.find((rm: RankedMission) => rm.id === rankedMissionId)?.missoes_diarias?.find((dm: DailyMission) => dm.id === dailyMissionId);
@@ -561,12 +567,12 @@ const MissionsViewComponent = () => {
             if (feedbackData.difficulty === 'perfect') {
                 toast({ 
                     title: "Missão Concluída!", 
-                    description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar." 
+                    description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar com um ajuste de +1%." 
                 });
             } else {
                 const adjustmentText = feedbackData.difficulty === 'too_easy' 
-                    ? 'mais desafiadora' 
-                    : 'mais acessível';
+                    ? 'mais desafiadora com um aumento de +1,5% de dificuldade' 
+                    : 'mais acessível com uma redução de -0,5% de dificuldade';
                 toast({ 
                     title: "Missão Concluída!", 
                     description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
