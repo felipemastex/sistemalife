@@ -12,6 +12,7 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { generateShopItems } from '@/ai/flows/generate-shop-items';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { isToday, parseISO } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const iconMap: { [key: string]: React.ElementType } = {
     Zap,
@@ -29,6 +30,7 @@ const ShopViewComponent = () => {
     const { toast } = useToast();
     const [isBuying, setIsBuying] = useState<string | null>(null);
     const [isGeneratingItems, setIsGeneratingItems] = useState(false);
+    const isMobile = useIsMobile();
 
     const fetchShopItems = useCallback(async (forceRefresh = false) => {
         if (!isDataLoaded || !profile) return;
@@ -145,21 +147,26 @@ const ShopViewComponent = () => {
     const renderShopContent = () => {
         if (isGeneratingItems) {
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+                <div className={cn(
+                    "grid gap-4", 
+                    isMobile 
+                        ? "grid-cols-1 sm:grid-cols-2" 
+                        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                )}>
                     {[...Array(3)].map((_, i) => (
-                        <Card key={i} className="bg-card/60 border-border/80 flex flex-col">
-                            <CardHeader className="flex flex-row items-center gap-4">
-                                <div className="w-14 h-14 rounded-lg bg-secondary flex-shrink-0"></div>
+                        <Card key={i} className={cn("bg-card/60 border-border/80 flex flex-col", isMobile ? "p-2" : "p-0")}>
+                            <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
+                                <div className={cn("rounded-lg bg-secondary flex-shrink-0", isMobile ? "w-12 h-12" : "w-14 h-14")}></div>
                                 <div className="flex-1 space-y-2">
-                                    <div className="h-5 w-3/4 rounded bg-secondary"></div>
+                                    <div className={cn("rounded bg-secondary", isMobile ? "h-4 w-3/4" : "h-5 w-3/4")}></div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-grow space-y-2">
-                                <div className="h-4 w-full rounded bg-secondary"></div>
-                                <div className="h-4 w-5/6 rounded bg-secondary"></div>
+                            <CardContent className={cn("flex-grow space-y-2", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
+                                <div className={cn("rounded bg-secondary", isMobile ? "h-3 w-full" : "h-4 w-full")}></div>
+                                <div className={cn("rounded bg-secondary", isMobile ? "h-3 w-5/6" : "h-4 w-5/6")}></div>
                             </CardContent>
-                            <CardFooter>
-                                <div className="h-10 w-full rounded bg-secondary"></div>
+                            <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
+                                <div className={cn("rounded bg-secondary", isMobile ? "h-8 w-full" : "h-10 w-full")}></div>
                             </CardFooter>
                         </Card>
                     ))}
@@ -169,15 +176,20 @@ const ShopViewComponent = () => {
 
         if (shopItems.length === 0) {
             return (
-                 <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
-                    <p className="font-semibold text-lg">O Mercador do Sistema está a reabastecer.</p>
-                    <p className="text-sm mt-1">Volte mais tarde para ver novas ofertas personalizadas.</p>
+                 <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg", isMobile ? "h-48 p-4" : "h-64 p-8")}>
+                    <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>O Mercador do Sistema está a reabastecer.</p>
+                    <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Volte mais tarde para ver novas ofertas personalizadas.</p>
                 </div>
             )
         }
 
         return (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className={cn(
+                "grid gap-4", 
+                isMobile 
+                    ? "grid-cols-1 sm:grid-cols-2" 
+                    : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            )}>
                 {shopItems.map((item: any) => {
                     const itemDetails = allShopItems.find(i => i.id === item.id);
                     if (!itemDetails) return null;
@@ -189,38 +201,39 @@ const ShopViewComponent = () => {
                             key={item.id}
                             className={cn(
                                 "bg-card/60 border-border/80 flex flex-col transition-all duration-300",
-                                canAfford ? 'hover:border-primary/50' : 'opacity-70'
+                                canAfford ? 'hover:border-primary/50' : 'opacity-70',
+                                isMobile ? 'p-2' : 'p-0'
                             )}
                         >
-                            <CardHeader className="flex flex-row items-center gap-4">
-                                 <div className="w-14 h-14 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                                    <Icon className="w-8 h-8"/>
+                            <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
+                                 <div className={cn("rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0", isMobile ? "w-12 h-12" : "w-14 h-14")}>
+                                    <Icon className={isMobile ? "w-6 h-6" : "w-8 h-8"}/>
                                 </div>
                                 <div className="flex-1">
-                                    <CardTitle className="text-lg text-foreground">
+                                    <CardTitle className={cn("text-foreground", isMobile ? "text-base" : "text-lg")}>
                                         {item.name}
                                     </CardTitle>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-grow">
-                                <CardDescription className="text-muted-foreground">
+                            <CardContent className={cn("flex-grow", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
+                                <CardDescription className={cn("text-muted-foreground", isMobile ? "text-xs" : "")}>
                                     {item.description}
                                 </CardDescription>
                                 {item.reasoning && (
-                                     <Alert className="mt-4 border-cyan-500/30 bg-cyan-900/10 text-cyan-200 text-xs p-2">
-                                        <Sparkles className="h-4 w-4 text-cyan-400" />
+                                     <Alert className={cn("border-cyan-500/30 bg-cyan-900/10 text-cyan-200 p-2 mt-3", isMobile ? "text-[10px]" : "text-xs")}>
+                                        <Sparkles className={cn("text-cyan-400", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <AlertDescription>{item.reasoning}</AlertDescription>
                                     </Alert>
                                 )}
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
                                 <Button 
-                                    className="w-full" 
+                                    className={cn("w-full", isMobile ? "h-8 text-sm" : "")} 
                                     onClick={() => handleBuyItem(item)}
                                     disabled={!canAfford || isBuying === item.id}
                                 >
-                                    <Gem className="mr-2 h-4 w-4" />
-                                    {isBuying === item.id ? 'A comprar...' : `Comprar por ${item.price}`}
+                                    <Gem className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                    {isBuying === item.id ? (isMobile ? 'A comprar...' : 'A comprar...') : `Comprar por ${item.price}`}
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -231,23 +244,23 @@ const ShopViewComponent = () => {
     }
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
+            <div className={cn("flex flex-col gap-4 mb-4", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
                 <div>
-                    <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Loja do Sistema</h1>
-                    <p className="text-muted-foreground mt-2 max-w-3xl">
+                    <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Loja do Sistema</h1>
+                    <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
                         Ofertas diárias geradas pela IA para otimizar a sua jornada.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                     <Button variant="outline" size="icon" onClick={() => fetchShopItems(true)} disabled={isGeneratingItems}>
+                <div className={cn("flex items-center gap-2", isMobile ? "" : "")}>
+                     <Button variant="outline" size="icon" onClick={() => fetchShopItems(true)} disabled={isGeneratingItems} className={isMobile ? "h-8 w-8" : ""}>
                         <RefreshCw className={cn("h-4 w-4", isGeneratingItems && "animate-spin")} />
                     </Button>
-                    <div className="flex-shrink-0 bg-secondary border border-border rounded-lg p-3">
+                    <div className={cn("flex-shrink-0 bg-secondary border border-border rounded-lg", isMobile ? "p-2" : "p-3")}>
                         <div className="flex items-center gap-2">
-                            <Gem className="h-6 w-6 text-yellow-400" />
-                            <span className="text-xl font-bold text-foreground">{profile.fragmentos || 0}</span>
-                            <span className="text-sm text-muted-foreground">Fragmentos</span>
+                            <Gem className={cn("text-yellow-400", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                            <span className={cn("font-bold text-foreground", isMobile ? "text-lg" : "text-xl")}>{profile.fragmentos || 0}</span>
+                            <span className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>Fragmentos</span>
                         </div>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AIChatViewComponent = () => {
     const { profile, metas, routine, missions, isDataLoaded } = usePlayerDataContext();
@@ -23,6 +24,7 @@ const AIChatViewComponent = () => {
     const { toast } = useToast();
     const isInitialMount = useRef(true);
     const speechRecognitionRef = useRef<any>(null);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -152,56 +154,57 @@ const AIChatViewComponent = () => {
         <div className="h-full flex flex-col bg-background relative">
              <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)]"></div>
 
-             <div className="p-4 md:p-6 flex-shrink-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Arquiteto</h1>
-                <p className="text-muted-foreground mt-1">A sua linha de comunicação direta com a IA que gere o seu progresso.</p>
+             <div className={cn("flex-shrink-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-sm", isMobile ? "p-2" : "p-4 md:p-6")}>
+                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Arquiteto</h1>
+                <p className={cn("text-muted-foreground", isMobile ? "mt-1 text-xs" : "mt-1")}>A sua linha de comunicação direta com a IA que gere o seu progresso.</p>
             </div>
             
             <ScrollArea className="flex-grow z-10" ref={scrollAreaRef}>
-                 <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-8">
+                 <div className={cn("mx-auto space-y-6", isMobile ? "p-2 max-w-full" : "p-4 md:p-6 max-w-4xl")}>
                     {messages.map((msg, index) => (
-                        <div key={index} className={cn("flex items-start gap-4", msg.sender === 'user' && 'justify-end')}>
-                            {msg.sender === 'ai' && <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />}
+                        <div key={index} className={cn("flex items-start gap-3", msg.sender === 'user' && 'justify-end')}>
+                            {msg.sender === 'ai' && <Bot className={cn("text-cyan-400 flex-shrink-0 border-2 border-cyan-400/50 rounded-full p-1.5", isMobile ? "h-6 w-6 mt-1" : "h-8 w-8 mt-1")} />}
                             <div className={cn(
-                                "max-w-2xl rounded-lg p-4 text-base", 
+                                "rounded-lg", 
                                 msg.sender === 'user' 
                                 ? 'bg-card border border-border text-foreground shadow-lg' 
-                                : 'bg-transparent text-muted-foreground'
+                                : 'bg-transparent text-muted-foreground',
+                                isMobile ? "p-2 text-sm max-w-[85%]" : "p-4 text-base max-w-2xl"
                             )}>
-                                <p className="whitespace-pre-wrap leading-relaxed font-sans">{msg.text}</p>
+                                <p className={cn("whitespace-pre-wrap font-sans", isMobile ? "leading-relaxed" : "leading-relaxed")}>{msg.text}</p>
                             </div>
                         </div>
                     ))}
                     {isLoading && (
-                         <div className="flex items-start gap-4 animate-in fade-in-50 duration-500">
-                             <Bot className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1 border-2 border-cyan-400/50 rounded-full p-1.5" />
-                             <div className="max-w-2xl rounded-lg p-4 text-base space-y-2 w-full">
-                                 <Skeleton className="h-4 w-4/5" />
-                                 <Skeleton className="h-4 w-full" />
-                                 <Skeleton className="h-4 w-2/3" />
+                         <div className={cn("flex items-start gap-3 animate-in fade-in-50 duration-500", isMobile ? "" : "")}>
+                             <Bot className={cn("text-cyan-400 flex-shrink-0 border-2 border-cyan-400/50 rounded-full p-1.5", isMobile ? "h-6 w-6 mt-1" : "h-8 w-8 mt-1")} />
+                             <div className={cn("rounded-lg space-y-2 w-full", isMobile ? "p-2" : "p-4")}>
+                                 <Skeleton className={cn("", isMobile ? "h-3 w-4/5" : "h-4 w-4/5")} />
+                                 <Skeleton className={cn("", isMobile ? "h-3 w-full" : "h-4 w-full")} />
+                                 <Skeleton className={cn("", isMobile ? "h-3 w-2/3" : "h-4 w-2/3")} />
                              </div>
                          </div>
                      )}
                  </div>
             </ScrollArea>
 
-            <div className="flex-shrink-0 p-4 md:p-6 z-10 bg-background/80 backdrop-blur-sm border-t border-border/50">
-                <div className="max-w-4xl mx-auto bg-card border border-border rounded-lg flex items-center p-2 shadow-lg">
-                    <span className="text-cyan-400 font-mono text-lg pl-3 pr-2 select-none">&gt;</span>
+            <div className={cn("flex-shrink-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/50", isMobile ? "p-2" : "p-4 md:p-6")}>
+                <div className={cn("mx-auto bg-card border border-border rounded-lg flex items-center shadow-lg", isMobile ? "p-1.5" : "p-2")}>
+                    <span className={cn("text-cyan-400 font-mono select-none", isMobile ? "text-base pl-2 pr-1.5" : "text-lg pl-3 pr-2")}>&gt;</span>
                     <Input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         placeholder={isDataLoaded ? (isListening ? "A escutar..." : "Digite sua diretiva...") : "A aguardar conexão com o Sistema..."}
-                        className="flex-1 bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+                        className={cn("flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground", isMobile ? "text-sm" : "text-base")}
                         disabled={isLoading || !isDataLoaded}
                     />
-                    <Button onClick={handleMicClick} variant="ghost" size="icon" disabled={!isDataLoaded || isLoading} className={cn(isListening && "text-red-500")}>
-                        {isListening ? <MicOff /> : <Mic />}
+                    <Button onClick={handleMicClick} variant="ghost" size="icon" disabled={!isDataLoaded || isLoading} className={cn(isListening && "text-red-500", isMobile ? "h-8 w-8" : "")}>
+                        {isListening ? <MicOff className={isMobile ? "h-4 w-4" : ""} /> : <Mic className={isMobile ? "h-4 w-4" : ""} />}
                     </Button>
-                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0">
-                        {isLoading ? <LoaderCircle className="animate-spin" /> : <Send className="h-5 w-5" />}
+                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className={cn("bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0", isMobile ? "h-8 w-8" : "")}>
+                        {isLoading ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : <Send className={cn("", isMobile ? "h-4 w-4" : "h-5 w-5")} />}
                     </Button>
                 </div>
             </div>

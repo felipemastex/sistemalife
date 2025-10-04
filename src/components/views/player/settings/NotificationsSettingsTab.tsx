@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Bell, BellOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const notificationsFormSchema = z.object({
     daily_briefing: z.boolean(),
@@ -40,6 +42,7 @@ export default function NotificationsSettingsTab() {
     const [justSaved, setJustSaved] = useState(false);
     const [enablingPush, setEnablingPush] = useState(false);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const form = useForm<z.infer<typeof notificationsFormSchema>>({
         resolver: zodResolver(notificationsFormSchema),
@@ -147,28 +150,28 @@ export default function NotificationsSettingsTab() {
     };
 
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Notificações Push</CardTitle>
-                    <CardDescription>
+        <div className={cn("space-y-6", isMobile && "space-y-4")}>
+            <Card className={isMobile ? "p-2" : ""}>
+                <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
+                    <CardTitle className={isMobile ? "text-lg" : ""}>Notificações Push</CardTitle>
+                    <CardDescription className={isMobile ? "text-xs" : ""}>
                         Receba notificações mesmo quando o aplicativo estiver fechado ou em segundo plano.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className={cn("space-y-4", isMobile && "space-y-2 p-3")}>
                     {!pushNotificationSupported ? (
-                        <Alert variant="destructive">
-                            <AlertTitle>Notificações não suportadas</AlertTitle>
-                            <AlertDescription>
+                        <Alert variant="destructive" className={isMobile ? "p-2" : ""}>
+                            <AlertTitle className={isMobile ? "text-sm" : ""}>Notificações não suportadas</AlertTitle>
+                            <AlertDescription className={isMobile ? "text-xs" : ""}>
                                 O seu navegador ou dispositivo não suporta notificações push. 
                                 Atualize o seu navegador ou utilize um dispositivo compatível.
                             </AlertDescription>
                         </Alert>
                     ) : (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
-                            <div className="space-y-1">
-                                <h4 className="font-medium">Notificações Push</h4>
-                                <p className="text-sm text-muted-foreground">
+                        <div className={cn("flex items-start justify-between gap-4 rounded-lg border p-4", isMobile ? "flex-col p-2 gap-2" : "flex-row p-4")}>
+                            <div className={cn("space-y-1", isMobile && "space-y-0")}>
+                                <h4 className={cn("font-medium", isMobile ? "text-sm" : "text-base")}>Notificações Push</h4>
+                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
                                     {pushNotificationEnabled 
                                         ? "Notificações ativadas" 
                                         : "Ative para receber notificações mesmo com o app fechado"}
@@ -180,21 +183,23 @@ export default function NotificationsSettingsTab() {
                                         variant="outline" 
                                         onClick={handleDisablePushNotifications}
                                         disabled={enablingPush}
+                                        className={isMobile ? "text-xs py-1 h-7" : ""}
                                     >
-                                        <BellOff className="mr-2 h-4 w-4" />
-                                        Desativar
+                                        <BellOff className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        {isMobile ? "Desativar" : "Desativar"}
                                     </Button>
                                 ) : (
                                     <Button 
                                         onClick={handleEnablePushNotifications}
                                         disabled={enablingPush}
+                                        className={isMobile ? "text-xs py-1 h-7" : ""}
                                     >
                                         {enablingPush ? (
-                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                            <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         ) : (
-                                            <Bell className="mr-2 h-4 w-4" />
+                                            <Bell className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         )}
-                                        Ativar Notificações
+                                        {isMobile ? "Ativar" : "Ativar Notificações"}
                                     </Button>
                                 )}
                             </div>
@@ -202,12 +207,12 @@ export default function NotificationsSettingsTab() {
                     )}
                     
                     {pushNotificationEnabled && (
-                        <Alert>
-                            <Bell className="h-4 w-4" />
-                            <AlertTitle>Notificações Ativadas</AlertTitle>
-                            <AlertDescription>
+                        <Alert className={isMobile ? "p-2" : ""}>
+                            <Bell className={cn("h-4 w-4", isMobile ? "h-3 w-3" : "")} />
+                            <AlertTitle className={isMobile ? "text-sm" : ""}>Notificações Ativadas</AlertTitle>
+                            <AlertDescription className={isMobile ? "text-xs" : ""}>
                                 Você receberá notificações push para eventos importantes como:
-                                <ul className="list-disc list-inside mt-2 space-y-1">
+                                <ul className={cn("list-disc list-inside mt-2 space-y-1", isMobile ? "space-y-0 text-xs" : "space-y-1")}>
                                     <li>Conclusão de missões</li>
                                     <li>Aumento de nível</li>
                                     <li>Desbloqueio de conquistas</li>
@@ -220,26 +225,26 @@ export default function NotificationsSettingsTab() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Preferências de Notificação</CardTitle>
-                    <CardDescription>
+            <Card className={isMobile ? "p-2" : ""}>
+                <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
+                    <CardTitle className={isMobile ? "text-lg" : ""}>Preferências de Notificação</CardTitle>
+                    <CardDescription className={isMobile ? "text-xs" : ""}>
                         Escolha quais tipos de notificações deseja receber.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className={isMobile ? "p-3" : ""}>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile && "space-y-3")}>
                             <FormField
                                 control={form.control}
                                 name="daily_briefing"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base">
+                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
+                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
+                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
                                                 Briefing Diário
                                             </FormLabel>
-                                            <FormDescription>
+                                            <FormDescription className={isMobile ? "text-xs" : ""}>
                                                 Receber notificações com as suas missões diárias.
                                             </FormDescription>
                                         </div>
@@ -257,12 +262,12 @@ export default function NotificationsSettingsTab() {
                                 control={form.control}
                                 name="goal_completed"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base">
+                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
+                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
+                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
                                                 Meta Concluída
                                             </FormLabel>
-                                            <FormDescription>
+                                            <FormDescription className={isMobile ? "text-xs" : ""}>
                                                 Notificação quando completar uma meta.
                                             </FormDescription>
                                         </div>
@@ -280,12 +285,12 @@ export default function NotificationsSettingsTab() {
                                 control={form.control}
                                 name="level_up"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base">
+                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
+                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
+                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
                                                 Aumento de Nível
                                             </FormLabel>
-                                            <FormDescription>
+                                            <FormDescription className={isMobile ? "text-xs" : ""}>
                                                 Notificação quando subir de nível.
                                             </FormDescription>
                                         </div>
@@ -299,12 +304,12 @@ export default function NotificationsSettingsTab() {
                                 )}
                             />
                             
-                            <Separator />
+                            <Separator className={isMobile ? "my-2" : ""} />
                             
-                            <div className="space-y-4">
+                            <div className={cn("space-y-4", isMobile && "space-y-2")}>
                                 <div>
-                                    <h3 className="text-lg font-medium">Horário Silencioso</h3>
-                                    <p className="text-sm text-muted-foreground">
+                                    <h3 className={cn("font-medium", isMobile ? "text-sm" : "text-lg")}>Horário Silencioso</h3>
+                                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
                                         Defina um período em que não deseja receber notificações.
                                     </p>
                                 </div>
@@ -313,12 +318,12 @@ export default function NotificationsSettingsTab() {
                                     control={form.control}
                                     name="quiet_hours.enabled"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                            <div className="space-y-0.5">
-                                                <FormLabel className="text-base">
+                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
+                                            <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
+                                                <FormLabel className={cn("text-base", isMobile && "text-sm")}>
                                                     Ativar Horário Silencioso
                                                 </FormLabel>
-                                                <FormDescription>
+                                                <FormDescription className={isMobile ? "text-xs" : ""}>
                                                     Silenciar todas as notificações durante um período específico.
                                                 </FormDescription>
                                             </div>
@@ -333,15 +338,15 @@ export default function NotificationsSettingsTab() {
                                 />
                                 
                                 {form.watch("quiet_hours.enabled") && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-2">
+                                    <div className={cn("gap-4 ml-2", isMobile ? "grid grid-cols-1 gap-2 ml-1" : "grid grid-cols-1 sm:grid-cols-2")}>
                                         <FormField
                                             control={form.control}
                                             name="quiet_hours.start"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Início</FormLabel>
+                                                    <FormLabel className={isMobile ? "text-xs" : ""}>Início</FormLabel>
                                                     <FormControl>
-                                                        <Input type="time" {...field} />
+                                                        <Input type="time" {...field} className={isMobile ? "text-xs py-1 h-8" : ""} />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -351,9 +356,9 @@ export default function NotificationsSettingsTab() {
                                             name="quiet_hours.end"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Fim</FormLabel>
+                                                    <FormLabel className={isMobile ? "text-xs" : ""}>Fim</FormLabel>
                                                     <FormControl>
-                                                        <Input type="time" {...field} />
+                                                        <Input type="time" {...field} className={isMobile ? "text-xs py-1 h-8" : ""} />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -363,19 +368,19 @@ export default function NotificationsSettingsTab() {
                             </div>
                             
                             <div className="flex justify-end">
-                                <Button type="submit" disabled={isSaving}>
+                                <Button type="submit" disabled={isSaving} className={isMobile ? "text-sm py-1 h-8" : ""}>
                                     {isSaving ? (
                                         <>
-                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                            Guardando...
+                                            <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                            {isMobile ? "Guardando..." : "Guardando..."}
                                         </>
                                     ) : justSaved ? (
                                         <>
-                                            <Check className="mr-2 h-4 w-4" />
-                                            Guardado!
+                                            <Check className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                            {isMobile ? "Guardado!" : "Guardado!"}
                                         </>
                                     ) : (
-                                        "Guardar Preferências"
+                                        isMobile ? "Guardar" : "Guardar Preferências"
                                     )}
                                 </Button>
                             </div>

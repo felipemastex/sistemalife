@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -162,6 +162,7 @@ interface TriggerWrapperProps {
 const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onOpenChange, onSubmit, mission, feedbackType }) => {
     const [feedbackText, setFeedbackText] = useState('');
     const [loading, setLoading] = useState(false);
+    const isMobile = useIsMobile();
 
     const dialogTitles: Record<FeedbackType, string> = {
         'hint': 'Precisa de uma Dica?',
@@ -187,24 +188,25 @@ const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onO
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setFeedbackText(''); onOpenChange(isOpen);}}>
-            <DialogContent>
+            <DialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                 <DialogHeader>
-                    <DialogTitle>{dialogTitles[feedbackType]}</DialogTitle>
-                    <DialogDescription>{dialogDescriptions[feedbackType]}</DialogDescription>
+                    <DialogTitle className={isMobile ? "text-lg" : ""}>{dialogTitles[feedbackType]}</DialogTitle>
+                    <DialogDescription className={isMobile ? "text-sm" : ""}>{dialogDescriptions[feedbackType]}</DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
+                <div className={cn("py-4", isMobile ? "py-2" : "")}>
                     <Textarea
                         placeholder="Forneça mais detalhes aqui..."
                         value={feedbackText}
                         onChange={(e) => setFeedbackText(e.target.value)}
                         disabled={loading}
+                        className={isMobile ? "text-sm" : ""}
                     />
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className={isMobile ? "h-8 text-sm" : ""}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
+                    <Button onClick={handleSubmit} disabled={loading} className={isMobile ? "h-8 text-sm" : ""}>
                         {loading ? "A enviar..." : "Enviar Feedback"}
                     </Button>
                 </DialogFooter>
@@ -215,6 +217,7 @@ const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onO
 
 const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenChange, subTask, onContribute }) => {
     const [amount, setAmount] = useState('');
+    const isMobile = useIsMobile();
     
     if (!subTask) return null;
 
@@ -231,19 +234,19 @@ const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenCha
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setAmount(''); onOpenChange(isOpen); }}>
-            <DialogContent>
+            <DialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                 <DialogHeader>
-                    <DialogTitle>Contribuir para: {subTask.name}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className={isMobile ? "text-lg" : ""}>Contribuir para: {subTask.name}</DialogTitle>
+                    <DialogDescription className={isMobile ? "text-sm" : ""}>
                         Insira a quantidade que você concluiu. O seu esforço fortalece o seu progresso.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 space-y-4">
-                    <p className="text-sm text-center bg-secondary p-2 rounded-md">
+                <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-2" : "")}>
+                    <p className={cn("text-center bg-secondary p-2 rounded-md", isMobile ? "text-xs p-1" : "text-sm p-2")}>
                         Progresso atual: <span className="font-bold text-primary">{subTask.current || 0} / {subTask.target}</span>
                     </p>
                     <div>
-                        <Label htmlFor="contribution-amount">Nova Contribuição</Label>
+                        <Label htmlFor="contribution-amount" className={isMobile ? "text-sm" : ""}>Nova Contribuição</Label>
                         <Input
                             id="contribution-amount"
                             type="number"
@@ -252,12 +255,13 @@ const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenCha
                             placeholder={`Ex: 5 (Máx: ${remaining})`}
                             min="1"
                             max={remaining}
+                            className={isMobile ? "h-8 text-sm" : ""}
                         />
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining}>
+                <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className={isMobile ? "h-8 text-sm" : ""}>Cancelar</Button>
+                    <Button onClick={handleContribute} disabled={!amount || parseInt(amount, 10) <= 0 || parseInt(amount, 10) > remaining} className={isMobile ? "h-8 text-sm" : ""}>
                         Contribuir
                     </Button>
                 </DialogFooter>
@@ -270,6 +274,7 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
   const [difficulty, setDifficulty] = useState<DifficultyType | ''>('');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSubmit = async () => {
     if (!difficulty) return;
@@ -302,57 +307,57 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
       value: 'too_easy',
       label: 'Muito Fácil',
       description: 'A missão foi simples demais, preciso de mais desafio (+1,5% de dificuldade)',
-      icon: <TrendingDown className="h-4 w-4 text-green-500" />,
+      icon: <TrendingDown className={cn("h-4 w-4 text-green-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
       color: 'border-green-200 hover:border-green-400',
     },
     {
       value: 'perfect',
       label: 'Perfeita',
       description: 'A dificuldade estava ideal para o meu nível (+1% de dificuldade)',
-      icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
+      icon: <CheckCircle2 className={cn("h-4 w-4 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
       color: 'border-blue-200 hover:border-blue-400',
     },
     {
       value: 'too_hard',
       label: 'Muito Difícil',
       description: 'A missão foi desafiadora demais, preciso de passos menores (-0,5% de dificuldade)',
-      icon: <TrendingUp className="h-4 w-4 text-red-500" />,
+      icon: <TrendingUp className={cn("h-4 w-4 text-red-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
       color: 'border-red-200 hover:border-red-400',
     },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={cn("max-w-md", isMobile ? "max-w-[95vw]" : "")}>
         <DialogHeader className="text-center">
-          <DialogTitle className="flex items-center justify-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
+          <DialogTitle className={cn("flex items-center justify-center gap-2", isMobile ? "text-lg" : "")}>
+            <MessageSquare className={cn("text-primary", isMobile ? "h-4 w-4" : "h-5 w-5")} />
             Feedback da Missão
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className={isMobile ? "text-sm" : ""}>
             Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
+        <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-2" : "")}>
           <div>
-            <Label className="text-sm font-medium">Dificuldade da Missão</Label>
-            <RadioGroup value={difficulty as string} onValueChange={(value) => setDifficulty(value as DifficultyType | '')} className="mt-2">
+            <Label className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>Dificuldade da Missão</Label>
+            <RadioGroup value={difficulty as string} onValueChange={(value) => setDifficulty(value as DifficultyType | '')} className={cn("mt-2", isMobile ? "mt-1" : "")}>
               {difficultyOptions.map((option) => (
                 <div 
                   key={option.value} 
-                  className={`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`}
+                  className={cn(`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`, isMobile ? "p-2 space-x-2" : "p-3 space-x-3")}
                   onClick={() => setDifficulty(option.value as DifficultyType | '')}
                 >
                   <RadioGroupItem value={option.value} id={option.value} className="mt-0.5 pointer-events-none" />
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       {option.icon}
-                      <Label htmlFor={option.value} className="font-normal cursor-pointer">
+                      <Label htmlFor={option.value} className={cn("font-normal cursor-pointer", isMobile ? "text-sm" : "")}>
                         {option.label}
                       </Label>
                     </div>
-                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>{option.description}</p>
                   </div>
                 </div>
               ))}
@@ -361,7 +366,7 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
 
           {difficulty && (
             <div className="space-y-2">
-              <Label htmlFor="comment" className="text-sm font-medium">
+              <Label htmlFor="comment" className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>
                 Comentário Adicional (Opcional)
               </Label>
               <Textarea
@@ -371,16 +376,17 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}
                 disabled={isSubmitting}
+                className={isMobile ? "text-sm" : ""}
               />
             </div>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
           <Button 
             onClick={handleSubmit}
             disabled={!difficulty || isSubmitting}
-            className="w-full"
+            className={cn("w-full", isMobile ? "h-8 text-sm" : "")}
           >
             {isSubmitting ? 'Enviando...' : 'Enviar Feedback'}
           </Button>
@@ -390,7 +396,7 @@ const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogP
   );
 };
 
-const MissionsViewComponent = () => {
+const MissionsView = () => {
     const { profile, missions, metas, completeMission, generatingMission, setGeneratingMission, missionFeedback, setMissionFeedback, persistData, generatePendingDailyMissions, addDailyMission, adjustDailyMission } = usePlayerDataContext() as {
         profile: Profile;
         missions: RankedMission[];
@@ -771,38 +777,38 @@ const MissionsViewComponent = () => {
         
         if (generatingMission === mission.id) {
             return (
-                <div className="bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                    <Sparkles className="h-10 w-10 text-primary animate-pulse-slow mb-4"/>
-                    <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
-                    <p className="text-sm text-muted-foreground">O Sistema está a preparar o seu próximo desafio.</p>
+                <div className={cn("bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300", isMobile ? "p-3 h-32" : "p-4 h-48")}>
+                    <Sparkles className={cn("text-primary animate-pulse-slow mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
+                    <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
+                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O Sistema está a preparar o seu próximo desafio.</p>
                 </div>
             );
         }
         
         if (activeDailyMission) {
             return (
-                <div className="rounded-lg p-4 animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-secondary/50 border-l-4 border-primary">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="flex-grow">
-                            <p className="text-lg font-bold text-foreground">{activeDailyMission.nome}</p>
-                            <p className="text-sm text-muted-foreground mt-1">{activeDailyMission.descricao}</p>
+                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-secondary/50 border-l-4 border-primary overflow-x-hidden", isMobile ? "p-2" : "p-2 md:p-4")}>
+                    <div className={cn("flex flex-col gap-2", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
+                        <div className="flex-grow min-w-0">
+                            <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
+                            <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
                         </div>
-                        <div className="text-right ml-0 sm:ml-4 flex-shrink-0 flex items-center gap-2">
+                        <div className={cn("text-right ml-0 flex-shrink-0 flex items-center gap-2", isMobile ? "md:ml-2" : "md:ml-4")}>
                             <div className="flex flex-col items-end">
                                 {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
-                                <p className="text-sm font-semibold text-primary">+{activeDailyMission.xp_conclusao} XP</p>
+                                <p className={cn("font-semibold text-primary", isMobile ? "text-xs" : "text-sm")}>+{activeDailyMission.xp_conclusao} XP</p>
                             )}
                             {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
-                                <p className="text-sm font-semibold text-amber-500 flex items-center">
-                                    <Gem className="w-4 h-4 mr-1" />
+                                <p className={cn("font-semibold text-amber-500 flex items-center", isMobile ? "text-xs" : "text-sm")}>
+                                    <Gem className={cn("mr-1", isMobile ? "w-3 h-3" : "w-4 h-4")} />
                                     +{activeDailyMission.fragmentos_conclusao || 0}
                                 </p>
                             )}
                             </div>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label="Opções da missão">
-                                        <Wand2 className="h-5 w-5" />
+                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label="Opções da missão">
+                                        <Wand2 className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
@@ -812,43 +818,45 @@ const MissionsViewComponent = () => {
                             </DropdownMenu>
                         </div>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                    <div className={cn("mt-2 pt-2 border-t border-border/50 space-y-2", isMobile ? "mt-2 pt-2" : "mt-4 pt-4")}>
                         {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
                             const isCompleted = (st.current || 0) >= st.target;
                             return(
-                                <div key={index} className={cn("bg-background/40 p-3 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10")}>
-                                    <div className="flex justify-between items-center text-sm mb-1 gap-2">
-                                        <p className={cn("font-semibold text-foreground flex-1", isCompleted && "line-through text-muted-foreground")}>{st.name}</p>
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className="font-mono text-muted-foreground">[{st.current || 0}/{st.target}] {st.unit}</span>
-                                            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} disabled={isCompleted} aria-label={`Adicionar progresso para ${st.name}`}>
-                                                <Plus className="h-4 w-4" />
+                                <div key={index} className={cn("bg-background/40 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10", isMobile ? "p-1" : "p-2")}>
+                                    <div className={cn("flex justify-between items-center gap-2", isMobile ? "text-xs mb-1 flex-wrap" : "text-sm mb-1")}>
+                                        <p className={cn("font-semibold text-foreground flex-1 min-w-0", isCompleted && "line-through text-muted-foreground")}>
+                                            <span className="truncate block">{st.name}</span>
+                                        </p>
+                                        <div className={cn("flex items-center gap-1 flex-shrink-0", isMobile ? "gap-1" : "gap-2")}>
+                                            <span className={cn("font-mono text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>[{st.current || 0}/{st.target}] {st.unit}</span>
+                                            <Button size="icon" variant="outline" className={cn("text-muted-foreground hover:text-primary flex-shrink-0", isMobile ? "h-6 w-6" : "h-7 w-7")} onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} disabled={isCompleted} aria-label={`Adicionar progresso para ${st.name}`}>
+                                                <Plus className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
                                             </Button>
                                         </div>
                                     </div>
-                                    <Progress value={((st.current || 0) / st.target) * 100} className="h-2"/>
+                                    <Progress value={((st.current || 0) / st.target) * 100} className={isMobile ? "h-1.5" : "h-2"}/>
                                 </div>
                             )
                         })}
                     </div>
                     {sortedDailyMissions && sortedDailyMissions.length > 1 && (
-                         <Collapsible className="mt-4">
+                         <Collapsible className={cn("mt-2", isMobile ? "mt-2" : "mt-4")}>
                             <CollapsibleTrigger asChild>
-                                <Button variant="ghost" className="text-xs text-muted-foreground w-full">Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})</Button>
+                                <Button variant="ghost" className={cn("text-muted-foreground w-full", isMobile ? "text-xs" : "text-xs")}>Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})</Button>
                             </CollapsibleTrigger>
-                             <CollapsibleContent className="space-y-2 mt-2">
+                             <CollapsibleContent className={cn("space-y-2 mt-2", isMobile ? "space-y-1 mt-1" : "")}>
                                  {sortedDailyMissions.filter(dm => dm.concluido).map((dm: DailyMission) => (
-                                    <div key={dm.id} className="p-2 bg-secondary/30 rounded-md text-sm text-muted-foreground flex items-center gap-2">
-                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                        <span className="line-through">{dm.nome}</span>
+                                    <div key={dm.id} className={cn("bg-secondary/30 rounded-md flex items-center gap-2 min-w-0", isMobile ? "p-1 text-xs" : "p-2 text-sm")}>
+                                        <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        <span className="line-through truncate">{dm.nome}</span>
                                     </div>
                                  ))}
                             </CollapsibleContent>
                         </Collapsible>
                     )}
                     {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((topic: string, index: number) => (
-                        <div key={index} className="flex items-center gap-2 text-primary text-sm bg-secondary p-2 rounded-md mt-3">
-                            <Link className="h-4 w-4"/>
+                        <div key={index} className={cn("flex items-center gap-2 bg-secondary p-2 rounded-md mt-2", isMobile ? "text-xs p-1" : "text-sm p-2")}>
+                            <Link className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
                             <span className="truncate">Sugestão de pesquisa: {topic}</span>
                         </div>
                     ))}
@@ -857,24 +865,23 @@ const MissionsViewComponent = () => {
         }
 
         return (
-            <div className="bg-secondary/30 border-2 border-dashed border-yellow-500/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 h-48">
-                <Lock className="h-10 w-10 text-yellow-500 mb-4"/>
-                <p className="text-lg font-bold text-foreground">Missão Bloqueada</p>
-                <p className="text-sm text-muted-foreground">O seu nível de Caçador (Nível {profile.nivel}) é muito baixo para esta missão de Rank {mission.rank} (Requer Nível {mission.level_requirement}).</p>
-                <Button variant="secondary" className="mt-4" onClick={() => handleUnlockMission(mission)} disabled={generatingMission === mission.id}>
+            <div className={cn("bg-secondary/30 border-2 border-dashed border-yellow-500/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300 overflow-x-hidden", isMobile ? "p-3 h-32" : "p-4 h-48")}>
+                <Lock className={cn("text-yellow-500 mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
+                <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Missão Bloqueada</p>
+                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O seu nível de Caçador (Nível {profile.nivel}) é muito baixo para esta missão de Rank {mission.rank} (Requer Nível {mission.level_requirement}).</p>
+                <Button variant="secondary" className={cn("mt-2", isMobile ? "text-xs h-8" : "mt-4")} onClick={() => handleUnlockMission(mission)} disabled={generatingMission === mission.id}>
                     {generatingMission === mission.id ? <LoaderCircle className="animate-spin" /> : "Tentar a Sorte (Missão de Qualificação)"}
                 </Button>
             </div>
         );
     };
 
-
     return (
-        <div className={cn("h-full flex flex-col p-4 md:p-6 pb-16 md:pb-6", accordionSpacing)}>
-            <div className="flex-shrink-0 mb-6 md:hidden">
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                    <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
-                    <div className="flex items-center justify-center gap-2 hidden md:flex">
+        <div className={cn("h-full flex flex-col w-full overflow-x-hidden", isMobile ? "p-0" : "p-2 md:p-6", accordionSpacing)}>
+            <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "md:mb-4" : "")}>
+                <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
+                    <h1 className={cn("font-bold text-primary font-cinzel tracking-wider text-center overflow-x-hidden", isMobile ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>Diário de Missões</h1>
+                    <div className={cn("flex items-center justify-center gap-2 overflow-x-hidden", isMobile ? "hidden" : "hidden md:flex")}>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -891,11 +898,11 @@ const MissionsViewComponent = () => {
                     </div>
                 </div>
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4 hidden md:block">
-                    <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300">
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4 hidden md:block overflow-x-hidden">
+                    <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300 overflow-x-hidden">
                         <MissionStatsPanel />
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-grow min-w-[200px]">
+                        <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row" : "md:flex-row")}>
+                            <div className={cn("flex-grow overflow-x-hidden", isMobile ? "min-w-[150px]" : "min-w-[200px]")}>
                                 <Input 
                                     placeholder="Procurar missão..."
                                     value={searchTerm}
@@ -903,9 +910,11 @@ const MissionsViewComponent = () => {
                                     className="bg-card"
                                 />
                             </div>
-                            <div className="flex gap-4 flex-grow sm:flex-grow-0">
+                            <div className={cn("flex gap-4 flex-grow overflow-x-hidden", isMobile ? "sm:flex-grow-0" : "sm:flex-grow-0")}>
                                 <Select value={rankFilter} onValueChange={setRankFilter}>
-                                    <SelectTrigger className="flex-1 md:w-[180px]"><SelectValue placeholder="Filtrar por Rank" /></SelectTrigger>
+                                    <SelectTrigger className={cn("flex-1 overflow-x-hidden", isMobile ? "md:w-[120px]" : "md:w-[180px]")}>
+                                        <SelectValue placeholder="Filtrar por Rank" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todos os Ranks</SelectItem>
                                         {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
@@ -913,7 +922,9 @@ const MissionsViewComponent = () => {
                                     </SelectContent>
                                 </Select>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="flex-1 md:w-[180px]"><SelectValue placeholder="Filtrar por Status" /></SelectTrigger>
+                                    <SelectTrigger className={cn("flex-1", isMobile ? "md:w-[120px]" : "md:w-[180px]")}>
+                                        <SelectValue placeholder="Filtrar por Status" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todos os Status</SelectItem>
                                         <SelectItem value="active">Ativas</SelectItem>
@@ -932,11 +943,11 @@ const MissionsViewComponent = () => {
                 </Collapsible>
             </div>
             
-            <div className="flex-grow overflow-y-auto -mx-4 px-4">
+            <div className={cn("flex-grow overflow-y-auto overflow-x-hidden w-full", isMobile ? "px-0" : "px-0")}>
                 <Accordion 
                     type="single" 
                     collapsible 
-                    className={cn("w-full", accordionSpacing)}
+                    className={cn("w-full overflow-x-hidden", isMobile ? "space-y-1" : accordionSpacing)}
                     value={activeAccordionItem || undefined}
                     onValueChange={(value: string) => {
                          if (missionViewStyle === 'inline') {
@@ -971,40 +982,40 @@ const MissionsViewComponent = () => {
                         };
                         
                         return (
-                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className="bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative">
-                                <div className={cn("p-4 transition-all duration-300", generatingMission === mission.id ? 'opacity-50' : '')}>
-                                    <div className="flex flex-col p-4 gap-4">
-                                        <div className="flex items-center gap-4">
+                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative", isMobile ? "p-1 mx-0" : "mx-0")}>
+                                <div className={cn("transition-all duration-300 overflow-x-hidden", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-1" : "p-2 md:p-4")}>
+                                    <div className={cn("flex flex-col gap-2", isMobile ? "p-1" : "p-2 md:p-4")}>
+                                        <div className={cn("flex items-center gap-2", isMobile ? "gap-2 flex-wrap" : "gap-4")}>
                                             <TriggerWrapper>
-                                                <div className="flex-1 text-left min-w-0 flex items-center gap-4">
-                                                    <div className={cn("w-16 h-16 flex-shrink-0 flex items-center justify-center font-cinzel text-4xl font-bold", getRankColor(mission.rank))}>
+                                                <div className="flex-1 text-left min-w-0 flex items-center gap-2 md:gap-4 overflow-x-hidden">
+                                                    <div className={cn("flex-shrink-0 flex items-center justify-center font-cinzel font-bold", getRankColor(mission.rank), isMobile ? "w-12 h-12 text-3xl" : "w-16 h-16 text-4xl")}>
                                                         {mission.rank}
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-center">
-                                                            <p className={cn("text-xl font-bold text-foreground break-words", "font-cinzel")}>
+                                                    <div className="flex-1 min-w-0 overflow-x-hidden">
+                                                        <div className="flex justify-between items-center flex-wrap">
+                                                            <p className={cn("font-bold text-foreground break-words font-cinzel", isMobile ? "text-base" : "text-xl")}>
                                                                 {mission.nome}
                                                             </p>
                                                         </div>
                                                         {associatedMeta && !isManualMission && (
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                                <Link className="h-3 w-3" />
-                                                                <span>{associatedMeta.nome}</span>
+                                                            <div className={cn("flex items-center gap-1 text-muted-foreground mt-1", isMobile ? "text-xs gap-1" : "text-xs gap-2")}>
+                                                                <Link className={isMobile ? "h-2 w-2 flex-shrink-0" : "h-3 w-3 flex-shrink-0"} />
+                                                                <span className="truncate">{associatedMeta.nome}</span>
                                                             </div>
                                                         )}
-                                                         <p className="text-sm text-muted-foreground mt-1 break-words">{mission.descricao}</p>
+                                                         <p className={cn("text-muted-foreground break-words", isMobile ? "text-xs mt-1" : "text-sm mt-1")}>{mission.descricao}</p>
                                                     </div>
                                                 </div>
                                             </TriggerWrapper>
-                                            <div className="flex items-center space-x-2 self-start flex-shrink-0 sm:ml-4">
+                                            <div className={cn("flex items-center space-x-1 self-start flex-shrink-0", isMobile ? "md:ml-2" : "md:ml-4")}>
                                                 {isManualMission && 
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
-                                                        <Edit className="h-5 w-5" />
+                                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
+                                                        <Edit className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                     </Button>
                                                 }
                                                 {!isManualMission && (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                                        <GitMerge className="h-5 w-5" />
+                                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                        <GitMerge className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                     </Button>
                                                 )}
                                             </div>
@@ -1013,40 +1024,40 @@ const MissionsViewComponent = () => {
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger className="w-full">
-                                                        <Progress value={missionProgress} className="h-2" />
+                                                        <Progress value={missionProgress} className={isMobile ? "h-1.5" : "h-2"} />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
+                                                        <p className={isMobile ? "text-xs" : ""}>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                        )}
                                     </div>
-                                    <AccordionContent className="px-4 pb-4 space-y-4">
+                                    <AccordionContent className={cn("space-y-2 overflow-x-hidden", isMobile ? "px-1 pb-1" : "px-2 pb-2 md:px-4 md:pb-4")}>
                                         {renderActiveMissionContent(mission)}
                                     </AccordionContent>
                                 </div>
                                 {generatingMission === mission.id ? (
-                                    <div className="absolute inset-0 bg-secondary/50 rounded-lg p-4 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
-                                        <Sparkles className="h-10 w-10 text-primary animate-pulse mb-4"/>
-                                        <p className="text-lg font-bold text-foreground">A gerar nova missão...</p>
+                                    <div className={cn("absolute inset-0 bg-secondary/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300", isMobile ? "p-2" : "p-4")}>
+                                        <Sparkles className={cn("text-primary animate-pulse mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
+                                        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
                                     </div>
                                 ) : wasCompletedToday ? (
                                     <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
-                                        <Timer className="h-16 w-16 text-cyan-400 mb-4 mx-auto animate-pulse"/>
-                                        <p className="text-lg font-bold text-foreground">Nova Missão em</p>
-                                        <p className="text-4xl font-mono text-cyan-400 font-bold tracking-wider">{timeUntilMidnight}</p>
-                                        <p className="text-xs text-muted-foreground mt-2">Missão concluída hoje!</p>
+                                        <Timer className={cn("text-cyan-400 mx-auto animate-pulse", isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4")}/>
+                                        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Nova Missão em</p>
+                                        <p className={cn("font-mono text-cyan-400 font-bold tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>{timeUntilMidnight}</p>
+                                        <p className={cn("text-muted-foreground mt-2", isMobile ? "text-xs" : "text-xs")}>Missão concluída hoje!</p>
                                     </div>
                                 ) : null}
                             </AccordionItem>
                         )
                     })}
                      {visibleMissions.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
-                            <Search className="h-16 w-16 mb-4" />
-                            <p className="font-semibold text-lg">Nenhuma Missão Encontrada</p>
-                            <p className="text-sm mt-1">Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
+                        <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg", isMobile ? "p-4" : "p-8")}>
+                            <Search className={isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4"} />
+                            <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Nenhuma Missão Encontrada</p>
+                            <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
                         </div>
                     )}
                 </Accordion>
@@ -1105,24 +1116,24 @@ const MissionsViewComponent = () => {
             }
 
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className={cn("max-w-2xl overflow-x-hidden", isMobile ? "max-w-[95vw]" : "")}>
                     <DialogHeader>
-                        <DialogTitle className="text-primary text-2xl">Árvore de Progressão da Missão</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className={cn("text-primary", isMobile ? "text-lg" : "text-2xl")}>Árvore de Progressão da Missão</DialogTitle>
+                        <DialogDescription className={isMobile ? "text-sm" : ""}>
                             Esta é a sequência de missões épicas para a meta "{selectedGoalMissions[0]?.meta_associada}".
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                    <div className={cn("mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4 overflow-x-hidden", isMobile ? "mt-2 space-y-2" : "")}>
                         {selectedGoalMissions.map((m: RankedMission, index: number) => (
-                             <div key={m.id} className={`p-4 rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'}`}>
+                             <div key={m.id} className={cn(`rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'} overflow-x-hidden`, isMobile ? "p-2" : "p-4")}>
                                 <div className="flex justify-between items-center">
-                                    <p className={`font-bold ${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{m.nome}</p>
-                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(m.rank)}`}>Rank {m.rank}</span>
+                                    <p className={cn(`${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`, isMobile ? "font-bold text-sm" : "font-bold")}>{m.nome}</p>
+                                    <span className={cn(`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(m.rank)}`, isMobile ? "text-xs px-1 py-0.5" : "")}>Rank {m.rank}</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">{m.descricao}</p>
+                                <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{m.descricao}</p>
                                 {m.concluido && (
-                                     <div className="flex items-center text-green-400 text-sm mt-2">
-                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                     <div className={cn("flex items-center text-green-400 mt-2", isMobile ? "text-xs" : "text-sm")}>
+                                        <CheckCircle className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <span>Concluída</span>
                                      </div>
                                 )}
@@ -1132,117 +1143,8 @@ const MissionsViewComponent = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Mobile Bottom Navigation Bar */}
-            {isMobile && (
-                <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-2 z-50 md:hidden">
-                    <div className="flex justify-around items-center">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="flex flex-col items-center justify-center h-auto p-1"
-                            onClick={() => setIsPanelVisible(!isPanelVisible)}
-                        >
-                            <Eye className="h-5 w-5" />
-                            <span className="text-xs mt-1">{isPanelVisible ? 'Ocultar' : 'Mostrar'}</span>
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="flex flex-col items-center justify-center h-auto p-1"
-                            onClick={() => setDialogState({open: true, mission: null, isManual: true})}
-                        >
-                            <PlusCircle className="h-5 w-5" />
-                            <span className="text-xs mt-1">Criar</span>
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="flex flex-col items-center justify-center h-auto p-1"
-                            onClick={() => setShowMobileMenu(!showMobileMenu)}
-                        >
-                            <Search className="h-5 w-5" />
-                            <span className="text-xs mt-1">Filtros</span>
-                        </Button>
-                    </div>
-                </div>
-            )}
-
-            {/* Mobile Menu Panel */}
-            {isMobile && showMobileMenu && (
-                <div className="fixed bottom-16 left-0 right-0 bg-background border-t border-border p-4 z-40 md:hidden">
-                    <div className="space-y-4">
-                        <div>
-                            <Label htmlFor="mobile-search">Pesquisar</Label>
-                            <Input 
-                                id="mobile-search"
-                                placeholder="Procurar missão..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="bg-card mt-1"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label>Filtrar por Rank</Label>
-                                <Select value={rankFilter} onValueChange={setRankFilter}>
-                                    <SelectTrigger className="mt-1"><SelectValue placeholder="Rank" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos</SelectItem>
-                                        {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
-                                        <SelectItem value="M">Manual</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label>Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="mt-1"><SelectValue placeholder="Status" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos</SelectItem>
-                                        <SelectItem value="active">Ativas</SelectItem>
-                                        <SelectItem value="completed">Concluídas</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        {generatePendingDailyMissions && (
-                            <Button 
-                                onClick={generatePendingDailyMissions} 
-                                variant="outline" 
-                                className="w-full text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300 mt-2"
-                            >
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                Gerar Missões Pendentes
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
-export const MissionsView = memo(MissionsViewComponent);
-
-// Helper function to convert DailyMission or RankedMission to Mission type
-const convertToMissionType = (mission: DailyMission | RankedMission | null): Mission | null => {
-  if (!mission) return null;
-  
-  if ('xp_conclusao' in mission && 'fragmentos_conclusao' in mission) {
-    // It's a DailyMission
-    return mission as Mission;
-  } else {
-    // It's a RankedMission, provide default values for missing properties
-    return {
-      ...mission as any,
-      id: mission.id,
-      nome: mission.nome,
-      descricao: mission.descricao,
-      xp_conclusao: 0,
-      fragmentos_conclusao: 0,
-      concluido: (mission as RankedMission).concluido,
-      tipo: 'epica',
-      subTasks: (mission as any).subTasks || [],
-    };
-  }
-};
+export default memo(MissionsView);

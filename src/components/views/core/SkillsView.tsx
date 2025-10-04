@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { Progress } from '@/components/ui/progress';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const statIcons = {
@@ -33,6 +34,7 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
     const [selectedMetaId, setSelectedMetaId] = useState<string | number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const getSkillColor = (category: string) => {
         switch(category){
@@ -129,16 +131,16 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
     const metasWithoutSkills = metas.filter((meta: any) => !skills.some((skill: any) => skill.id === meta.habilidade_associada_id));
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Árvore de Habilidades</h1>
-                <Button onClick={() => setShowAddDialog(true)} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
-                    <PlusCircle className="h-5 w-5 mr-2" />
+        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
+            <div className={cn("flex flex-col gap-4 mb-4", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
+                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Árvore de Habilidades</h1>
+                <Button onClick={() => setShowAddDialog(true)} className={cn("w-full", isMobile ? "sm:w-auto h-9 text-sm" : "sm:w-auto")}>
+                    <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
                     Adicionar Habilidade
                 </Button>
             </div>
-            <p className="text-muted-foreground mb-8 max-w-4xl">As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Mas cuidado, a inatividade prolongada pode levar à Corrupção, causando a perda de XP.</p>
-            <div className="space-y-4">
+            <p className={cn("text-muted-foreground mb-4", isMobile ? "text-sm" : "mb-8")}>As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Mas cuidado, a inatividade prolongada pode levar à Corrupção, causando a perda de XP.</p>
+            <div className={cn("space-y-2", isMobile ? "space-y-2" : "space-y-4")}>
                 {skills.map((skill: any) => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
                     const stats: string[] = statCategoryMapping[skill.categoria as keyof typeof statCategoryMapping] || [];
@@ -151,100 +153,102 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
 
                     return(
                     <div key={skill.id} className={cn(
-                        "bg-card/60 border border-l-4 rounded-lg p-4 transition-all",
+                        "bg-card/60 border border-l-4 rounded-lg transition-all",
+                        isMobile ? "p-2" : "p-4",
                         isDecaying ? "border-purple-600 animate-pulse-slow" : getSkillColor(skill.categoria),
                         isAtRisk && "border-yellow-500"
                     )}>
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-2">
+                        <div className={cn("flex flex-col gap-3", isMobile ? "sm:flex-row sm:items-start" : "sm:flex-row sm:items-start")}>
+                            <div className="flex-1 min-w-0">
+                                <div className={cn("flex justify-between items-start", isMobile ? "flex-wrap gap-1" : "")}>
+                                    <div className={cn("flex items-center gap-1 min-w-0", isMobile ? "gap-1" : "gap-2")}>
                                         {(isDecaying || isAtRisk) && (
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger>
-                                                        <AlertTriangle className={cn("h-5 w-5", isDecaying ? "text-purple-500" : "text-yellow-500")} />
+                                                        <AlertTriangle className={cn("flex-shrink-0", isMobile ? "h-4 w-4" : "h-5 w-5", isDecaying ? "text-purple-500" : "text-yellow-500")} />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p>{isDecaying ? "Esta habilidade está a perder XP por inatividade!" : "Esta habilidade entrará em declínio em breve."}</p>
+                                                        <p className={isMobile ? "text-xs" : ""}>{isDecaying ? "Esta habilidade está a perder XP por inatividade!" : "Esta habilidade entrará em declínio em breve."}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         )}
-                                        <p className="text-lg font-bold text-foreground break-words">{skill.nome}</p>
+                                        <p className={cn("font-bold text-foreground break-words", isMobile ? "text-base" : "text-lg")}>{skill.nome}</p>
                                     </div>
                                      <div className="flex items-center">
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-8 w-8" aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
-                                                        <KeySquare className="h-4 w-4" />
+                                                     <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
+                                                        <KeySquare className={cn("", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                    <p>Usar Cristal da Masmorra ({(profile?.dungeon_crystals || 0)})</p>
+                                                    <p className={isMobile ? "text-xs" : ""}>Usar Cristal da Masmorra ({(profile?.dungeon_crystals || 0)})</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir habilidade ${skill.nome}`}>
-                                                    <Trash2 className="h-4 w-4" />
+                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-red-400", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Excluir habilidade ${skill.nome}`}>
+                                                    <Trash2 className={cn("", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Excluir Habilidade?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
+                                                    <AlertDialogTitle className={isMobile ? "text-lg" : ""}>Excluir Habilidade?</AlertDialogTitle>
+                                                    <AlertDialogDescription className={isMobile ? "text-sm" : ""}>
                                                         Tem a certeza que quer excluir a habilidade "{skill.nome}"? Isto irá apenas desvinculá-la da meta associada.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)}>Sim, Excluir</AlertDialogAction>
+                                                <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                                                    <AlertDialogCancel className={isMobile ? "h-8 text-sm" : ""}>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)} className={isMobile ? "h-8 text-sm" : ""}>Sim, Excluir</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1 break-words">{skill.descricao}</p>
+                                <p className={cn("text-muted-foreground mt-1 break-words", isMobile ? "text-xs" : "text-sm")}>{skill.descricao}</p>
                                 
                                 {associatedMeta && (
-                                    <div className="flex items-center gap-2 mt-2 text-sm text-primary/80 bg-primary/20 px-2 py-1 rounded-md max-w-max">
-                                        <Link2 className="h-4 w-4" />
-                                        <span>Vinculado a: {associatedMeta.nome}</span>
+                                    <div className={cn("flex items-center gap-1 mt-2 text-primary/80 bg-primary/20 px-2 py-1 rounded-md max-w-max", isMobile ? "text-xs px-1.5 py-0.5" : "")}>
+                                        <Link2 className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        <span className="truncate">Vinculado a: {associatedMeta.nome}</span>
                                     </div>
                                 )}
 
                                 {stats.length > 0 && (
-                                     <div className="flex items-center gap-4 pt-2 mt-2 border-t border-border/50">
-                                        <strong className="text-xs text-muted-foreground">Aumenta:</strong>
-                                        <div className="flex flex-wrap items-center gap-3">
+                                     <div className={cn("flex flex-wrap items-center gap-2 pt-2 mt-2 border-t border-border/50", isMobile ? "gap-2 pt-1.5 mt-1.5" : "")}>
+                                        <strong className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>Aumenta:</strong>
+                                        <div className="flex flex-wrap items-center gap-2">
                                         {stats.map((stat: string) => (
-                                            <div key={stat} className="flex items-center gap-1.5 text-foreground">
+                                            <div key={stat} className={cn("flex items-center gap-1 text-foreground", isMobile ? "gap-1" : "gap-1.5")}>
                                                 {statIcons[stat as keyof typeof statIcons]}
-                                                <span className="capitalize text-xs">{stat}</span>
+                                                <span className={cn("capitalize", isMobile ? "text-xs" : "text-xs")}>{stat}</span>
                                             </div>
                                         ))}
                                         </div>
                                     </div>
                                 )}
                             </div>
-                            <div className="text-center w-full sm:w-28 flex-shrink-0 bg-secondary/30 p-2 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none">
-                                <p className="text-sm text-muted-foreground">Nível</p>
-                                <p className="text-2xl font-bold text-primary">{skill.nivel_atual}</p>
-                                <p className="text-xs text-muted-foreground">Máx {skill.nivel_maximo}</p>
+                            <div className={cn("text-center flex-shrink-0 bg-secondary/30 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none w-full sm:w-24", isMobile ? "p-1.5 w-full sm:w-20" : "p-2 sm:w-28")}>
+                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>Nível</p>
+                                <p className={cn("font-bold text-primary", isMobile ? "text-xl" : "text-2xl")}>{skill.nivel_atual}</p>
+                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>Máx {skill.nivel_maximo}</p>
                             </div>
                         </div>
                         {skill.nivel_atual > 0 && (
-                             <div className="mt-3">
-                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                             <div className={cn("mt-2", isMobile ? "mt-2" : "mt-3")}>
+                                <div className={cn("flex justify-between text-xs text-muted-foreground mb-1", isMobile ? "text-xs mb-0.5" : "")}>
                                     <span>XP da Habilidade</span>
                                     <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel}</span>
                                 </div>
-                                <div className="w-full bg-secondary rounded-full h-2.5">
+                                <div className={cn("w-full bg-secondary rounded-full", isMobile ? "h-2" : "h-2.5")}>
                                     <div className={cn(
-                                        "h-2.5 rounded-full transition-all duration-500",
+                                        "rounded-full transition-all duration-500",
+                                        isMobile ? "h-2" : "h-2.5",
                                         isDecaying ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-primary to-cyan-400"
                                      )} style={{ width: `${skillProgress}%` }}></div>
                                 </div>
@@ -255,37 +259,37 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
             </div>
 
             <Dialog open={showAddDialog} onOpenChange={(isOpen) => { if(!isOpen) { setShowAddDialog(false); setSelectedMetaId(null); } else { setShowAddDialog(true); }}}>
-                <DialogContent className="max-w-lg">
+                <DialogContent className={cn("max-w-lg", isMobile ? "max-w-[95vw] p-4" : "")}>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-primary text-xl">
-                            <PlusCircle/>
+                        <DialogTitle className={cn("flex items-center gap-2 text-primary", isMobile ? "text-lg" : "text-xl")}>
+                            <PlusCircle className={isMobile ? "h-5 w-5" : ""}/>
                             Adicionar Nova Habilidade
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className={isMobile ? "text-sm" : ""}>
                             Escolha uma meta existente para criar e associar uma nova habilidade. A IA irá gerar uma habilidade relevante com base na meta selecionada.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <Label htmlFor="meta-select">Meta a Vincular</Label>
+                    <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-3" : "")}>
+                        <Label htmlFor="meta-select" className={isMobile ? "text-sm" : ""}>Meta a Vincular</Label>
                         <Select onValueChange={(value) => setSelectedMetaId(value)} value={selectedMetaId ? String(selectedMetaId) : ''}>
-                            <SelectTrigger id="meta-select" className="w-full">
+                            <SelectTrigger id="meta-select" className={cn("w-full", isMobile ? "h-9 text-sm" : "")}>
                                 <SelectValue placeholder="Selecione uma meta..." />
                             </SelectTrigger>
                             <SelectContent>
                                 {metasWithoutSkills.length > 0 ? (
                                     metasWithoutSkills.map((meta: any) => (
-                                        <SelectItem key={meta.id} value={String(meta.id)}>{meta.nome}</SelectItem>
+                                        <SelectItem key={meta.id} value={String(meta.id)} className={isMobile ? "text-sm" : ""}>{meta.nome}</SelectItem>
                                     ))
                                 ) : (
-                                    <SelectItem value="none" disabled>Nenhuma meta disponível para vincular.</SelectItem>
+                                    <SelectItem value="none" disabled className={isMobile ? "text-sm" : ""}>Nenhuma meta disponível para vincular.</SelectItem>
                                 )}
                             </SelectContent>
                         </Select>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveNewSkill} disabled={isLoading || !selectedMetaId}>
-                            {isLoading ? 'A gerar...' : 'Criar e Vincular Habilidade'}
+                    <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                        <Button variant="outline" onClick={() => setShowAddDialog(false)} className={isMobile ? "h-8 text-sm" : ""}>Cancelar</Button>
+                        <Button onClick={handleSaveNewSkill} disabled={isLoading || !selectedMetaId} className={isMobile ? "h-8 text-sm" : ""}>
+                            {isLoading ? (isMobile ? 'A gerar...' : 'A gerar...') : 'Criar e Vincular Habilidade'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

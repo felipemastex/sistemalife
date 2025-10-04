@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
 import { MetasView } from '@/components/views/core/MetasView';
-import { MissionsView } from '@/components/views/core/MissionsView';
+import MissionsView from '@/components/views/core/MissionsView';
 import { SkillsView } from '@/components/views/core/SkillsView';
 import { RoutineView } from '@/components/views/core/RoutineView';
 import { AIChatView } from '@/components/views/ai/AIChatView';
@@ -314,8 +314,11 @@ export default function App() {
       )}
       
       <div className="flex-1 flex flex-col">
-        <main 
-          className="flex-1 overflow-y-auto overflow-x-hidden relative" 
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto overflow-x-hidden relative",
+            isMobile && "pb-20"
+          )}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={() => onTouchEnd(false)}

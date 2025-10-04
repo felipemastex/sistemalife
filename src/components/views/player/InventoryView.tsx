@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Define iconMap similar to ShopView
 const iconMap: { [key: string]: React.ElementType } = {
@@ -26,6 +27,7 @@ const iconMap: { [key: string]: React.ElementType } = {
 const InventoryViewComponent = () => {
     const { profile, persistData } = usePlayerDataContext();
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     if (!profile) {
         return <div>A carregar perfil...</div>;
@@ -116,16 +118,21 @@ const InventoryViewComponent = () => {
 
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Inventário</h1>
-                <p className="text-muted-foreground mt-2 max-w-3xl">
+        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
+            <div className={cn("mb-4", isMobile ? "mb-4" : "mb-8")}>
+                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Inventário</h1>
+                <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
                     Estes são os itens que você adquiriu na sua jornada. Use-os com sabedoria.
                 </p>
             </div>
 
             {inventoryItems.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className={cn(
+                    "grid gap-4", 
+                    isMobile 
+                        ? "grid-cols-1 sm:grid-cols-2" 
+                        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                )}>
                     {inventoryItems.map((item: any) => {
                         // Use iconMap to get the correct icon component
                         const Icon = iconMap[item.icon] || Backpack;
@@ -137,36 +144,36 @@ const InventoryViewComponent = () => {
                         return (
                             <Card 
                                 key={item.instanceId}
-                                className={cn("bg-card/60 border-border/80 flex flex-col", isEffectActive && "border-primary/50")}
+                                className={cn("bg-card/60 border-border/80 flex flex-col", isEffectActive && "border-primary/50", isMobile ? "p-2" : "p-0")}
                             >
-                                <CardHeader className="flex flex-row items-center gap-4">
-                                     <div className="w-14 h-14 rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0">
-                                        <Icon className="w-8 h-8"/>
+                                <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
+                                     <div className={cn("rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0", isMobile ? "w-12 h-12" : "w-14 h-14")}>
+                                        <Icon className={isMobile ? "w-6 h-6" : "w-8 h-8"}/>
                                     </div>
                                     <div className="flex-1">
-                                        <CardTitle className="text-lg text-foreground">
+                                        <CardTitle className={cn("text-foreground", isMobile ? "text-base" : "text-lg")}>
                                             {item.name}
                                         </CardTitle>
-                                        <CardDescription className="text-xs">Adquirido {timeAgo}</CardDescription>
+                                        <CardDescription className={cn("", isMobile ? "text-[10px]" : "text-xs")}>Adquirido {timeAgo}</CardDescription>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <p className="text-sm text-muted-foreground">
+                                <CardContent className={cn("flex-grow", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
+                                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
                                         {item.description}
                                     </p>
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
                                      {isCosmetic ? (
-                                        <Button className="w-full" onClick={() => handleEquipItem(item)}>
+                                        <Button className={cn("w-full", isMobile ? "h-8 text-sm" : "")} onClick={() => handleEquipItem(item)}>
                                             Equipar
                                         </Button>
                                     ) : (
                                         <Button 
-                                            className="w-full" 
+                                            className={cn("w-full", isMobile ? "h-8 text-sm" : "")} 
                                             onClick={() => handleUseItem(item)}
                                             disabled={isEffectActive}
                                         >
-                                            {isEffectActive ? "Efeito Ativo" : "Usar Item"}
+                                            {isEffectActive ? (isMobile ? "Efeito Ativo" : "Efeito Ativo") : (isMobile ? "Usar Item" : "Usar Item")}
                                         </Button>
                                     )}
                                 </CardFooter>
@@ -175,10 +182,10 @@ const InventoryViewComponent = () => {
                     })}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground p-8 border-2 border-dashed border-border rounded-lg">
-                    <Backpack className="h-16 w-16 mb-4" />
-                    <p className="font-semibold text-lg">Inventário Vazio</p>
-                    <p className="text-sm mt-1">Visite a Loja para adquirir itens e melhorar a sua jornada.</p>
+                <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg", isMobile ? "h-48 p-4" : "h-64 p-8")}>
+                    <Backpack className={isMobile ? "h-12 w-12 mb-3" : "h-16 w-16 mb-4"} />
+                    <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Inventário Vazio</p>
+                    <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Visite a Loja para adquirir itens e melhorar a sua jornada.</p>
                 </div>
             )}
         </div>

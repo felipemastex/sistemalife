@@ -19,6 +19,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const timeToMinutes = (time: string) => {
     if (!time || !/^\d{2}:\d{2}$/.test(time)) return 0;
@@ -59,7 +60,8 @@ const AgendaView = ({
   suggestions, 
   onImplementSuggestion, 
   onDiscardSuggestion, 
-  isPastDay 
+  isPastDay,
+  isMobile
 }: { 
   routineItems: RoutineItem[]; 
   onEditItem: (item: RoutineItem) => void; 
@@ -71,6 +73,7 @@ const AgendaView = ({
   onImplementSuggestion: (mission: Mission) => void; 
   onDiscardSuggestion: (missionId: string | number) => void; 
   isPastDay: boolean; 
+  isMobile?: boolean;
 }) => {
     const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
@@ -86,44 +89,44 @@ const AgendaView = ({
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
+        <div className={cn("flex flex-col overflow-hidden h-full", isMobile ? "gap-4" : "lg:flex-row gap-8")}>
             {/* Unscheduled Missions Column */}
-            <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
-                <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
-                <ScrollArea className="h-full pr-4 -mr-4">
-                    <div className="space-y-3">
+            <div className={cn("flex flex-col", isMobile ? "w-full" : "w-full lg:w-[450px] lg:flex-shrink-0")}>
+                <h2 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-xl mb-3" : "text-2xl mb-4")}>Missões por Agendar</h2>
+                <ScrollArea className={cn("h-full", isMobile ? "pr-2 -mr-2" : "pr-4 -mr-4")}>
+                    <div className={cn("", isMobile ? "space-y-2" : "space-y-3")}>
                         {missions.length > 0 ? (
                             missions.map(mission => (
-                                <Collapsible key={mission.id} className="bg-card/60 border border-border rounded-lg">
-                                    <CollapsibleTrigger className="w-full p-3 text-left">
+                                <Collapsible key={mission.id} className={cn("bg-card/60 border border-border rounded-lg", isMobile ? "" : "")}>
+                                    <CollapsibleTrigger className={cn("w-full text-left", isMobile ? "p-2" : "p-3")}>
                                          <div className="flex justify-between items-center gap-4">
-                                            <CardTitle className="text-base flex-1">{mission.nome}</CardTitle>
-                                            <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                            <CardTitle className={cn("flex-1", isMobile ? "text-sm" : "text-base")}>{mission.nome}</CardTitle>
+                                            <ChevronsUpDown className={cn("text-muted-foreground flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                          </div>
                                     </CollapsibleTrigger>
-                                    <CollapsibleContent className="px-3 pb-3">
-                                        <div className="border-t border-border pt-3 mt-3 space-y-4">
-                                            <p className="text-sm text-muted-foreground">{mission.descricao}</p>
+                                    <CollapsibleContent className={cn("", isMobile ? "px-2 pb-2" : "px-3 pb-3")}>
+                                        <div className={cn("border-border pt-3 mt-3", isMobile ? "border-t space-y-3" : "border-t space-y-4")}>
+                                            <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>{mission.descricao}</p>
                                             
                                             {suggestions[mission.id] && (
-                                                <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
-                                                    <Sparkles className="h-4 w-4 text-primary" />
-                                                    <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
-                                                    <AlertDescription className="text-card-foreground">
+                                                <Alert className={cn("border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500", isMobile ? "" : "")}>
+                                                    <Sparkles className={cn("text-primary", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                                    <AlertTitle className={cn("text-primary", isMobile ? "text-sm" : "")}>Sugestão do Sistema</AlertTitle>
+                                                    <AlertDescription className={cn("text-card-foreground", isMobile ? "text-xs" : "")}>
                                                         {suggestions[mission.id].suggestionText}
-                                                        <div className="flex gap-2 mt-3">
-                                                            <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay}>Implementar</Button>
-                                                            <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                        <div className={cn("mt-2", isMobile ? "gap-1" : "gap-2")}>
+                                                            <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay} className={isMobile ? "h-7 text-xs" : ""}>Implementar</Button>
+                                                            <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)} className={isMobile ? "h-7 text-xs" : ""}>Descartar</Button>
                                                         </div>
                                                     </AlertDescription>
                                                 </Alert>
                                             )}
 
-                                            <div className="flex flex-col sm:flex-row gap-2">
-                                                <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full" disabled={isPastDay}>Adicionar Manualmente</Button>
-                                                <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className="w-full">
+                                            <div className={cn("flex", isMobile ? "flex-col gap-1" : "flex-col sm:flex-row gap-2")}>
+                                                <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className={cn("w-full", isMobile ? "h-8 text-xs" : "")} disabled={isPastDay}>Adicionar Manualmente</Button>
+                                                <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className={cn("w-full", isMobile ? "h-8 text-xs" : "")}>
                                                     {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                    <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                    <BrainCircuit className={cn("ml-2", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
                                                 </Button>
                                             </div>
                                         </div>
@@ -131,23 +134,23 @@ const AgendaView = ({
                                 </Collapsible>
                             ))
                         ) : (
-                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
+                            <div className={cn("border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center", isMobile ? "py-6" : "py-10")}>
                                 <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
-                                <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
+                                <p className={cn("text-muted-foreground/70", isMobile ? "text-xs mt-1" : "text-sm mt-2")}>Bom trabalho, Caçador!</p>
                             </div>
                         )}
                     </div>
                 </ScrollArea>
             </div>
             {/* Agenda View */}
-            <div className="flex-1 min-w-0">
-                 <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda</h2>
-                <ScrollArea className="h-full pr-4 -mr-4">
+            <div className={cn("", isMobile ? "" : "flex-1 min-w-0")}>
+                 <h2 className={cn("font-bold text-primary capitalize font-cinzel tracking-wider", isMobile ? "text-xl mb-3" : "text-2xl mb-4")}>Agenda</h2>
+                <ScrollArea className={cn("h-full", isMobile ? "pr-2 -mr-2" : "pr-4 -mr-4")}>
                     <div className="relative">
                         {/* Hours timeline */}
                         {hours.map(hour => (
-                            <div key={hour} className="h-[60px] flex items-start border-t border-border/50">
-                                <span className="text-xs text-muted-foreground -mt-2.5 mr-2 bg-background px-1">{hour}</span>
+                            <div key={hour} className={cn("flex items-start border-border/50", isMobile ? "h-10 border-t" : "h-[60px] border-t")}>
+                                <span className={cn("text-muted-foreground bg-background px-1", isMobile ? "text-[10px] -mt-2 mr-1" : "text-xs -mt-2.5 mr-2")}>{hour}</span>
                             </div>
                         ))}
                         {/* Events */}
@@ -156,12 +159,12 @@ const AgendaView = ({
                             return (
                                 <div
                                     key={item.id}
-                                    className="absolute left-16 right-0 bg-primary/20 border-l-4 border-primary p-2 rounded-r-lg cursor-pointer"
+                                    className="absolute left-16 right-0 bg-primary/20 border-l-4 border-primary rounded-r-lg cursor-pointer"
                                     style={{ top: `${top}px`, height: `${height}px` }}
                                     onClick={() => onEditItem(item)}
                                 >
-                                    <p className="font-bold text-sm text-foreground truncate">{item.activity}</p>
-                                    <p className="text-xs text-primary">{item.start_time} - {item.end_time}</p>
+                                    <p className={cn("font-bold text-foreground truncate", isMobile ? "text-xs p-1" : "text-sm p-2")}>{item.activity}</p>
+                                    <p className={cn("text-primary", isMobile ? "text-[10px] px-1" : "text-xs p-2 pt-0")}>{item.start_time} - {item.end_time}</p>
                                 </div>
                             )
                         })}
@@ -183,7 +186,8 @@ const ListView = ({
   onImplementSuggestion, 
   onDiscardSuggestion, 
   onDeleteItem, 
-  isPastDay 
+  isPastDay,
+  isMobile
 }: { 
   routineItems: RoutineItem[]; 
   onEditItem: (item: RoutineItem) => void; 
@@ -196,32 +200,37 @@ const ListView = ({
   onDiscardSuggestion: (missionId: string | number) => void; 
   onDeleteItem: (itemId: string | number) => void; 
   isPastDay: boolean; 
+  isMobile?: boolean;
 }) => (
-    <div className="flex flex-col lg:flex-row gap-8 overflow-hidden h-full">
+    <div className={cn("flex flex-col overflow-hidden h-full", isMobile ? "gap-4" : "lg:flex-row gap-8")}>
         {/* Agenda List View */}
-        <div className="flex flex-col flex-1 min-w-0">
-             <h2 className="text-2xl font-bold text-primary mb-4 capitalize font-cinzel tracking-wider">Agenda de Hoje</h2>
-            <ScrollArea className="h-full pr-4 -mr-4">
-                <div className="relative pl-6">
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border/50"></div>
-                    <div className="space-y-3">
+        <div className={cn("flex flex-col", isMobile ? "" : "flex-1 min-w-0")}>
+             <h2 className={cn("font-bold text-primary capitalize font-cinzel tracking-wider", isMobile ? "text-xl mb-3" : "text-2xl mb-4")}>Agenda de Hoje</h2>
+            <ScrollArea className={cn("h-full", isMobile ? "pr-2 -mr-2" : "pr-4 -mr-4")}>
+                <div className={cn("relative", isMobile ? "pl-4" : "pl-6")}>
+                    <div className={cn("absolute top-0 bottom-0 bg-border/50", isMobile ? "left-0 w-0.5" : "left-0 w-0.5")}></div>
+                    <div className={cn("", isMobile ? "space-y-2" : "space-y-3")}>
                         {routineItems.map(item => (
-                            <div key={item.id} className="relative pl-6">
-                                <div className="absolute -left-1.5 top-1 h-3 w-3 bg-primary rounded-full border-2 border-background"></div>
-                                <div className="bg-card/80 border border-border rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                                        <span className="text-primary font-mono text-base">{item.start_time} - {item.end_time}</span>
-                                        <p className="text-base text-card-foreground break-all">{item.activity}</p>
+                            <div key={item.id} className={cn("relative", isMobile ? "pl-4" : "pl-6")}>
+                                <div className={cn("absolute bg-primary rounded-full border-2 border-background", isMobile ? "-left-1 top-1 h-2 w-2" : "-left-1.5 top-1 h-3 w-3")}></div>
+                                <div className={cn("bg-card/80 border border-border rounded-lg flex flex-col justify-between gap-2", isMobile ? "p-2" : "p-3 sm:flex-row sm:items-start")}>
+                                    <div className={cn("", isMobile ? "flex-col gap-y-1" : "flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1")}>
+                                        <span className={cn("font-mono text-primary", isMobile ? "text-sm" : "text-base")}>{item.start_time} - {item.end_time}</span>
+                                        <p className={cn("text-card-foreground break-all", isMobile ? "text-sm" : "text-base")}>{item.activity}</p>
                                     </div>
-                                    <div className="flex space-x-1 self-end sm:self-center">
-                                        <Button onClick={() => onEditItem(item)} variant="ghost" size="icon" className="text-muted-foreground hover:text-yellow-400 h-8 w-8" aria-label={`Editar atividade ${item.activity}`}><Edit className="h-4 w-4" /></Button>
-                                        <Button onClick={() => onDeleteItem(item.id)} variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400 h-8 w-8" aria-label={`Excluir atividade ${item.activity}`}><Trash2 className="h-4 w-4" /></Button>
+                                    <div className={cn("flex space-x-1", isMobile ? "self-end" : "self-end sm:self-center")}>
+                                        <Button onClick={() => onEditItem(item)} variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Editar atividade ${item.activity}`}>
+                                            <Edit className={cn("", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        </Button>
+                                        <Button onClick={() => onDeleteItem(item.id)} variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-red-400", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Excluir atividade ${item.activity}`}>
+                                            <Trash2 className={cn("", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
                         ))}
                         {routineItems.length === 0 && (
-                            <div className="text-center py-10 border-2 border-dashed border-border rounded-lg ml-[-24px]">
+                            <div className={cn("border-2 border-dashed border-border rounded-lg flex flex-col justify-center items-center", isMobile ? "py-6" : "py-10 ml-[-24px]")}>
                                 <p className="text-muted-foreground">Nenhuma atividade agendada.</p>
                             </div>
                         )}
@@ -230,42 +239,42 @@ const ListView = ({
             </ScrollArea>
         </div>
         {/* Unscheduled Missions Column */}
-        <div className="flex flex-col w-full lg:w-[450px] lg:flex-shrink-0">
-            <h2 className="text-2xl font-bold text-primary mb-4 font-cinzel tracking-wider">Missões por Agendar</h2>
-            <ScrollArea className="h-full pr-4 -mr-4">
-                <div className="space-y-3">
+        <div className={cn("flex flex-col", isMobile ? "w-full" : "w-full lg:w-[450px] lg:flex-shrink-0")}>
+            <h2 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-xl mb-3" : "text-2xl mb-4")}>Missões por Agendar</h2>
+            <ScrollArea className={cn("h-full", isMobile ? "pr-2 -mr-2" : "pr-4 -mr-4")}>
+                <div className={cn("", isMobile ? "space-y-2" : "space-y-3")}>
                     {missions.length > 0 ? (
                         missions.map(mission => (
-                            <Collapsible key={mission.id} className="bg-card/60 border border-border rounded-lg">
-                                <CollapsibleTrigger className="w-full p-3 text-left">
+                            <Collapsible key={mission.id} className={cn("bg-card/60 border border-border rounded-lg", isMobile ? "" : "")}>
+                                <CollapsibleTrigger className={cn("w-full text-left", isMobile ? "p-2" : "p-3")}>
                                     <div className="flex justify-between items-center gap-4">
-                                        <CardTitle className="text-base flex-1">{mission.nome}</CardTitle>
-                                        <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                        <CardTitle className={cn("flex-1", isMobile ? "text-sm" : "text-base")}>{mission.nome}</CardTitle>
+                                        <ChevronsUpDown className={cn("text-muted-foreground flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                     </div>
                                 </CollapsibleTrigger>
-                                <CollapsibleContent className="px-3 pb-3">
-                                    <div className="border-t border-border pt-3 mt-3 space-y-4">
-                                        <p className="text-sm text-muted-foreground">{mission.descricao}</p>
+                                <CollapsibleContent className={cn("", isMobile ? "px-2 pb-2" : "px-3 pb-3")}>
+                                    <div className={cn("border-border pt-3 mt-3", isMobile ? "border-t space-y-3" : "border-t space-y-4")}>
+                                        <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>{mission.descricao}</p>
                                         
                                         {suggestions[mission.id] && (
-                                            <Alert className="border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500">
-                                                <Sparkles className="h-4 w-4 text-primary" />
-                                                <AlertTitle className="text-primary">Sugestão do Sistema</AlertTitle>
-                                                <AlertDescription className="text-card-foreground">
+                                            <Alert className={cn("border-primary/50 bg-primary/10 animate-in fade-in-50 duration-500", isMobile ? "" : "")}>
+                                                <Sparkles className={cn("text-primary", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                                <AlertTitle className={cn("text-primary", isMobile ? "text-sm" : "")}>Sugestão do Sistema</AlertTitle>
+                                                <AlertDescription className={cn("text-card-foreground", isMobile ? "text-xs" : "")}>
                                                     {suggestions[mission.id].suggestionText}
-                                                    <div className="flex gap-2 mt-3">
-                                                        <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay}>Implementar</Button>
-                                                        <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)}>Descartar</Button>
+                                                    <div className={cn("mt-2", isMobile ? "gap-1" : "gap-2")}>
+                                                        <Button size="sm" onClick={() => onImplementSuggestion(mission)} disabled={isPastDay} className={isMobile ? "h-7 text-xs" : ""}>Implementar</Button>
+                                                        <Button size="sm" variant="ghost" onClick={() => onDiscardSuggestion(mission.id)} className={isMobile ? "h-7 text-xs" : ""}>Descartar</Button>
                                                     </div>
                                                 </AlertDescription>
                                             </Alert>
                                         )}
 
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className="w-full" disabled={isPastDay}>Adicionar Manualmente</Button>
-                                            <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className="w-full">
+                                        <div className={cn("flex", isMobile ? "flex-col gap-1" : "flex-col sm:flex-row gap-2")}>
+                                            <Button onClick={() => onManualAdd(mission)} size="sm" variant="secondary" className={cn("w-full", isMobile ? "h-8 text-xs" : "")} disabled={isPastDay}>Adicionar Manualmente</Button>
+                                            <Button onClick={() => onSuggestTime(mission)} disabled={isLoadingSuggestion === mission.id || isPastDay} size="sm" className={cn("w-full", isMobile ? "h-8 text-xs" : "")}>
                                                 {isLoadingSuggestion === mission.id ? "A analisar..." : "Sugerir Horário"}
-                                                <BrainCircuit className="ml-2 h-4 w-4"/>
+                                                <BrainCircuit className={cn("ml-2", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
                                             </Button>
                                         </div>
                                     </div>
@@ -273,9 +282,9 @@ const ListView = ({
                             </Collapsible>
                         ))
                     ) : (
-                        <div className="text-center py-10 border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center">
+                        <div className={cn("border-2 border-dashed border-border rounded-lg h-full flex flex-col justify-center items-center", isMobile ? "py-6" : "py-10")}>
                             <p className="text-muted-foreground">Nenhuma missão por agendar.</p>
-                            <p className="text-muted-foreground/70 text-sm">Bom trabalho, Caçador!</p>
+                            <p className={cn("text-muted-foreground/70", isMobile ? "text-xs mt-1" : "text-sm mt-2")}>Bom trabalho, Caçador!</p>
                         </div>
                     )}
                 </div>
@@ -343,6 +352,7 @@ const RoutineViewComponent = () => {
     const [showTemplateDialog, setShowTemplateDialog] = useState(false);
     const [routineTemplates, setRoutineTemplates] = useState<any>({});
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
     const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
@@ -601,20 +611,20 @@ const RoutineViewComponent = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col">
+        <div className={cn("h-full flex flex-col", isMobile ? "p-2" : "p-4 md:p-6")}>
             <div className="flex-shrink-0">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                    <h1 className="text-3xl font-bold text-cyan-400 font-cinzel tracking-wider">Rotina Semanal</h1>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)} className="w-full sm:w-auto">
-                            <Save className="h-5 w-5 mr-2" />
-                            Salvar como Template
+                <div className={cn("flex flex-col gap-4 mb-4", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
+                    <h1 className={cn("font-bold text-cyan-400 font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Rotina Semanal</h1>
+                    <div className={cn("flex flex-col gap-2 w-full", isMobile ? "sm:flex-row sm:gap-1" : "sm:flex-row sm:w-auto")}>
+                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)} className={cn("w-full", isMobile ? "sm:w-auto h-8 text-sm" : "sm:w-auto")}>
+                            <Save className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                            <span className={isMobile ? "text-sm" : ""}>Salvar como Template</span>
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full sm:w-auto" disabled={Object.keys(routineTemplates).length === 0}>
-                                <FileDown className="h-5 w-5 mr-2" />
-                                Carregar Template
+                                <Button variant="outline" className={cn("w-full", isMobile ? "sm:w-auto h-8 text-sm" : "sm:w-auto")} disabled={Object.keys(routineTemplates).length === 0}>
+                                <FileDown className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                                <span className={isMobile ? "text-sm" : ""}>Carregar Template</span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -629,58 +639,59 @@ const RoutineViewComponent = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-500 hover:text-red-400"
+                                                        className={cn("absolute right-1 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-400", isMobile ? "h-5 w-5" : "h-6 w-6")}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setTemplateToDelete(templateName);
                                                         }}
                                                         aria-label={`Excluir template ${templateName}`}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className={cn("", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                                     </Button>
                                                 </AlertDialogTrigger>
                                             </div>
                                         </AlertDialog>
                                     ))
                                 ) : (
-                                    <DropdownMenuItem disabled>Nenhum template salvo</DropdownMenuItem>
+                                    <DropdownMenuItem disabled className={isMobile ? "text-sm" : ""}>Nenhum template salvo</DropdownMenuItem>
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button onClick={() => handleOpenDialog()} className="bg-cyan-600 hover:bg-cyan-500 w-full sm:w-auto" disabled={isCurrentDayPast}>
-                            <PlusCircle className="h-5 w-5 mr-2" />
-                            Adicionar Atividade
+                        <Button onClick={() => handleOpenDialog()} className={cn("bg-cyan-600 hover:bg-cyan-500 w-full", isMobile ? "sm:w-auto h-8 text-sm" : "sm:w-auto")} disabled={isCurrentDayPast}>
+                            <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                            <span className={isMobile ? "text-sm" : ""}>Adicionar Atividade</span>
                         </Button>
                     </div>
                 </div>
-                <p className="text-gray-400 mb-6 max-w-4xl">Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
+                <p className={cn("text-gray-400 max-w-4xl", isMobile ? "text-xs mb-4" : "mb-6")}>Mantenha a sua rotina semanal atualizada para que o Sistema possa sugerir os melhores horários para as suas missões.</p>
 
                  <Tabs defaultValue={selectedDay} onValueChange={setSelectedDay} className="w-full">
                     <ScrollArea className="w-full whitespace-nowrap">
-                        <TabsList className="inline-flex h-auto bg-card/60 p-1 rounded-lg">
+                        <TabsList className={cn("inline-flex h-auto bg-card/60 rounded-lg", isMobile ? "p-0.5" : "p-1")}>
                             {weekDays.map(day => (
                             <TabsTrigger 
                                 key={day.name} 
                                 value={day.name} 
                                 className={cn(
-                                    "flex-col p-2 h-auto capitalize data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-md w-24 text-muted-foreground",
+                                    "flex-col h-auto capitalize data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-md text-muted-foreground",
                                     day.isToday && "border-b-2 border-primary",
-                                    day.isPast && "opacity-60"
+                                    day.isPast && "opacity-60",
+                                    isMobile ? "p-1 w-12 text-xs" : "p-2 w-24"
                                 )}
                             >
                                 <span>{day.name.substring(0,3)}</span>
-                                <span className="font-bold text-lg">{day.date}</span>
+                                <span className={cn("font-bold", isMobile ? "text-base" : "text-lg")}>{day.date}</span>
                             </TabsTrigger>
                             ))}
                         </TabsList>
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
-                    <TabsContent value={selectedDay} className="mt-6 flex-grow animate-in fade-in-50 duration-500 h-full">
+                    <TabsContent value={selectedDay} className={cn("flex-grow animate-in fade-in-50 duration-500 h-full", isMobile ? "mt-4" : "mt-6")}>
                         <Tabs defaultValue="lista" className="h-full flex flex-col">
-                            <TabsList className="grid w-full grid-cols-2 max-w-sm self-start mb-4">
-                                <TabsTrigger value="lista"><List className="mr-2 h-4 w-4"/>Lista</TabsTrigger>
-                                <TabsTrigger value="agenda"><Calendar className="mr-2 h-4 w-4"/>Agenda</TabsTrigger>
+                            <TabsList className={cn("grid w-full max-w-sm self-start", isMobile ? "grid-cols-2 mb-2" : "grid-cols-2 mb-4")}>
+                                <TabsTrigger value="lista" className={isMobile ? "text-sm" : ""}><List className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")}/>Lista</TabsTrigger>
+                                <TabsTrigger value="agenda" className={isMobile ? "text-sm" : ""}><Calendar className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")}/>Agenda</TabsTrigger>
                             </TabsList>
                             <TabsContent value="lista" className="flex-grow">
                                 <ListView 
@@ -695,6 +706,7 @@ const RoutineViewComponent = () => {
                                     onImplementSuggestion={handleImplementSuggestion}
                                     onDiscardSuggestion={handleDiscardSuggestion}
                                     isPastDay={isCurrentDayPast}
+                                    isMobile={isMobile}
                                 />
                             </TabsContent>
                             <TabsContent value="agenda" className="flex-grow">
@@ -709,6 +721,7 @@ const RoutineViewComponent = () => {
                                     onImplementSuggestion={handleImplementSuggestion}
                                     onDiscardSuggestion={handleDiscardSuggestion}
                                     isPastDay={isCurrentDayPast}
+                                    isMobile={isMobile}
                                 />
                             </TabsContent>
                         </Tabs>
@@ -717,100 +730,101 @@ const RoutineViewComponent = () => {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                     <DialogHeader>
-                        <DialogTitle>{editedItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className={isMobile ? "text-lg" : ""}>{editedItem ? 'Editar Atividade' : 'Adicionar Atividade'}</DialogTitle>
+                        <DialogDescription className={isMobile ? "text-sm" : ""}>
                             A atividade será adicionada à agenda de <span className="font-bold capitalize text-primary">{selectedDay}</span>.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="start_time" className="text-right">Início</Label>
+                    <div className={cn("grid gap-4 py-4", isMobile ? "gap-3 py-3" : "")}>
+                        <div className={cn("grid items-center gap-4", isMobile ? "grid-cols-3" : "grid-cols-4")}>
+                            <Label htmlFor="start_time" className={cn("text-right", isMobile ? "text-sm" : "")}>Início</Label>
                             <Input 
                                 id="start_time" 
                                 type="time" 
                                 value={editedItem?.start_time || "09:00"} 
                                 onChange={(e) => setEditedItem(editedItem ? {...editedItem, start_time: e.target.value} : null)} 
-                                className="col-span-3" 
+                                className={cn("col-span-3", isMobile ? "h-8 text-sm" : "")} 
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="end_time" className="text-right">Fim</Label>
+                        <div className={cn("grid items-center gap-4", isMobile ? "grid-cols-3" : "grid-cols-4")}>
+                            <Label htmlFor="end_time" className={cn("text-right", isMobile ? "text-sm" : "")}>Fim</Label>
                             <Input 
                                 id="end_time" 
                                 type="time" 
                                 value={editedItem?.end_time || "10:00"} 
                                 onChange={(e) => setEditedItem(editedItem ? {...editedItem, end_time: e.target.value} : null)} 
-                                className="col-span-3" 
+                                className={cn("col-span-3", isMobile ? "h-8 text-sm" : "")} 
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="activity" className="text-right">Atividade</Label>
+                        <div className={cn("grid items-center gap-4", isMobile ? "grid-cols-3" : "grid-cols-4")}>
+                            <Label htmlFor="activity" className={cn("text-right", isMobile ? "text-sm" : "")}>Atividade</Label>
                             <Input 
                                 id="activity" 
                                 value={editedItem?.activity || ""} 
                                 onChange={(e) => setEditedItem(editedItem ? {...editedItem, activity: e.target.value} : null)} 
-                                className="col-span-3" 
+                                className={cn("col-span-3", isMobile ? "h-8 text-sm" : "")} 
                                 placeholder="Ex: Trabalho, Almoço, Exercício"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button onClick={handleSave}>Salvar</Button>
+                    <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                        <Button onClick={handleSave} className={isMobile ? "h-8 text-sm" : ""}>Salvar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
             
             <AlertDialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-                <AlertDialogContent>
+                <AlertDialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Carregar Template de Rotina?</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className={isMobile ? "text-lg" : ""}>Carregar Template de Rotina?</AlertDialogTitle>
+                        <AlertDialogDescription className={isMobile ? "text-sm" : ""}>
                             Isto irá substituir todas as atividades agendadas para <span className="font-bold capitalize text-primary">{selectedDay}</span>. Tem a certeza?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setSelectedTemplate(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmLoadTemplate}>Sim, carregar</AlertDialogAction>
+                    <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                        <AlertDialogCancel onClick={() => setSelectedTemplate(null)} className={isMobile ? "h-8 text-sm" : ""}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmLoadTemplate} className={isMobile ? "h-8 text-sm" : ""}>Sim, carregar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             
             <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
-                <AlertDialogContent>
+                <AlertDialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Eliminar Template?</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className={isMobile ? "text-lg" : ""}>Eliminar Template?</AlertDialogTitle>
+                        <AlertDialogDescription className={isMobile ? "text-sm" : ""}>
                             Tem a certeza que quer eliminar o template "{templateToDelete}"? Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDeleteTemplate}>Sim, eliminar</AlertDialogAction>
+                    <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                        <AlertDialogCancel className={isMobile ? "h-8 text-sm" : ""}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteTemplate} className={isMobile ? "h-8 text-sm" : ""}>Sim, eliminar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
              <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
-                <DialogContent>
+                <DialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                     <DialogHeader>
-                        <DialogTitle>Salvar Rotina como Template</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className={isMobile ? "text-lg" : ""}>Salvar Rotina como Template</DialogTitle>
+                        <DialogDescription className={isMobile ? "text-sm" : ""}>
                            Dê um nome ao seu template para a rotina de <span className="font-bold capitalize text-primary">{selectedDay}</span>.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
+                    <div className={cn("py-4", isMobile ? "py-3" : "")}>
                          <Input 
                             id="templateName" 
                             placeholder="Ex: Dia de Semana Produtivo"
                             value={newTemplateName}
                             onChange={(e) => setNewTemplateName(e.target.value)}
+                            className={isMobile ? "h-8 text-sm" : ""}
                          />
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveTemplate}>Salvar Template</Button>
+                    <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                        <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)} className={isMobile ? "h-8 text-sm" : ""}>Cancelar</Button>
+                        <Button onClick={handleSaveTemplate} className={isMobile ? "h-8 text-sm" : ""}>Salvar Template</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

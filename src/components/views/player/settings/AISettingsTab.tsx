@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -16,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const themeColors = [
     { name: 'Ciano (Padrão)', value: '198 90% 55%' },
@@ -39,6 +39,7 @@ export default function AISettingsTab() {
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const form = useForm<z.infer<typeof aiSettingsFormSchema>>({
         resolver: zodResolver(aiSettingsFormSchema),
@@ -107,35 +108,40 @@ export default function AISettingsTab() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>IA &amp; Interface</CardTitle>
-                        <CardDescription>Personalize como você interage com o Sistema e a interface da aplicação.</CardDescription>
+            <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile && "space-y-4")}>
+                <Card className={isMobile ? "p-2" : ""}>
+                    <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
+                        <CardTitle className={isMobile ? "text-lg" : ""}>IA & Interface</CardTitle>
+                        <CardDescription className={isMobile ? "text-xs" : ""}>
+                            Personalize como você interage com o Sistema e a interface da aplicação.
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className={cn("space-y-6", isMobile && "space-y-4 p-3")}>
                         <FormField
                             control={form.control}
                             name="theme_accent_color"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Tema Visual</FormLabel>
-                                    <FormDescription>Escolha a cor de destaque para a interface do Sistema.</FormDescription>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
+                                    <FormLabel className={isMobile ? "text-sm" : ""}>Tema Visual</FormLabel>
+                                    <FormDescription className={isMobile ? "text-xs" : ""}>
+                                        Escolha a cor de destaque para a interface do Sistema.
+                                    </FormDescription>
+                                    <div className={cn("grid gap-4 pt-2", isMobile ? "grid-cols-3 gap-2" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4")}>
                                         {themeColors.map((color) => (
                                             <div key={color.value}>
                                                 <button
                                                     type="button"
                                                     onClick={() => field.onChange(color.value)}
                                                     className={cn(
-                                                        "w-full h-16 rounded-md border-2 flex items-center justify-center transition-all duration-200",
+                                                        "w-full rounded-md border-2 flex items-center justify-center transition-all duration-200",
+                                                        isMobile ? "h-12" : "h-16",
                                                         field.value === color.value ? "border-foreground" : "border-transparent hover:border-muted-foreground/50"
                                                     )}
                                                     style={{ backgroundColor: `hsl(${color.value})`}}
                                                 >
-                                                    {field.value === color.value && <Check className="h-6 w-6 text-white mix-blend-difference" />}
+                                                    {field.value === color.value && <Check className={cn("text-white mix-blend-difference", isMobile ? "h-4 w-4" : "h-6 w-6")} />}
                                                 </button>
-                                                <p className="text-center text-sm mt-2 text-muted-foreground">{color.name}</p>
+                                                <p className={cn("text-center mt-2 text-muted-foreground", isMobile ? "text-xs mt-1" : "text-sm")}>{color.name}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -144,15 +150,15 @@ export default function AISettingsTab() {
                             )}
                         />
 
-                        <Separator/>
+                        <Separator className={isMobile ? "my-2" : ""}/>
                         
                          <FormField
                             control={form.control}
                             name="layout_density"
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                <FormLabel>Densidade do Layout</FormLabel>
-                                <FormDescription>
+                                <FormLabel className={isMobile ? "text-sm" : ""}>Densidade do Layout</FormLabel>
+                                <FormDescription className={isMobile ? "text-xs" : ""}>
                                     Ajuste o espaçamento na interface para corresponder às suas preferências visuais.
                                 </FormDescription>
                                 <FormControl>
@@ -160,13 +166,16 @@ export default function AISettingsTab() {
                                     onValueChange={field.onChange}
                                     defaultValue={field.value}
                                     value={field.value}
-                                    className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
+                                    className={cn("grid gap-4 pt-2", isMobile ? "grid-cols-1 gap-2" : "grid-cols-1 sm:grid-cols-3")}
                                     >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'compact' ? 'checked' : 'unchecked'} onClick={() => field.onChange('compact')}>
+                                                <div className={cn(
+                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
+                                                    isMobile ? "p-2" : "p-4"
+                                                )} data-state={field.value === 'compact' ? 'checked' : 'unchecked'} onClick={() => field.onChange('compact')}>
                                                     <RadioGroupItem value="compact" id="density-compact" className="sr-only"/>
-                                                    <FormLabel htmlFor="density-compact" className="font-normal cursor-pointer w-full text-center">
+                                                    <FormLabel htmlFor="density-compact" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
                                                         Compacto
                                                     </FormLabel>
                                                 </div>
@@ -174,9 +183,12 @@ export default function AISettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                              <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'default' ? 'checked' : 'unchecked'} onClick={() => field.onChange('default')}>
+                                                <div className={cn(
+                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
+                                                    isMobile ? "p-2" : "p-4"
+                                                )} data-state={field.value === 'default' ? 'checked' : 'unchecked'} onClick={() => field.onChange('default')}>
                                                     <RadioGroupItem value="default" id="density-default" className="sr-only"/>
-                                                    <FormLabel htmlFor="density-default" className="font-normal cursor-pointer w-full text-center">
+                                                    <FormLabel htmlFor="density-default" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
                                                         Padrão
                                                     </FormLabel>
                                                 </div>
@@ -184,9 +196,12 @@ export default function AISettingsTab() {
                                         </FormItem>
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
-                                                <div className="flex w-full items-center justify-center rounded-md border border-muted-foreground p-4 cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors" data-state={field.value === 'comfortable' ? 'checked' : 'unchecked'} onClick={() => field.onChange('comfortable')}>
+                                                <div className={cn(
+                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
+                                                    isMobile ? "p-2" : "p-4"
+                                                )} data-state={field.value === 'comfortable' ? 'checked' : 'unchecked'} onClick={() => field.onChange('comfortable')}>
                                                     <RadioGroupItem value="comfortable" id="density-comfortable" className="sr-only"/>
-                                                    <FormLabel htmlFor="density-comfortable" className="font-normal cursor-pointer w-full text-center">
+                                                    <FormLabel htmlFor="density-comfortable" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
                                                         Confortável
                                                     </FormLabel>
                                                 </div>
@@ -200,28 +215,28 @@ export default function AISettingsTab() {
                         />
 
 
-                        <Separator/>
+                        <Separator className={isMobile ? "my-2" : ""}/>
 
                          <FormField
                             control={form.control}
                             name="ai_personality"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Personalidade do Sistema</FormLabel>
+                                    <FormLabel className={isMobile ? "text-sm" : ""}>Personalidade do Sistema</FormLabel>
                                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className={isMobile ? "text-sm py-1 h-8" : ""}>
                                                 <SelectValue placeholder="Selecione uma personalidade" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="balanced">Equilibrado (Padrão)</SelectItem>
-                                            <SelectItem value="mentor">Mentor Sábio</SelectItem>
-                                            <SelectItem value="strategist">Estratega Frio</SelectItem>
-                                            <SelectItem value="friendly">Parceiro Amigável</SelectItem>
+                                            <SelectItem value="balanced" className={isMobile ? "text-sm py-1" : ""}>Equilibrado (Padrão)</SelectItem>
+                                            <SelectItem value="mentor" className={isMobile ? "text-sm py-1" : ""}>Mentor Sábio</SelectItem>
+                                            <SelectItem value="strategist" className={isMobile ? "text-sm py-1" : ""}>Estratega Frio</SelectItem>
+                                            <SelectItem value="friendly" className={isMobile ? "text-sm py-1" : ""}>Parceiro Amigável</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>
+                                    <FormDescription className={isMobile ? "text-xs" : ""}>
                                         Escolha como o "Arquiteto" (IA) deve comunicar consigo.
                                     </FormDescription>
                                     <FormMessage />
@@ -229,16 +244,16 @@ export default function AISettingsTab() {
                             )}
                         />
                         
-                        <Separator/>
+                        <Separator className={isMobile ? "my-2" : ""}/>
 
                         <FormField
                             control={form.control}
                             name="mission_view_style"
                             render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <FormItem className={cn("flex items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Visualização de Missão em Pop-up</FormLabel>
-                                        <FormDescription>
+                                        <FormLabel className={cn("text-base", isMobile && "text-sm")}>Visualização de Missão em Pop-up</FormLabel>
+                                        <FormDescription className={isMobile ? "text-xs" : ""}>
                                             Ative para que os detalhes da missão diária abram num pop-up em vez de expandir na lista.
                                         </FormDescription>
                                     </div>
@@ -255,10 +270,10 @@ export default function AISettingsTab() {
                             control={form.control}
                             name="reduce_motion"
                             render={({ field }) => (
-                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <FormItem className={cn("flex items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Reduzir Animações</FormLabel>
-                                        <FormDescription>
+                                        <FormLabel className={cn("text-base", isMobile && "text-sm")}>Reduzir Animações</FormLabel>
+                                        <FormDescription className={isMobile ? "text-xs" : ""}>
                                             Ative para desativar ou reduzir as animações da interface.
                                         </FormDescription>
                                     </div>
@@ -275,8 +290,8 @@ export default function AISettingsTab() {
                 </Card>
 
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved}>
-                         {isSaving ? <LoaderCircle className="animate-spin" /> : justSaved ? <Check /> : "Salvar Preferências"}
+                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved} className={isMobile ? "text-sm py-1 h-8" : ""}>
+                         {isSaving ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : justSaved ? <Check className={isMobile ? "h-4 w-4" : ""} /> : "Salvar Preferências"}
                     </Button>
                 </div>
             </form>
