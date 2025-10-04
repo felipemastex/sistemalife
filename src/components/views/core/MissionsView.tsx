@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Type definitions
 interface SubTask {
@@ -431,6 +432,10 @@ const MissionsViewComponent = () => {
     const [isPanelVisible, setIsPanelVisible] = useState(false);
 
     const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
+
+    // Mobile detection and bottom bar state
+    const isMobile = useIsMobile();
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     
     const { toast } = useToast();
@@ -865,11 +870,11 @@ const MissionsViewComponent = () => {
 
 
     return (
-        <div className={cn("h-full flex flex-col p-4 md:p-6", accordionSpacing)}>
-            <div className="flex-shrink-0 mb-6">
+        <div className={cn("h-full flex flex-col p-4 md:p-6 pb-16 md:pb-6", accordionSpacing)}>
+            <div className="flex-shrink-0 mb-6 md:hidden">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider text-center md:text-left flex-grow">Diário de Missões</h1>
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-2 hidden md:flex">
                         <Button
                             variant="ghost"
                             size="sm"
@@ -886,7 +891,7 @@ const MissionsViewComponent = () => {
                     </div>
                 </div>
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4">
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4 hidden md:block">
                     <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300">
                         <MissionStatsPanel />
                         <div className="flex flex-col md:flex-row gap-4">
@@ -1126,6 +1131,93 @@ const MissionsViewComponent = () => {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Mobile Bottom Navigation Bar */}
+            {isMobile && (
+                <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-2 z-50 md:hidden">
+                    <div className="flex justify-around items-center">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex flex-col items-center justify-center h-auto p-1"
+                            onClick={() => setIsPanelVisible(!isPanelVisible)}
+                        >
+                            <Eye className="h-5 w-5" />
+                            <span className="text-xs mt-1">{isPanelVisible ? 'Ocultar' : 'Mostrar'}</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex flex-col items-center justify-center h-auto p-1"
+                            onClick={() => setDialogState({open: true, mission: null, isManual: true})}
+                        >
+                            <PlusCircle className="h-5 w-5" />
+                            <span className="text-xs mt-1">Criar</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex flex-col items-center justify-center h-auto p-1"
+                            onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        >
+                            <Search className="h-5 w-5" />
+                            <span className="text-xs mt-1">Filtros</span>
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Menu Panel */}
+            {isMobile && showMobileMenu && (
+                <div className="fixed bottom-16 left-0 right-0 bg-background border-t border-border p-4 z-40 md:hidden">
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="mobile-search">Pesquisar</Label>
+                            <Input 
+                                id="mobile-search"
+                                placeholder="Procurar missão..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="bg-card mt-1"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Filtrar por Rank</Label>
+                                <Select value={rankFilter} onValueChange={setRankFilter}>
+                                    <SelectTrigger className="mt-1"><SelectValue placeholder="Rank" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos</SelectItem>
+                                        {rankOrder.map(r => <SelectItem key={r} value={r}>Rank {r}</SelectItem>)}
+                                        <SelectItem value="M">Manual</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>Status</Label>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="mt-1"><SelectValue placeholder="Status" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos</SelectItem>
+                                        <SelectItem value="active">Ativas</SelectItem>
+                                        <SelectItem value="completed">Concluídas</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        {generatePendingDailyMissions && (
+                            <Button 
+                                onClick={generatePendingDailyMissions} 
+                                variant="outline" 
+                                className="w-full text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300 mt-2"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Gerar Missões Pendentes
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

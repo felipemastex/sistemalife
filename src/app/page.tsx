@@ -1,10 +1,9 @@
-
-
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, KeySquare } from 'lucide-react';
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Menu, Award, Store, Backpack, Swords, UserSquare, Trophy, TowerControl, KeySquare, ChevronUp, ChevronDown, TrendingUp, HandCoins, ScrollText, GitFork } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
@@ -159,6 +158,77 @@ export default function App() {
     );
   };
 
+  const NavButton = ({ icon: Icon, label, page }: { 
+    icon: React.ComponentType<{ className?: string }>, 
+    label: string, 
+    page: string 
+  }) => {
+    return (
+      <button
+        onClick={() => handleNavigate(page)}
+        className={cn(
+          'flex flex-col items-center justify-center p-1 rounded-lg transition-colors flex-shrink-0',
+          currentPage === page ? 'text-primary' : 'text-gray-400'
+        )}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="text-xs mt-1 whitespace-nowrap">{label}</span>
+      </button>
+    );
+  };
+
+  const DropdownNavButton = React.forwardRef<
+    HTMLButtonElement,
+    {
+      icon: React.ComponentType<{ className?: string }>,
+      label: string,
+      'data-state'?: 'open' | 'closed'
+    }
+  >(({ icon: Icon, label, ...props }, ref) => {
+    const isOpen = props['data-state'] === 'open';
+    return (
+      <button
+        ref={ref}
+        {...props}
+        className={cn(
+          'flex flex-col items-center justify-center p-1 rounded-lg transition-colors flex-shrink-0',
+          isOpen ? 'text-primary' : 'text-gray-400'
+        )}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="text-xs mt-1 whitespace-nowrap">{label}</span>
+        {isOpen ? <ChevronUp className="h-3 w-3 mt-1" /> : <ChevronDown className="h-3 w-3 mt-1" />}
+      </button>
+    );
+  });
+  DropdownNavButton.displayName = 'DropdownNavButton';
+
+  const DropdownMenu = ({
+    children,
+    className = ''
+  }: {
+    children: React.ReactNode,
+    className?: string
+  }) => {
+    return (
+      <DropdownMenuPrimitive.Portal>
+        <DropdownMenuPrimitive.Content
+          side="top"
+          align="center"
+          sideOffset={12}
+          className={cn(
+            'w-max bg-card/95 border border-border/50 rounded-lg shadow-lg z-50',
+            className
+          )}
+        >
+          <div className="py-2">
+            {children}
+          </div>
+        </DropdownMenuPrimitive.Content>
+      </DropdownMenuPrimitive.Portal>
+    );
+  };
+
   const renderContent = () => {
     if (!isDataLoaded) {
       return null
@@ -237,56 +307,230 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans">
-        {!isMobile && (
-          <aside className="w-64 bg-card/50 border-r border-border/50 p-4 flex flex-col">
-              <NavContent />
-          </aside>
-        )}
+      {!isMobile && (
+        <aside className="w-64 bg-card/50 border-r border-border/50 p-4 flex flex-col">
+          <NavContent />
+        </aside>
+      )}
+      
+      <div className="flex-1 flex flex-col">
+        <main 
+          className="flex-1 overflow-y-auto overflow-x-hidden relative" 
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={() => onTouchEnd(false)}
+        >
+          {renderContent()}
+        </main>
         
-      <main 
-        className="flex-1 overflow-y-auto overflow-x-hidden relative" 
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={() => onTouchEnd(false)}
-      >
-         {isMobile && (
-            <header className="sticky top-0 left-0 right-0 z-10 p-2 bg-background/80 backdrop-blur-md border-b border-border/50 flex items-center">
-                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Abrir menu">
-                            <Menu />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent
-                        side="left" 
-                        className="w-72 bg-card/95 border-r border-border/50 p-4 flex flex-col"
-                        onTouchStart={onTouchStart}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={() => onTouchEnd(true)}
+        {/* Mobile Bottom Navigation - Only shown on mobile */}
+        {isMobile && (
+          <div className="fixed bottom-0 left-0 right-0 bg-card/95 border-t border-border/50 p-2 flex overflow-x-auto z-40 md:hidden scrollbar-hide">
+            <div className="flex space-x-3 min-w-max mx-auto relative">
+              {/* Main Group */}
+              <DropdownMenuPrimitive.Root>
+                <DropdownMenuPrimitive.Trigger asChild>
+                  <DropdownNavButton icon={LayoutDashboard} label="Principal" />
+                </DropdownMenuPrimitive.Trigger>
+                <DropdownMenu>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('dashboard')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'dashboard' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
                     >
-                        <NavContent inSheet={true}/>
-                    </SheetContent>
-                </Sheet>
-                 <h2 className="text-lg font-bold text-primary ml-4 capitalize font-cinzel tracking-wider">{currentPage}</h2>
-            </header>
-          )}
-        {renderContent()}
-        
-        {showOnboarding && <OnboardingGuide onFinish={() => {
-            setShowOnboarding(false);
-            if (profile) {
-              persistData('profile', {...profile, onboarding_completed: true});
-            }
-        }} />}
-        {systemAlert && (
-            <SystemAlert
-              message={systemAlert.message}
-              position={systemAlert.position}
-              onDismiss={() => setSystemAlert(null)}
-            />
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span className="text-sm">Dashboard</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('metas')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'metas' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span className="text-sm">Metas</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('missions')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'missions' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <Target className="h-4 w-4" />
+                      <span className="text-sm">Missões</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                </DropdownMenu>
+              </DropdownMenuPrimitive.Root>
+
+              {/* Events Group (existing) */}
+              <DropdownMenuPrimitive.Root>
+                <DropdownMenuPrimitive.Trigger asChild>
+                  <DropdownNavButton icon={TowerControl} label="Eventos" />
+                </DropdownMenuPrimitive.Trigger>
+                <DropdownMenu>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('tower')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'tower' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <TowerControl className="h-4 w-4" />
+                      <span className="text-sm">Torre</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('dungeon')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'dungeon' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <KeySquare className="h-4 w-4" />
+                      <span className="text-sm">Masmorra</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                </DropdownMenu>
+              </DropdownMenuPrimitive.Root>
+              
+              {/* Progress Group (existing) */}
+              <DropdownMenuPrimitive.Root>
+                  <DropdownMenuPrimitive.Trigger asChild>
+                      <DropdownNavButton icon={TrendingUp} label="Progresso" />
+                  </DropdownMenuPrimitive.Trigger>
+                  <DropdownMenu>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('skills')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'skills' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <BarChart3 className="h-4 w-4" />
+                              <span className="text-sm">Habilidades</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('class')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'class' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <UserSquare className="h-4 w-4" />
+                              <span className="text-sm">Classe</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('routine')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'routine' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <Clock className="h-4 w-4" />
+                              <span className="text-sm">Rotina</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('achievements')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'achievements' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <Award className="h-4 w-4" />
+                              <span className="text-sm">Conquistas</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                  </DropdownMenu>
+              </DropdownMenuPrimitive.Root>
+              
+              {/* Economy Group (existing) */}
+              <DropdownMenuPrimitive.Root>
+                  <DropdownMenuPrimitive.Trigger asChild>
+                      <DropdownNavButton icon={HandCoins} label="Economia" />
+                  </DropdownMenuPrimitive.Trigger>
+                  <DropdownMenu>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('shop')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'shop' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <Store className="h-4 w-4" />
+                              <span className="text-sm">Loja</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                      <DropdownMenuPrimitive.Item asChild>
+                          <button
+                              onClick={() => handleNavigate('inventory')}
+                              className={cn(
+                                  'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                                  currentPage === 'inventory' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                              )}
+                          >
+                              <Backpack className="h-4 w-4" />
+                              <span className="text-sm">Inventário</span>
+                          </button>
+                      </DropdownMenuPrimitive.Item>
+                  </DropdownMenu>
+              </DropdownMenuPrimitive.Root>
+
+              {/* System Group */}
+              <DropdownMenuPrimitive.Root>
+                <DropdownMenuPrimitive.Trigger asChild>
+                  <DropdownNavButton icon={GitFork} label="Sistema" />
+                </DropdownMenuPrimitive.Trigger>
+                <DropdownMenu>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('ai-chat')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'ai-chat' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <Bot className="h-4 w-4" />
+                      <span className="text-sm">Arquiteto</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('settings')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'settings' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="text-sm">Configurações</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                </DropdownMenu>
+              </DropdownMenuPrimitive.Root>
+            </div>
+          </div>
         )}
-        {profile?.active_dungeon_event && <DungeonEventPrompt />}
-      </main>
+      </div>
     </div>
   );
 }
