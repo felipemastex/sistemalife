@@ -9,19 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "cap": "npx cap",
-    "cap:add": "npx cap add",
-    "cap:copy": "npx cap copy",
-    "cap:open": "npx cap open",
-    "cap:update": "npx cap update",
-    "cap:sync": "npx cap sync"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/cli": "^7.4.3",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/ios": "^7.4.3",
     "@genkit-ai/firebase": "^1.17.0",
     "@genkit-ai/googleai": "^1.17.0",
     "@genkit-ai/next": "^1.17.0",
